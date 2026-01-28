@@ -1,7 +1,7 @@
 import { ClientLayout } from "@/layouts";
 import { Route } from "react-router-dom";
+import { HomePage, AboutPage, ContactPage } from "@/pages/client";
 import { ROUTER_URL } from "../route.const";
-import { AboutPage, ContactPage, HomePage } from "@/pages/client";
 
 export const ClientPublicRoute = (
   <Route element={<ClientLayout />}>
