@@ -9,5 +9,8 @@ export const ROUTER_URL = {
   },
 
   ADMIN: "/admin",
-  ADMIN_ROUTER: {},
+  ADMIN_ROUTER: {
+    DASHBOARD: "dashboard",
+    USER_CONTROL: "user-control",
+  },
 };

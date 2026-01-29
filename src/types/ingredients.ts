@@ -5,4 +5,5 @@ export interface Ingredient extends Timestamp {
   name: string;
   quantity: number;
   unit: string;
+  origin: string;
 }
