@@ -21,4 +21,5 @@ export interface User {
   address?: string;
   loyalPoints: number;
   tier: Tier;
+  avatarUrl?: string;
 }
