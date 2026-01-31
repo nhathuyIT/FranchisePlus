@@ -3,8 +3,8 @@ import type { Product } from "@/types/product.type";
 import { FRANCHISES_MOCK } from "./franchises.const";
 
 /**
- * Mock products for inventory (simplified for UI)
- * Note: Using old Product type structure from product.type.ts
+ * Mock products for inventory UI rendering
+ * Note: Using temporary Product type. Will be replaced when Product team completes their API.
  */
 const PRODUCTS_FOR_INVENTORY: Array<Product & { SKU: string }> = [
   {
@@ -142,49 +142,30 @@ const PRODUCTS_FOR_INVENTORY: Array<Product & { SKU: string }> = [
 ];
 
 /**
- * Inventory records based on ERD
- * Tracks stock levels for each product at each franchise
+ * Mock inventory data - 22 records distributed across 10 franchises
+ * Includes low stock items (quantity <= alert_threshold) for testing alerts
  */
 export const INVENTORY_MOCK: Inventory[] = [
-  // Franchise 1 inventory
   { id: "inv-1", product_franchise_id: "1", quantity: 150, alert_threshold: 50, is_active: true, is_deleted: false, createdAt: "2025-01-01T08:00:00Z", updatedAt: "2025-01-30T10:00:00Z" },
   { id: "inv-2", product_franchise_id: "2", quantity: 30, alert_threshold: 40, is_active: true, is_deleted: false, createdAt: "2025-01-01T08:00:00Z", updatedAt: "2025-01-29T14:30:00Z" },
   { id: "inv-3", product_franchise_id: "3", quantity: 80, alert_threshold: 30, is_active: true, is_deleted: false, createdAt: "2025-01-01T08:00:00Z", updatedAt: "2025-01-30T09:15:00Z" },
-
-  // Franchise 2 inventory
   { id: "inv-4", product_franchise_id: "1", quantity: 20, alert_threshold: 50, is_active: true, is_deleted: false, createdAt: "2025-01-02T09:00:00Z", updatedAt: "2025-01-30T08:45:00Z" },
   { id: "inv-5", product_franchise_id: "4", quantity: 60, alert_threshold: 20, is_active: true, is_deleted: false, createdAt: "2025-01-02T09:00:00Z", updatedAt: "2025-01-29T16:20:00Z" },
   { id: "inv-6", product_franchise_id: "5", quantity: 15, alert_threshold: 25, is_active: true, is_deleted: false, createdAt: "2025-01-02T09:00:00Z", updatedAt: "2025-01-30T11:00:00Z" },
-
-  // Franchise 3 inventory
   { id: "inv-7", product_franchise_id: "2", quantity: 100, alert_threshold: 40, is_active: true, is_deleted: false, createdAt: "2025-01-03T07:30:00Z", updatedAt: "2025-01-29T13:40:00Z" },
   { id: "inv-8", product_franchise_id: "6", quantity: 35, alert_threshold: 20, is_active: true, is_deleted: false, createdAt: "2025-01-03T07:30:00Z", updatedAt: "2025-01-30T10:25:00Z" },
-
-  // Franchise 4 inventory
   { id: "inv-9", product_franchise_id: "3", quantity: 25, alert_threshold: 30, is_active: true, is_deleted: false, createdAt: "2025-01-04T10:00:00Z", updatedAt: "2025-01-30T07:50:00Z" },
   { id: "inv-10", product_franchise_id: "7", quantity: 40, alert_threshold: 15, is_active: true, is_deleted: false, createdAt: "2025-01-04T10:00:00Z", updatedAt: "2025-01-29T15:10:00Z" },
   { id: "inv-11", product_franchise_id: "1", quantity: 75, alert_threshold: 50, is_active: true, is_deleted: false, createdAt: "2025-01-04T10:00:00Z", updatedAt: "2025-01-30T12:30:00Z" },
-
-  // Franchise 5 inventory (inactive)
   { id: "inv-12", product_franchise_id: "8", quantity: 10, alert_threshold: 20, is_active: false, is_deleted: false, createdAt: "2025-01-05T08:45:00Z", updatedAt: "2025-01-28T09:00:00Z" },
-
-  // Franchise 6 inventory
   { id: "inv-13", product_franchise_id: "1", quantity: 120, alert_threshold: 50, is_active: true, is_deleted: false, createdAt: "2025-01-06T09:30:00Z", updatedAt: "2025-01-30T11:45:00Z" },
   { id: "inv-14", product_franchise_id: "9", quantity: 18, alert_threshold: 25, is_active: true, is_deleted: false, createdAt: "2025-01-06T09:30:00Z", updatedAt: "2025-01-29T17:20:00Z" },
-
-  // Franchise 7 inventory
   { id: "inv-15", product_franchise_id: "2", quantity: 90, alert_threshold: 40, is_active: true, is_deleted: false, createdAt: "2025-01-07T07:00:00Z", updatedAt: "2025-01-30T08:15:00Z" },
   { id: "inv-16", product_franchise_id: "10", quantity: 28, alert_threshold: 20, is_active: true, is_deleted: false, createdAt: "2025-01-07T07:00:00Z", updatedAt: "2025-01-29T12:40:00Z" },
-
-  // Franchise 8 inventory
   { id: "inv-17", product_franchise_id: "4", quantity: 45, alert_threshold: 20, is_active: true, is_deleted: false, createdAt: "2025-01-08T10:20:00Z", updatedAt: "2025-01-30T09:50:00Z" },
   { id: "inv-18", product_franchise_id: "3", quantity: 12, alert_threshold: 30, is_active: true, is_deleted: false, createdAt: "2025-01-08T10:20:00Z", updatedAt: "2025-01-30T06:30:00Z" },
-
-  // Franchise 9 inventory
   { id: "inv-19", product_franchise_id: "1", quantity: 65, alert_threshold: 50, is_active: true, is_deleted: false, createdAt: "2025-01-09T08:10:00Z", updatedAt: "2025-01-29T14:15:00Z" },
   { id: "inv-20", product_franchise_id: "11", quantity: 22, alert_threshold: 15, is_active: true, is_deleted: false, createdAt: "2025-01-09T08:10:00Z", updatedAt: "2025-01-30T13:25:00Z" },
-
-  // Franchise 10 inventory
   { id: "inv-21", product_franchise_id: "5", quantity: 8, alert_threshold: 25, is_active: true, is_deleted: false, createdAt: "2025-01-10T09:45:00Z", updatedAt: "2025-01-30T10:40:00Z" },
   { id: "inv-22", product_franchise_id: "2", quantity: 110, alert_threshold: 40, is_active: true, is_deleted: false, createdAt: "2025-01-10T09:45:00Z", updatedAt: "2025-01-29T16:55:00Z" },
 ];
