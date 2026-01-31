@@ -1,6 +1,7 @@
 import { Navigate, Route } from "react-router-dom";
 import { ROUTER_URL } from "../route.const";
 import { CLIENT_MENU } from "./client.menu";
+
 export const ClientRoute = (
   <Route>
     <Route path={ROUTER_URL.CLIENT}>

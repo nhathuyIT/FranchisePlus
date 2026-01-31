@@ -3,9 +3,12 @@ export const ROUTER_URL = {
   ABOUT: "/about",
   CONTACT: "/contact",
 
+
   CLIENT: "/client",
   CLIENT_ROUTER: {
     CART: "cart",
+    PRODUCTS: "products",
+    PRODUCT_DETAIL: "products/:id",
   },
 
   ADMIN: "/admin",
