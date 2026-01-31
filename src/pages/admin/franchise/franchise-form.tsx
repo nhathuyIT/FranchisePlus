@@ -57,40 +57,36 @@ const FranchiseForm = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-
-    // Mock save operation
     console.log("Saving franchise:", formData);
-
-    // Navigate back to franchise list
     navigate(`${ROUTER_URL.ADMIN}/${ROUTER_URL.ADMIN_ROUTER.FRANCHISES}`);
   };
 
   return (
-    <div className="p-6 bg-[#FAF9F6] min-h-screen">
+    <div className="p-6 bg-gradient-to-br from-[#FAF8F5] via-[#F5F1EB] to-[#EDE7DD] min-h-screen">
       <div className="max-w-4xl mx-auto">
         <div className="mb-6">
           <Link to={`${ROUTER_URL.ADMIN}/${ROUTER_URL.ADMIN_ROUTER.FRANCHISES}`}>
-            <Button variant="outline" className="mb-4 border-[#4A3B2A] text-[#4A3B2A] hover:bg-[#4A3B2A] hover:text-white">
+            <Button variant="outline" className="mb-4 border-2 border-[#6D4C41] text-[#6D4C41] hover:bg-[#6D4C41] hover:text-white rounded-full transition-all duration-300 cursor-pointer">
               <ArrowLeft className="mr-2 h-4 w-4" />
               Back to List
             </Button>
           </Link>
 
-          <h1 className="text-3xl font-bold text-[#4A3B2A]">
+          <h1 className="text-3xl font-bold text-[#3E2723]">
             {isEditMode ? "Edit Franchise" : "Create New Franchise"}
           </h1>
-          <p className="text-gray-600 mt-1">
+          <p className="text-[#5D4037] mt-1">
             {isEditMode
               ? "Update franchise information"
               : "Add a new franchise location"}
           </p>
         </div>
 
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        <div className="bg-white rounded-2xl shadow-lg border border-[#E8DFD6] p-6">
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
-                <Label htmlFor="code" className="text-[#4A3B2A] font-semibold">
+                <Label htmlFor="code" className="text-[#3E2723] font-semibold">
                   Franchise Code *
                 </Label>
                 <Input
@@ -99,12 +95,12 @@ const FranchiseForm = () => {
                   onChange={(e) => handleChange("code", e.target.value)}
                   placeholder="CF-D1-001"
                   required
-                  className="border-gray-300 focus:border-[#4A3B2A] focus:ring-[#4A3B2A]"
+                  className="border-[#E8DFD6] focus:border-[#6D4C41] focus:ring-[#6D4C41] rounded-lg transition-all duration-200"
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="name" className="text-[#4A3B2A] font-semibold">
+                <Label htmlFor="name" className="text-[#3E2723] font-semibold">
                   Franchise Name *
                 </Label>
                 <Input
@@ -113,13 +109,13 @@ const FranchiseForm = () => {
                   onChange={(e) => handleChange("name", e.target.value)}
                   placeholder="Coffee House District 1"
                   required
-                  className="border-gray-300 focus:border-[#4A3B2A] focus:ring-[#4A3B2A]"
+                  className="border-[#E8DFD6] focus:border-[#6D4C41] focus:ring-[#6D4C41] rounded-lg transition-all duration-200"
                 />
               </div>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="address" className="text-[#4A3B2A] font-semibold">
+              <Label htmlFor="address" className="text-[#3E2723] font-semibold">
                 Address *
               </Label>
               <Input
@@ -128,13 +124,13 @@ const FranchiseForm = () => {
                 onChange={(e) => handleChange("address", e.target.value)}
                 placeholder="123 Nguyen Hue Street, District 1, Ho Chi Minh City"
                 required
-                className="border-gray-300 focus:border-[#4A3B2A] focus:ring-[#4A3B2A]"
+                className="border-[#E8DFD6] focus:border-[#6D4C41] focus:ring-[#6D4C41] rounded-lg transition-all duration-200"
               />
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
-                <Label htmlFor="opened_at" className="text-[#4A3B2A] font-semibold">
+                <Label htmlFor="opened_at" className="text-[#3E2723] font-semibold">
                   Opened Date
                 </Label>
                 <Input
@@ -142,19 +138,19 @@ const FranchiseForm = () => {
                   type="date"
                   value={formData.opened_at ? formData.opened_at.split('T')[0] : ''}
                   onChange={(e) => handleChange("opened_at", e.target.value ? `${e.target.value}T00:00:00Z` : '')}
-                  className="border-gray-300 focus:border-[#4A3B2A] focus:ring-[#4A3B2A]"
+                  className="border-[#E8DFD6] focus:border-[#6D4C41] focus:ring-[#6D4C41] rounded-lg transition-all duration-200"
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="status" className="text-[#4A3B2A] font-semibold">
+                <Label htmlFor="status" className="text-[#3E2723] font-semibold">
                   Status *
                 </Label>
                 <Select
                   value={formData.is_active ? "active" : "inactive"}
                   onValueChange={(value) => handleChange("is_active", value === "active")}
                 >
-                  <SelectTrigger className="border-gray-300 focus:border-[#4A3B2A] focus:ring-[#4A3B2A]">
+                  <SelectTrigger className="border-[#E8DFD6] focus:border-[#6D4C41] focus:ring-[#6D4C41] rounded-lg transition-all duration-200">
                     <SelectValue placeholder="Select status" />
                   </SelectTrigger>
                   <SelectContent>
@@ -165,19 +161,19 @@ const FranchiseForm = () => {
               </div>
             </div>
 
-            <div className="flex justify-end gap-4 pt-4 border-t border-gray-200">
+            <div className="flex justify-end gap-4 pt-4 border-t border-[#E8DFD6]">
               <Link to={`${ROUTER_URL.ADMIN}/${ROUTER_URL.ADMIN_ROUTER.FRANCHISES}`}>
                 <Button
                   type="button"
                   variant="outline"
-                  className="border-gray-300 text-gray-700 hover:bg-gray-100"
+                  className="border-2 border-gray-300 text-[#5D4037] hover:bg-gray-100 rounded-full transition-all duration-300 cursor-pointer"
                 >
                   Cancel
                 </Button>
               </Link>
               <Button
                 type="submit"
-                className="bg-[#4A3B2A] hover:bg-[#3A2B1A] text-white"
+                className="bg-[#6D4C41] hover:bg-[#5D4037] text-white rounded-full shadow-md hover:shadow-lg transition-all duration-300 cursor-pointer"
               >
                 <Save className="mr-2 h-4 w-4" />
                 {isEditMode ? "Update Franchise" : "Create Franchise"}

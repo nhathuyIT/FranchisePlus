@@ -20,22 +20,22 @@ const FranchiseList = () => {
   );
 
   return (
-    <div className="p-6 bg-[#FAF9F6] min-h-screen">
+    <div className="p-6 bg-gradient-to-br from-[#FAF8F5] via-[#F5F1EB] to-[#EDE7DD] min-h-screen">
       <div className="max-w-7xl mx-auto">
         <div className="flex justify-between items-center mb-6">
           <div>
-            <h1 className="text-3xl font-bold text-[#4A3B2A]">Franchise Management</h1>
-            <p className="text-gray-600 mt-1">Manage all your franchise locations</p>
+            <h1 className="text-3xl font-bold text-[#3E2723]">Franchise Management</h1>
+            <p className="text-[#5D4037] mt-1">Manage all your franchise locations</p>
           </div>
           <Link to={`${ROUTER_URL.ADMIN}/${ROUTER_URL.ADMIN_ROUTER.FRANCHISES_CREATE}`}>
-            <Button className="bg-[#4A3B2A] hover:bg-[#3A2B1A] text-white">
+            <Button className="bg-[#6D4C41] hover:bg-[#5D4037] text-white rounded-full shadow-md hover:shadow-lg transition-all duration-300 cursor-pointer">
               <Plus className="mr-2 h-4 w-4" />
               Add Franchise
             </Button>
           </Link>
         </div>
 
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        <div className="bg-white rounded-2xl shadow-lg border border-[#E8DFD6] p-6">
           <div className="mb-4">
             <Input
               placeholder="Search by name, code, or address..."
