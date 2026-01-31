@@ -25,4 +25,18 @@ export const ADMIN_MENU: AdminMenuItem[] = [
     component: React.lazy(() => import("@/pages/admin/user-crud/index")),
     isEnd: true,
   },
+  {
+    label: "Categories",
+    path: ROUTER_URL.ADMIN_ROUTER.CATEGORIES,
+    icon: "category",
+    component: React.lazy(() => import("@/pages/admin/categories/index")),
+    isEnd: true,
+  },
+  {
+    label: "Products",
+    path: ROUTER_URL.ADMIN_ROUTER.PRODUCTS,
+    icon: "product",
+    component: React.lazy(() => import("@/pages/admin/products/index")),
+    isEnd: true,
+  },
 ];
