@@ -10,16 +10,16 @@ export const StockStatusBadge = ({ quantity, lowStockThreshold }: StockStatusBad
 
   let variant: "default" | "secondary" | "destructive" | "outline" = "default";
   let label = "Good Stock";
-  let colorClass = "bg-green-600 hover:bg-green-700"; // Coffee theme green
+  let colorClass = "bg-green-600 hover:bg-green-700 rounded-full";
 
   if (percentage <= 50) {
     variant = "destructive";
     label = "Critical";
-    colorClass = "bg-[#EF4444] hover:bg-[#DC2626]"; // Red from design system
+    colorClass = "bg-[#EF4444] hover:bg-[#DC2626] rounded-full";
   } else if (percentage <= 100) {
     variant = "secondary";
     label = "Low Stock";
-    colorClass = "bg-[#D97706] hover:bg-[#B45309]"; // Terracotta/Amber from design system
+    colorClass = "bg-[#D97706] hover:bg-[#B45309] rounded-full";
   }
 
   return (
