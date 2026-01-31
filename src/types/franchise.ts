@@ -1,17 +1,17 @@
 import type { ID, Timestamp } from "./common";
 
 /**
- * Franchise entity based on ERD
- * Represents a franchise location/branch
+ * Franchise entity - represents a franchise location/branch
+ * Based on ERD with unique code constraint
  */
 export interface Franchise extends Timestamp {
   id: ID;
-  code: string; // unique identifier code
+  code: string; // Unique franchise code (e.g., CF-D1-001)
   name: string;
   logo_url?: string;
   address: string;
-  opened_at?: string; // ISO timestamp
-  closed_at?: string; // ISO timestamp
-  is_active: boolean; // true = active, false = inactive
-  is_deleted: boolean; // soft delete flag
+  opened_at?: string;
+  closed_at?: string;
+  is_active: boolean;
+  is_deleted: boolean; // Soft delete flag
 }

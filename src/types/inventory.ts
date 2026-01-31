@@ -1,23 +1,21 @@
 import type { ID, Timestamp } from "./common";
 
 /**
- * Inventory entity based on ERD
- * Represents stock levels for a product at a franchise
- * UNIQUE (product_franchise_id, franchise_id)
+ * Inventory entity - tracks stock levels per product per franchise
+ * Based on ERD with UNIQUE constraint (product_franchise_id, franchise_id)
  */
 export interface Inventory extends Timestamp {
   id: ID;
   product_franchise_id: ID;
-  quantity: number; // decimal in DB
-  alert_threshold: number; // decimal in DB - lowStockThreshold
-  is_active: boolean; // true = AVAILABLE, false = OUT_OF_STOCK
+  quantity: number; // Stock quantity (decimal in DB)
+  alert_threshold: number; // Low stock warning level (decimal in DB)
+  is_active: boolean; // AVAILABLE (true) / OUT_OF_STOCK (false)
   is_deleted: boolean;
 }
 
 /**
- * ProductFranchise type for inventory view
- * Note: This is a simplified version for Inventory module only
- * The full ProductFranchise should be defined by Product Management team
+ * ProductFranchise junction table - links products to franchises with pricing
+ * Note: Simplified for Inventory module. Full definition owned by Product team.
  */
 export interface ProductFranchise extends Timestamp {
   id: ID;
@@ -29,8 +27,8 @@ export interface ProductFranchise extends Timestamp {
 }
 
 /**
- * View model for UI - combines Inventory with related data
- * This is specifically for Franchise & Inventory Management modules
+ * InventoryItemView - denormalized view model for UI rendering
+ * Combines inventory, product, franchise data for display
  */
 export interface InventoryItemView {
   inventory: Inventory;
