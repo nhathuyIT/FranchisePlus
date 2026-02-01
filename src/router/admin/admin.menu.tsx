@@ -36,21 +36,27 @@ export const ADMIN_MENU: AdminMenuItem[] = [
     label: "Franchise Detail",
     path: ROUTER_URL.ADMIN_ROUTER.FRANCHISES_DETAIL,
     icon: "store",
-    component: React.lazy(() => import("@/pages/admin/franchise/franchise-detail")),
+    component: React.lazy(
+      () => import("@/pages/admin/franchise/franchise-detail"),
+    ),
     isEnd: true,
   },
   {
     label: "Create Franchise",
     path: ROUTER_URL.ADMIN_ROUTER.FRANCHISES_CREATE,
     icon: "store",
-    component: React.lazy(() => import("@/pages/admin/franchise/franchise-form")),
+    component: React.lazy(
+      () => import("@/pages/admin/franchise/franchise-form"),
+    ),
     isEnd: true,
   },
   {
     label: "Edit Franchise",
     path: ROUTER_URL.ADMIN_ROUTER.FRANCHISES_EDIT,
     icon: "store",
-    component: React.lazy(() => import("@/pages/admin/franchise/franchise-form")),
+    component: React.lazy(
+      () => import("@/pages/admin/franchise/franchise-form"),
+    ),
     isEnd: true,
   },
   {
@@ -64,7 +70,9 @@ export const ADMIN_MENU: AdminMenuItem[] = [
     label: "Low Stock Alert",
     path: ROUTER_URL.ADMIN_ROUTER.INVENTORY_LOW_STOCK,
     icon: "alert-triangle",
-    component: React.lazy(() => import("@/pages/admin/inventory/low-stock-alert")),
+    component: React.lazy(
+      () => import("@/pages/admin/inventory/low-stock-alert"),
+    ),
   },
   {
     label: "Categories",

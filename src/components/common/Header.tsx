@@ -8,7 +8,7 @@ import {
 } from "../ui/dropdown-menu";
 import { Button } from "../ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
-import { FileText, LogOut, User } from "lucide-react";
+import { FileText, LogOut, Settings, User } from "lucide-react";
 import { useAuthStore } from "@/stores/auth-store";
 
 const Header = () => {
@@ -85,20 +85,20 @@ const Header = () => {
                       <span>My Posts</span>
                     </Link>
                   </DropdownMenuItem>
-                  {/* {user.role === 0 && (
-                  <>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem asChild>
-                      <Link
-                        to="/admin-dashboard"
-                        className="flex items-center cursor-pointer"
-                      >
-                        <Settings className="mr-2 h-4 w-4" />
-                        <span>Admin Dashboard</span>
-                      </Link>
-                    </DropdownMenuItem>
-                  </>
-                )} */}
+                  {user.role === "admin" && (
+                    <>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem asChild>
+                        <Link
+                          to="/admin/dashboard"
+                          className="flex items-center cursor-pointer"
+                        >
+                          <Settings className="mr-2 h-4 w-4" />
+                          <span>Admin Dashboard</span>
+                        </Link>
+                      </DropdownMenuItem>
+                    </>
+                  )}
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={logout} className="cursor-pointer">
                     <LogOut className="mr-2 h-4 w-4" />
@@ -109,13 +109,13 @@ const Header = () => {
             ) : (
               <>
                 <Button className="text-md" variant="ghost" asChild>
-                  <Link to="/login">Login</Link>
+                  <Link to="/client/login">Login</Link>
                 </Button>
                 <Button
                   asChild
                   className="bg-[#6D4C41] hover:bg-[#5D4037] text-white text-md"
                 >
-                  <Link to="/signup">Sign Up</Link>
+                  <Link to="/client/signup">Sign Up</Link>
                 </Button>
               </>
             )}
