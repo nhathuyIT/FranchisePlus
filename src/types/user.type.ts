@@ -1,17 +1,9 @@
 import type { ID } from "./common";
 
-export type Role = {
-  ADMIN: "admin";
-  MANAGER: "manager";
-  STAFF: "staff";
-  CUSTOMER: "customer";
-};
-export type Tier = {
-  BRONZE: "bronze";
-  SILVER: "silver";
-  GOLD: "gold";
-  PLATINUM: "platinum";
-};
+export type Role = "admin" | "manager" | "staff" | "customer";
+
+export type Tier = "bronze" | "silver" | "gold" | "platinum";
+
 export interface User {
   id: ID;
   name: string;
@@ -19,7 +11,7 @@ export interface User {
   password: string;
   role: Role;
   address?: string;
-  loyalPoints: number;
-  tier: Tier;
+  loyalPoints: number | null;
+  tier: Tier | null;
   avatarUrl?: string;
 }
