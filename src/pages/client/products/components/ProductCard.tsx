@@ -1,8 +1,8 @@
-import type { CoffeeProduct } from "@/const/coffee.const";
+import type { ProductClient } from "@/const/product-client.const";
 import { Link } from "react-router-dom";
 
 type ProductCardProps = {
-	product: CoffeeProduct;
+	product: ProductClient;
 };
 
 export const ProductCard = ({ product }: ProductCardProps) => {

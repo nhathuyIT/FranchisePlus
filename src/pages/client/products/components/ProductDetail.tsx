@@ -1,13 +1,13 @@
 import { useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { COFFEE_PRODUCTS } from "@/const/coffee.const";
+import { PRODUCTS_CLIENT } from "@/const/product-client.const";
 
 const ProductDetailPage = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
 
   const product = useMemo(
-    () => COFFEE_PRODUCTS.find((item) => item.id === Number(id)),
+    () => PRODUCTS_CLIENT.find((item) => item.id === Number(id)),
     [id],
   );
 

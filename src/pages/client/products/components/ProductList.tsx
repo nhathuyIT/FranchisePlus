@@ -1,8 +1,8 @@
-import { COFFEE_PRODUCTS, type CoffeeProduct } from "@/const/coffee.const";
+import { PRODUCTS_CLIENT, type ProductClient  } from "@/const/product-client.const";
 import ProductCard from "./ProductCard";
 
 const ProductList = () => {
-  const activeProducts: CoffeeProduct[] = COFFEE_PRODUCTS.filter(
+  const activeProducts: ProductClient[] = PRODUCTS_CLIENT.filter(
     (product) => product.is_active,
   );
 
