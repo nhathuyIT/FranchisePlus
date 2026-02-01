@@ -90,36 +90,6 @@ const AdminLogin = () => {
 
         {/* Card */}
         <div className="bg-white dark:bg-stone-800 rounded-2xl shadow-2xl p-8 pt-16 border border-amber-200 dark:border-amber-900">
-          {/* Header */}
-          <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-amber-900 dark:text-amber-50 mb-2">
-              Staff Portal
-            </h1>
-            <p className="text-amber-700 dark:text-amber-300 text-sm">
-              Welcome back! Please login to your account
-            </p>
-          </div>
-
-          <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg p-3 mb-6">
-            <p className="text-xs font-semibold text-amber-900 dark:text-amber-100 mb-2">
-              Demo Credentials:
-            </p>
-            <div className="text-xs text-amber-800 dark:text-amber-200 space-y-1">
-              <p>
-                <span className="font-medium">Admin:</span>{" "}
-                admin@franchiseplus.com / admin123
-              </p>
-              <p>
-                <span className="font-medium">Manager:</span>{" "}
-                manager@franchiseplus.com / manager123
-              </p>
-              <p>
-                <span className="font-medium">Staff:</span>{" "}
-                staff@franchiseplus.com / staff123
-              </p>
-            </div>
-          </div>
-
           {/* Login Form */}
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
             {/* Email Field */}

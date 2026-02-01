@@ -99,18 +99,6 @@ const ClientLogin = () => {
             </p>
           </div>
 
-          <div className="bg-orange-50 dark:bg-orange-950/30 border border-orange-200 dark:border-orange-800 rounded-lg p-3 mb-6">
-            <p className="text-xs font-semibold text-orange-900 dark:text-orange-100 mb-2">
-              Demo Credentials:
-            </p>
-            <div className="text-xs text-orange-800 dark:text-orange-200 space-y-1">
-              <p>
-                <span className="font-medium">Customer:</span>{" "}
-                client@example.com / client123
-              </p>
-            </div>
-          </div>
-
           {/* Login Form */}
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
             {/* Email Field */}
