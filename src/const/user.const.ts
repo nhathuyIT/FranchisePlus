@@ -1,3 +1,48 @@
 import type { User } from "@/types/user.type";
 
-export const UserDataMock: User[] = [];
+export const UserDataMock: User[] = [
+  {
+    id: "admin-1",
+    name: "Admin User",
+    email: "admin@franchiseplus.com",
+    password: "admin123",
+    role: "admin",
+    phone: "0912333122",
+    loyalPoints: 0,
+    tier: null,
+    avatarUrl: "https://api.dicebear.com/7.x/avataaars/svg?seed=admin",
+  },
+  {
+    id: "manager-1",
+    name: "Manager User",
+    email: "manager@franchiseplus.com",
+    password: "manager123",
+    role: "manager",
+    phone: "0912333122",
+    loyalPoints: 0,
+    tier: null,
+    avatarUrl: "https://api.dicebear.com/7.x/avataaars/svg?seed=manager",
+  },
+  {
+    id: "staff-1",
+    name: "Staff User",
+    email: "staff@franchiseplus.com",
+    password: "staff123",
+    role: "staff",
+    phone: "0912333122",
+    loyalPoints: 0,
+    tier: null,
+    avatarUrl: "https://api.dicebear.com/7.x/avataaars/svg?seed=staff",
+  },
+  {
+    id: "client-1",
+    name: "Client User",
+    email: "client@franchiseplus.com",
+    password: "client123",
+    role: "customer",
+    phone: "0912333122",
+    loyalPoints: 100,
+    tier: "gold",
+    avatarUrl: "https://api.dicebear.com/7.x/avataaars/svg?seed=client",
+  },
+];

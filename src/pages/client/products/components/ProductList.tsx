@@ -7,8 +7,8 @@ const ProductList = () => {
   );
 
   return (
-    <section className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-10 sm:px-6 lg:px-8">
-      <header className="flex flex-col gap-3 text-center">
+    <section className="mx-auto flex w-full max-w-6xl flex-col gap-4 px-4 py-0 sm:px-6 lg:px-8">
+      <header className="flex flex-col gap-2 text-center mb-4">
         <p className="text-xs font-semibold uppercase tracking-[0.2em] text-amber-700">
           Our Menu
         </p>

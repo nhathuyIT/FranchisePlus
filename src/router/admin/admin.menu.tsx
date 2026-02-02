@@ -25,4 +25,67 @@ export const ADMIN_MENU: AdminMenuItem[] = [
     component: React.lazy(() => import("@/pages/admin/user-crud/index")),
     isEnd: true,
   },
+  {
+    label: "Franchises",
+    path: ROUTER_URL.ADMIN_ROUTER.FRANCHISES,
+    icon: "store",
+    component: React.lazy(() => import("@/pages/admin/franchise/index")),
+    isEnd: true,
+  },
+  {
+    label: "Franchise Detail",
+    path: ROUTER_URL.ADMIN_ROUTER.FRANCHISES_DETAIL,
+    icon: "store",
+    component: React.lazy(
+      () => import("@/pages/admin/franchise/franchise-detail"),
+    ),
+    isEnd: true,
+  },
+  {
+    label: "Create Franchise",
+    path: ROUTER_URL.ADMIN_ROUTER.FRANCHISES_CREATE,
+    icon: "store",
+    component: React.lazy(
+      () => import("@/pages/admin/franchise/franchise-form"),
+    ),
+    isEnd: true,
+  },
+  {
+    label: "Edit Franchise",
+    path: ROUTER_URL.ADMIN_ROUTER.FRANCHISES_EDIT,
+    icon: "store",
+    component: React.lazy(
+      () => import("@/pages/admin/franchise/franchise-form"),
+    ),
+    isEnd: true,
+  },
+  {
+    label: "Inventory",
+    path: ROUTER_URL.ADMIN_ROUTER.INVENTORY,
+    icon: "package",
+    component: React.lazy(() => import("@/pages/admin/inventory/index")),
+    isEnd: true,
+  },
+  {
+    label: "Low Stock Alert",
+    path: ROUTER_URL.ADMIN_ROUTER.INVENTORY_LOW_STOCK,
+    icon: "alert-triangle",
+    component: React.lazy(
+      () => import("@/pages/admin/inventory/low-stock-alert"),
+    ),
+  },
+  {
+    label: "Categories",
+    path: ROUTER_URL.ADMIN_ROUTER.CATEGORIES,
+    icon: "category",
+    component: React.lazy(() => import("@/pages/admin/categories/index")),
+    isEnd: true,
+  },
+  {
+    label: "Products",
+    path: ROUTER_URL.ADMIN_ROUTER.PRODUCTS,
+    icon: "product",
+    component: React.lazy(() => import("@/pages/admin/products/index")),
+    isEnd: true,
+  },
 ];

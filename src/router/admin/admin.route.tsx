@@ -1,6 +1,7 @@
 import { Navigate, Route } from "react-router-dom";
 import { ROUTER_URL } from "../route.const";
 import { ADMIN_MENU } from "./admin.menu";
+
 export const AdminRoutes = (
   <Route>
     <Route path={ROUTER_URL.ADMIN}>
