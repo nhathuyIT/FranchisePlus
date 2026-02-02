@@ -1,53 +1,108 @@
-import { Button } from "@/components/ui/button";
+import React from "react";
+import { Swiper, SwiperSlide } from "swiper/react";
+import { Autoplay, EffectFade } from "swiper/modules";
+import { motion, AnimatePresence } from "framer-motion";
+import "swiper/css";
+import "swiper/css/effect-fade";
+
+// Coffee-themed images (local assets)
+import carousel1 from "@/assets/carousel_1.jpg";
+import carousel2 from "@/assets/carousel_2.jpg";
+import mikeCoffee from "@/assets/mike-kenneally-tNALoIZhqVM-unsplash.jpg";
+
+const slides = [
+  {
+    image: carousel1,
+    title: "Crafted with Passion",
+    description:
+      "Experience the finest selection of artisanal coffee beans, roasted to perfection.",
+  },
+  {
+    image: carousel2,
+    title: "A Sensory Journey",
+    description:
+      "Every cup tells a story of quality, sustainability, and exceptional taste.",
+  },
+  {
+    image: mikeCoffee,
+    title: "Moments to Savor",
+    description: "Indulge in the warmth and aroma of our signature blends.",
+  },
+];
+
+const textVariants = {
+  initial: { x: "100vw", opacity: 0 },
+  animate: {
+    x: 0,
+    opacity: 1,
+    transition: { duration: 3, ease: [0.4, 0, 0.2, 1] },
+  },
+  exit: { x: "-20vw", opacity: 0, transition: { duration: 1.2 } },
+};
 
 export const HeroSection = () => {
-  return (
-    <section className="relative min-h-[90vh] flex items-center justify-center overflow-hidden bg-gradient-to-br from-[#FAF8F5] via-[#F5F1EB] to-[#EDE7DD]">
-      <div className="container mx-auto px-4 py-20">
-        <div className="flex flex-col lg:flex-row items-center gap-12 lg:gap-16">
-          {/* Left Content */}
-          <div className="flex-1 text-center lg:text-left space-y-8">
-            <h1 className="text-5xl sm:text-6xl lg:text-7xl xl:text-8xl font-bold text-[#3E2723] leading-tight tracking-tight">
-              Crafted with <br />
-              <span className="bg-gradient-to-r from-[#8D6E63] to-[#5D4037] bg-clip-text text-transparent">
-                Passion
-              </span>
-            </h1>
-            <p className="text-lg sm:text-xl text-[#5D4037] max-w-2xl mx-auto lg:mx-0 leading-relaxed">
-              Experience the finest selection of artisanal coffee beans, roasted
-              to perfection. Every cup tells a story of quality, sustainability,
-              and exceptional taste.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
-              <Button
-                size="lg"
-                className="bg-[#6D4C41] hover:bg-[#5D4037] text-white px-8 py-6 text-lg rounded-full transition-all duration-300 cursor-pointer shadow-lg hover:shadow-xl"
-              >
-                Explore Our Menu
-              </Button>
-              <Button
-                size="lg"
-                variant="outline"
-                className="bg-[#6D4C41] hover:bg-[#5D4037] text-white px-8 py-6 text-lg rounded-full transition-all duration-300 cursor-pointer shadow-lg hover:shadow-xl"
-              >
-                Find a Location
-              </Button>
-            </div>
-          </div>
+  const [activeIndex, setActiveIndex] = React.useState(0);
 
-          {/* Right Image */}
-          <div className="flex-1 relative">
-            <div className="relative w-full aspect-square max-w-lg mx-auto">
-              <div className="absolute inset-0 bg-[#8D6E63] rounded-full opacity-10 blur-3xl animate-pulse"></div>
-              <img
-                src="https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=800&auto=format&fit=crop"
-                alt="Premium coffee cup"
-                className="relative rounded-3xl shadow-2xl object-cover w-full h-full"
-              />
+  return (
+    <section className="relative w-full h-screen overflow-hidden">
+      <Swiper
+        modules={[Autoplay, EffectFade]}
+        effect="fade"
+        autoplay={{ delay: 6000, disableOnInteraction: false }}
+        speed={1200}
+        loop
+        onSlideChange={(swiper) => setActiveIndex(swiper.realIndex)}
+        className="w-full h-full"
+      >
+        {slides.map((slide, idx) => (
+          <SwiperSlide key={idx}>
+            <div
+              className="absolute inset-0 w-full h-full"
+              style={{
+                backgroundImage: `url(${slide.image})`,
+                backgroundSize: "cover",
+                backgroundPosition: "center",
+              }}
+            >
+              <div className="absolute inset-0 bg-black/40" />
+              <div className="relative z-10 flex flex-col items-center justify-center h-full w-full">
+                <AnimatePresence mode="wait">
+                  {activeIndex === idx && (
+                    <motion.div
+                      key={slide.title}
+                      variants={textVariants}
+                      initial="initial"
+                      animate="animate"
+                      exit="exit"
+                      className="text-center px-6"
+                    >
+                      <h1
+                        className="text-5xl md:text-7xl font-serif font-bold text-[#fffbea] drop-shadow-lg mb-6"
+                        style={{
+                          textShadow:
+                            "0 4px 24px rgba(0,0,0,0.45), 0 1px 0 #6D4C41",
+                        }}
+                      >
+                        {slide.title}
+                      </h1>
+                      <p
+                        className="text-xl md:text-2xl font-sans text-[#fffbea] drop-shadow-md max-w-2xl mx-auto"
+                        style={{
+                          textShadow: "0 2px 12px rgba(0,0,0,0.35)",
+                        }}
+                      >
+                        {slide.description}
+                      </p>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
             </div>
-          </div>
-        </div>
-      </div>
+          </SwiperSlide>
+        ))}
+      </Swiper>
     </section>
   );
 };
+
+export default HeroSection;
