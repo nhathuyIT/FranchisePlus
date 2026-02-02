@@ -78,9 +78,6 @@ const AdminLogin = () => {
       };
 
       login(authUser);
-      toast.success("Welcome back!", {
-        description: `Logged in as ${user.name}`,
-      });
 
       navigate(ROUTER_URL.ADMIN + "/" + ROUTER_URL.ADMIN_ROUTER.DASHBOARD);
     } catch (error) {

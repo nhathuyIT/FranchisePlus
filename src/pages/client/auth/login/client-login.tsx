@@ -68,9 +68,6 @@ const ClientLogin = () => {
       };
 
       login(authUser);
-      toast.success("Welcome back!", {
-        description: `Logged in as ${user.name}`,
-      });
 
       navigate("/");
     } catch (error) {
