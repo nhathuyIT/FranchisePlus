@@ -1,17 +1,9 @@
-export interface Category {
-  id: number;
-  code: string;
-  name: string;
-  description: string;
-  is_active: boolean;
-  is_deleted: boolean;
-  created_at: string;
-  updated_at: string;
-}
+import type { Category } from "@/types/category";
+import type { ID } from "@/types/common";
 
 export const CATEGORIES: Category[] = [
   {
-    id: 1,
+    id: 1 as ID,
     code: "MUST_TRY",
     name: "Must Try",
     description: "Featured products of the day",
@@ -21,7 +13,7 @@ export const CATEGORIES: Category[] = [
     updated_at: "2025-01-01",
   },
   {
-    id: 2,
+    id: 2 as ID,
     code: "COFFEE",
     name: "Coffee",
     description: "Brewed and specialty coffee drinks",
@@ -31,7 +23,7 @@ export const CATEGORIES: Category[] = [
     updated_at: "2025-01-01",
   },
   {
-    id: 3,
+    id: 3 as ID,
     code: "TEA",
     name: "Tea",
     description: "Fruit teas and milk teas",
@@ -41,7 +33,7 @@ export const CATEGORIES: Category[] = [
     updated_at: "2025-01-01",
   },
   {
-    id: 4,
+    id: 4 as ID,
     code: "FOOD",
     name: "Food",
     description: "Bakery and light meals",
