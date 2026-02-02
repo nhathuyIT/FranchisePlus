@@ -8,11 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuthStore } from "@/stores/auth-store";
-import {
-  UserDataMock,
-  RoleDataMock,
-  UserFranchiseRoleDataMock,
-} from "@/const/user.const";
+import { UserDataMock } from "@/const/user.const";
 import { ROUTER_URL } from "@/router/route.const";
 import {
   AdminLoginZod,
@@ -39,7 +35,7 @@ const AdminLogin = () => {
     try {
       await new Promise((resolve) => setTimeout(resolve, 800));
       const user = UserDataMock.find(
-        (u) => u.email === data.email && u.password_hash === data.password,
+        (u) => u.email === data.email && u.password === data.password,
       );
 
       if (!user) {
@@ -49,35 +45,18 @@ const AdminLogin = () => {
         return;
       }
 
-      // Get user's roles and franchise assignments
-      const userFranchiseRoles = UserFranchiseRoleDataMock.filter(
-        (ufr) => ufr.user_id === user.id,
-      );
-      const roles = RoleDataMock.filter((role) =>
-        userFranchiseRoles.some((ufr) => ufr.role_id === role.id),
-      );
-
-      // Check if user has staff role (ADMIN, MANAGER, or STAFF)
-      const hasStaffRole = roles.some((role) =>
-        ["ADMIN", "MANAGER", "STAFF"].includes(role.code),
-      );
-
-      if (!hasStaffRole) {
+      const role = user.role;
+      if (!["admin", "manager", "staff"].includes(role)) {
         toast.error("Access Denied", {
           description: "This portal is for staff only",
         });
         return;
       }
 
-      // Build AuthUser object
-      const authUser = {
-        user,
-        roles,
-        franchiseRoles: userFranchiseRoles,
-        currentFranchiseId: userFranchiseRoles[0]?.franchise_id || null,
-      };
-
-      login(authUser);
+      login(user);
+      toast.success("Welcome back!", {
+        description: `Logged in as ${user.name}`,
+      });
 
       navigate(ROUTER_URL.ADMIN + "/" + ROUTER_URL.ADMIN_ROUTER.DASHBOARD);
     } catch (error) {

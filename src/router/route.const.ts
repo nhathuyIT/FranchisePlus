@@ -17,8 +17,6 @@ export const ROUTER_URL = {
     LOGIN: "/admin/login",
     DASHBOARD: "dashboard",
     USER_CONTROL: "user-control",
-    USER_CONTROL_CREATE: "user-control/create",
-    USER_CONTROL_EDIT: "user-control/:id/edit",
     FRANCHISES: "franchises",
     FRANCHISES_CREATE: "franchises/create",
     FRANCHISES_EDIT: "franchises/:id/edit",

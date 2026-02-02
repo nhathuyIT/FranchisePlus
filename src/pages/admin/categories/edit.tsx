@@ -6,20 +6,18 @@ const CategoryEditPage = () => {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const [formData, setFormData] = useState({
-    code: "",
     name: "",
     description: "",
-    is_active: true,
+    status: "active" as "active" | "inactive",
   });
 
   useEffect(() => {
-    const category = CATEGORIES.find((cat) => cat.id === Number(id));
+    const category = CATEGORIES.find((cat) => cat.id === id);
     if (category) {
       setFormData({
-        code: category.code,
         name: category.name,
         description: category.description || "",
-        is_active: category.is_active,
+        status: category.status,
       });
     }
   }, [id]);
@@ -37,21 +35,6 @@ const CategoryEditPage = () => {
         <h1 className="text-3xl font-bold text-gray-900 mb-8">Edit Category</h1>
 
         <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow p-6 space-y-6">
-          <div>
-            <label className="block text-sm font-medium text-gray-900 mb-2">
-              Code
-            </label>
-            <input
-              type="text"
-              required
-              value={formData.code}
-              onChange={(e) =>
-                setFormData({ ...formData, code: e.target.value })
-              }
-              className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-gray-900"
-            />
-          </div>
-
           <div>
             <label className="block text-sm font-medium text-gray-900 mb-2">
               Name
@@ -85,17 +68,19 @@ const CategoryEditPage = () => {
             <label className="block text-sm font-medium text-gray-900 mb-2">
               Status
             </label>
-            <div className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                checked={formData.is_active}
-                onChange={(e) =>
-                  setFormData({ ...formData, is_active: e.target.checked })
-                }
-                className="w-4 h-4 text-gray-900 border-gray-300 rounded focus:ring-gray-900"
-              />
-              <span className="text-sm text-gray-900">Active</span>
-            </div>
+            <select
+              value={formData.status}
+              onChange={(e) =>
+                setFormData({
+                  ...formData,
+                  status: e.target.value as "active" | "inactive",
+                })
+              }
+              className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-gray-900"
+            >
+              <option value="active">Active</option>
+              <option value="inactive">Inactive</option>
+            </select>
           </div>
 
           <div className="flex gap-4">

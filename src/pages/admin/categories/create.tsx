@@ -4,10 +4,9 @@ import { useNavigate } from "react-router-dom";
 const CategoryCreatePage = () => {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
-    code: "",
     name: "",
     description: "",
-    is_active: true,
+    status: "active" as "active" | "inactive",
   });
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -23,22 +22,6 @@ const CategoryCreatePage = () => {
         <h1 className="text-3xl font-bold text-gray-900 mb-8">Create Category</h1>
 
         <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow p-6 space-y-6">
-          <div>
-            <label className="block text-sm font-medium text-gray-900 mb-2">
-              Code
-            </label>
-            <input
-              type="text"
-              required
-              value={formData.code}
-              onChange={(e) =>
-                setFormData({ ...formData, code: e.target.value })
-              }
-              placeholder="e.g., espresso"
-              className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-gray-900"
-            />
-          </div>
-
           <div>
             <label className="block text-sm font-medium text-gray-900 mb-2">
               Name
@@ -72,17 +55,19 @@ const CategoryCreatePage = () => {
             <label className="block text-sm font-medium text-gray-900 mb-2">
               Status
             </label>
-            <div className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                checked={formData.is_active}
-                onChange={(e) =>
-                  setFormData({ ...formData, is_active: e.target.checked })
-                }
-                className="w-4 h-4 text-gray-900 border-gray-300 rounded focus:ring-gray-900"
-              />
-              <span className="text-sm text-gray-900">Active</span>
-            </div>
+            <select
+              value={formData.status}
+              onChange={(e) =>
+                setFormData({
+                  ...formData,
+                  status: e.target.value as "active" | "inactive",
+                })
+              }
+              className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-gray-900"
+            >
+              <option value="active">Active</option>
+              <option value="inactive">Inactive</option>
+            </select>
           </div>
 
           <div className="flex gap-4">
