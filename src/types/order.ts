@@ -1,23 +1,46 @@
-import type { ID, Timestamp } from "./common";
+import type { ID, BaseTimestamp, SoftDeletable } from "./common";
 
+/**
+ * Order type - POS (Point of Sale) or ONLINE
+ */
+export type OrderType = "POS" | "ONLINE";
+
+/**
+ * Order status lifecycle
+ */
 export type OrderStatus =
-  | "pending"
-  | "processing"
-  | "shipping"
-  | "completed"
-  | "cancelled";
+  | "DRAFT"
+  | "CONFIRMED"
+  | "PREPARING"
+  | "COMPLETED"
+  | "CANCELLED";
 
-export interface OrderItem {
-  productId: ID;
-  quantity: number;
-  price: number; // snapshot per item
+/**
+ * Order entity - snapshot-based order system
+ */
+export interface Order extends BaseTimestamp, SoftDeletable {
+  id: ID;
+  code: string; // unique
+  franchise_id: ID;
+  customer_id: ID;
+  type: OrderType;
+  status: OrderStatus;
+  total_amount: number; // decimal - snapshot, không tính lại từ product
+  confirmed_at: string | null; // Chốt đơn
+  completed_at: string | null; // Hoàn tất
+  cancelled_at: string | null; // Huỷ
+  created_by: ID | null; // Staff tạo (POS)
 }
 
-export interface Order extends Timestamp {
+/**
+ * OrderItem entity - individual items in an order with snapshot pricing
+ */
+export interface OrderItem extends BaseTimestamp, SoftDeletable {
   id: ID;
-  customerId: ID;
-  items: OrderItem[];
-  totalAmount: number;
-  status: OrderStatus;
-  paymentId?: ID;
+  order_id: ID;
+  product_franchise_id: ID;
+  product_name_snapshot: string; // Tên tại thời điểm mua
+  price_snapshot: number; // decimal - Giá tại thời điểm mua
+  quantity: number;
+  line_total: number; // decimal - price × quantity
 }

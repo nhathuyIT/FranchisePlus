@@ -1,17 +1,11 @@
-import type { ID, Timestamp } from "./common";
+import type { ID, BaseTimestamp, SoftDeletable, Activatable } from "./common";
 
-/**
- * Franchise entity - represents a franchise location/branch
- * Based on ERD with unique code constraint
- */
-export interface Franchise extends Timestamp {
+export interface Franchise extends BaseTimestamp, SoftDeletable, Activatable {
   id: ID;
-  code: string; // Unique franchise code (e.g., CF-D1-001)
+  code: string; // Unique franchise code
   name: string;
-  logo_url?: string;
+  logo_url: string | null;
   address: string;
-  opened_at?: string;
-  closed_at?: string;
-  is_active: boolean;
-  is_deleted: boolean; // Soft delete flag
+  opened_at: string | null;
+  closed_at: string | null;
 }
