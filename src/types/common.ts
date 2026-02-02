@@ -1,6 +1,14 @@
-export type ID = string | number;
+export type ID = number;
 
-export type Timestamp = {
-  createdAt: string; // ISO
-  updatedAt: string; // ISO
-};
+export interface BaseTimestamp {
+  created_at: string; // ISO timestamp
+  updated_at: string; // ISO timestamp
+}
+
+export interface SoftDeletable {
+  is_deleted: boolean; // false by default
+}
+
+export interface Activatable {
+  is_active: boolean; // true by default
+}

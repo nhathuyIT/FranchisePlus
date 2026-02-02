@@ -3,9 +3,10 @@ export const ROUTER_URL = {
   ABOUT: "/about",
   CONTACT: "/contact",
 
-
   CLIENT: "/client",
   CLIENT_ROUTER: {
+    LOGIN: "/client/login",
+    REGISTER: "register",
     CART: "cart",
     PRODUCTS: "products",
     PRODUCT_DETAIL: "products/:id",
@@ -13,8 +14,17 @@ export const ROUTER_URL = {
 
   ADMIN: "/admin",
   ADMIN_ROUTER: {
+    LOGIN: "/admin/login",
     DASHBOARD: "dashboard",
     USER_CONTROL: "user-control",
+    USER_CONTROL_CREATE: "user-control/create",
+    USER_CONTROL_EDIT: "user-control/:id/edit",
+    FRANCHISES: "franchises",
+    FRANCHISES_CREATE: "franchises/create",
+    FRANCHISES_EDIT: "franchises/:id/edit",
+    FRANCHISES_DETAIL: "franchises/:id",
+    INVENTORY: "inventory",
+    INVENTORY_LOW_STOCK: "inventory/low-stock",
     CATEGORIES: "categories",
     CATEGORIES_CREATE: "categories/create",
     CATEGORIES_EDIT: "categories/:id/edit",
