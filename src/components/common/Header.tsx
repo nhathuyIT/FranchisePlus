@@ -20,29 +20,58 @@ const Header = () => {
   return (
     <header className="sticky top-0 z-50 w-full h-18 border-b bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60">
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
-        <Link to={"/"} className="flex flex-col items-center ">
-          <img
-            className="h-15 "
-            src={"/coffee-beans.png"}
-            alt="Coffee Franchise"
-          />
-        </Link>
-        <div className="flex items-center gap-6 ">
-          <nav className="hidden md:flex items-center gap-6">
-            <Link
-              to="/about"
-              className="text-lg font-medium text-[#5D4037] hover:text-[#6D4C41] transition-colors duration-200"
-            >
-              About Us
-            </Link>
-            <Link
-              to="/contact"
-              className="text-lg font-medium text-[#5D4037] hover:text-[#6D4C41] transition-colors duration-200"
-            >
-              Contact
-            </Link>
-          </nav>
+        {/* Left: Original Logo Block */}
+        <Link
+          to={"/"}
+          className="flex w-48 h-16 overflow-hidden rounded-md group"
+        >
+          {/* PHẦN BÊN TRÁI: Chứa Logo (50% chiều rộng) */}
+          <div className="w-1/2 h-full flex items-center justify-end">
+            <img
+              className="h-15 object-contain group-hover:scale-110 transition-transform"
+              src={"/coffee-beans.png"}
+              alt="Coffee Franchise"
+            />
+          </div>
 
+          {/* PHẦN BÊN PHẢI: Chia đôi trên dưới (50% chiều rộng) */}
+          <div className="w-1/2 h-full flex flex-col">
+            <div className="h-1/2 flex items-end justify-start pl-2">
+              <h3 className="font-bold leading-none text-[24px] text-[#6D4C41] uppercase tracking-tighter">
+                GOAT
+              </h3>
+            </div>
+            <div className="h-1/2 flex items-start justify-between pl-2">
+              <p className="text-lg font-medium text-[#6D4C41] italic">
+                coffee
+              </p>
+            </div>
+          </div>
+        </Link>
+
+        {/* Center: Navigation */}
+        <nav className="hidden md:flex items-center gap-10 absolute left-1/2 -translate-x-1/2">
+          <Link
+            to="/menu"
+            className="text-2xl font-coffee tracking-wide text-[#5D4037] hover:text-[#6D4C41] transition-colors duration-200"
+          >
+            Menu
+          </Link>
+          <Link
+            to="/about"
+            className="text-2xl font-coffee tracking-wide text-[#5D4037] hover:text-[#6D4C41] transition-colors duration-200"
+          >
+            The Stories
+          </Link>
+          <Link
+            to="/contact"
+            className="text-2xl font-coffee tracking-wide text-[#5D4037] hover:text-[#6D4C41] transition-colors duration-200"
+          >
+            Contact
+          </Link>
+        </nav>
+
+        <div className="flex items-center gap-6">
           <div className="flex items-center gap-4">
             {authUser ? (
               <DropdownMenu>
