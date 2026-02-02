@@ -31,7 +31,7 @@ const InventoryList = () => {
       item.franchiseName.toLowerCase().includes(searchTerm.toLowerCase());
 
     const matchesFranchise =
-      selectedFranchise === "all" || item.productFranchise.franchise_id === selectedFranchise;
+      selectedFranchise === "all" || item.productFranchise.franchise_id === Number(selectedFranchise);
 
     return matchesSearch && matchesFranchise;
   });
@@ -46,7 +46,7 @@ const InventoryList = () => {
     setSelectedItem(null);
   };
 
-  const handleUpdateStock = (inventoryId: string, newQuantity: number) => {
+  const handleUpdateStock = (inventoryId: number, newQuantity: number) => {
     setInventory((prev) =>
       prev.map((item) =>
         item.inventory.id === inventoryId
@@ -55,7 +55,7 @@ const InventoryList = () => {
               inventory: {
                 ...item.inventory,
                 quantity: newQuantity,
-                updatedAt: new Date().toISOString(),
+                updated_at: new Date().toISOString(),
               },
             }
           : item
