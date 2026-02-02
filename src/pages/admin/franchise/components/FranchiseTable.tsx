@@ -1,7 +1,8 @@
 import { Link } from "react-router";
-import { Pencil, Eye } from "lucide-react";
+import { Pencil, Eye, Store } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import {
   Table,
   TableBody,
@@ -23,6 +24,7 @@ export const FranchiseTable = ({ franchises }: FranchiseTableProps) => {
       <Table>
         <TableHeader>
           <TableRow className="bg-gradient-to-br from-[#FAF8F5] to-[#F5F1EB] hover:bg-gradient-to-br hover:from-[#FAF8F5] hover:to-[#F5F1EB]">
+            <TableHead className="font-semibold text-[#3E2723] w-16">Logo</TableHead>
             <TableHead className="font-semibold text-[#3E2723]">Code</TableHead>
             <TableHead className="font-semibold text-[#3E2723]">Name</TableHead>
             <TableHead className="font-semibold text-[#3E2723]">Address</TableHead>
@@ -37,6 +39,18 @@ export const FranchiseTable = ({ franchises }: FranchiseTableProps) => {
               key={franchise.id}
               className="hover:bg-[#FAF8F5] transition-colors duration-200 border-b border-[#E8DFD6] cursor-pointer"
             >
+              <TableCell>
+                <Avatar className="h-12 w-12 rounded-lg border-2 border-[#E8DFD6]">
+                  <AvatarImage
+                    src={franchise.logo_url || undefined}
+                    alt={franchise.name}
+                    className="object-cover"
+                  />
+                  <AvatarFallback className="rounded-lg bg-[#6D4C41] text-white">
+                    <Store className="h-6 w-6" />
+                  </AvatarFallback>
+                </Avatar>
+              </TableCell>
               <TableCell className="font-mono text-sm text-[#5D4037]">
                 {franchise.code}
               </TableCell>

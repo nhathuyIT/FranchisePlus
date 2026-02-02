@@ -57,7 +57,7 @@ export const InventoryTable = ({ items, onEdit }: InventoryTableProps) => {
                   />
                 </TableCell>
                 <TableCell className="text-[#5D4037]">
-                  {new Date(item.inventory.updatedAt).toLocaleDateString()}
+                  {new Date(item.inventory.updated_at).toLocaleDateString()}
                 </TableCell>
                 <TableCell className="text-right">
                   <Button
