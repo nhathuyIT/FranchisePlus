@@ -1,30 +1,34 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { PRODUCTS } from "@/const/product.const";
+import { PRODUCTS, PRODUCT_CATEGORY_MAP } from "@/const/product.const";
 import { CATEGORIES } from "@/const/category.const";
 
 const ProductEditPage = () => {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const [formData, setFormData] = useState({
+    SKU: "",
     name: "",
     description: "",
+    content: "",
     categoryId: "",
-    price: "",
-    imageUrl: "",
-    status: "active" as "active" | "inactive" | "out_of_stock",
+    min_price: "",
+    max_price: "",
+    is_active: true,
   });
 
   useEffect(() => {
-    const product = PRODUCTS.find((prod) => prod.id === id);
+    const product = PRODUCTS.find((prod) => prod.id === Number(id));
     if (product) {
       setFormData({
+        SKU: product.SKU,
         name: product.name,
         description: product.description || "",
-        categoryId: String(product.categoryId),
-        price: product.price.toString(),
-        imageUrl: product.images[0] || "",
-        status: product.status,
+        content: product.content || "",
+        categoryId: String(PRODUCT_CATEGORY_MAP[Number(product.id)] || ""),
+        min_price: product.min_price.toString(),
+        max_price: product.max_price.toString(),
+        is_active: product.is_active,
       });
     }
   }, [id]);
@@ -40,6 +44,21 @@ const ProductEditPage = () => {
         <h1 className="text-3xl font-bold text-gray-900 mb-8">Edit Product</h1>
 
         <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow p-6 space-y-6">
+          <div>
+            <label className="block text-sm font-medium text-gray-900 mb-2">
+              SKU (Stock Keeping Unit)
+            </label>
+            <input
+              type="text"
+              required
+              value={formData.SKU}
+              onChange={(e) =>
+                setFormData({ ...formData, SKU: e.target.value })
+              }
+              className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-gray-900"
+            />
+          </div>
+
           <div>
             <label className="block text-sm font-medium text-gray-900 mb-2">
               Name
@@ -71,6 +90,20 @@ const ProductEditPage = () => {
 
           <div>
             <label className="block text-sm font-medium text-gray-900 mb-2">
+              Content
+            </label>
+            <textarea
+              value={formData.content}
+              onChange={(e) =>
+                setFormData({ ...formData, content: e.target.value })
+              }
+              rows={2}
+              className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-gray-900"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-900 mb-2">
               Category
             </label>
             <select
@@ -82,7 +115,7 @@ const ProductEditPage = () => {
               className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-gray-900"
             >
               <option value="">Select a category</option>
-              {CATEGORIES.filter((cat) => cat.status === "active").map((cat) => (
+              {CATEGORIES.filter((cat) => cat.is_active && !cat.is_deleted).map((cat) => (
                 <option key={cat.id} value={cat.id}>
                   {cat.name}
                 </option>
@@ -90,55 +123,57 @@ const ProductEditPage = () => {
             </select>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-900 mb-2">
-              Price
-            </label>
-            <input
-              type="number"
-              required
-              step="0.01"
-              min="0"
-              value={formData.price}
-              onChange={(e) =>
-                setFormData({ ...formData, price: e.target.value })
-              }
-              className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-gray-900"
-            />
-          </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-900 mb-2">
-              Image URL
-            </label>
-            <input
-              type="url"
-              value={formData.imageUrl}
-              onChange={(e) =>
-                setFormData({ ...formData, imageUrl: e.target.value })
-              }
-              className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-gray-900"
-            />
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-900 mb-2">
+                Min Price
+              </label>
+              <input
+                type="number"
+                required
+                step="0.01"
+                min="0"
+                value={formData.min_price}
+                onChange={(e) =>
+                  setFormData({ ...formData, min_price: e.target.value })
+                }
+                className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-gray-900"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-900 mb-2">
+                Max Price
+              </label>
+              <input
+                type="number"
+                required
+                step="0.01"
+                min="0"
+                value={formData.max_price}
+                onChange={(e) =>
+                  setFormData({ ...formData, max_price: e.target.value })
+                }
+                className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-gray-900"
+              />
+            </div>
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-900 mb-2">
               Status
             </label>
-            <select
-              value={formData.status}
-              onChange={(e) =>
-                setFormData({
-                  ...formData,
-                  status: e.target.value as "active" | "inactive" | "out_of_stock",
-                })
-              }
-              className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-gray-900"
-            >
-              <option value="active">Active</option>
-              <option value="inactive">Inactive</option>
-              <option value="out_of_stock">Out of Stock</option>
-            </select>
+            <div className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                checked={formData.is_active}
+                onChange={(e) =>
+                  setFormData({ ...formData, is_active: e.target.checked })
+                }
+                className="w-4 h-4 text-gray-900 border-gray-300 rounded focus:ring-gray-900"
+              />
+              <span className="text-sm text-gray-900">Active</span>
+            </div>
           </div>
 
           <div className="flex gap-4">
