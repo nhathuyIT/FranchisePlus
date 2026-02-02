@@ -1,15 +1,21 @@
 import { useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { PRODUCTS_CLIENT } from "@/const/product-client.const";
+import { parseProductIdFromSlug } from "@/lib/slugify";
 
 const ProductDetailPage = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
 
-  const product = useMemo(
-    () => PRODUCTS_CLIENT.find((item) => item.id === Number(id)),
-    [id],
-  );
+  const product = useMemo(() => {
+    if (!id) return null;
+    
+    // Try to parse as slug first
+    const parsedId = parseProductIdFromSlug(id);
+    const productId = parsedId || id; // fallback to original id if not a slug
+    
+    return PRODUCTS_CLIENT.find((item) => item.id === Number(productId));
+  }, [id]);
 
   const [quantity, setQuantity] = useState(1);
   const [selectedImage, setSelectedImage] = useState(product?.image ?? "");
