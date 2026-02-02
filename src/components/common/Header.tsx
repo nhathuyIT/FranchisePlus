@@ -8,7 +8,7 @@ import {
 } from "../ui/dropdown-menu";
 import { Button } from "../ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
-import { FileText, LogOut, Settings, User } from "lucide-react";
+import { FileText, LogOut, Settings, User, ShoppingCart } from "lucide-react";
 import { useAuthStore } from "@/stores/auth-store";
 
 const Header = () => {
@@ -52,7 +52,7 @@ const Header = () => {
         {/* Center: Navigation */}
         <nav className="hidden md:flex items-center gap-10 absolute left-1/2 -translate-x-1/2">
           <Link
-            to="/menu"
+            to="/client/products"
             className="text-2xl font-coffee tracking-wide text-[#5D4037] hover:text-[#6D4C41] transition-colors duration-200"
           >
             Menu
@@ -73,6 +73,17 @@ const Header = () => {
 
         <div className="flex items-center gap-6">
           <div className="flex items-center gap-4">
+            {/* Cart Icon */}
+            <Link to="/client/cart">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="relative h-12 w-12 text-[#5D4037] hover:text-[#6D4C41] hover:bg-[#FAF8F5]"
+              >
+                <ShoppingCart className="h-7 w-7" strokeWidth={2} />
+              </Button>
+            </Link>
+
             {authUser ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -80,7 +91,7 @@ const Header = () => {
                     variant="ghost"
                     className="relative h-10 w-10 rounded-full"
                   >
-                    <Avatar className="h-12 w-12 cursor-pointer mt-5">
+                    <Avatar className="h-12 w-12  mt-5">
                       <AvatarImage
                         src={user?.avatar_url || undefined}
                         alt={user?.name}

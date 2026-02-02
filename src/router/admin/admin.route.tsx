@@ -2,18 +2,25 @@ import { Navigate, Route } from "react-router-dom";
 import { ROUTER_URL } from "../route.const";
 import { ADMIN_MENU } from "./admin.menu";
 import { AdminLayout } from "@/layouts";
+import AdminGuard from "../guard/admin-guard.route";
 
 export const AdminRoutes = (
-  <Route element={<AdminLayout />}>
-    <Route path={ROUTER_URL.ADMIN}>
-      <Route
-        index
-        element={<Navigate to={ROUTER_URL.ADMIN_ROUTER.DASHBOARD} replace />}
-      />
+  <Route element={<AdminGuard />}>
+    <Route element={<AdminLayout />}>
+      <Route path={ROUTER_URL.ADMIN}>
+        <Route
+          index
+          element={<Navigate to={ROUTER_URL.ADMIN_ROUTER.DASHBOARD} replace />}
+        />
 
-      {ADMIN_MENU.map((item) => (
-        <Route key={item.path} path={item.path} element={<item.component />} />
-      ))}
+        {ADMIN_MENU.map((item) => (
+          <Route
+            key={item.path}
+            path={item.path}
+            element={<item.component />}
+          />
+        ))}
+      </Route>
     </Route>
   </Route>
 );
