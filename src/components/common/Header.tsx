@@ -12,7 +12,11 @@ import { FileText, LogOut, Settings, User } from "lucide-react";
 import { useAuthStore } from "@/stores/auth-store";
 
 const Header = () => {
-  const { user, logout } = useAuthStore();
+  const { authUser, logout, isAdmin } = useAuthStore();
+  const user = authUser?.user;
+
+  const primaryRole = authUser?.roles[0]?.name || "User";
+
   return (
     <header className="sticky top-0 z-50 w-full h-18 border-b bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60">
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
@@ -40,7 +44,7 @@ const Header = () => {
           </nav>
 
           <div className="flex items-center gap-4">
-            {user ? (
+            {authUser ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
@@ -48,7 +52,10 @@ const Header = () => {
                     className="relative h-10 w-10 rounded-full"
                   >
                     <Avatar className="h-12 w-12 cursor-pointer mt-5">
-                      <AvatarImage src={user.avatarUrl} alt={user.name} />
+                      <AvatarImage
+                        src={user?.avatar_url || undefined}
+                        alt={user?.name}
+                      />
                       <AvatarFallback>
                         <User className="h-5 w-5" />
                       </AvatarFallback>
@@ -59,10 +66,10 @@ const Header = () => {
                   <div className="flex items-center justify-start gap-2 p-2">
                     <div className="flex flex-col space-y-1">
                       <p className="text-sm font-medium leading-none">
-                        {user.name || "Username"}
+                        {user?.name || "Username"}
                       </p>
                       <p className="text-xs leading-none text-muted-foreground">
-                        {/* {user.role  === "admin" ? "Admin" : "Customer"} */}
+                        {primaryRole}
                       </p>
                     </div>
                   </div>
@@ -85,7 +92,7 @@ const Header = () => {
                       <span>My Posts</span>
                     </Link>
                   </DropdownMenuItem>
-                  {user.role === "admin" && (
+                  {isAdmin() && (
                     <>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem asChild>
