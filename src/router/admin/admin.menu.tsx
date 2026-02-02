@@ -26,6 +26,20 @@ export const ADMIN_MENU: AdminMenuItem[] = [
     isEnd: true,
   },
   {
+    label: "User Create",
+    path: ROUTER_URL.ADMIN_ROUTER.USER_CONTROL_CREATE,
+    icon: "user",
+    component: React.lazy(() => import("@/pages/admin/user-crud/create")),
+    isEnd: true,
+  },
+  {
+    label: "User Edit",
+    path: ROUTER_URL.ADMIN_ROUTER.USER_CONTROL_EDIT,
+    icon: "user",
+    component: React.lazy(() => import("@/pages/admin/user-crud/edit")),
+    isEnd: true,
+  },
+  {
     label: "Franchises",
     path: ROUTER_URL.ADMIN_ROUTER.FRANCHISES,
     icon: "store",
