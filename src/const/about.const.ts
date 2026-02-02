@@ -1,123 +1,91 @@
-import { Award, Users, Lightbulb, Leaf, Coffee } from "lucide-react";
+import React from "react";
+import { Users, ShieldCheck, Coffee, 
+  // Zap, Award, Cpu, Star
+ } from "lucide-react";
 
 export interface TeamMember {
   name: string;
   role: string;
-  bio: string;
-  icon: typeof Coffee;
+  summary: string;
+  detail: string;
+  icon: React.ElementType;
 }
 
-export interface Testimonial {
-  quote: string;
-  name: string;
-  location: string;
-  rating: number;
-}
+export const ABOUT_THEME = {
+  primary: "#6D4C41",
+  secondary: "#f7c6a3",
+  bgKem: "#FAF8F5",
+  textTitle: "#3E2723",
+  textBody: "#5D4037",
+};
 
-export const awards = [
-  { year: "2024", name: "Best Coffee Chain" },
-  { year: "2023", name: "Sustainability Award" },
-  { year: "2022", name: "Customer Choice" },
-  { year: "2021", name: "Quality Excellence" },
-];
-
-export const certifications = [
-  "Fair Trade Certified",
-  "Organic Certified",
-  "Rainforest Alliance",
-  "Carbon Neutral",
-];
-
-export const testimonials: Testimonial[] = [
-  {
-    quote:
-      "The best coffee I've ever had! Every visit feels like coming home. The quality is unmatched and the atmosphere is warm and welcoming.",
-    name: "Jennifer Martinez",
-    location: "San Francisco, CA",
-    rating: 5,
+export const ABOUT_CONTENT = {
+  hero: {
+    title: "NGUỒN GỐC",
+    subTitle: "CÂU CHUYỆN NÀY LÀ CỦA CHÚNG MÌNH",
+    summary: "Capital Corp được thành lập vào năm 1999, bắt nguồn từ tình yêu dành cho đất Việt cùng với cà phê và cộng đồng nơi đây.",
+    detail: "Từ những ngày đầu tiên, mục tiêu của chúng mình là phục vụ và góp phần phát triển cộng đồng bằng cách siết chặt sự kết nối giữa người với người thông qua hệ thống CFMS.",
+    image: "https://plus.unsplash.com/premium_photo-1675237625862-d982e7f44696?q=80&w=2340&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+    bgColor: "#6D4C41"
   },
-  {
-    quote:
-      "As a coffee enthusiast, I've tried many places. This franchise consistently delivers exceptional quality and service. Highly recommend!",
-    name: "Robert Thompson",
-    location: "New York, NY",
-    rating: 5,
+  tech: {
+    title: "DỊCH VỤ",
+    subTitle: "CÔNG NGHỆ LÀ CỦA CHÚNG MÌNH",
+    summary: "Hệ sinh thái Microservices hiện đại đảm bảo vận hành ổn định cho hơn 100 chi nhánh toàn cầu với uptime 99.9%.",
+    detail: "Kiến trúc bao gồm các dịch vụ độc lập: IAM (Bảo mật), Inventory (Kho), Product và Payment. Bảo mật dữ liệu tiêu chuẩn AES-256.",
+    image: "https://images.unsplash.com/photo-1763343030530-d76455f7526f?q=80&w=2340&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+    bgColor: "#f7c6a3"
   },
-  {
-    quote:
-      "Their commitment to sustainability and quality is evident in every cup. I'm proud to support a business that cares about the environment.",
-    name: "Amanda Lee",
-    location: "Seattle, WA",
-    rating: 5,
+  aiBooking: {
+    title: "ĐỘT PHÁ AI",
+    subTitle: "TỰ ĐỘNG HÓA BOOKING",
+    summary: "Công nghệ AI Booking hỗ trợ đặt hàng bằng giọng nói ngay cả khi hệ thống offline, tối ưu hóa quy trình bán hàng.",
+    detail: "Giải pháp POS hiện đại với khả năng xử lý 50 đơn hàng đồng thời mỗi chi nhánh. Tích hợp trí tuệ nhân tạo để nâng cao trải nghiệm khách hàng và hiệu suất vận hành.",
+    image: "https://media.istockphoto.com/id/2184518485/vi/anh/b%E1%BA%A1n-b%C3%A8-s%E1%BB%AD-d%E1%BB%A5ng-%E1%BB%A9ng-d%E1%BB%A5ng-giao-%C4%91%E1%BB%93-%C4%83n-di-%C4%91%E1%BB%99ng-%C4%91%E1%BB%83-duy%E1%BB%87t-th%E1%BB%B1c-%C4%91%C6%A1n-v%C3%A0-%C4%91%E1%BA%B7t-h%C3%A0ng-tr%E1%BB%B1c-tuy%E1%BA%BFn.jpg?s=612x612&w=0&k=20&c=svRZNgvgC9XfA9x-UK9qUsCvldEs8pygGDo7U6ACKmo=",
+    bgColor: "#ffeadd"
   },
-];
+};
 
 export const teamMembers: TeamMember[] = [
   {
-    name: "Sarah Johnson",
-    role: "Founder & CEO",
-    bio: "Passionate about bringing exceptional coffee to communities worldwide.",
+    name: "Administrator",
+    role: "Quản trị viên Hệ thống",
+    summary: "Kiểm soát toàn diện qua dịch vụ IAM và cấu hình bảo mật.",
+    detail: "Quản lý tài khoản, phân quyền, giám sát thanh toán và cấu hình chiến dịch khuyến mãi theo SRS v2.0.",
+    icon: ShieldCheck,
+  },
+  {
+    name: "Manager",
+    role: "Quản lý Vận hành",
+    summary: "Giám sát hiệu quả kinh doanh và nhân sự tại chi nhánh.",
+    detail: "Tương tác với Shift Management và Inventory Service để đảm bảo vận hành ổn định.",
+    icon: Users,
+  },
+  {
+    name: "Staff",
+    role: "Nhân viên Cửa hàng",
+    summary: "Thực thi vận hành hàng ngày và tối ưu trải nghiệm khách hàng.",
+    detail: "Sử dụng POS để nhập đơn, cập nhật trạng thái đơn hàng và phối hợp giao nhận.",
     icon: Coffee,
   },
-  {
-    name: "Michael Chen",
-    role: "Head of Quality",
-    bio: "Master roaster with 20+ years of experience in coffee excellence.",
-    icon: Award,
-  },
-  {
-    name: "Emily Rodriguez",
-    role: "Head of Sustainability",
-    bio: "Leading our mission to create a more sustainable coffee industry.",
-    icon: Leaf,
-  },
-  {
-    name: "David Kim",
-    role: "Community Director",
-    bio: "Building connections between our coffee and the communities we serve.",
-    icon: Users,
-  },
 ];
 
-export const values = [
-  { icon: Award, title: "Quality", description: "Excellence in every cup" },
-  {
-    icon: Leaf,
-    title: "Sustainability",
-    description: "Eco-friendly practices",
-  },
-  {
-    icon: Users,
-    title: "Community",
-    description: "Building connections",
-  },
-  {
-    icon: Lightbulb,
-    title: "Innovation",
-    description: "Always improving",
-  },
+export const awards = [
+  { year: "2024", name: "Hệ thống quản trị xuất sắc" },
+  { year: "2023", name: "Đột phá AI Retail" },
 ];
 
-export const milestones = [
+export const certifications = [
+  "ISO 27001 - Security",
+  "Rainforest Alliance",
+  "Global Franchise Partner",
+];
+
+export const testimonials = [
   {
-    year: "1999",
-    title: "First Location",
-    description: "Opened our first coffee shop",
+    quote: "CFMS đã thay đổi hoàn toàn cách chúng tôi vận hành chuỗi 100 cửa hàng.",
+    name: "Nguyễn Văn A",
+    location: "CEO Capital Corp",
+    rating: 5,
   },
-  {
-    year: "2010",
-    title: "First Franchise",
-    description: "Welcomed first partner",
-  },
-  {
-    year: "2015",
-    title: "25 Locations",
-    description: "Reached 25 locations milestone",
-  },
-  {
-    year: "2020",
-    title: "Sustainability",
-    description: "Achieved certification",
-  },
-  { year: "2024", title: "50+ Locations", description: "Nationwide expansion" },
 ];

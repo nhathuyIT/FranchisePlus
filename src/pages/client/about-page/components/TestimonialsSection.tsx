@@ -1,89 +1,41 @@
-import { awards, certifications, testimonials } from "@/const/about.const";
-import { Star, Quote, Award } from "lucide-react";
+import { ABOUT_THEME, awards, certifications, testimonials } from "@/const/about.const";
+import { Award, CheckCircle2 } from "lucide-react";
 
 export const TestimonialsSection = () => {
   return (
-    <section className="py-20 bg-white">
+    <section className="py-24 bg-white">
       <div className="container mx-auto px-4 max-w-7xl">
-        <div className="text-center mb-16">
-          <h2 className="text-4xl sm:text-5xl font-bold text-[#3E2723] mb-4">
-            Trusted by Coffee Lovers Worldwide
-          </h2>
-          <p className="text-lg text-[#5D4037] max-w-2xl mx-auto">
-            See what our community has to say about their experience
-          </p>
-        </div>
-
-        {/* Testimonials Carousel */}
-        <div className="mb-16">
-          <div className="bg-linear-to-br from-[#FAF8F5] to-[#F5F1EB] rounded-2xl p-8 md:p-12 shadow-lg">
-            <div className="flex justify-center mb-6">
-              <Quote className="w-12 h-12 text-[#6D4C41] opacity-50" />
-            </div>
-            <blockquote className="text-2xl md:text-3xl font-medium text-[#3E2723] text-center mb-8 leading-relaxed">
-              {testimonials[0].quote}
-            </blockquote>
-            <div className="flex items-center justify-center gap-4 mb-4">
-              <div className="w-16 h-16 bg-[#6D4C41] rounded-full flex items-center justify-center">
-                <span className="text-white text-xl font-bold">
-                  {testimonials[0].name.charAt(0)}
-                </span>
-              </div>
-              <div>
-                <div className="font-semibold text-[#3E2723]">
-                  {testimonials[0].name}
-                </div>
-                <div className="text-sm text-[#5D4037]">
-                  {testimonials[0].location}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-20 items-center">
+          <div className="space-y-8">
+            <h2 className="text-4xl font-black uppercase" style={{ color: ABOUT_THEME.textTitle }}>Sự Tin Cậy Toàn Cầu</h2>
+            <div className="bg-[#FAF8F5] p-10 border-l-8" style={{ borderColor: ABOUT_THEME.primary }}>
+              <p className="text-2xl font-medium italic mb-6">"{testimonials[0].quote}"</p>
+            <div className="flex items-center gap-4">
+                <div className="font-bold uppercase tracking-widest">{testimonials[0].name}</div>
+                <div className="flex gap-1">
+                  {[...Array(testimonials[0].rating)].map((_, i) => <span key={i} className="text-[#F59E0B]">★</span>)}
                 </div>
               </div>
-            </div>
-            <div className="flex justify-center gap-1">
-              {[...Array(testimonials[0].rating)].map((_, i) => (
-                <Star
-                  key={i}
-                  className="w-5 h-5 fill-[#F59E0B] text-[#F59E0B]"
-                />
-              ))}
             </div>
           </div>
-        </div>
-
-        {/* Awards Grid */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-16">
-          {awards.map((award, index) => (
-            <div
-              key={index}
-              className="bg-white rounded-xl shadow-md p-6 hover:shadow-xl transition-all duration-300 text-center border border-[#E8DFD6]"
-            >
-              <div className="w-16 h-16 bg-[#6D4C41] rounded-full flex items-center justify-center mx-auto mb-4">
-                <Award className="w-8 h-8 text-white" />
-              </div>
-              <div className="text-2xl font-bold text-[#6D4C41] mb-2">
-                {award.year}
-              </div>
-              <div className="text-sm text-[#5D4037] font-medium">
-                {award.name}
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* Certifications */}
-        <div className="bg-gradient-to-br from-[#FAF8F5] to-[#F5F1EB] rounded-xl p-8 border border-[#E8DFD6]">
-          <h3 className="text-2xl font-bold text-[#3E2723] mb-6 text-center">
-            Certifications & Partnerships
-          </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {certifications.map((cert, index) => (
-              <div
-                key={index}
-                className="bg-white rounded-lg p-4 text-center shadow-sm hover:shadow-md transition-shadow"
-              >
-                <div className="text-[#6D4C41] font-semibold">{cert}</div>
+          <div className="grid grid-cols-2 gap-4">
+            {awards.map((a, i) => (
+              <div key={i} className="p-8 border text-center hover:bg-[#FAF8F5] transition-colors">
+                <Award size={32} className="mx-auto mb-4" style={{ color: ABOUT_THEME.primary }} />
+                <div className="text-2xl font-bold">{a.year}</div>
+                <div className="text-xs uppercase opacity-60">{a.name}</div>
               </div>
             ))}
           </div>
+        </div>
+
+        <div className="mt-20 flex flex-wrap justify-center gap-4">
+          {certifications.map((cert, i) => (
+            <div key={i} className="flex items-center gap-2 px-6 py-3 rounded-full border border-amber-200 bg-amber-50/30">
+              <CheckCircle2 size={18} className="text-[#6D4C41]" />
+              <span className="text-sm font-bold opacity-80" style={{ color: ABOUT_THEME.textTitle }}>{cert}</span>
+            </div>
+          ))}
         </div>
       </div>
     </section>
