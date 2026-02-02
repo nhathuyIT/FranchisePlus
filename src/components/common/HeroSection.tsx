@@ -270,17 +270,6 @@ export const HeroSection = () => {
           transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
         />
       </div>
-
-      {/* Slide counter */}
-      <div className="absolute top-8 right-8 z-20 hidden sm:flex items-center gap-2 text-white/80 font-medium">
-        <span className="text-2xl font-serif">
-          {String(activeIndex + 1).padStart(2, "0")}
-        </span>
-        <span className="text-white/40">/</span>
-        <span className="text-sm text-white/60">
-          {String(slides.length).padStart(2, "0")}
-        </span>
-      </div>
     </section>
   );
 };
