@@ -13,14 +13,14 @@ import { FranchiseInventoryTab } from "./components/FranchiseInventoryTab";
 
 const FranchiseDetail = () => {
   const { id } = useParams<{ id: string }>();
-  const franchise = FRANCHISES_MOCK.find((f) => f.id === id);
+  const franchise = FRANCHISES_MOCK.find((f) => f.id === Number(id));
 
   const [staffList] = useState([
     { id: "staff-001", name: "Tran Van A", email: "tran.vana@coffeehouse.vn", role: "STAFF" },
     { id: "staff-002", name: "Nguyen Thi B", email: "nguyen.thib@coffeehouse.vn", role: "STAFF" },
   ]);
 
-  const franchiseInventory = id ? getInventoryByFranchiseId(id) : [];
+  const franchiseInventory = id ? getInventoryByFranchiseId(Number(id)) : [];
 
   const handleAddStaff = () => {
     console.log("Add staff clicked");
