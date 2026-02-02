@@ -16,7 +16,7 @@ interface UpdateStockModalProps {
   item: InventoryItemView | null;
   isOpen: boolean;
   onClose: () => void;
-  onUpdate: (inventoryId: number, newQuantity: number) => void;
+  onUpdate: (inventoryId: string, newQuantity: number) => void;
 }
 
 export const UpdateStockModal = ({
@@ -34,7 +34,7 @@ export const UpdateStockModal = ({
     if (item) {
       const newQuantity = parseFloat(quantity);
       if (!isNaN(newQuantity) && newQuantity >= 0) {
-        onUpdate(item.inventory.id, newQuantity);
+        onUpdate(item.inventory.id.toString(), newQuantity);
         onClose();
       }
     }

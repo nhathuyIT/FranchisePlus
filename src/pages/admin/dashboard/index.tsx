@@ -1,5 +1,12 @@
+import { AdminLayout } from "@/layouts";
+
 const AdminDashBoard = () => {
-  return <div>AdminDashBoard1</div>;
+  return (
+    <div>
+      <AdminLayout />
+      AdminDashBoard1
+    </div>
+  );
 };
 
 export default AdminDashBoard;

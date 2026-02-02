@@ -1,10 +1,9 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router";
-import { ArrowLeft, Save, Store, Upload } from "lucide-react";
+import { ArrowLeft, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import {
   Select,
   SelectContent,
@@ -21,21 +20,21 @@ const FranchiseForm = () => {
   const navigate = useNavigate();
   const isEditMode = Boolean(id);
 
-  const [formData, setFormData] = useState<Omit<Franchise, "created_at" | "updated_at">>({
-    id: 0,
+  const [formData, setFormData] = useState<Omit<Franchise, "createdAt" | "updatedAt">>({
+    id: "",
     code: "",
     name: "",
-    logo_url: null,
+    logo_url: undefined,
     address: "",
-    opened_at: null,
-    closed_at: null,
+    opened_at: undefined,
+    closed_at: undefined,
     is_active: true,
     is_deleted: false,
   });
 
   useEffect(() => {
     if (isEditMode && id) {
-      const franchise = FRANCHISES_MOCK.find((f) => f.id === Number(id));
+      const franchise = FRANCHISES_MOCK.find((f) => f.id === id);
       if (franchise) {
         setFormData({
           id: franchise.id,
@@ -52,7 +51,7 @@ const FranchiseForm = () => {
     }
   }, [id, isEditMode]);
 
-  const handleChange = (field: keyof typeof formData, value: string | boolean | null) => {
+  const handleChange = (field: keyof typeof formData, value: string | boolean) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
@@ -85,42 +84,6 @@ const FranchiseForm = () => {
 
         <div className="bg-white rounded-2xl shadow-lg border border-[#E8DFD6] p-6">
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Logo Upload Section */}
-            <div className="space-y-4">
-              <Label className="text-[#3E2723] font-semibold">Franchise Logo</Label>
-              <div className="flex items-center gap-6">
-                <Avatar className="h-24 w-24 rounded-xl border-4 border-[#E8DFD6]">
-                  <AvatarImage
-                    src={formData.logo_url || undefined}
-                    alt={formData.name}
-                    className="object-cover"
-                  />
-                  <AvatarFallback className="rounded-xl bg-gradient-to-br from-[#6D4C41] to-[#5D4037] text-white">
-                    <Store className="h-10 w-10" />
-                  </AvatarFallback>
-                </Avatar>
-                <div className="flex-1 space-y-2">
-                  <div className="flex items-center gap-2">
-                    <Input
-                      id="logo_url"
-                      value={formData.logo_url || ""}
-                      onChange={(e) => handleChange("logo_url", e.target.value || null)}
-                      placeholder="https://images.unsplash.com/photo-..."
-                      className="border-[#E8DFD6] focus:border-[#6D4C41] focus:ring-[#6D4C41] rounded-lg transition-all duration-200"
-                    />
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="icon"
-                      className="border-[#6D4C41] text-[#6D4C41] hover:bg-[#6D4C41] hover:text-white rounded-lg"
-                    >
-                      <Upload className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            </div>
-
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
                 <Label htmlFor="code" className="text-[#3E2723] font-semibold">
@@ -174,7 +137,7 @@ const FranchiseForm = () => {
                   id="opened_at"
                   type="date"
                   value={formData.opened_at ? formData.opened_at.split('T')[0] : ''}
-                  onChange={(e) => handleChange("opened_at", e.target.value ? `${e.target.value}T00:00:00Z` : null)}
+                  onChange={(e) => handleChange("opened_at", e.target.value ? `${e.target.value}T00:00:00Z` : '')}
                   className="border-[#E8DFD6] focus:border-[#6D4C41] focus:ring-[#6D4C41] rounded-lg transition-all duration-200"
                 />
               </div>

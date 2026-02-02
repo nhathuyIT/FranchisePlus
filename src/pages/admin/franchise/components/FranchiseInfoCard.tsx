@@ -77,7 +77,7 @@ export const FranchiseInfoCard = ({ franchise }: FranchiseInfoCardProps) => {
           <div>
             <p className="text-sm text-[#5D4037]/70">Created At</p>
             <p className="text-base font-medium text-[#3E2723]">
-              {new Date(franchise.created_at).toLocaleDateString()}
+              {new Date(franchise.createdAt).toLocaleDateString()}
             </p>
           </div>
         </div>
@@ -89,7 +89,7 @@ export const FranchiseInfoCard = ({ franchise }: FranchiseInfoCardProps) => {
           <div>
             <p className="text-sm text-[#5D4037]/70">Last Updated</p>
             <p className="text-base font-medium text-[#3E2723]">
-              {new Date(franchise.updated_at).toLocaleDateString()}
+              {new Date(franchise.updatedAt).toLocaleDateString()}
             </p>
           </div>
         </div>

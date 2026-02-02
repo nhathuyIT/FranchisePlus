@@ -49,7 +49,7 @@ export const FranchiseInventoryTab = ({ inventoryItems }: FranchiseInventoryTabP
                 />
               </TableCell>
               <TableCell className="text-gray-700">
-                {new Date(item.inventory.updated_at).toLocaleDateString()}
+                {new Date(item.inventory.updatedAt).toLocaleDateString()}
               </TableCell>
             </TableRow>
           ))}

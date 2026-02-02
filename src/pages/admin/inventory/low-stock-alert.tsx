@@ -37,7 +37,7 @@ const LowStockAlert = () => {
     setSelectedItem(null);
   };
 
-  const handleUpdate = (inventoryId: number, newQuantity: number) => {
+  const handleUpdate = (inventoryId: string, newQuantity: number) => {
     setInventory((prev) =>
       prev.map((item) =>
         item.inventory.id === inventoryId
@@ -46,7 +46,7 @@ const LowStockAlert = () => {
               inventory: {
                 ...item.inventory,
                 quantity: newQuantity,
-                updated_at: new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
               },
             }
           : item

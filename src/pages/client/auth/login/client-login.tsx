@@ -8,11 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuthStore } from "@/stores/auth-store";
-import {
-  UserDataMock,
-  RoleDataMock,
-  UserFranchiseRoleDataMock,
-} from "@/const/user.const";
+import { UserDataMock } from "@/const/user.const";
 import {
   ClientLoginZod,
   type ClientLoginZodType,
@@ -37,11 +33,8 @@ const ClientLogin = () => {
   const onSubmit = async (data: ClientLoginZodType) => {
     try {
       await new Promise((resolve) => setTimeout(resolve, 800));
-
-      // TODO: This should use Customer entity, not User entity
-      // For now, using User mock data for demonstration
       const user = UserDataMock.find(
-        (u) => u.email === data.email && u.password_hash === data.password,
+        (u) => u.email === data.email && u.password === data.password,
       );
 
       if (!user) {
@@ -51,23 +44,18 @@ const ClientLogin = () => {
         return;
       }
 
-      // Get user's roles and franchise assignments
-      const userFranchiseRoles = UserFranchiseRoleDataMock.filter(
-        (ufr) => ufr.user_id === user.id,
-      );
-      const roles = RoleDataMock.filter((role) =>
-        userFranchiseRoles.some((ufr) => ufr.role_id === role.id),
-      );
+      const role = user.role;
+      if (role !== "customer") {
+        toast.error("Access Denied", {
+          description: "This portal is for customers only",
+        });
+        return;
+      }
 
-      // Build AuthUser object
-      const authUser = {
-        user,
-        roles,
-        franchiseRoles: userFranchiseRoles,
-        currentFranchiseId: userFranchiseRoles[0]?.franchise_id || null,
-      };
-
-      login(authUser);
+      login(user);
+      toast.success("Welcome back!", {
+        description: `Logged in as ${user.name}`,
+      });
 
       navigate("/");
     } catch (error) {
