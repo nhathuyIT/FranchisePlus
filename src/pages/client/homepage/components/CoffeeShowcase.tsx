@@ -16,16 +16,13 @@ export const CoffeeShowcase = () => {
         />
       </div>
 
-      {/* Decorative corner ornaments */}
       <div className="absolute top-8 left-8 w-24 h-24 border-l-2 border-t-2 border-[#C4A77D]/30" />
       <div className="absolute top-8 right-8 w-24 h-24 border-r-2 border-t-2 border-[#C4A77D]/30" />
       <div className="absolute bottom-8 left-8 w-24 h-24 border-l-2 border-b-2 border-[#C4A77D]/30" />
       <div className="absolute bottom-8 right-8 w-24 h-24 border-r-2 border-b-2 border-[#C4A77D]/30" />
 
       <div className="container mx-auto px-4 relative z-10">
-        {/* Section Header - Classic Style */}
         <div className="text-center mb-20">
-          {/* Vintage decorative element */}
           <div className="flex items-center justify-center gap-4 mb-6">
             <div className="h-px w-16 bg-linear-to-r from-transparent to-[#C4A77D]" />
             <div className="flex gap-1">
@@ -64,16 +61,7 @@ export const CoffeeShowcase = () => {
         {/* Coffee Products - Elegant Masonry Style */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 lg:gap-10">
           {COFFEE_PRODUCTS.map((coffee, index) => (
-            <div
-              key={index}
-              className={`group relative ${
-                index === 0 || index === 3
-                  ? "lg:mt-0"
-                  : index % 3 === 1
-                    ? "lg:mt-12"
-                    : "lg:mt-6"
-              }`}
-            >
+            <div key={index} className="group relative">
               {/* Card */}
               <div className="relative bg-white rounded-sm overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-500 border border-[#E8DFD6]">
                 {/* Vintage corner accents */}
