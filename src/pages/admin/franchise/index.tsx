@@ -2,50 +2,88 @@ import { useState } from "react";
 import { Link } from "react-router";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { toast } from "sonner";
 import { FRANCHISES_MOCK } from "@/const/franchises.const";
 import { ROUTER_URL } from "@/router/route.const";
+import { PageHeader } from "@/components/common/PageHeader";
 import { FranchiseTable } from "./components/FranchiseTable";
 import type { Franchise } from "@/types/franchise";
 
 const FranchiseList = () => {
-  const [franchises] = useState<Franchise[]>(FRANCHISES_MOCK);
-  const [searchTerm, setSearchTerm] = useState("");
+  const [franchises, setFranchises] = useState<Franchise[]>(FRANCHISES_MOCK);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
 
-  const filteredFranchises = franchises.filter(
-    (franchise) =>
-      franchise.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      franchise.address.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      franchise.code.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Bulk Delete Handler
+  const handleBulkDelete = async (selectedFranchises: Franchise[]) => {
+    const confirmDelete = window.confirm(
+      `Are you sure you want to delete ${selectedFranchises.length} franchise(s)? This action cannot be undone.`
+    );
+
+    if (!confirmDelete) return;
+
+    setIsLoading(true);
+    try {
+      // TODO: Replace with actual API call
+      // await deleteFranchises(selectedFranchises.map(f => f.id));
+
+      // Simulate API delay
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+
+      // Remove deleted franchises from state
+      const deletedIds = new Set(selectedFranchises.map((f) => f.id));
+      setFranchises((prev) => prev.filter((f) => !deletedIds.has(f.id)));
+
+      toast.success(
+        `Successfully deleted ${selectedFranchises.length} franchise(s)`
+      );
+    } catch (err) {
+      toast.error("Failed to delete franchises. Please try again.");
+      setError(
+        err instanceof Error ? err : new Error("Failed to delete franchises")
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Retry Handler
+  const handleRetry = () => {
+    setError(null);
+    setIsLoading(true);
+
+    // TODO: Replace with actual data fetching
+    setTimeout(() => {
+      setIsLoading(false);
+    }, 1000);
+  };
 
   return (
     <div className="p-6 bg-gradient-to-br from-[#FAF8F5] via-[#F5F1EB] to-[#EDE7DD] min-h-screen">
       <div className="max-w-7xl mx-auto">
-        <div className="flex justify-between items-center mb-6">
-          <div>
-            <h1 className="text-3xl font-bold text-[#3E2723]">Franchise Management</h1>
-            <p className="text-[#5D4037] mt-1">Manage all your franchise locations</p>
-          </div>
-          <Link to={`${ROUTER_URL.ADMIN}/${ROUTER_URL.ADMIN_ROUTER.FRANCHISES_CREATE}`}>
-            <Button className="bg-[#6D4C41] hover:bg-[#5D4037] text-white rounded-full shadow-md hover:shadow-lg transition-all duration-300 cursor-pointer">
-              <Plus className="mr-2 h-4 w-4" />
-              Add Franchise
-            </Button>
-          </Link>
-        </div>
+        <PageHeader
+          title="Franchise Management"
+          description="Manage all your franchise locations"
+          action={
+            <Link
+              to={`${ROUTER_URL.ADMIN}/${ROUTER_URL.ADMIN_ROUTER.FRANCHISES_CREATE}`}
+            >
+              <Button className="bg-[#6D4C41] hover:bg-[#5D4037] text-white rounded-full shadow-md hover:shadow-lg transition-all duration-300 cursor-pointer">
+                <Plus className="mr-2 h-4 w-4" />
+                Add Franchise
+              </Button>
+            </Link>
+          }
+        />
 
         <div className="bg-white rounded-2xl shadow-lg border border-[#E8DFD6] p-6">
-          <div className="mb-4">
-            <Input
-              placeholder="Search by name, code, or address..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="max-w-md"
-            />
-          </div>
-
-          <FranchiseTable franchises={filteredFranchises} />
+          <FranchiseTable
+            franchises={franchises}
+            isLoading={isLoading}
+            error={error}
+            onRetry={handleRetry}
+            onBulkDelete={handleBulkDelete}
+          />
         </div>
       </div>
     </div>
