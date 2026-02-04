@@ -52,7 +52,7 @@ const Header = () => {
         {/* Center: Navigation */}
         <nav className="hidden md:flex items-center gap-10 absolute left-1/2 -translate-x-1/2">
           <Link
-            to="/client/products"
+            to="/products"
             className="text-2xl font-coffee tracking-wide text-[#5D4037] hover:text-[#6D4C41] transition-colors duration-200"
           >
             Menu
