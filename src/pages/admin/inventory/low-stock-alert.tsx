@@ -1,18 +1,27 @@
 import { useState } from "react";
 import { AlertTriangle, Package } from "lucide-react";
+import { toast } from "sonner";
 import { getLowStockItems } from "@/const/inventory.const";
+import { PageHeader } from "@/components/common/PageHeader";
 import { InventoryStatsCards } from "./components/InventoryStatsCards";
 import { LowStockTable } from "./components/LowStockTable";
 import { UpdateStockModal } from "./components/UpdateStockModal";
 import type { InventoryItemView } from "@/types/inventory";
 
 const LowStockAlert = () => {
-  const [inventory, setInventory] = useState<InventoryItemView[]>(getLowStockItems());
-  const [selectedItem, setSelectedItem] = useState<InventoryItemView | null>(null);
+  const [inventory, setInventory] = useState<InventoryItemView[]>(
+    getLowStockItems()
+  );
+  const [selectedItem, setSelectedItem] = useState<InventoryItemView | null>(
+    null
+  );
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
 
   const criticalItems = inventory.filter(
-    (item) => (item.inventory.quantity / item.inventory.alert_threshold) * 100 <= 50
+    (item) =>
+      (item.inventory.quantity / item.inventory.alert_threshold) * 100 <= 50
   );
 
   const handleUpdateStock = (item: InventoryItemView) => {
@@ -42,22 +51,83 @@ const LowStockAlert = () => {
     );
   };
 
+  // Bulk Export Handler
+  const handleBulkExport = async (selectedItems: InventoryItemView[]) => {
+    setIsLoading(true);
+    try {
+      // TODO: Replace with actual export logic
+      // Generate CSV content
+      const headers = [
+        "Product",
+        "SKU",
+        "Franchise",
+        "Current",
+        "Threshold",
+        "Shortage",
+        "Status",
+      ];
+      const rows = selectedItems.map((item) => {
+        const shortage = item.inventory.alert_threshold - item.inventory.quantity;
+        const status =
+          (item.inventory.quantity / item.inventory.alert_threshold) * 100 <= 50
+            ? "Critical"
+            : "Warning";
+        return [
+          item.product.name,
+          item.product.SKU,
+          item.franchiseName,
+          `${item.inventory.quantity} kg`,
+          `${item.inventory.alert_threshold} kg`,
+          `-${shortage} kg`,
+          status,
+        ];
+      });
+
+      const csvContent = [
+        headers.join(","),
+        ...rows.map((row) => row.join(",")),
+      ].join("\n");
+
+      // Download CSV
+      const blob = new Blob([csvContent], { type: "text/csv" });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `low-stock-alert-${new Date().toISOString().split("T")[0]}.csv`;
+      link.click();
+      window.URL.revokeObjectURL(url);
+
+      toast.success(`Successfully exported ${selectedItems.length} item(s)`);
+    } catch (err) {
+      toast.error("Failed to export low stock items. Please try again.");
+      setError(
+        err instanceof Error ? err : new Error("Failed to export items")
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Retry Handler
+  const handleRetry = () => {
+    setError(null);
+    setIsLoading(true);
+
+    // TODO: Replace with actual data fetching
+    setTimeout(() => {
+      setIsLoading(false);
+    }, 1000);
+  };
+
   return (
     <div className="p-6 bg-gradient-to-br from-[#FAF8F5] via-[#F5F1EB] to-[#EDE7DD] min-h-screen">
       <div className="max-w-7xl mx-auto">
-        <div className="mb-6">
-          <div className="flex justify-between items-center">
-            <div>
-              <h1 className="text-3xl font-bold text-[#3E2723] flex items-center gap-2">
-                <AlertTriangle className="h-8 w-8 text-[#D97706]" />
-                Low Stock Alert
-              </h1>
-              <p className="text-[#5D4037] mt-1">
-                Items that need immediate attention
-              </p>
-            </div>
-          </div>
-        </div>
+        <PageHeader
+          title="Low Stock Alert"
+          description="Items that need immediate attention"
+          icon={AlertTriangle}
+          iconSize="h-8 w-8"
+        />
 
         <div className="mb-6">
           <InventoryStatsCards
@@ -70,7 +140,14 @@ const LowStockAlert = () => {
         <div className="bg-white rounded-2xl shadow-lg border border-[#E8DFD6] p-6">
           {inventory.length > 0 ? (
             <>
-              <LowStockTable items={inventory} onUpdateStock={handleUpdateStock} />
+              <LowStockTable
+                items={inventory}
+                isLoading={isLoading}
+                error={error}
+                onRetry={handleRetry}
+                onUpdateStock={handleUpdateStock}
+                onBulkExport={handleBulkExport}
+              />
               <div className="mt-4 text-sm text-[#5D4037]">
                 Showing {inventory.length} low stock items
               </div>
@@ -78,8 +155,12 @@ const LowStockAlert = () => {
           ) : (
             <div className="text-center py-8">
               <Package className="h-16 w-16 text-[#E8DFD6] mx-auto mb-4" />
-              <p className="text-[#5D4037] text-lg font-medium">No low stock items found</p>
-              <p className="text-[#5D4037]/70 text-sm">All inventory levels are healthy</p>
+              <p className="text-[#5D4037] text-lg font-medium">
+                No low stock items found
+              </p>
+              <p className="text-[#5D4037]/70 text-sm">
+                All inventory levels are healthy
+              </p>
             </div>
           )}
         </div>

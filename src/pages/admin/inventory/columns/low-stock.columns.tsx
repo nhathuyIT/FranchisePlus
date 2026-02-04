@@ -1,16 +1,8 @@
 import type { ColumnDef } from "@tanstack/react-table";
-import { Edit } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { StockStatusBadge } from "@/components/common/StockStatusBadge";
 import type { InventoryItemView } from "@/types/inventory";
 
-interface LowStockColumnsProps {
-  onUpdateStock?: (item: InventoryItemView) => void;
-}
-
-export const createLowStockColumns = ({
-  onUpdateStock,
-}: LowStockColumnsProps): ColumnDef<InventoryItemView>[] => [
+export const lowStockColumns: ColumnDef<InventoryItemView>[] = [
   {
     accessorKey: "product.name",
     header: "Product",
@@ -75,24 +67,6 @@ export const createLowStockColumns = ({
         quantity={row.original.inventory.quantity}
         lowStockThreshold={row.original.inventory.alert_threshold}
       />
-    ),
-  },
-  {
-    id: "actions",
-    header: () => <div className="text-right">Actions</div>,
-    enableSorting: false,
-    cell: ({ row }) => (
-      <div className="flex justify-end">
-        <Button
-          variant="outline"
-          size="sm"
-          className="border-2 border-[#D97706] text-[#D97706] hover:bg-[#D97706] hover:text-white rounded-lg transition-all duration-200 cursor-pointer"
-          onClick={() => onUpdateStock?.(row.original)}
-        >
-          <Edit className="h-4 w-4 mr-2" />
-          Update Stock
-        </Button>
-      </div>
     ),
   },
 ];

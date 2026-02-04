@@ -1,16 +1,8 @@
 import type { ColumnDef } from "@tanstack/react-table";
-import { Edit } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { StockStatusBadge } from "@/components/common/StockStatusBadge";
 import type { InventoryItemView } from "@/types/inventory";
 
-interface InventoryColumnsProps {
-  onEdit?: (item: InventoryItemView) => void;
-}
-
-export const createInventoryColumns = ({
-  onEdit,
-}: InventoryColumnsProps): ColumnDef<InventoryItemView>[] => [
+export const inventoryColumns: ColumnDef<InventoryItemView>[] = [
   {
     accessorKey: "product.name",
     header: "Product",
@@ -58,6 +50,24 @@ export const createInventoryColumns = ({
     id: "status",
     header: "Status",
     enableSorting: false,
+    filterFn: (row, _columnId, filterValue) => {
+      const quantity = row.original.inventory.quantity;
+      const threshold = row.original.inventory.alert_threshold;
+      const percentage = (quantity / threshold) * 100;
+
+      if (filterValue === "out_of_stock") {
+        return quantity === 0;
+      }
+      if (filterValue === "low_stock") {
+        // Low Stock: percentage <= 100 (including critical)
+        return quantity > 0 && percentage <= 100;
+      }
+      if (filterValue === "in_stock") {
+        // In Stock (Good Stock): percentage > 100
+        return percentage > 100;
+      }
+      return true;
+    },
     cell: ({ row }) => (
       <StockStatusBadge
         quantity={row.original.inventory.quantity}
@@ -72,23 +82,6 @@ export const createInventoryColumns = ({
       <span className="text-[#5D4037]">
         {new Date(row.original.inventory.updated_at).toLocaleDateString()}
       </span>
-    ),
-  },
-  {
-    id: "actions",
-    header: () => <div className="text-right">Actions</div>,
-    enableSorting: false,
-    cell: ({ row }) => (
-      <div className="flex justify-end">
-        <Button
-          variant="outline"
-          size="sm"
-          className="border-2 border-[#6D4C41] text-[#6D4C41] hover:bg-[#6D4C41] hover:text-white rounded-lg transition-all duration-200 cursor-pointer"
-          onClick={() => onEdit?.(row.original)}
-        >
-          <Edit className="h-4 w-4" />
-        </Button>
-      </div>
     ),
   },
 ];
