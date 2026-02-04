@@ -9,7 +9,7 @@ export const ROUTER_URL = {
     REGISTER: "register",
     CART: "cart",
     PRODUCTS: "products",
-    PRODUCT_DETAIL: "products/:id",
+    PRODUCT_DETAIL: "products/:slug",
   },
 
   ADMIN: "/admin",

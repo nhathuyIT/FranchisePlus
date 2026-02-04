@@ -1,21 +1,17 @@
 import { useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { PRODUCTS_CLIENT } from "@/const/product-client.const";
-import { parseProductIdFromSlug } from "@/lib/slugify";
+import { createProductSlug } from "@/lib/slugify";
+
 
 const ProductDetailPage = () => {
-  const { id } = useParams<{ id: string }>();
+  const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
 
   const product = useMemo(() => {
-    if (!id) return null;
-    
-    // Try to parse as slug first
-    const parsedId = parseProductIdFromSlug(id);
-    const productId = parsedId || id; // fallback to original id if not a slug
-    
-    return PRODUCTS_CLIENT.find((item) => item.id === Number(productId));
-  }, [id]);
+    if (!slug) return null;
+    return PRODUCTS_CLIENT.find((p) => createProductSlug(p.name) === slug);
+  }, [slug]);
 
   const [quantity, setQuantity] = useState(1);
   const [selectedImage, setSelectedImage] = useState(product?.image ?? "");
@@ -105,7 +101,7 @@ const ProductDetailPage = () => {
 
           <p className="text-xs text-neutral-500">
             SKU:{" "}
-            <span className="font-medium text-neutral-700">{product.sku}</span>
+            <span className="font-medium text-neutral-700">{product.SKU}</span>
           </p>
 
           <h1 className="text-2xl font-bold tracking-tight text-neutral-900 sm:text-3xl">

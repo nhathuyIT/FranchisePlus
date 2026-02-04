@@ -1,14 +1,14 @@
 import slugify from "slugify";
 
 // Product slugify functions
-export function createProductSlug(name: string, id: number | string): string {
+export function createProductSlug(name: string): string {
   const slug = slugify(name, {
     lower: true,
     strict: true,
     locale: "vi",
     remove: /[*+~.()'"!:@]/g,
   });
-  return `${slug}-${id}`;
+  return `${slug}`;
 }
 
 export function parseProductIdFromSlug(slug: string): string | null {
@@ -16,7 +16,6 @@ export function parseProductIdFromSlug(slug: string): string | null {
   const parts = slug.split("-");
   const lastPart = parts[parts.length - 1];
   
-  // Check if last part is a number (ID)
   if (/^\d+$/.test(lastPart)) {
     return lastPart;
   }

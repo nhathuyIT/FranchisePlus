@@ -7,7 +7,7 @@ type ProductCardProps = {
 };
 
 export const ProductCard = ({ product }: ProductCardProps) => {
-	const productSlug = createProductSlug(product.name, product.id);
+	const productSlug = createProductSlug(product.name);
 	
 	return (
 		<Link
