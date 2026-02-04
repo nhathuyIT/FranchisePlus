@@ -105,7 +105,7 @@ const ProductDetailPage = () => {
 
           <p className="text-xs text-neutral-500">
             SKU:{" "}
-            <span className="font-medium text-neutral-700">{product.sku}</span>
+            <span className="font-medium text-neutral-700">{product.SKU}</span>
           </p>
 
           <h1 className="text-2xl font-bold tracking-tight text-neutral-900 sm:text-3xl">
