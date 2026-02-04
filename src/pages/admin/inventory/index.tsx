@@ -2,7 +2,6 @@ import { useState } from "react";
 import { Link } from "react-router";
 import { Package, Filter } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -19,21 +18,15 @@ import type { InventoryItemView } from "@/types/inventory";
 
 const InventoryList = () => {
   const [inventory, setInventory] = useState<InventoryItemView[]>(getInventoryItemViews());
-  const [searchTerm, setSearchTerm] = useState("");
   const [selectedFranchise, setSelectedFranchise] = useState<string>("all");
   const [selectedItem, setSelectedItem] = useState<InventoryItemView | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const filteredInventory = inventory.filter((item) => {
-    const matchesSearch =
-      item.product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.product.SKU.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.franchiseName.toLowerCase().includes(searchTerm.toLowerCase());
-
     const matchesFranchise =
       selectedFranchise === "all" || item.productFranchise.franchise_id === Number(selectedFranchise);
 
-    return matchesSearch && matchesFranchise;
+    return matchesFranchise;
   });
 
   const handleEdit = (item: InventoryItemView) => {
@@ -81,14 +74,6 @@ const InventoryList = () => {
 
         <div className="bg-white rounded-2xl shadow-lg border border-[#E8DFD6] p-6">
           <div className="flex flex-col md:flex-row gap-4 mb-6">
-            <div className="flex-1">
-              <Input
-                placeholder="Search by product name, SKU, or franchise..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full"
-              />
-            </div>
             <div className="w-full md:w-64">
               <Select value={selectedFranchise} onValueChange={setSelectedFranchise}>
                 <SelectTrigger className="w-full">
