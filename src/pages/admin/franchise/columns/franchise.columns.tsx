@@ -1,10 +1,7 @@
-import { Link } from "react-router-dom";
 import type { ColumnDef } from "@tanstack/react-table";
-import { Pencil, Eye, Store } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Store } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { ROUTER_URL } from "@/router/route.const";
 import type { Franchise } from "@/types/franchise";
 
 export const franchiseColumns: ColumnDef<Franchise>[] = [
@@ -62,6 +59,10 @@ export const franchiseColumns: ColumnDef<Franchise>[] = [
   {
     accessorKey: "is_active",
     header: "Status",
+    filterFn: (row, _columnId, filterValue) => {
+      // filterValue will be boolean after conversion in DataTable
+      return row.original.is_active === filterValue;
+    },
     cell: ({ row }) => (
       <Badge
         variant={row.original.is_active ? "default" : "secondary"}
@@ -73,37 +74,6 @@ export const franchiseColumns: ColumnDef<Franchise>[] = [
       >
         {row.original.is_active ? "Active" : "Inactive"}
       </Badge>
-    ),
-  },
-  {
-    id: "actions",
-    header: () => <div className="text-right">Actions</div>,
-    enableSorting: false,
-    cell: ({ row }) => (
-      <div className="flex justify-end gap-2">
-        <Link
-          to={`${ROUTER_URL.ADMIN}/${ROUTER_URL.ADMIN_ROUTER.FRANCHISES}/${row.original.id}`}
-        >
-          <Button
-            variant="outline"
-            size="sm"
-            className="border-2 border-[#6D4C41] text-[#6D4C41] hover:bg-[#6D4C41] hover:text-white rounded-lg transition-all duration-200 cursor-pointer"
-          >
-            <Eye className="h-4 w-4" />
-          </Button>
-        </Link>
-        <Link
-          to={`${ROUTER_URL.ADMIN}/${ROUTER_URL.ADMIN_ROUTER.FRANCHISES}/${row.original.id}/edit`}
-        >
-          <Button
-            variant="outline"
-            size="sm"
-            className="border-2 border-[#D97706] text-[#D97706] hover:bg-[#D97706] hover:text-white rounded-lg transition-all duration-200 cursor-pointer"
-          >
-            <Pencil className="h-4 w-4" />
-          </Button>
-        </Link>
-      </div>
     ),
   },
 ];
