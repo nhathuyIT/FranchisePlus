@@ -1,17 +1,9 @@
 import { useState } from "react";
 import { Link } from "react-router";
-import { Package, Filter } from "lucide-react";
+import { Package } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { toast } from "sonner";
 import { getInventoryItemViews } from "@/const/inventory.const";
-import { FRANCHISES_MOCK } from "@/const/franchises.const";
 import { ROUTER_URL } from "@/router/route.const";
 import { PageHeader } from "@/components/common/PageHeader";
 import { InventoryTable } from "./components/InventoryTable";
@@ -22,7 +14,6 @@ const InventoryList = () => {
   const [inventory, setInventory] = useState<InventoryItemView[]>(
     getInventoryItemViews()
   );
-  const [selectedFranchise, setSelectedFranchise] = useState<string>("all");
   const [selectedItem, setSelectedItem] = useState<InventoryItemView | null>(
     null
   );
@@ -30,13 +21,7 @@ const InventoryList = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
-  const filteredInventory = inventory.filter((item) => {
-    const matchesFranchise =
-      selectedFranchise === "all" ||
-      item.productFranchise.franchise_id === Number(selectedFranchise);
-
-    return matchesFranchise;
-  });
+  const filteredInventory = inventory;
 
   const handleEdit = (item: InventoryItemView) => {
     setSelectedItem(item);
