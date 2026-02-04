@@ -4,7 +4,7 @@ import type { ID } from "@/types/common";
 // ProductClient now matches Product type
 export type ProductClient = Product & { image: string };
 
-export const PRODUCTS_CLIENT: ProductClient[] = [
+const baseProducts = [
   {
     id: 1 as ID,
     SKU: "CF-ESP-001",
@@ -90,5 +90,7 @@ export const PRODUCTS_CLIENT: ProductClient[] = [
     image: "https://plus.unsplash.com/premium_photo-1675435644687-562e8042b9db?q=80&w=749&auto=format&fit=crop",
   },
 ];
+
+export const PRODUCTS_CLIENT: ProductClient[] = baseProducts;
 
 // ...existing code...
