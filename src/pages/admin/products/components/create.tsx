@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { CATEGORIES } from "@/const/category.const";
+import { ImageUpload } from "@/hooks/image-upload";
+import { uploadFileToCloudinary } from "@/stores/cloudinary";
 
 const ProductCreatePage = () => {
   const navigate = useNavigate();
@@ -13,7 +15,9 @@ const ProductCreatePage = () => {
     min_price: "",
     max_price: "",
     is_active: true,
+    imageUrl: "",
   });
+  const [isUploading, setIsUploading] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -23,9 +27,14 @@ const ProductCreatePage = () => {
   return (
     <div className="min-h-screen bg-[#FAF8F5] p-8">
       <div className="max-w-2xl mx-auto">
-        <h1 className="text-3xl font-bold text-gray-900 mb-8">Create Product</h1>
+        <h1 className="text-3xl font-bold text-gray-900 mb-8">
+          Create Product
+        </h1>
 
-        <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow p-6 space-y-6">
+        <form
+          onSubmit={handleSubmit}
+          className="bg-white rounded-lg shadow p-6 space-y-6"
+        >
           <div>
             <label className="block text-sm font-medium text-gray-900 mb-2">
               Name
@@ -68,14 +77,21 @@ const ProductCreatePage = () => {
               className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-gray-900"
             >
               <option value="">Select a category</option>
-              {CATEGORIES.filter((cat) => cat.is_active && !cat.is_deleted).map((cat) => (
-                <option key={cat.id} value={cat.id}>
-                  {cat.name}
-                </option>
-              ))}
+              {CATEGORIES.filter((cat) => cat.is_active && !cat.is_deleted).map(
+                (cat) => (
+                  <option key={cat.id} value={cat.id}>
+                    {cat.name}
+                  </option>
+                ),
+              )}
             </select>
           </div>
-
+          <ImageUpload
+            value={formData.imageUrl}
+            onChange={(url) => setFormData({ ...formData, imageUrl: url })}
+            onUpload={uploadFileToCloudinary}
+            disabled={isUploading}
+          />
           <div>
             <label className="block text-sm font-medium text-gray-900 mb-2">
               SKU (Stock Keeping Unit)
