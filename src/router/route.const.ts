@@ -2,14 +2,13 @@ export const ROUTER_URL = {
   HOME: "/",
   ABOUT: "/about",
   CONTACT: "/contact",
-
+  PRODUCTS: "/products",
   CLIENT: "/client",
+  PRODUCT_DETAIL: "products/:slug",
   CLIENT_ROUTER: {
     LOGIN: "/client/login",
     REGISTER: "register",
     CART: "cart",
-    PRODUCTS: "products",
-    PRODUCT_DETAIL: "products/:slug",
   },
 
   ADMIN: "/admin",
