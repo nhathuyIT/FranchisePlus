@@ -120,21 +120,27 @@ export const ADMIN_MENU: AdminMenuItem[] = [
     label: "Create Product",
     path: ROUTER_URL.ADMIN_ROUTER.PRODUCTS_CREATE,
     icon: "product",
-    component: React.lazy(() => import("@/pages/admin/products/create")),
+    component: React.lazy(
+      () => import("@/pages/admin/products/components/create"),
+    ),
     isEnd: true,
   },
   {
     label: "Edit Product",
     path: ROUTER_URL.ADMIN_ROUTER.PRODUCTS_EDIT,
     icon: "product",
-    component: React.lazy(() => import("@/pages/admin/products/edit")),
+    component: React.lazy(
+      () => import("@/pages/admin/products/components/edit"),
+    ),
     isEnd: true,
   },
   {
     label: "Product Detail",
     path: ROUTER_URL.ADMIN_ROUTER.PRODUCTS_DETAIL,
     icon: "product",
-    component: React.lazy(() => import("@/pages/admin/products/detail")),
+    component: React.lazy(
+      () => import("@/pages/admin/products/components/detail"),
+    ),
     isEnd: true,
   },
 ];
