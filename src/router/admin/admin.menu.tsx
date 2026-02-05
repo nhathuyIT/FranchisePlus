@@ -56,24 +56,6 @@ export const ADMIN_MENU: AdminMenuItem[] = [
     isEnd: true,
   },
   {
-    label: "Create Franchise",
-    path: ROUTER_URL.ADMIN_ROUTER.FRANCHISES_CREATE,
-    icon: "store",
-    component: React.lazy(
-      () => import("@/pages/admin/franchise/franchise-form"),
-    ),
-    isEnd: true,
-  },
-  {
-    label: "Edit Franchise",
-    path: ROUTER_URL.ADMIN_ROUTER.FRANCHISES_EDIT,
-    icon: "store",
-    component: React.lazy(
-      () => import("@/pages/admin/franchise/franchise-form"),
-    ),
-    isEnd: true,
-  },
-  {
     label: "Inventory",
     path: ROUTER_URL.ADMIN_ROUTER.INVENTORY,
     icon: "package",
