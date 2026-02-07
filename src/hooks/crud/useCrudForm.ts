@@ -14,7 +14,9 @@ export function useCrudForm<TEntity, TFormData extends FieldValues>(
 ): UseFormReturn<TFormData> {
   const form = useForm<TFormData>({
     resolver: zodResolver(config.schema as any) as any,
-    mode: "onBlur", // Validate on blur for better UX
+    mode: "onTouched", // Validate after first interaction
+    reValidateMode: "onChange", // Real-time validation after first error shows
+    criteriaMode: "all", // Show all errors, not just first one
   });
 
   // Reset form when entity changes
