@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { createProductSlug } from "@/lib/slugify";
 
 type ProductCardProps = {
-  product: ProductClient;
+	product: ProductClient;
 };
 
 export const ProductCard = ({ product }: ProductCardProps) => {
@@ -26,13 +26,24 @@ export const ProductCard = ({ product }: ProductCardProps) => {
 				/>
 			</div>
 
-			<div className="flex flex-1 flex-col gap-1 p-4">
-				<div className="flex flex-col items-start gap-1">
-					<h3 className="text-base font-semibold text-neutral-900 line-clamp-2">
+			<div className="flex flex-1 flex-col gap-2 p-4">
+				<div className="flex flex-col gap-1">
+					<h3 className="font-semibold text-gray-900 group-hover:text-green-600 transition-colors line-clamp-2">
 						{product.name}
 					</h3>
-					<span className="mt-1 rounded-full bg-amber-100 px-3 py-1 text-lg font-semibold text-amber-700">
-						{product.min_price.toLocaleString("vi-VN")} VND
+					{product.description && (
+						<p className="text-sm text-gray-600 line-clamp-2">
+							{product.description}
+						</p>
+					)}
+				</div>
+				
+				<div className="mt-auto flex items-center justify-between">
+					<span className="font-bold text-green-600">
+						{priceDisplay}
+					</span>
+					<span className="text-xs text-gray-400">
+						{product.SKU}
 					</span>
 				</div>
 			</div>
@@ -41,3 +52,4 @@ export const ProductCard = ({ product }: ProductCardProps) => {
 };
 
 export default ProductCard;
+

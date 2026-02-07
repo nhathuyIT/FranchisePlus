@@ -2,11 +2,13 @@ import { useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { PRODUCTS_CLIENT } from "@/const/product-client.const";
 import { createProductSlug, parseProductIdFromSlug } from "@/lib/slugify";
+import { useCart } from "@/pages/client/cart/useCart";
 
 
 const ProductDetailPage = () => {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
+  const { addItem } = useCart();
 
   const product = useMemo(() => {
     if (!slug) return null;
@@ -24,6 +26,35 @@ const ProductDetailPage = () => {
 
   const [quantity, setQuantity] = useState(1);
   const [selectedImage, setSelectedImage] = useState(product?.image ?? "");
+
+  const handleAddToCart = () => {
+    if (!product) return;
+    
+    addItem(
+      product.id,
+      product.name,
+      product.min_price,
+      quantity
+    );
+    
+    // Show confirmation
+    alert(`Added ${quantity} "${product.name}" to cart!`);
+  };
+
+  const handleBuyNow = () => {
+    if (!product) return;
+    
+    // Add to cart first
+    addItem(
+      product.id,
+      product.name,
+      product.min_price,
+      quantity
+    );
+    
+    // Navigate to cart
+    navigate("/client/cart");
+  };
 
   if (!product) {
     return (
@@ -161,12 +192,14 @@ const ProductDetailPage = () => {
           <div className="mt-5 flex flex-wrap gap-4">
             <button
               type="button"
+              onClick={handleBuyNow}
               className="inline-flex flex-1 items-center justify-center rounded-full bg-[#6D4C41] px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-[#5b4037] sm:flex-none sm:px-10"
             >
               Buy now
             </button>
             <button
               type="button"
+              onClick={handleAddToCart}
               className="inline-flex flex-1 items-center justify-center rounded-full border border-[#6D4C41] px-6 py-3 text-sm font-semibold text-[#6D4C41] transition hover:bg-[#f3e9e4] sm:flex-none sm:px-10"
             >
               Add to cart
