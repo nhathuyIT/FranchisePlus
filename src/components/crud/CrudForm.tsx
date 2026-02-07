@@ -7,6 +7,8 @@ import type { CrudConfig, CrudMode } from "@/lib/crud/types";
 import { useCrudForm } from "@/hooks/crud/useCrudForm";
 import { useCrudMutation } from "@/hooks/crud/useCrudMutation";
 import { renderField } from "./fields";
+import { FormErrorSummary } from "./FormErrorSummary";
+import { useMemo } from "react";
 
 interface CrudFormProps<TEntity, TFormData extends FieldValues> {
   config: CrudConfig<TEntity, TFormData>;
@@ -32,9 +34,20 @@ export function CrudForm<TEntity, TFormData extends FieldValues>({
 
   const isViewMode = mode === "view";
 
+  // Build field label map for error summary
+  const fieldLabels = useMemo(() => {
+    return config.fields.reduce((acc, field) => {
+      acc[String(field.name)] = field.label;
+      return acc;
+    }, {} as Record<string, string>);
+  }, [config.fields]);
+
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+        {/* Error Summary - Shows all errors at once */}
+        <FormErrorSummary errors={form.formState.errors} fieldLabels={fieldLabels} />
+
         <div className="space-y-4 max-h-[60vh] overflow-y-auto px-1">
           {config.fields.map((fieldConfig) => {
             // Handle conditional rendering
