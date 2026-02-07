@@ -1,5 +1,5 @@
-const Cart = () => {
-  return <div>Welcome to the Cart</div>;
-};
+import CartPage from './CartPage';
 
-export default Cart;
+const CartPageWrapper = () => <CartPage />;
+export default CartPageWrapper;
+export { useCart } from './useCart';
