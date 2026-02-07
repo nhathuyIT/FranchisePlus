@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { PRODUCTS_CLIENT } from "@/const/product-client.const";
-import { createProductSlug } from "@/lib/slugify";
+import { createProductSlug, parseProductIdFromSlug } from "@/lib/slugify";
 
 
 const ProductDetailPage = () => {
@@ -10,7 +10,16 @@ const ProductDetailPage = () => {
 
   const product = useMemo(() => {
     if (!slug) return null;
-    return PRODUCTS_CLIENT.find((p) => createProductSlug(p.name) === slug);
+    
+    // Try to parse ID from slug first
+    const idFromSlug = parseProductIdFromSlug(slug);
+    if (idFromSlug) {
+      const foundProduct = PRODUCTS_CLIENT.find((p) => p.id.toString() === idFromSlug);
+      if (foundProduct) return foundProduct;
+    }
+    
+    // Fallback: match by generated slug
+    return PRODUCTS_CLIENT.find((p) => createProductSlug(p.name, p.id) === slug);
   }, [slug]);
 
   const [quantity, setQuantity] = useState(1);
@@ -89,7 +98,7 @@ const ProductDetailPage = () => {
           <button
             type="button"
             className="mb-1 inline-flex w-fit items-center gap-1 text-xs font-medium text-neutral-500 hover:text-neutral-700"
-            onClick={() => navigate("/client/products")}
+            onClick={() => navigate("/client/menu")}
           >
             <span className="text-lg">←</span>
             Back to list

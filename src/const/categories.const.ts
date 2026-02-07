@@ -1,6 +1,9 @@
 import type { Category } from "@/types/category";
 import type { ID } from "@/types/common";
 
+// Re-export Category type for easy import
+export type { Category };
+
 export const CATEGORIES: Category[] = [
   {
     id: 1 as ID,
