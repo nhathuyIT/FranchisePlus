@@ -10,8 +10,8 @@ export const UpdateStockSchema = z.object({
   alert_threshold: z.number().optional(), // Read-only display
   quantity: z
     .number()
-    .min(0, "Quantity cannot be negative")
-    .max(999999, "Quantity exceeds maximum limit"),
+    .min(0, "Stock quantity cannot be negative - enter 0 or more")
+    .max(999999, "Quantity too high - maximum is 999,999 kg"),
 });
 
 /**
@@ -20,12 +20,18 @@ export const UpdateStockSchema = z.object({
  */
 export const AddInventoryItemSchema = z
   .object({
-    product_franchise_id: z.number().min(1, "Please select a product"),
-    quantity: z.number().min(0, "Quantity cannot be negative"),
-    alert_threshold: z.number().min(0, "Threshold cannot be negative"),
+    product_franchise_id: z
+      .number()
+      .min(1, "Select a product from the list"),
+    quantity: z
+      .number()
+      .min(0, "Stock quantity cannot be negative - enter 0 or more"),
+    alert_threshold: z
+      .number()
+      .min(0, "Alert threshold cannot be negative"),
   })
-  .refine((data) => data.quantity >= data.alert_threshold * 0.2, {
-    message: "Initial quantity should be at least 20% above alert threshold",
+  .refine((data) => data.quantity >= data.alert_threshold * 1.2, {
+    message: "Initial stock should be at least 20% above the alert threshold to avoid immediate alerts",
     path: ["quantity"],
   });
 
@@ -39,8 +45,8 @@ export const AdjustThresholdSchema = z.object({
   current_quantity: z.number().optional(), // Read-only display
   alert_threshold: z
     .number()
-    .min(1, "Threshold must be at least 1")
-    .max(10000, "Threshold exceeds maximum limit"),
+    .min(1, "Alert threshold must be at least 1 kg")
+    .max(10000, "Threshold too high - maximum is 10,000 kg"),
 });
 
 export type UpdateStockFormData = z.infer<typeof UpdateStockSchema>;
