@@ -1,53 +1,49 @@
 import { useState } from "react";
 import { Link } from "react-router";
-import { Package } from "lucide-react";
+import { Package, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { getInventoryItemViews } from "@/const/inventory.const";
 import { ROUTER_URL } from "@/router/route.const";
 import { PageHeader } from "@/components/common/PageHeader";
 import { InventoryTable } from "./components/InventoryTable";
-import { UpdateStockModal } from "./components/UpdateStockModal";
+import { CrudDialog } from "@/components/crud/CrudDialog";
+import { useCrudDialog } from "@/hooks/crud/useCrudDialog";
+import { updateStockConfig, addInventoryItemConfig } from "./inventory.config";
 import type { InventoryItemView } from "@/types/inventory";
 
 const InventoryList = () => {
   const [inventory, setInventory] = useState<InventoryItemView[]>(
     getInventoryItemViews()
   );
-  const [selectedItem, setSelectedItem] = useState<InventoryItemView | null>(
-    null
-  );
-  const [isModalOpen, setIsModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
+
+  // Dialog state management
+  const updateStockDialog = useCrudDialog<InventoryItemView>();
+  const addItemDialog = useCrudDialog<InventoryItemView>();
 
   const filteredInventory = inventory;
 
   const handleEdit = (item: InventoryItemView) => {
-    setSelectedItem(item);
-    setIsModalOpen(true);
+    updateStockDialog.openUpdate(item);
   };
 
-  const handleCloseModal = () => {
-    setIsModalOpen(false);
-    setSelectedItem(null);
+  const refreshData = () => {
+    // TODO: Replace with actual API call
+    setInventory(getInventoryItemViews());
   };
 
-  const handleUpdateStock = (inventoryId: number, newQuantity: number) => {
-    setInventory((prev) =>
-      prev.map((item) =>
-        item.inventory.id === inventoryId
-          ? {
-              ...item,
-              inventory: {
-                ...item.inventory,
-                quantity: newQuantity,
-                updated_at: new Date().toISOString(),
-              },
-            }
-          : item
-      )
-    );
+  const handleUpdateSuccess = () => {
+    refreshData();
+    updateStockDialog.close();
+    toast.success("Stock updated successfully");
+  };
+
+  const handleAddSuccess = () => {
+    refreshData();
+    addItemDialog.close();
+    toast.success("Inventory item added successfully");
   };
 
   // Bulk Export Handler
@@ -109,14 +105,23 @@ const InventoryList = () => {
           title="Inventory Management"
           description="Track all products across franchises"
           action={
-            <Link
-              to={`${ROUTER_URL.ADMIN}/${ROUTER_URL.ADMIN_ROUTER.INVENTORY_LOW_STOCK}`}
-            >
-              <Button className="bg-[#D97706] hover:bg-[#B45309] text-white rounded-full shadow-md hover:shadow-lg transition-all duration-300 cursor-pointer">
-                <Package className="mr-2 h-4 w-4" />
-                Low Stock Alert
+            <div className="flex gap-3">
+              <Button
+                onClick={addItemDialog.openCreate}
+                className="bg-[#6D4C41] hover:bg-[#3E2723] text-white rounded-full shadow-md hover:shadow-lg transition-all duration-300 cursor-pointer"
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                Add Item
               </Button>
-            </Link>
+              <Link
+                to={`${ROUTER_URL.ADMIN}/${ROUTER_URL.ADMIN_ROUTER.INVENTORY_LOW_STOCK}`}
+              >
+                <Button className="bg-[#D97706] hover:bg-[#B45309] text-white rounded-full shadow-md hover:shadow-lg transition-all duration-300 cursor-pointer">
+                  <Package className="mr-2 h-4 w-4" />
+                  Low Stock Alert
+                </Button>
+              </Link>
+            </div>
           }
         />
 
@@ -136,11 +141,18 @@ const InventoryList = () => {
         </div>
       </div>
 
-      <UpdateStockModal
-        item={selectedItem}
-        isOpen={isModalOpen}
-        onClose={handleCloseModal}
-        onUpdate={handleUpdateStock}
+      {/* Update Stock Dialog */}
+      <CrudDialog
+        config={updateStockConfig}
+        dialog={updateStockDialog}
+        onSuccess={handleUpdateSuccess}
+      />
+
+      {/* Add Inventory Item Dialog */}
+      <CrudDialog
+        config={addInventoryItemConfig}
+        dialog={addItemDialog}
+        onSuccess={handleAddSuccess}
       />
     </div>
   );

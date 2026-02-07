@@ -1,18 +1,29 @@
 import { useState } from "react";
-import { Link } from "react-router";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { FRANCHISES_MOCK } from "@/const/franchises.const";
-import { ROUTER_URL } from "@/router/route.const";
 import { PageHeader } from "@/components/common/PageHeader";
 import { FranchiseTable } from "./components/FranchiseTable";
+import { CrudDialog } from "@/components/crud/CrudDialog";
+import { useCrudDialog } from "@/hooks/crud";
+import { franchiseConfig } from "./franchise.config";
 import type { Franchise } from "@/types/franchise";
 
 const FranchiseList = () => {
   const [franchises, setFranchises] = useState<Franchise[]>(FRANCHISES_MOCK);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
+
+  // CRUD Dialog state
+  const dialog = useCrudDialog<Franchise>();
+
+  // Refresh data after CRUD operations
+  const refreshData = () => {
+    // TODO: Replace with actual API call
+    setFranchises([...FRANCHISES_MOCK]);
+    dialog.close();
+  };
 
   // Bulk Delete Handler
   const handleBulkDelete = async (selectedFranchises: Franchise[]) => {
@@ -65,14 +76,13 @@ const FranchiseList = () => {
           title="Franchise Management"
           description="Manage all your franchise locations"
           action={
-            <Link
-              to={`${ROUTER_URL.ADMIN}/${ROUTER_URL.ADMIN_ROUTER.FRANCHISES_CREATE}`}
+            <Button
+              onClick={dialog.openCreate}
+              className="bg-[#6D4C41] hover:bg-[#5D4037] text-white rounded-full shadow-md hover:shadow-lg transition-all duration-300 cursor-pointer"
             >
-              <Button className="bg-[#6D4C41] hover:bg-[#5D4037] text-white rounded-full shadow-md hover:shadow-lg transition-all duration-300 cursor-pointer">
-                <Plus className="mr-2 h-4 w-4" />
-                Add Franchise
-              </Button>
-            </Link>
+              <Plus className="mr-2 h-4 w-4" />
+              Add Franchise
+            </Button>
           }
         />
 
@@ -83,8 +93,18 @@ const FranchiseList = () => {
             error={error}
             onRetry={handleRetry}
             onBulkDelete={handleBulkDelete}
+            onEdit={dialog.openUpdate}
+            onView={dialog.openView}
+            onDelete={dialog.openDelete}
           />
         </div>
+
+        {/* CRUD Dialog */}
+        <CrudDialog
+          config={franchiseConfig}
+          dialog={dialog}
+          onSuccess={refreshData}
+        />
       </div>
     </div>
   );

@@ -33,11 +33,11 @@ export const InventoryTable = ({
         { label: "Out of Stock", value: "out_of_stock" },
       ],
     },
-    {
-      id: "franchiseName",
-      type: "search",
-      label: "Franchise",
-    },
+    // {
+    //   id: "franchiseName",
+    //   type: "search",
+    //   label: "Franchise",
+    // },
   ];
 
   // Bulk Actions Configuration

@@ -5,19 +5,20 @@ import { getLowStockItems } from "@/const/inventory.const";
 import { PageHeader } from "@/components/common/PageHeader";
 import { InventoryStatsCards } from "./components/InventoryStatsCards";
 import { LowStockTable } from "./components/LowStockTable";
-import { UpdateStockModal } from "./components/UpdateStockModal";
+import { CrudDialog } from "@/components/crud/CrudDialog";
+import { useCrudDialog } from "@/hooks/crud/useCrudDialog";
+import { updateStockConfig } from "./inventory.config";
 import type { InventoryItemView } from "@/types/inventory";
 
 const LowStockAlert = () => {
   const [inventory, setInventory] = useState<InventoryItemView[]>(
     getLowStockItems()
   );
-  const [selectedItem, setSelectedItem] = useState<InventoryItemView | null>(
-    null
-  );
-  const [isModalOpen, setIsModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
+
+  // Dialog state management
+  const updateStockDialog = useCrudDialog<InventoryItemView>();
 
   const criticalItems = inventory.filter(
     (item) =>
@@ -25,30 +26,18 @@ const LowStockAlert = () => {
   );
 
   const handleUpdateStock = (item: InventoryItemView) => {
-    setSelectedItem(item);
-    setIsModalOpen(true);
+    updateStockDialog.openUpdate(item);
   };
 
-  const handleCloseModal = () => {
-    setIsModalOpen(false);
-    setSelectedItem(null);
+  const refreshData = () => {
+    // TODO: Replace with actual API call
+    setInventory(getLowStockItems());
   };
 
-  const handleUpdate = (inventoryId: number, newQuantity: number) => {
-    setInventory((prev) =>
-      prev.map((item) =>
-        item.inventory.id === inventoryId
-          ? {
-              ...item,
-              inventory: {
-                ...item.inventory,
-                quantity: newQuantity,
-                updated_at: new Date().toISOString(),
-              },
-            }
-          : item
-      )
-    );
+  const handleUpdateSuccess = () => {
+    refreshData();
+    updateStockDialog.close();
+    toast.success("Stock updated successfully");
   };
 
   // Bulk Export Handler
@@ -166,11 +155,11 @@ const LowStockAlert = () => {
         </div>
       </div>
 
-      <UpdateStockModal
-        item={selectedItem}
-        isOpen={isModalOpen}
-        onClose={handleCloseModal}
-        onUpdate={handleUpdate}
+      {/* Update Stock Dialog */}
+      <CrudDialog
+        config={updateStockConfig}
+        dialog={updateStockDialog}
+        onSuccess={handleUpdateSuccess}
       />
     </div>
   );
