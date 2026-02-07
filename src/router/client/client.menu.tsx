@@ -16,9 +16,10 @@ export const CLIENT_MENU: ClientMenuItem[] = [
     isEnd: true,
   },
   {
-    label: "Products",
-    path: ROUTER_URL.CLIENT_ROUTER.PRODUCTS,
-    component: React.lazy(() => import("@/pages/client/products")),
+    label: "Menu",
+    path: ROUTER_URL.CLIENT_ROUTER.MENU,
+    component: React.lazy(() => import("@/pages/client/menu/MenuPage")),
+    isEnd: true,
   },
   {
     label: "Product Detail",

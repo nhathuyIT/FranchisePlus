@@ -1,8 +1,11 @@
 import type { Product } from "@/types/product.type";
 import type { ID } from "@/types/common";
 
-// ProductClient now matches Product type
-export type ProductClient = Product & { image: string };
+// ProductClient extends Product with category_id for menu filtering
+export type ProductClient = Product & { 
+  image: string;
+  category_id: number;
+};
 
 const baseProducts = [
   {
@@ -89,8 +92,255 @@ const baseProducts = [
     updated_at: new Date("2024-01-01").toISOString(),
     image: "https://plus.unsplash.com/premium_photo-1675435644687-562e8042b9db?q=80&w=749&auto=format&fit=crop",
   },
+  // Coffee Category - More products
+  {
+    id: 7 as ID,
+    SKU: "CF-FLA-007",
+    name: "Flat White",
+    description: "Australian-style coffee with micro-foam",
+    content: null,
+    min_price: 48000,
+    max_price: 48000,
+    is_active: true,
+    is_deleted: false,
+    created_at: new Date("2024-01-01").toISOString(),
+    updated_at: new Date("2024-01-01").toISOString(),
+    image: "https://images.unsplash.com/photo-1509042239860-f550ce710b93?w=600&auto=format&fit=crop",
+  },
+  {
+    id: 8 as ID,
+    SKU: "CF-COL-008",
+    name: "Cold Brew",
+    description: "Smooth, slow-steeped cold coffee",
+    content: null,
+    min_price: 42000,
+    max_price: 52000,
+    is_active: true,
+    is_deleted: false,
+    created_at: new Date("2024-01-01").toISOString(),
+    updated_at: new Date("2024-01-01").toISOString(),
+    image: "https://images.unsplash.com/photo-1517701604599-bb29b565090c?w=600&auto=format&fit=crop",
+  },
+  {
+    id: 9 as ID,
+    SKU: "CF-AFF-009",
+    name: "Affogato",
+    description: "Espresso shot over vanilla ice cream",
+    content: null,
+    min_price: 65000,
+    max_price: 65000,
+    is_active: true,
+    is_deleted: false,
+    created_at: new Date("2024-01-01").toISOString(),
+    updated_at: new Date("2024-01-01").toISOString(),
+    image: "https://images.unsplash.com/photo-1571091718767-18b5b1457add?w=600&auto=format&fit=crop",
+  },
+  {
+    id: 10 as ID,
+    SKU: "CF-COR-010",
+    name: "Cortado",
+    description: "Perfect balance of espresso and warm milk",
+    content: null,
+    min_price: 46000,
+    max_price: 46000,
+    is_active: true,
+    is_deleted: false,
+    created_at: new Date("2024-01-01").toISOString(),
+    updated_at: new Date("2024-01-01").toISOString(),
+    image: "https://images.unsplash.com/photo-1447933601403-0c6688de566e?w=600&auto=format&fit=crop",
+  },
+  // Tea Category
+  {
+    id: 11 as ID,
+    SKU: "TEA-GRN-011",
+    name: "Jasmine Green Tea",
+    description: "Delicate jasmine-scented green tea",
+    content: null,
+    min_price: 35000,
+    max_price: 35000,
+    is_active: true,
+    is_deleted: false,
+    created_at: new Date("2024-01-01").toISOString(),
+    updated_at: new Date("2024-01-01").toISOString(),
+    image: "https://images.unsplash.com/photo-1556881286-fc6915169721?w=600&auto=format&fit=crop",
+  },
+  {
+    id: 12 as ID,
+    SKU: "TEA-EAR-012",
+    name: "Earl Grey Latte",
+    description: "Classic Earl Grey with steamed milk",
+    content: null,
+    min_price: 42000,
+    max_price: 42000,
+    is_active: true,
+    is_deleted: false,
+    created_at: new Date("2024-01-01").toISOString(),
+    updated_at: new Date("2024-01-01").toISOString(),
+    image: "https://images.unsplash.com/photo-1597318281675-c410734c4e3e?w=600&auto=format&fit=crop",
+  },
+  {
+    id: 13 as ID,
+    SKU: "TEA-CHA-013",
+    name: "Chai Tea Latte",
+    description: "Spiced black tea with creamy foam",
+    content: null,
+    min_price: 45000,
+    max_price: 45000,
+    is_active: true,
+    is_deleted: false,
+    created_at: new Date("2024-01-01").toISOString(),
+    updated_at: new Date("2024-01-01").toISOString(),
+    image: "https://images.unsplash.com/photo-1571934811356-5cc061b6821f?w=600&auto=format&fit=crop",
+  },
+  {
+    id: 14 as ID,
+    SKU: "TEA-MTL-014",
+    name: "Matcha Tea Latte",
+    description: "Premium Japanese matcha with milk",
+    content: null,
+    min_price: 58000,
+    max_price: 58000,
+    is_active: true,
+    is_deleted: false,
+    created_at: new Date("2024-01-01").toISOString(),
+    updated_at: new Date("2024-01-01").toISOString(),
+    image: "https://images.unsplash.com/photo-1515823064-d6e0c04616a7?w=600&auto=format&fit=crop",
+  },
+  {
+    id: 15 as ID,
+    SKU: "TEA-ICE-015",
+    name: "Iced Peach Tea",
+    description: "Refreshing peach-infused iced tea",
+    content: null,
+    min_price: 38000,
+    max_price: 38000,
+    is_active: true,
+    is_deleted: false,
+    created_at: new Date("2024-01-01").toISOString(),
+    updated_at: new Date("2024-01-01").toISOString(),
+    image: "https://images.unsplash.com/photo-1556679343-c7306c1976bc?w=600&auto=format&fit=crop",
+  },
+  // Frappuccino/Blended Category  
+  {
+    id: 16 as ID,
+    SKU: "FRP-CAR-016",
+    name: "Caramel Frappuccino",
+    description: "Blended coffee with caramel and whipped cream",
+    content: null,
+    min_price: 72000,
+    max_price: 82000,
+    is_active: true,
+    is_deleted: false,
+    created_at: new Date("2024-01-01").toISOString(),
+    updated_at: new Date("2024-01-01").toISOString(),
+    image: "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=600&auto=format&fit=crop",
+  },
+  {
+    id: 17 as ID,
+    SKU: "FRP-VAL-017",
+    name: "Vanilla Bean Frappuccino",
+    description: "Creamy vanilla-flavored blended drink",
+    content: null,
+    min_price: 68000,
+    max_price: 78000,
+    is_active: true,
+    is_deleted: false,
+    created_at: new Date("2024-01-01").toISOString(),
+    updated_at: new Date("2024-01-01").toISOString(),
+    image: "https://images.unsplash.com/photo-1544787219-7f47ccb76574?w=600&auto=format&fit=crop",
+  },
+  {
+    id: 18 as ID,
+    SKU: "FRP-CHO-018",
+    name: "Java Chip Frappuccino",
+    description: "Coffee blended with chocolate chips",
+    content: null,
+    min_price: 75000,
+    max_price: 85000,
+    is_active: true,
+    is_deleted: false,
+    created_at: new Date("2024-01-01").toISOString(),
+    updated_at: new Date("2024-01-01").toISOString(),
+    image: "https://images.unsplash.com/photo-1546173159-315724a31696?w=600&auto=format&fit=crop",
+  },
+  // Must Try Category - Seasonal/Special
+  {
+    id: 19 as ID,
+    SKU: "SPE-PSL-019",
+    name: "Pumpkin Spice Latte",
+    description: "Seasonal favorite with pumpkin and spices",
+    content: null,
+    min_price: 68000,
+    max_price: 78000,
+    is_active: true,
+    is_deleted: false,
+    created_at: new Date("2024-01-01").toISOString(),
+    updated_at: new Date("2024-01-01").toISOString(),
+    image: "https://images.unsplash.com/photo-1571115764595-644a1f56a55c?w=600&auto=format&fit=crop",
+  },
+  {
+    id: 20 as ID,
+    SKU: "SPE-HON-020",
+    name: "Honey Oat Milk Latte",
+    description: "Creamy oat milk latte with natural honey",
+    content: null,
+    min_price: 52000,
+    max_price: 62000,
+    is_active: true,
+    is_deleted: false,
+    created_at: new Date("2024-01-01").toISOString(),
+    updated_at: new Date("2024-01-01").toISOString(),
+    image: "https://images.unsplash.com/photo-1559056199-641a0ac8b55e?w=600&auto=format&fit=crop",
+  },
+  {
+    id: 21 as ID,
+    SKU: "SPE-LAV-021",
+    name: "Lavender Honey Latte",
+    description: "Floral lavender with sweet honey notes",
+    content: null,
+    min_price: 58000,
+    max_price: 68000,
+    is_active: true,
+    is_deleted: false,
+    created_at: new Date("2024-01-01").toISOString(),
+    updated_at: new Date("2024-01-01").toISOString(),
+    image: "https://images.unsplash.com/photo-1580933073521-dc49ac0d4e6a?w=600&auto=format&fit=crop",
+  },
+  {
+    id: 22 as ID,
+    SKU: "SPE-ROS-022",
+    name: "Rose Gold Latte",
+    description: "Instagram-worthy latte with rose flavor",
+    content: null,
+    min_price: 65000,
+    max_price: 75000,
+    is_active: true,
+    is_deleted: false,
+    created_at: new Date("2024-01-01").toISOString(),
+    updated_at: new Date("2024-01-01").toISOString(),
+    image: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=600&auto=format&fit=crop",
+  },
 ];
 
-export const PRODUCTS_CLIENT: ProductClient[] = baseProducts;
+export const PRODUCTS_CLIENT: ProductClient[] = baseProducts.map(product => ({
+  ...product,
+  category_id: 
+    // Must Try category (1) - Special/Seasonal drinks
+    product.name.toLowerCase().includes('pumpkin') || 
+    product.name.toLowerCase().includes('honey') ||
+    product.name.toLowerCase().includes('lavender') ||
+    product.name.toLowerCase().includes('rose') ? 1 :
+    
+    // Tea category (3) - All teas
+    product.name.toLowerCase().includes('tea') || 
+    product.name.toLowerCase().includes('chai') ||
+    product.name.toLowerCase().includes('matcha') ? 3 :
+    
+    // Frappuccino category (4) - Blended drinks
+    product.name.toLowerCase().includes('frappuccino') ? 4 :
+    
+    // Default to Coffee category (2)
+    2
+}));
 
 // ...existing code...

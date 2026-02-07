@@ -8,6 +8,7 @@ export const ROUTER_URL = {
     LOGIN: "/client/login",
     REGISTER: "register",
     CART: "cart",
+    MENU: "menu",
     PRODUCTS: "products",
     PRODUCT_DETAIL: "products/:slug",
   },
