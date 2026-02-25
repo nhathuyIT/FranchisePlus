@@ -25,19 +25,19 @@ export const updateStockConfig: CrudConfig<
   fields: [
     // Read-only context fields
     {
-      name: "product_name",
+      name: "productName",
       type: "text",
       label: "Product Name",
       disabled: true,
     },
     {
-      name: "current_quantity",
+      name: "currentQuantity",
       type: "number",
       label: "Current Quantity (kg)",
       disabled: true,
     },
     {
-      name: "alert_threshold",
+      name: "alertThreshold",
       type: "number",
       label: "Alert Threshold (kg)",
       disabled: true,
@@ -71,9 +71,9 @@ export const updateStockConfig: CrudConfig<
 
   transform: {
     toForm: (item) => ({
-      product_name: item.product.name,
-      current_quantity: item.inventory.quantity,
-      alert_threshold: item.inventory.alert_threshold,
+      productName: item.product.name,
+      currentQuantity: item.inventory.quantity,
+      alertThreshold: item.inventory.alertThreshold,
       quantity: item.inventory.quantity,
     }),
   },
@@ -100,7 +100,7 @@ export const addInventoryItemConfig: CrudConfig<
 
   fields: [
     {
-      name: "product_franchise_id",
+      name: "productFranchiseId",
       type: "select",
       label: "Product",
       required: true,
@@ -130,7 +130,7 @@ export const addInventoryItemConfig: CrudConfig<
       description: "Starting stock quantity (should be above threshold)",
     },
     {
-      name: "alert_threshold",
+      name: "alertThreshold",
       type: "number",
       label: "Alert Threshold (kg)",
       required: true,
@@ -150,13 +150,13 @@ export const addInventoryItemConfig: CrudConfig<
       const newItem: InventoryItemView = {
         inventory: {
           id: Date.now(),
-          product_franchise_id: data.product_franchise_id,
+          productFranchiseId: data.productFranchiseId,
           quantity: data.quantity,
-          alert_threshold: data.alert_threshold,
-          is_active: true,
-          is_deleted: false,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
+          alertThreshold: data.alertThreshold,
+          isActive: true,
+          isDeleted: false,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
         },
         product: {
           id: 1,
@@ -165,14 +165,14 @@ export const addInventoryItemConfig: CrudConfig<
           description: "Temporary product",
         },
         productFranchise: {
-          id: data.product_franchise_id,
+          id: data.productFranchiseId,
           franchiseId: 1,
           productId: 1,
           priceBase: 0,
-          is_active: true,
-          is_deleted: false,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
+          isActive: true,
+          isDeleted: false,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
         },
         franchiseName: "Temp Franchise",
         franchiseCode: "TEMP",
@@ -210,26 +210,26 @@ export const adjustThresholdConfig: CrudConfig<
   fields: [
     // Read-only context fields
     {
-      name: "product_name",
+      name: "productName",
       type: "text",
       label: "Product Name",
       disabled: true,
     },
     {
-      name: "current_threshold",
+      name: "currentThreshold",
       type: "number",
       label: "Current Threshold (kg)",
       disabled: true,
     },
     {
-      name: "current_quantity",
+      name: "currentQuantity",
       type: "number",
       label: "Current Stock (kg)",
       disabled: true,
     },
     // Editable field
     {
-      name: "alert_threshold",
+      name: "alertThreshold",
       type: "number",
       label: "New Alert Threshold (kg)",
       required: true,
@@ -256,10 +256,10 @@ export const adjustThresholdConfig: CrudConfig<
 
   transform: {
     toForm: (item) => ({
-      product_name: item.product.name,
-      current_threshold: item.inventory.alert_threshold,
-      current_quantity: item.inventory.quantity,
-      alert_threshold: item.inventory.alert_threshold,
+      productName: item.product.name,
+      currentThreshold: item.inventory.alertThreshold,
+      currentQuantity: item.inventory.quantity,
+      alertThreshold: item.inventory.alertThreshold,
     }),
   },
 

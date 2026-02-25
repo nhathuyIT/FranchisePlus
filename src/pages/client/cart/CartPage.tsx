@@ -14,12 +14,12 @@ const CartPage: React.FC = () => {
   // Helper function to get product image
   const getProductImage = (productId: number): string => {
     const product = PRODUCTS_CLIENT.find((p) => p.id === productId);
-    return product?.image || "";
+    return product?.imageUrl || "/placeholder-coffee.jpg";
   };
 
   const handleIncrease = (productId: number) => {
     const item = cart.items.find(
-      (item) => item.product_franchise_id === productId,
+      (item) => item.productFranchiseId === productId,
     );
     if (item) {
       updateQuantity(productId, item.quantity + 1);
@@ -28,7 +28,7 @@ const CartPage: React.FC = () => {
 
   const handleDecrease = (productId: number) => {
     const item = cart.items.find(
-      (item) => item.product_franchise_id === productId,
+      (item) => item.productFranchiseId === productId,
     );
     if (item && item.quantity > 1) {
       updateQuantity(productId, item.quantity - 1);
@@ -100,15 +100,15 @@ const CartPage: React.FC = () => {
             <tbody className="divide-y divide-gray-200">
               {cart.items.map((item) => (
                 <tr
-                  key={item.product_franchise_id}
+                  key={item.productFranchiseId}
                   className="hover:bg-gray-50"
                 >
                   {/* Product Image */}
                   <td className="px-6 py-4">
                     <div className="w-20 h-20 bg-amber-50 rounded-lg border border-gray-200 overflow-hidden">
                       <img
-                        src={getProductImage(item.product_franchise_id)}
-                        alt={item.product_name_snapshot}
+                        src={getProductImage(item.productFranchiseId)}
+                        alt={item.productNameSnapshot}
                         className="w-full h-full object-cover"
                         onError={(e) => {
                           const target = e.target as HTMLImageElement;
@@ -123,7 +123,7 @@ const CartPage: React.FC = () => {
                   {/* Product Name */}
                   <td className="px-6 py-4">
                     <div className="font-semibold text-gray-900">
-                      {item.product_name_snapshot}
+                      {item.productNameSnapshot}
                     </div>
                   </td>
 
@@ -136,7 +136,7 @@ const CartPage: React.FC = () => {
                       <div className="flex items-center bg-[#B8860B] rounded">
                         <button
                           onClick={() =>
-                            handleDecrease(item.product_franchise_id)
+                            handleDecrease(item.productFranchiseId)
                           }
                           className="w-8 h-8 text-white hover:bg-amber-700 transition-colors flex items-center justify-center"
                         >
@@ -147,7 +147,7 @@ const CartPage: React.FC = () => {
                         </span>
                         <button
                           onClick={() =>
-                            handleIncrease(item.product_franchise_id)
+                            handleIncrease(item.productFranchiseId)
                           }
                           className="w-8 h-8 text-white hover:bg-amber-700 transition-colors flex items-center justify-center"
                         >
@@ -155,7 +155,7 @@ const CartPage: React.FC = () => {
                         </button>
                       </div>
                       <button
-                        onClick={() => handleRemove(item.product_franchise_id)}
+                        onClick={() => handleRemove(item.productFranchiseId)}
                         className="ml-3 w-8 h-8 bg-[#B8860B] text-white rounded hover:bg-red-600 transition-colors flex items-center justify-center"
                         title="Xóa sản phẩm"
                       >
@@ -166,12 +166,12 @@ const CartPage: React.FC = () => {
 
                   {/* Unit Price */}
                   <td className="px-8 py-4 text-right font-semibold text-gray-900">
-                    {item.price_snapshot.toLocaleString("vi-VN")} VND
+                    {(item.priceSnapshot || 0).toLocaleString("vi-VN")} VND
                   </td>
 
                   {/* Total Price */}
                   <td className="px-8 py-4 text-right font-bold text-[#B8860B] text-lg">
-                    {item.line_total.toLocaleString("vi-VN")} VND
+                    {(item.lineTotal || 0).toLocaleString("vi-VN")} VND
                   </td>
                 </tr>
               ))}
