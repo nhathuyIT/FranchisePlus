@@ -17,8 +17,8 @@ const MenuPage: React.FC = () => {
     e.preventDefault();
     e.stopPropagation();
     
-    // Use the product price (min_price as default)
-    const price = product.min_price;
+    // Use the product price (minPrice as default)
+    const price = product.minPrice;
     
     addItem(product.id, product.name, price, 1);
     
@@ -30,7 +30,7 @@ const MenuPage: React.FC = () => {
 
   // Get active categories only
   const activeCategories: Category[] = CATEGORIES.filter(
-    category => category.is_active === true && category.is_deleted === false
+    category => category.isActive === true && category.isDeleted === false
   );
 
   // Auto-select first category on load
@@ -46,7 +46,7 @@ const MenuPage: React.FC = () => {
 
   // Get filtered products
   const filteredProducts = PRODUCTS_CLIENT.filter(product => {
-    if (!product.is_active) return false;
+    if (!product.isActive) return false;
     if (!selectedCategoryId) return true;
     return product.category_id === selectedCategoryId;
   });
@@ -151,7 +151,7 @@ const MenuPage: React.FC = () => {
                     <div className="relative mb-4">
                       <div className="w-32 h-32 mx-auto rounded-full overflow-hidden bg-amber-50 border-4 border-[#5B4037] group-hover:border-amber-800 transition-colors">
                         <img
-                          src={product.image}
+                          src={product.imageUrl || '/placeholder-coffee.jpg'}
                           alt={product.name}
                           className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
                           loading="lazy"
@@ -176,9 +176,9 @@ const MenuPage: React.FC = () => {
                     
                     {/* Price */}
                     <p className="text-amber-700 font-medium text-sm mt-1">
-                      {product.min_price === product.max_price
-                        ? `${product.min_price.toLocaleString('vi-VN')}₫`
-                        : `${product.min_price.toLocaleString('vi-VN')}₫ - ${product.max_price.toLocaleString('vi-VN')}₫`
+                      {product.minPrice === product.maxPrice
+                        ? `${product.minPrice.toLocaleString('vi-VN')}₫`
+                        : `${product.minPrice.toLocaleString('vi-VN')}₫ - ${product.maxPrice.toLocaleString('vi-VN')}₫`
                       }
                     </p>
                   </Link>

@@ -13,16 +13,16 @@ type ProductCardProps = {
 export const ProductCard = ({ product }: ProductCardProps) => {
 	const { addItem } = useCart();
 	const productSlug = createProductSlug(product.name, product.id);
-	const priceDisplay = product.min_price === product.max_price 
-		? `${product.min_price.toLocaleString('vi-VN')}₫`
-		: `${product.min_price.toLocaleString('vi-VN')}₫ - ${product.max_price.toLocaleString('vi-VN')}₫`;
+	const priceDisplay = product.minPrice === product.maxPrice 
+		? `${product.minPrice.toLocaleString('vi-VN')}₫`
+		: `${product.minPrice.toLocaleString('vi-VN')}₫ - ${product.maxPrice.toLocaleString('vi-VN')}₫`;
 
 	const handleAddToCart = (e: React.MouseEvent) => {
 		e.preventDefault();
 		e.stopPropagation();
 		
-		// Use min_price as default price for adding to cart
-		addItem(product.id, product.name, product.min_price, 1);
+		// Use minPrice as default price for adding to cart
+		addItem(product.id, product.name, product.minPrice, 1);
 		
 		toast.success(`${product.name} đã được thêm vào giỏ hàng!`, {
 		});
@@ -35,7 +35,7 @@ export const ProductCard = ({ product }: ProductCardProps) => {
 		>
 			<div className="relative overflow-hidden bg-gray-100">
 				<img
-					src={product.image}
+					src={product.imageUrl || '/placeholder-coffee.jpg'}
 					alt={product.name}
 					className="h-48 w-full object-cover transition duration-300 group-hover:scale-105"
 					loading="lazy"
@@ -69,7 +69,7 @@ export const ProductCard = ({ product }: ProductCardProps) => {
 						{priceDisplay}
 					</span>
 					<span className="text-xs text-gray-400">
-						{product.SKU}
+						{product.sku}
 					</span>
 				</div>
 			</div>

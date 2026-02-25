@@ -40,7 +40,7 @@ export const ViewProductModal = ({ product, isOpen, onClose }: ViewProductModalP
           {product.imageUrl && (
             <div className="flex justify-center">
               <img
-                src={product.imageUrl}
+                src={product.imageUrl || '/placeholder-coffee.jpg'}
                 alt={product.name}
                 className="w-48 h-48 object-cover rounded-lg border-2 border-[#E8DFD6] shadow-md"
                 onError={(e) => {

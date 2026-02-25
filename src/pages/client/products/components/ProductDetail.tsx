@@ -25,7 +25,7 @@ const ProductDetailPage = () => {
   }, [slug]);
 
   const [quantity, setQuantity] = useState(1);
-  const [selectedImage, setSelectedImage] = useState(product?.image ?? "");
+  const [selectedImage, setSelectedImage] = useState(product?.imageUrl || "/placeholder-coffee.jpg");
 
   const handleAddToCart = () => {
     if (!product) return;
@@ -33,7 +33,7 @@ const ProductDetailPage = () => {
     addItem(
       product.id,
       product.name,
-      product.min_price,
+      product.minPrice,
       quantity
     );
     
@@ -48,7 +48,7 @@ const ProductDetailPage = () => {
     addItem(
       product.id,
       product.name,
-      product.min_price,
+      product.minPrice,
       quantity
     );
     
@@ -79,7 +79,11 @@ const ProductDetailPage = () => {
     );
   }
 
-  const galleryImages = [product.image, product.image, product.image];
+  const galleryImages = [
+    product.imageUrl || '/placeholder-coffee.jpg', 
+    product.imageUrl || '/placeholder-coffee.jpg', 
+    product.imageUrl || '/placeholder-coffee.jpg'
+  ];
 
   const handleDecrease = () => {
     setQuantity((prev) => (prev > 1 ? prev - 1 : 1));
@@ -96,7 +100,7 @@ const ProductDetailPage = () => {
         <div className="flex flex-1 flex-col gap-4 lg:max-w-xl">
           <div className="overflow-hidden rounded-3xl bg-neutral-100 shadow-sm">
             <img
-              src={selectedImage || product.image}
+              src={selectedImage || product.imageUrl || '/placeholder-coffee.jpg'}
               alt={product.name}
               className="h-full w-full max-h-[460px] object-cover"
             />
@@ -109,7 +113,7 @@ const ProductDetailPage = () => {
                 type="button"
                 onClick={() => setSelectedImage(img)}
                 className={`flex h-20 w-24 items-center justify-center overflow-hidden rounded-xl border bg-white transition ${
-                  (selectedImage || product.image) === img
+                  (selectedImage || product.imageUrl || '/placeholder-coffee.jpg') === img
                     ? "border-black-500 ring-2 ring-black-500/40"
                     : "border-neutral-200 hover:border-brown-300"
                 }`}
@@ -141,7 +145,7 @@ const ProductDetailPage = () => {
 
           <p className="text-xs text-neutral-500">
             SKU:{" "}
-            <span className="font-medium text-neutral-700">{product.SKU}</span>
+            <span className="font-medium text-neutral-700">{product.sku}</span>
           </p>
 
           <h1 className="text-2xl font-bold tracking-tight text-neutral-900 sm:text-3xl">
@@ -150,11 +154,11 @@ const ProductDetailPage = () => {
 
           <div className="mt-3 flex items-center gap-3">
             <span className="text-4xl font-semibold text-[#6D4C41]">
-              {product.min_price.toLocaleString("vi-VN")} VND
+              {product.minPrice.toLocaleString("vi-VN")} VND
             </span>
-            {product.max_price !== product.min_price && (
+            {product.maxPrice !== product.minPrice && (
               <span className="text-sm text-neutral-500 line-through">
-                {product.max_price.toLocaleString("vi-VN")} VND
+                {product.maxPrice.toLocaleString("vi-VN")} VND
               </span>
             )}
           </div>
@@ -185,7 +189,7 @@ const ProductDetailPage = () => {
 
             <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700">
               <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-              {product.is_active ? "In stock" : "Out of stock"}
+              {product.isActive ? "In stock" : "Out of stock"}
             </span>
           </div>
 

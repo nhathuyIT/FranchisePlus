@@ -5,7 +5,7 @@ const CART_KEY = 'coffee_cart';
 
 export type CartItem = OrderItem;
 
-export interface Cart extends Omit<Order, 'id' | 'code' | 'confirmed_at' | 'completed_at' | 'cancelled_at' | 'created_by'> {
+export interface Cart extends Omit<Order, 'id' | 'code' | 'confirmedAt' | 'completedAt' | 'cancelledAt' | 'createdBy'> {
   id: string;
   code: string;
   items: CartItem[];
@@ -15,11 +15,27 @@ function getInitialCart(): Cart {
   const raw = localStorage.getItem(CART_KEY);
   if (raw) {
     try {
-      return JSON.parse(raw);
-    } catch {}
+      const parsed = JSON.parse(raw);
+      // Check if cart has old structure (snake_case properties)
+      if (parsed.items && parsed.items.length > 0) {
+        const firstItem = parsed.items[0];
+        if (firstItem.price_snapshot !== undefined || firstItem.line_total !== undefined) {
+          // Clear old cart data with outdated structure
+          localStorage.removeItem(CART_KEY);
+          return getDefaultCart();
+        }
+      }
+      return parsed;
+    } catch {
+      // Clear corrupted cart data
+      localStorage.removeItem(CART_KEY);
+    }
   }
   
-  // Return minimal cart structure
+  return getDefaultCart();
+}
+
+function getDefaultCart(): Cart {
   return {
     id: 'draft',
     code: 'DRAFT',
@@ -57,14 +73,13 @@ export function useCart() {
               ? {
                   ...item,
                   quantity: item.quantity + quantity,
-                  line_total: (item.quantity + quantity) * item.priceSnapshot
+                  lineTotal: (item.quantity + quantity) * item.priceSnapshot
                 }
               : item
           ),
-          updated_at: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
         };
       }
-      
       // Add new item
       const newItem: CartItem = {
         id: Date.now(), // Simple ID generation
@@ -78,11 +93,10 @@ export function useCart() {
         updatedAt: new Date().toISOString(),
         isDeleted: false,
       };
-      
       return {
         ...prev,
         items: [...prev.items, newItem],
-        updated_at: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
       };
     });
   };
@@ -101,11 +115,11 @@ export function useCart() {
           ? {
               ...item,
               quantity: newQuantity,
-              line_total: newQuantity * item.priceSnapshot
+              lineTotal: newQuantity * item.priceSnapshot
             }
           : item
       ),
-      updated_at: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
     }));
   };
 
@@ -114,7 +128,7 @@ export function useCart() {
     setCart(prev => ({
       ...prev,
       items: prev.items.filter(item => item.productFranchiseId !== productId),
-      updated_at: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
     }));
   };
 
