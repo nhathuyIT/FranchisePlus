@@ -66,7 +66,7 @@ export const CustomerTable = ({ customers }: CustomerTableProps) => {
                 <div className="flex items-center">
                   <img
                     src={
-                      customer.avatar_url ||
+                      customer.avatarUrl ||
                       `https://api.dicebear.com/7.x/avataaars/svg?seed=${customer.name}`
                     }
                     alt={customer.name}
@@ -84,18 +84,18 @@ export const CustomerTable = ({ customers }: CustomerTableProps) => {
                 {customer.email || "N/A"}
               </TableCell>
               <TableCell className="text-[#5D4037]">
-                {new Date(customer.created_at).toLocaleDateString()}
+                {new Date(customer.createdAt).toLocaleDateString()}
               </TableCell>
               <TableCell>
                 <Badge
-                  variant={customer.is_active ? "default" : "secondary"}
+                  variant={customer.isActive ? "default" : "secondary"}
                   className={
-                    customer.is_active
+                    customer.isActive
                       ? "bg-green-600 hover:bg-green-700 rounded-full"
                       : "bg-gray-500 hover:bg-gray-600 rounded-full"
                   }
                 >
-                  {customer.is_active ? "Active" : "Inactive"}
+                  {customer.isActive ? "Active" : "Inactive"}
                 </Badge>
               </TableCell>
               <TableCell className="text-right">
@@ -105,12 +105,12 @@ export const CustomerTable = ({ customers }: CustomerTableProps) => {
                     size="sm"
                     onClick={() => handleToggleActive(customer)}
                     className={`border-2 rounded-lg transition-all duration-200 cursor-pointer ${
-                      customer.is_active
+                      customer.isActive
                         ? "border-orange-500 text-orange-500 hover:bg-orange-500 hover:text-white"
                         : "border-green-500 text-green-500 hover:bg-green-500 hover:text-white"
                     }`}
                   >
-                    {customer.is_active ? (
+                    {customer.isActive ? (
                       <UserX className="h-4 w-4" />
                     ) : (
                       <UserCheck className="h-4 w-4" />
