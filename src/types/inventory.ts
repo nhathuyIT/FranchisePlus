@@ -7,9 +7,9 @@ import type { Product, ProductFranchise } from "./product.type";
  */
 export interface Inventory extends BaseTimestamp, SoftDeletable, Activatable {
   id: ID;
-  product_franchise_id: ID;
+  productFranchiseId: ID;
   quantity: number; 
-  alert_threshold: number; 
+  alertThreshold: number; 
 }
 
 /**
@@ -33,10 +33,10 @@ export type InventoryStatus = "AVAILABLE" | "LOW_STOCK" | "OUT_OF_STOCK";
  * Helper function to determine inventory status
  */
 export function getInventoryStatus(inventory: Inventory): InventoryStatus {
-  if (inventory.quantity === 0 || !inventory.is_active) {
+  if (inventory.quantity === 0 || !inventory.isActive) {
     return "OUT_OF_STOCK";
   }
-  if (inventory.quantity <= inventory.alert_threshold) {
+  if (inventory.quantity <= inventory.alertThreshold) {
     return "LOW_STOCK";
   }
   return "AVAILABLE";
