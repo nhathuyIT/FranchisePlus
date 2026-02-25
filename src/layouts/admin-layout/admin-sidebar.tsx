@@ -86,7 +86,7 @@ const AdminSideBar = ({ collapsed = false }: AdminSidebarProps) => {
           <div className="flex items-center gap-3">
             <Avatar className="h-10 w-10 border-2 border-amber-300">
               <AvatarImage
-                src={user?.avatar_url || undefined}
+                src={user?.avatarUrl || undefined}
                 alt={user?.name}
               />
               <AvatarFallback className="bg-amber-700 text-amber-100">
@@ -104,7 +104,7 @@ const AdminSideBar = ({ collapsed = false }: AdminSidebarProps) => {
       {collapsed && (
         <div className="p-2 border-b border-amber-800/50 flex justify-center">
           <Avatar className="h-8 w-8 border-2 border-amber-300">
-            <AvatarImage src={user?.avatar_url || undefined} alt={user?.name} />
+            <AvatarImage src={user?.avatarUrl || undefined} alt={user?.name} />
             <AvatarFallback className="bg-amber-700 text-amber-100 text-xs">
               {user?.name?.charAt(0) || "U"}
             </AvatarFallback>

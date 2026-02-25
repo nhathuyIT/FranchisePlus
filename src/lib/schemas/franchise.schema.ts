@@ -2,7 +2,7 @@ import { z } from "zod";
 
 /**
  * Franchise form validation schema
- * Includes cross-field validation for closed_at > opened_at
+ * Includes cross-field validation for closedAt > openedAt
  */
 export const FranchiseSchema = z
   .object({
@@ -20,7 +20,7 @@ export const FranchiseSchema = z
       .min(1, "Franchise name is required")
       .max(100, "Name too long - keep it under 100 characters"),
 
-    logo_url: z
+    logoUrl: z
       .string()
       .url("Enter a valid URL starting with http:// or https://")
       .optional()
@@ -31,7 +31,7 @@ export const FranchiseSchema = z
       .min(1, "Please enter the franchise address")
       .max(500, "Address too long - keep it under 500 characters"),
 
-    opened_at: z
+    openedAt: z
       .string()
       .refine((date) => !date || !isNaN(Date.parse(date)), {
         message: "Select a valid opening date or leave empty",
@@ -39,7 +39,7 @@ export const FranchiseSchema = z
       .optional()
       .or(z.literal("")),
 
-    closed_at: z
+    closedAt: z
       .string()
       .refine((date) => !date || !isNaN(Date.parse(date)), {
         message: "Select a valid closing date or leave empty",
@@ -47,19 +47,19 @@ export const FranchiseSchema = z
       .optional()
       .or(z.literal("")),
 
-    is_active: z.boolean(),
+    isActive: z.boolean(),
   })
   .refine(
     (data) => {
-      // Advanced validation: closed_at must be after opened_at
-      if (data.closed_at && data.opened_at) {
-        return new Date(data.closed_at) > new Date(data.opened_at);
+      // Advanced validation: closedAt must be after openedAt
+      if (data.closedAt && data.openedAt) {
+        return new Date(data.closedAt) > new Date(data.openedAt);
       }
       return true;
     },
     {
       message: "Closing date must be later than the opening date. Check both dates.",
-      path: ["closed_at"],
+      path: ["closedAt"],
     }
   );
 
