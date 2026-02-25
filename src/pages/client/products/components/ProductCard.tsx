@@ -1,16 +1,32 @@
 import type { ProductClient } from "@/const/product-client.const";
 import { Link } from "react-router-dom";
 import { createProductSlug } from "@/lib/slugify";
+import { useCart } from "../../cart/useCart";
+import { Button } from "@/components/ui/button";
+import { Plus } from "lucide-react";
+import { toast } from "sonner";
 
 type ProductCardProps = {
 	product: ProductClient;
 };
 
 export const ProductCard = ({ product }: ProductCardProps) => {
+	const { addItem } = useCart();
 	const productSlug = createProductSlug(product.name, product.id);
 	const priceDisplay = product.min_price === product.max_price 
 		? `${product.min_price.toLocaleString('vi-VN')}₫`
 		: `${product.min_price.toLocaleString('vi-VN')}₫ - ${product.max_price.toLocaleString('vi-VN')}₫`;
+
+	const handleAddToCart = (e: React.MouseEvent) => {
+		e.preventDefault();
+		e.stopPropagation();
+		
+		// Use min_price as default price for adding to cart
+		addItem(product.id, product.name, product.min_price, 1);
+		
+		toast.success(`${product.name} đã được thêm vào giỏ hàng!`, {
+		});
+	};
 
 	return (
 		<Link
@@ -24,6 +40,16 @@ export const ProductCard = ({ product }: ProductCardProps) => {
 					className="h-48 w-full object-cover transition duration-300 group-hover:scale-105"
 					loading="lazy"
 				/>
+				
+				{/* Add to Cart Button - Top Left Corner */}
+				<Button
+					onClick={handleAddToCart}
+					size="sm"
+					className="absolute top-2 left-2 h-8 w-8 rounded-full bg-green-600 hover:bg-green-700 text-white shadow-lg transition-all duration-200 hover:scale-110 z-10 p-0"
+					aria-label={`Thêm ${product.name} vào giỏ hàng`}
+				>
+					<Plus className="h-4 w-4" />
+				</Button>
 			</div>
 
 			<div className="flex flex-1 flex-col gap-2 p-4">
