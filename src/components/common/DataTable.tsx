@@ -321,9 +321,9 @@ export function DataTable<TData>({
   const totalRows = table.getFilteredRowModel().rows.length;
 
   return (
-    <div className="space-y-4">
-      {/* Toolbar */}
-      <div className="flex items-center gap-4">
+    <div className="flex flex-col h-full">
+      {/* Toolbar - Fixed */}
+      <div className="flex items-center gap-4 shrink-0 pb-4">
         {/* Global Search */}
         {searchable && (
           <div className="relative flex-1 max-w-sm">
@@ -448,9 +448,9 @@ export function DataTable<TData>({
         )}
       </div>
 
-      {/* Active Filter Chips */}
+      {/* Active Filter Chips - Fixed */}
       {hasActiveFilters && (
-        <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex items-center gap-2 flex-wrap shrink-0 pb-4">
           <span className="text-sm text-[#5D4037]">Active filters:</span>
           {globalFilter && (
             <Badge
@@ -489,9 +489,9 @@ export function DataTable<TData>({
         </div>
       )}
 
-      {/* Bulk Actions Toolbar */}
+      {/* Bulk Actions Toolbar - Fixed */}
       {enableRowSelection && selectedRows.length > 0 && (
-        <div className="flex items-center justify-between p-4 bg-[#FAF8F5] border border-[#E8DFD6] rounded-lg animate-in slide-in-from-top-2">
+        <div className="flex items-center justify-between p-4 bg-[#FAF8F5] border border-[#E8DFD6] rounded-lg animate-in slide-in-from-top-2 shrink-0 mb-4">
           <span className="text-sm font-medium text-[#3E2723]">
             {selectedRows.length} row(s) selected
           </span>
@@ -519,9 +519,11 @@ export function DataTable<TData>({
         </div>
       )}
 
-      {/* Table */}
-      <div className="rounded-2xl border-2 border-[#E8DFD6] bg-white overflow-hidden shadow-sm">
-        <Table>
+      {/* Table - Scrollable */}
+      <div className="flex-1 min-h-0 overflow-hidden">
+        <div className="rounded-2xl border-2 border-[#E8DFD6] bg-white shadow-sm h-full flex flex-col overflow-hidden">
+          <div className="flex-1 overflow-auto">
+            <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow
@@ -607,10 +609,12 @@ export function DataTable<TData>({
             )}
           </TableBody>
         </Table>
+          </div>
+        </div>
       </div>
 
-      {/* Pagination */}
-      <div className="flex items-center justify-between px-2">
+      {/* Pagination - Fixed */}
+      <div className="flex items-center justify-between px-2 shrink-0 pt-4">
         <div className="flex items-center gap-6">
           {/* Page Size Selector */}
           <div className="flex items-center gap-2">

@@ -55,7 +55,7 @@ const InventoryList = () => {
       const headers = ["Product", "SKU", "Franchise", "Quantity", "Threshold", "Last Updated"];
       const rows = selectedItems.map((item) => [
         item.product.name,
-        item.product.SKU,
+        item.product.sku,
         item.franchiseName,
         `${item.inventory.quantity} kg`,
         `${item.inventory.alert_threshold} kg`,
@@ -99,8 +99,8 @@ const InventoryList = () => {
   };
 
   return (
-    <div className="p-6 bg-gradient-to-br from-[#FAF8F5] via-[#F5F1EB] to-[#EDE7DD] min-h-screen">
-      <div className="max-w-7xl mx-auto">
+    <div className="h-full flex flex-col">
+      <div className="flex-1 flex flex-col min-h-0 max-w-7xl mx-auto w-full">
         <PageHeader
           title="Inventory Management"
           description="Track all products across franchises"
@@ -125,7 +125,7 @@ const InventoryList = () => {
           }
         />
 
-        <div className="bg-white rounded-2xl shadow-lg border border-[#E8DFD6] p-6">
+        <div className="flex-1 min-h-0 flex flex-col bg-white rounded-2xl shadow-lg border border-[#E8DFD6] p-6">
           <InventoryTable
             items={filteredInventory}
             isLoading={isLoading}
@@ -135,9 +135,9 @@ const InventoryList = () => {
             onBulkExport={handleBulkExport}
           />
 
-          <div className="mt-4 text-sm text-gray-600">
+          {/* <div className="mt-4 text-sm text-gray-600 shrink-0">
             Showing {filteredInventory.length} of {inventory.length} items
-          </div>
+          </div> */}
         </div>
       </div>
 

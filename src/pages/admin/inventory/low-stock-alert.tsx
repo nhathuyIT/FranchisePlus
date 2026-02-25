@@ -63,7 +63,7 @@ const LowStockAlert = () => {
             : "Warning";
         return [
           item.product.name,
-          item.product.SKU,
+          item.product.sku,
           item.franchiseName,
           `${item.inventory.quantity} kg`,
           `${item.inventory.alert_threshold} kg`,
@@ -109,8 +109,8 @@ const LowStockAlert = () => {
   };
 
   return (
-    <div className="p-6 bg-gradient-to-br from-[#FAF8F5] via-[#F5F1EB] to-[#EDE7DD] min-h-screen">
-      <div className="max-w-7xl mx-auto">
+    <div className="h-full flex flex-col">
+      <div className="flex-1 flex flex-col min-h-0 max-w-7xl mx-auto w-full">
         <PageHeader
           title="Low Stock Alert"
           description="Items that need immediate attention"
@@ -118,7 +118,7 @@ const LowStockAlert = () => {
           iconSize="h-8 w-8"
         />
 
-        <div className="mb-6">
+        <div className="mb-6 shrink-0">
           <InventoryStatsCards
             totalLowStock={inventory.length}
             criticalItems={criticalItems.length}
@@ -126,7 +126,7 @@ const LowStockAlert = () => {
           />
         </div>
 
-        <div className="bg-white rounded-2xl shadow-lg border border-[#E8DFD6] p-6">
+        <div className="flex-1 min-h-0 flex flex-col bg-white rounded-2xl shadow-lg border border-[#E8DFD6] p-6">
           {inventory.length > 0 ? (
             <>
               <LowStockTable
@@ -137,9 +137,9 @@ const LowStockAlert = () => {
                 onUpdateStock={handleUpdateStock}
                 onBulkExport={handleBulkExport}
               />
-              <div className="mt-4 text-sm text-[#5D4037]">
+              {/* <div className="mt-4 text-sm text-[#5D4037] shrink-0">
                 Showing {inventory.length} low stock items
-              </div>
+              </div> */}
             </>
           ) : (
             <div className="text-center py-8">
