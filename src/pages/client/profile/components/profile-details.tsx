@@ -36,16 +36,16 @@ export const ProfileDetails = ({ user }: ProfileDetailsProps) => {
     {
       icon: Shield,
       label: "Account Status",
-      value: user.is_active ? "Active" : "Inactive",
+      value: user.isActive ? "Active" : "Inactive",
       badge: true,
-      badgeColor: user.is_active
+      badgeColor: user.isActive
         ? "bg-green-100 text-green-700"
         : "bg-red-100 text-red-700",
     },
     {
       icon: Calendar,
       label: "Created At",
-      value: new Date(user.created_at).toLocaleDateString("en-US", {
+      value: new Date(user.createdAt).toLocaleDateString("en-US", {
         year: "numeric",
         month: "long",
         day: "numeric",
@@ -56,7 +56,7 @@ export const ProfileDetails = ({ user }: ProfileDetailsProps) => {
     {
       icon: Calendar,
       label: "Last Updated",
-      value: new Date(user.updated_at).toLocaleDateString("en-US", {
+      value: new Date(user.updatedAt).toLocaleDateString("en-US", {
         year: "numeric",
         month: "long",
         day: "numeric",

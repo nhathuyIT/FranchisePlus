@@ -24,9 +24,9 @@ const ProfilePage = () => {
           <div className="md:col-span-1">
             <div className="bg-white rounded-2xl shadow-sm border border-[#E8E0D8] p-6 text-center">
               <div className="w-28 h-28 mx-auto mb-4 rounded-full overflow-hidden border-4 border-[#D7CCC8] shadow-md">
-                {user.avatar_url ? (
+                {user.avatarUrl ? (
                   <img
-                    src={user.avatar_url}
+                    src={user.avatarUrl}
                     alt={user.name}
                     className="w-full h-full object-cover"
                   />
@@ -47,7 +47,7 @@ const ProfilePage = () => {
               <div className="mt-4 pt-4 border-t border-[#E8E0D8]">
                 <p className="text-xs text-[#A1887F]">
                   Member since{" "}
-                  {new Date(user.created_at).toLocaleDateString("en-US", {
+                  {new Date(user.createdAt).toLocaleDateString("en-US", {
                     year: "numeric",
                     month: "long",
                   })}

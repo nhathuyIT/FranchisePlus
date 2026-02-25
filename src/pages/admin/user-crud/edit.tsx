@@ -7,7 +7,7 @@ interface CustomerFormData {
   name: string;
   phone: string;
   email: string;
-  avatar_url: string;
+  avatarUrl: string;
 }
 
 export default function EditCustomer() {
@@ -18,7 +18,7 @@ export default function EditCustomer() {
     name: "",
     phone: "",
     email: "",
-    avatar_url: "",
+    avatarUrl: "",
   });
   const [errors, setErrors] = useState<Partial<CustomerFormData>>({});
   const [isLoading, setIsLoading] = useState(false);
@@ -38,7 +38,7 @@ export default function EditCustomer() {
             name: foundCustomer.name,
             phone: foundCustomer.phone,
             email: foundCustomer.email || "",
-            avatar_url: foundCustomer.avatar_url || "",
+            avatarUrl: foundCustomer.avatarUrl || "",
           });
         } else {
           // Customer not found, redirect to list
@@ -107,8 +107,8 @@ export default function EditCustomer() {
         name: formData.name,
         phone: formData.phone,
         email: formData.email || null,
-        avatar_url: formData.avatar_url || customer.avatar_url,
-        updated_at: new Date().toISOString(),
+        avatarUrl: formData.avatarUrl || customer.avatarUrl,
+        updatedAt: new Date().toISOString(),
       };
 
       console.log("Updating customer:", updatedCustomer);
@@ -168,7 +168,7 @@ export default function EditCustomer() {
           <div className="flex items-center gap-4 mb-6 p-4 bg-gray-50 rounded-lg">
             <img
               src={
-                customer.avatar_url ||
+                customer.avatarUrl ||
                 `https://api.dicebear.com/7.x/avataaars/svg?seed=${customer.name}`
               }
               alt={customer.name}
@@ -180,7 +180,7 @@ export default function EditCustomer() {
               </h2>
               <p className="text-gray-600">Customer ID: {customer.id}</p>
               <p className="text-sm text-gray-500">
-                Created: {new Date(customer.created_at).toLocaleDateString()}
+                Created: {new Date(customer.createdAt).toLocaleDateString()}
               </p>
             </div>
           </div>
@@ -249,8 +249,8 @@ export default function EditCustomer() {
               </label>
               <input
                 type="url"
-                name="avatar_url"
-                value={formData.avatar_url}
+                name="avatarUrl"
+                value={formData.avatarUrl}
                 onChange={handleInputChange}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-500"
                 placeholder="https://example.com/avatar.jpg (optional)"
