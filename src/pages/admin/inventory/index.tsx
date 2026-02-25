@@ -58,8 +58,8 @@ const InventoryList = () => {
         item.product.sku,
         item.franchiseName,
         `${item.inventory.quantity} kg`,
-        `${item.inventory.alert_threshold} kg`,
-        new Date(item.inventory.updated_at).toLocaleDateString(),
+        `${item.inventory.alertThreshold} kg`,
+        new Date(item.inventory.updatedAt).toLocaleDateString(),
       ]);
 
       const csvContent = [
