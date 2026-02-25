@@ -47,6 +47,7 @@ const LocationPage = () => {
               <p className="text-sm opacity-60 flex items-start gap-2 mt-1">
                 <MapPin size={14} className="mt-1 shrink-0" /> {store.address}
               </p>
+              
             </div>
           ))}
         </div>
