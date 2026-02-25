@@ -56,14 +56,14 @@ const FranchiseDetail = () => {
               <p className="text-[#5D4037] mt-1">Franchise Details & Management</p>
             </div>
             <Badge
-              variant={franchise.is_active ? "default" : "secondary"}
+              variant={franchise.isActive ? "default" : "secondary"}
               className={
-                franchise.is_active
+                franchise.isActive
                   ? "bg-green-600 hover:bg-green-700 text-lg px-4 py-1 rounded-full"
                   : "bg-gray-500 hover:bg-gray-600 text-lg px-4 py-1 rounded-full"
               }
             >
-              {franchise.is_active ? "Active" : "Inactive"}
+              {franchise.isActive ? "Active" : "Inactive"}
             </Badge>
           </div>
         </div>

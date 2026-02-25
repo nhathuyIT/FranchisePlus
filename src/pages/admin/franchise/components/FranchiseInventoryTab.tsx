@@ -42,15 +42,15 @@ export const FranchiseInventoryTab = ({ inventoryItems }: FranchiseInventoryTabP
                 <TableCell className="text-gray-700 font-semibold">
                   {item.inventory.quantity} kg
                 </TableCell>
-                <TableCell className="text-gray-700">{item.inventory.alert_threshold} kg</TableCell>
+                <TableCell className="text-gray-700">{item.inventory.alertThreshold} kg</TableCell>
                 <TableCell>
                   <StockStatusBadge
                     quantity={item.inventory.quantity}
-                    lowStockThreshold={item.inventory.alert_threshold}
+                    lowStockThreshold={item.inventory.alertThreshold}
                   />
                 </TableCell>
                 <TableCell className="text-gray-700">
-                  {new Date(item.inventory.updated_at).toLocaleDateString()}
+                  {new Date(item.inventory.updatedAt).toLocaleDateString()}
                 </TableCell>
               </TableRow>
             ))}
