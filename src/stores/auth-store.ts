@@ -24,6 +24,9 @@ interface AuthState {
   logout: () => void;
   hydrate: () => void;
   setCurrentFranchise: (franchiseId: number | null) => void;
+  updateProfile: (
+    data: Partial<Pick<User, "name" | "email" | "phone">>,
+  ) => void;
 
   hasGlobalRole: (roleCode: string) => boolean;
   hasFranchiseRole: (roleCode: string, franchiseId?: number) => boolean;
@@ -62,6 +65,22 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       const updatedAuthUser = {
         ...authUser,
         currentFranchiseId: franchiseId,
+      };
+      set({ authUser: updatedAuthUser });
+      setItemInLocalStorage(LOCAL_STORAGE.ACCOUNT_ADMIN, updatedAuthUser);
+    }
+  },
+
+  updateProfile: (data) => {
+    const { authUser } = get();
+    if (authUser) {
+      const updatedAuthUser = {
+        ...authUser,
+        user: {
+          ...authUser.user,
+          ...data,
+          updated_at: new Date().toISOString(),
+        },
       };
       set({ authUser: updatedAuthUser });
       setItemInLocalStorage(LOCAL_STORAGE.ACCOUNT_ADMIN, updatedAuthUser);

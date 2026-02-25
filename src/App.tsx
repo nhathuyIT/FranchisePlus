@@ -1,5 +1,10 @@
 import { BrowserRouter, Route, Routes } from "react-router-dom";
-import { AdminRoutes, ClientPublicRoute, ClientRoute } from "./router";
+import {
+  AdminRoutes,
+  ClientPublicRoute,
+  ClientRoute,
+  AccountRoute,
+} from "./router";
 import NotFoundPage from "./pages/NotFoundPage.page";
 import AdminAuthRoute from "./router/admin/admin.auth.route";
 import ClientAuthRoute from "./router/client/client.auth.route";
@@ -27,6 +32,7 @@ function App() {
           {AdminRoutes}
           {ClientAuthRoute}
           {ClientRoute}
+          {AccountRoute}
           {ClientPublicRoute}
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
