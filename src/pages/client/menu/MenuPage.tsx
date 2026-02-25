@@ -151,7 +151,7 @@ const MenuPage: React.FC = () => {
                     <div className="relative mb-4">
                       <div className="w-32 h-32 mx-auto rounded-full overflow-hidden bg-amber-50 border-4 border-[#5B4037] group-hover:border-amber-800 transition-colors">
                         <img
-                          src={product.imageUrl}
+                          src={product.imageUrl || '/placeholder-coffee.jpg'}
                           alt={product.name}
                           className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
                           loading="lazy"

@@ -25,7 +25,7 @@ const ProductDetailPage = () => {
   }, [slug]);
 
   const [quantity, setQuantity] = useState(1);
-  const [selectedImage, setSelectedImage] = useState(product?.imageUrl ?? "");
+  const [selectedImage, setSelectedImage] = useState(product?.imageUrl || "/placeholder-coffee.jpg");
 
   const handleAddToCart = () => {
     if (!product) return;
@@ -79,7 +79,11 @@ const ProductDetailPage = () => {
     );
   }
 
-  const galleryImages = [product.imageUrl, product.imageUrl, product.imageUrl];
+  const galleryImages = [
+    product.imageUrl || '/placeholder-coffee.jpg', 
+    product.imageUrl || '/placeholder-coffee.jpg', 
+    product.imageUrl || '/placeholder-coffee.jpg'
+  ];
 
   const handleDecrease = () => {
     setQuantity((prev) => (prev > 1 ? prev - 1 : 1));
@@ -96,7 +100,7 @@ const ProductDetailPage = () => {
         <div className="flex flex-1 flex-col gap-4 lg:max-w-xl">
           <div className="overflow-hidden rounded-3xl bg-neutral-100 shadow-sm">
             <img
-              src={selectedImage || product.imageUrl}
+              src={selectedImage || product.imageUrl || '/placeholder-coffee.jpg'}
               alt={product.name}
               className="h-full w-full max-h-[460px] object-cover"
             />
@@ -109,7 +113,7 @@ const ProductDetailPage = () => {
                 type="button"
                 onClick={() => setSelectedImage(img)}
                 className={`flex h-20 w-24 items-center justify-center overflow-hidden rounded-xl border bg-white transition ${
-                  (selectedImage || product.imageUrl) === img
+                  (selectedImage || product.imageUrl || '/placeholder-coffee.jpg') === img
                     ? "border-black-500 ring-2 ring-black-500/40"
                     : "border-neutral-200 hover:border-brown-300"
                 }`}

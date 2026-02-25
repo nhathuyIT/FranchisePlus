@@ -5,7 +5,7 @@ const CART_KEY = 'coffee_cart';
 
 export type CartItem = OrderItem;
 
-export interface Cart extends Omit<Order, 'id' | 'code' | 'confirmed_at' | 'completed_at' | 'cancelled_at' | 'created_by'> {
+export interface Cart extends Omit<Order, 'id' | 'code' | 'confirmedAt' | 'completedAt' | 'cancelledAt' | 'createdBy'> {
   id: string;
   code: string;
   items: CartItem[];

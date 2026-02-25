@@ -14,7 +14,7 @@ const CartPage: React.FC = () => {
   // Helper function to get product image
   const getProductImage = (productId: number): string => {
     const product = PRODUCTS_CLIENT.find((p) => p.id === productId);
-    return product?.imageUrl || "";
+    return product?.imageUrl || "/placeholder-coffee.jpg";
   };
 
   const handleIncrease = (productId: number) => {
