@@ -56,7 +56,7 @@ export const ProfileRoles = ({ roles, franchiseRoles }: ProfileRolesProps) => {
             </h3>
             <div className="space-y-2">
               {franchiseRoles.map((fr) => {
-                const role = roles.find((r) => r.id === fr.role_id);
+                const role = roles.find((r) => r.id === fr.roleId);
                 return (
                   <div
                     key={fr.id}
@@ -68,7 +68,7 @@ export const ProfileRoles = ({ roles, franchiseRoles }: ProfileRolesProps) => {
                       </div>
                       <div>
                         <p className="text-sm font-medium text-[#3E2723]">
-                          Franchise #{fr.franchise_id || "Global"}
+                          Franchise #{fr.franchiseId || "Global"}
                         </p>
                         <p className="text-xs text-[#A1887F]">
                           {role?.name || "Unknown Role"}
