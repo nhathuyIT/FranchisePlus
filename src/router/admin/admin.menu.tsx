@@ -56,24 +56,6 @@ export const ADMIN_MENU: AdminMenuItem[] = [
     isEnd: true,
   },
   {
-    label: "Create Franchise",
-    path: ROUTER_URL.ADMIN_ROUTER.FRANCHISES_CREATE,
-    icon: "store",
-    component: React.lazy(
-      () => import("@/pages/admin/franchise/franchise-form"),
-    ),
-    isEnd: true,
-  },
-  {
-    label: "Edit Franchise",
-    path: ROUTER_URL.ADMIN_ROUTER.FRANCHISES_EDIT,
-    icon: "store",
-    component: React.lazy(
-      () => import("@/pages/admin/franchise/franchise-form"),
-    ),
-    isEnd: true,
-  },
-  {
     label: "Inventory",
     path: ROUTER_URL.ADMIN_ROUTER.INVENTORY,
     icon: "package",
@@ -96,45 +78,10 @@ export const ADMIN_MENU: AdminMenuItem[] = [
     isEnd: true,
   },
   {
-    label: "Create Category",
-    path: ROUTER_URL.ADMIN_ROUTER.CATEGORIES_CREATE,
-    icon: "category",
-    component: React.lazy(() => import("@/pages/admin/categories/create")),
-    isEnd: true,
-  },
-  {
-    label: "Edit Category",
-    path: ROUTER_URL.ADMIN_ROUTER.CATEGORIES_EDIT,
-    icon: "category",
-    component: React.lazy(() => import("@/pages/admin/categories/edit")),
-    isEnd: true,
-  },
-  {
     label: "Products",
     path: ROUTER_URL.ADMIN_ROUTER.PRODUCTS,
     icon: "product",
     component: React.lazy(() => import("@/pages/admin/products/index")),
-    isEnd: true,
-  },
-  {
-    label: "Create Product",
-    path: ROUTER_URL.ADMIN_ROUTER.PRODUCTS_CREATE,
-    icon: "product",
-    component: React.lazy(() => import("@/pages/admin/products/create")),
-    isEnd: true,
-  },
-  {
-    label: "Edit Product",
-    path: ROUTER_URL.ADMIN_ROUTER.PRODUCTS_EDIT,
-    icon: "product",
-    component: React.lazy(() => import("@/pages/admin/products/edit")),
-    isEnd: true,
-  },
-  {
-    label: "Product Detail",
-    path: ROUTER_URL.ADMIN_ROUTER.PRODUCTS_DETAIL,
-    icon: "product",
-    component: React.lazy(() => import("@/pages/admin/products/detail")),
     isEnd: true,
   },
 ];

@@ -1,14 +1,14 @@
 export type ID = number;
 
 export interface BaseTimestamp {
-  created_at: string; // ISO timestamp
-  updated_at: string; // ISO timestamp
+  createdAt: string; // ISO timestamp
+  updatedAt: string; // ISO timestamp
 }
 
 export interface SoftDeletable {
-  is_deleted: boolean; // false by default
+  isDeleted: boolean; // false by default
 }
 
 export interface Activatable {
-  is_active: boolean; // true by default
+  isActive: boolean; // true by default
 }

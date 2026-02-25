@@ -1,0 +1,13 @@
+<svg width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <circle cx="60" cy="60" r="55" fill="#FFF3E0" stroke="#FF9800" stroke-width="2"/>
+  <path d="M35 40 L45 40 L55 80 L85 80" stroke="#FF6F00" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  <rect x="50" y="50" width="40" height="30" rx="2" fill="none" stroke="#FF6F00" stroke-width="2"/>
+  <circle cx="60" cy="90" r="4" fill="#FF6F00"/>
+  <circle cx="78" cy="90" r="4" fill="#FF6F00"/>
+  <line x1="50" y1="60" x2="90" y2="60" stroke="#FF6F00" stroke-width="2"/>
+  <line x1="50" y1="68" x2="90" y2="68" stroke="#FF6F00" stroke-width="2"/>
+  <!-- Coffee cup in cart -->
+  <path d="M60 58 L62 68 L68 68 L70 58 Z" fill="#8D6E63"/>
+  <ellipse cx="65" cy="58" rx="5" ry="2" fill="#6D4C41"/>
+  <path d="M69 61 Q73 61 73 64 Q73 67 69 67" stroke="#8D6E63" stroke-width="1.5" fill="none"/>
+</svg>
