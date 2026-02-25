@@ -22,6 +22,11 @@ export const ROUTER_URL = {
     MY_PROFILE: "my-profile",
   },
 
+  ACCOUNT: "/account",
+  ACCOUNT_ROUTER: {
+    MY_PROFILE: "my-profile",
+  },
+
   ADMIN: "/admin",
   ADMIN_ROUTER: {
     LOGIN: "/admin/login",
