@@ -10,7 +10,7 @@ export interface Category extends BaseTimestamp, SoftDeletable, Activatable {
 export interface CategoryFranchise
   extends BaseTimestamp, SoftDeletable, Activatable {
   id: ID;
-  category_id: ID;
-  franchise_id: ID;
-  display_order: number;
+  categoryId: ID;
+  franchiseId: ID;
+  displayOrder: number;
 }

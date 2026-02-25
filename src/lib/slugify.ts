@@ -1,14 +1,14 @@
 import slugify from "slugify";
 
 // Product slugify functions
-export function createProductSlug(name: string): string {
+export function createProductSlug(name: string, id?: number | string): string {
   const slug = slugify(name, {
     lower: true,
     strict: true,
     locale: "vi",
     remove: /[*+~.()'"!:@]/g,
   });
-  return `${slug}`;
+  return id ? `${slug}-${id}` : slug;
 }
 
 export function parseProductIdFromSlug(slug: string): string | null {

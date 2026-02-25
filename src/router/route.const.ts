@@ -4,11 +4,14 @@ export const ROUTER_URL = {
   CONTACT: "/contact",
   LOCATIONS: "/locations",
 
+  PRODUCTS: "/products",
   CLIENT: "/client",
+  PRODUCT_DETAIL: "products/:slug",
   CLIENT_ROUTER: {
     LOGIN: "/client/login",
     REGISTER: "register",
     CART: "cart",
+    MENU: "menu",
     PRODUCTS: "products",
     PRODUCT_DETAIL: "products/:slug",
   },
