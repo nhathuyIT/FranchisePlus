@@ -2,6 +2,7 @@ export const ROUTER_URL = {
   HOME: "/",
   ABOUT: "/about",
   CONTACT: "/contact",
+  LOCATIONS: "/locations",
 
   CLIENT: "/client",
   CLIENT_ROUTER: {
