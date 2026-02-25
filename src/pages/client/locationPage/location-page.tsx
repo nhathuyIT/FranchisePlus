@@ -7,7 +7,6 @@ import { StoreMap } from "./components/storeMap";
 const LocationPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedStore, setSelectedStore] = useState<StoreLocationData | null>(null);
-
   const filteredStores = STORE_LOCATIONS.filter(s =>
     s.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     s.address.toLowerCase().includes(searchTerm.toLowerCase())

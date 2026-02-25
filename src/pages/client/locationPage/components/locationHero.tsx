@@ -1,5 +1,4 @@
 import { LOCATION_THEME } from "@/const/location.const";
-
 export const LocationHero = () => {
   return (
     <section className="relative py-20 overflow-hidden" style={{ backgroundColor: LOCATION_THEME.bgKem }}>
