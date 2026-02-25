@@ -40,7 +40,7 @@ export const ViewProductModal = ({ product, isOpen, onClose }: ViewProductModalP
           {product.imageUrl && (
             <div className="flex justify-center">
               <img
-                src={product.imageUrl}
+                src={product.imageUrl || '/placeholder-coffee.jpg'}
                 alt={product.name}
                 className="w-48 h-48 object-cover rounded-lg border-2 border-[#E8DFD6] shadow-md"
                 onError={(e) => {
@@ -104,27 +104,27 @@ export const ViewProductModal = ({ product, isOpen, onClose }: ViewProductModalP
             <div>
               <h3 className="text-sm font-medium text-[#5D4037] mb-1">Status</h3>
               <Badge
-                variant={product.is_active ? "default" : "secondary"}
+                variant={product.isActive ? "default" : "secondary"}
                 className={
-                  product.is_active
+                  product.isActive
                     ? "bg-green-600 hover:bg-green-700 rounded-full"
                     : "bg-gray-500 hover:bg-gray-600 rounded-full"
                 }
               >
-                {product.is_active ? "Active" : "Inactive"}
+                {product.isActive ? "Active" : "Inactive"}
               </Badge>
             </div>
             <div>
               <h3 className="text-sm font-medium text-[#5D4037] mb-1">Deleted</h3>
               <Badge
-                variant={product.is_deleted ? "destructive" : "default"}
+                variant={product.isDeleted ? "destructive" : "default"}
                 className={
-                  product.is_deleted
+                  product.isDeleted
                     ? "bg-red-600 hover:bg-red-700 rounded-full"
                     : "bg-green-600 hover:bg-green-700 rounded-full"
                 }
               >
-                {product.is_deleted ? "Yes" : "No"}
+                {product.isDeleted ? "Yes" : "No"}
               </Badge>
             </div>
           </div>
@@ -133,13 +133,13 @@ export const ViewProductModal = ({ product, isOpen, onClose }: ViewProductModalP
             <div>
               <h3 className="text-sm font-medium text-[#5D4037] mb-1">Created</h3>
               <p className="text-base text-[#3E2723]">
-                {new Date(product.created_at).toLocaleDateString()}
+                {new Date(product.createdAt).toLocaleDateString()}
               </p>
             </div>
             <div>
               <h3 className="text-sm font-medium text-[#5D4037] mb-1">Last Updated</h3>
               <p className="text-base text-[#3E2723]">
-                {new Date(product.updated_at).toLocaleDateString()}
+                {new Date(product.updatedAt).toLocaleDateString()}
               </p>
             </div>
           </div>

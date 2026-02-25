@@ -2,10 +2,9 @@ import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 import { useEffect } from 'react';
-import { LOCATION_THEME } from "@/const/location.const";
+// import { LOCATION_THEME } from "@/const/location.const";
 // Sử dụng đúng alias StoreLocationData (tương đương Franchise)
 import type { StoreLocationData } from "@/const/location.const"; 
-
 const customIcon = new L.Icon({
   iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
   iconSize: [25, 41],

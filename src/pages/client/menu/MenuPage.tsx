@@ -3,13 +3,34 @@ import { CATEGORIES, type Category } from '@/const/categories.const';
 import { PRODUCTS_CLIENT } from '@/const/product-client.const';
 import { createProductSlug } from '@/lib/slugify';
 import { Link } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
+import { Plus } from 'lucide-react';
+import { useCart } from '../cart/useCart';
+import { toast } from 'sonner';
 
 const MenuPage: React.FC = () => {
   const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
+  const { addItem } = useCart();
+
+  // Handle add to cart for products
+  const handleAddToCart = (e: React.MouseEvent, product: any) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    // Use the product price (minPrice as default)
+    const price = product.minPrice;
+    
+    addItem(product.id, product.name, price, 1);
+    
+    toast.success(`${product.name} đã được thêm vào giỏ hàng!`, {
+      description: `Giá: ${price.toLocaleString('vi-VN')}₫`,
+      duration: 2000,
+    });
+  };
 
   // Get active categories only
   const activeCategories: Category[] = CATEGORIES.filter(
-    category => category.is_active === true && category.is_deleted === false
+    category => category.isActive === true && category.isDeleted === false
   );
 
   // Auto-select first category on load
@@ -25,7 +46,7 @@ const MenuPage: React.FC = () => {
 
   // Get filtered products
   const filteredProducts = PRODUCTS_CLIENT.filter(product => {
-    if (!product.is_active) return false;
+    if (!product.isActive) return false;
     if (!selectedCategoryId) return true;
     return product.category_id === selectedCategoryId;
   });
@@ -130,12 +151,22 @@ const MenuPage: React.FC = () => {
                     <div className="relative mb-4">
                       <div className="w-32 h-32 mx-auto rounded-full overflow-hidden bg-amber-50 border-4 border-[#5B4037] group-hover:border-amber-800 transition-colors">
                         <img
-                          src={product.image}
+                          src={product.imageUrl || '/placeholder-coffee.jpg'}
                           alt={product.name}
                           className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
                           loading="lazy"
                         />
                       </div>
+
+                      {/* Add to Cart Button - Outside Circle, Upper Left */}
+                      <Button
+                        onClick={(e) => handleAddToCart(e, product)}
+                        size="sm"
+                        className="absolute -top-4 left-1/2 transform -translate-x-20 h-8 w-8 rounded-full bg-[#5B4037] hover:bg-[#4A2C20] text-white shadow-lg transition-all duration-200 p-0 border-2 border-white"
+                        aria-label={`Thêm ${product.name} vào giỏ hàng`}
+                      >
+                        <Plus className="h-4 w-4" />
+                      </Button>
                     </div>
                     
                     {/* Product Name */}
@@ -145,9 +176,9 @@ const MenuPage: React.FC = () => {
                     
                     {/* Price */}
                     <p className="text-amber-700 font-medium text-sm mt-1">
-                      {product.min_price === product.max_price
-                        ? `${product.min_price.toLocaleString('vi-VN')}₫`
-                        : `${product.min_price.toLocaleString('vi-VN')}₫ - ${product.max_price.toLocaleString('vi-VN')}₫`
+                      {product.minPrice === product.maxPrice
+                        ? `${product.minPrice.toLocaleString('vi-VN')}₫`
+                        : `${product.minPrice.toLocaleString('vi-VN')}₫ - ${product.maxPrice.toLocaleString('vi-VN')}₫`
                       }
                     </p>
                   </Link>

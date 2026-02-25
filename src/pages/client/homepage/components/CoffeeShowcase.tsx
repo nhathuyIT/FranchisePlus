@@ -1,8 +1,29 @@
 import { Button } from "@/components/ui/button";
 import { COFFEE_PRODUCTS } from "@/const/coffee.const";
-import { Star, ArrowRight } from "lucide-react";
+import { Star, ArrowRight, Plus } from "lucide-react";
+import { useCart } from "../../cart/useCart";
+import { toast } from "sonner";
 
 export const CoffeeShowcase = () => {
+  const { addItem } = useCart();
+
+  // Handle add to cart for coffee products
+  const handleAddToCart = (e: React.MouseEvent, coffee: any, index: number) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    // Use index + 1 as product ID and set a default price
+    const productId = index + 1;
+    const defaultPrice = 45000; // Default price for coffee products (45,000 VND)
+    
+    addItem(productId, coffee.name, defaultPrice, 1);
+    
+    toast.success(`${coffee.name} đã được thêm vào giỏ hàng!`, {
+      description: `Giá: ${defaultPrice.toLocaleString('vi-VN')}₫`,
+      duration: 2000,
+    });
+  };
+
   return (
     <section className="relative py-24 lg:py-32 bg-[#F8F5F0] overflow-hidden">
       {/* Decorative vintage pattern background */}
@@ -80,6 +101,16 @@ export const CoffeeShowcase = () => {
                   />
                   {/* Elegant overlay */}
                   <div className="absolute inset-0 bg-linear-to-t from-[#1A1612]/80 via-[#1A1612]/20 to-transparent" />
+
+                  {/* Add to Cart Button - Top Left Corner */}
+                  <Button
+                    onClick={(e) => handleAddToCart(e, coffee, index)}
+                    size="sm"
+                    className="absolute top-4 left-4 h-10 w-10 rounded-full bg-[#C4A77D] hover:bg-[#A68B5B] text-white shadow-xl transition-all duration-200 hover:scale-110 z-30 p-0 border-2 border-white/30"
+                    aria-label={`Thêm ${coffee.name} vào giỏ hàng`}
+                  >
+                    <Plus className="h-5 w-5" />
+                  </Button>
 
                   {/* Vintage Badge */}
                   <div className="absolute top-4 right-4 z-10">

@@ -22,9 +22,6 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
-<<<<<<< HEAD
 *.env
-=======
+.claude/CLAUDE.md
 
-.claude/
->>>>>>> dev

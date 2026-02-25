@@ -38,11 +38,11 @@ export const inventoryColumns: ColumnDef<InventoryItemView>[] = [
     ),
   },
   {
-    accessorKey: "inventory.alert_threshold",
+    accessorKey: "inventory.alertThreshold",
     header: "Threshold",
     cell: ({ row }) => (
       <span className="text-[#5D4037]">
-        {row.original.inventory.alert_threshold} kg
+        {row.original.inventory.alertThreshold} kg
       </span>
     ),
   },
@@ -52,7 +52,7 @@ export const inventoryColumns: ColumnDef<InventoryItemView>[] = [
     enableSorting: false,
     filterFn: (row, _columnId, filterValue) => {
       const quantity = row.original.inventory.quantity;
-      const threshold = row.original.inventory.alert_threshold;
+      const threshold = row.original.inventory.alertThreshold;
       const percentage = (quantity / threshold) * 100;
 
       if (filterValue === "out_of_stock") {
@@ -71,16 +71,16 @@ export const inventoryColumns: ColumnDef<InventoryItemView>[] = [
     cell: ({ row }) => (
       <StockStatusBadge
         quantity={row.original.inventory.quantity}
-        lowStockThreshold={row.original.inventory.alert_threshold}
+        lowStockThreshold={row.original.inventory.alertThreshold}
       />
     ),
   },
   {
-    accessorKey: "inventory.updated_at",
+    accessorKey: "inventory.updatedAt",
     header: "Last Updated",
     cell: ({ row }) => (
       <span className="text-[#5D4037]">
-        {new Date(row.original.inventory.updated_at).toLocaleDateString()}
+        {new Date(row.original.inventory.updatedAt).toLocaleDateString()}
       </span>
     ),
   },

@@ -26,7 +26,7 @@ const categorySchema = z.object({
   code: z.string().min(2, "Code must be at least 2 characters").max(50, "Code must be less than 50 characters"),
   name: z.string().min(2, "Name must be at least 2 characters").max(100, "Name must be less than 100 characters"),
   description: z.string().optional(),
-  is_active: z.boolean(),
+  isActive: z.boolean(),
 });
 
 type CategoryFormData = z.infer<typeof categorySchema>;
@@ -50,7 +50,7 @@ const CategoriesPage = () => {
       code: "",
       name: "",
       description: "",
-      is_active: true,
+      isActive: true,
     },
   });
 
@@ -72,7 +72,7 @@ const CategoriesPage = () => {
     setValue("code", category.code);
     setValue("name", category.name);
     setValue("description", category.description || "");
-    setValue("is_active", category.is_active);
+    setValue("isActive", category.isActive);
     setIsDialogOpen(true);
   };
 
@@ -186,11 +186,11 @@ const CategoriesPage = () => {
                     <div className="flex items-center gap-2">
                       <input
                         type="checkbox"
-                        id="is_active"
-                        {...register("is_active")}
+                        id="isActive"
+                        {...register("isActive")}
                         className="w-4 h-4 text-[#6D4C41] border-gray-300 rounded focus:ring-[#6D4C41]"
                       />
-                      <Label htmlFor="is_active" className="text-[#3E2723] font-medium cursor-pointer">
+                      <Label htmlFor="isActive" className="text-[#3E2723] font-medium cursor-pointer">
                         Active
                       </Label>
                     </div>

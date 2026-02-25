@@ -38,11 +38,11 @@ export const lowStockColumns: ColumnDef<InventoryItemView>[] = [
     ),
   },
   {
-    accessorKey: "inventory.alert_threshold",
+    accessorKey: "inventory.alertThreshold",
     header: "Threshold",
     cell: ({ row }) => (
       <span className="text-[#5D4037]">
-        {row.original.inventory.alert_threshold} kg
+        {row.original.inventory.alertThreshold} kg
       </span>
     ),
   },
@@ -52,7 +52,7 @@ export const lowStockColumns: ColumnDef<InventoryItemView>[] = [
     enableSorting: false,
     cell: ({ row }) => {
       const shortage =
-        row.original.inventory.alert_threshold - row.original.inventory.quantity;
+        row.original.inventory.alertThreshold - row.original.inventory.quantity;
       return (
         <span className="text-[#EF4444] font-semibold">-{shortage} kg</span>
       );
@@ -65,7 +65,7 @@ export const lowStockColumns: ColumnDef<InventoryItemView>[] = [
     cell: ({ row }) => (
       <StockStatusBadge
         quantity={row.original.inventory.quantity}
-        lowStockThreshold={row.original.inventory.alert_threshold}
+        lowStockThreshold={row.original.inventory.alertThreshold}
       />
     ),
   },

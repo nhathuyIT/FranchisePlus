@@ -24,6 +24,9 @@ interface AuthState {
   logout: () => void;
   hydrate: () => void;
   setCurrentFranchise: (franchiseId: number | null) => void;
+  updateProfile: (
+    data: Partial<Pick<User, "name" | "email" | "phone">>,
+  ) => void;
 
   hasGlobalRole: (roleCode: string) => boolean;
   hasFranchiseRole: (roleCode: string, franchiseId?: number) => boolean;
@@ -68,6 +71,22 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     }
   },
 
+  updateProfile: (data) => {
+    const { authUser } = get();
+    if (authUser) {
+      const updatedAuthUser = {
+        ...authUser,
+        user: {
+          ...authUser.user,
+          ...data,
+          updatedAt: new Date().toISOString(),
+        },
+      };
+      set({ authUser: updatedAuthUser });
+      setItemInLocalStorage(LOCAL_STORAGE.ACCOUNT_ADMIN, updatedAuthUser);
+    }
+  },
+
   hasGlobalRole: (roleCode: string) => {
     const { authUser } = get();
     if (!authUser) return false;
@@ -85,8 +104,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     if (!targetFranchiseId) return false;
 
     return authUser.franchiseRoles.some((fr) => {
-      const role = authUser.roles.find((r) => r.id === fr.role_id);
-      return role?.code === roleCode && fr.franchise_id === targetFranchiseId;
+      const role = authUser.roles.find((r) => r.id === fr.roleId);
+      return role?.code === roleCode && fr.franchiseId === targetFranchiseId;
     });
   },
 

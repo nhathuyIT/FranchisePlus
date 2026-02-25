@@ -14,6 +14,17 @@ export const ROUTER_URL = {
     MENU: "menu",
     PRODUCTS: "products",
     PRODUCT_DETAIL: "products/:slug",
+    PAYMENT: "payment",
+  },
+
+  ACCOUNT: "/account",
+  ACCOUNT_ROUTER: {
+    MY_PROFILE: "my-profile",
+  },
+
+  ACCOUNT: "/account",
+  ACCOUNT_ROUTER: {
+    MY_PROFILE: "my-profile",
   },
 
   ADMIN: "/admin",

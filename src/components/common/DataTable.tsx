@@ -159,8 +159,8 @@ export function DataTable<TData>({
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>(
     defaultHiddenColumns.reduce(
       (acc, col) => ({ ...acc, [col]: false }),
-      {} as VisibilityState
-    )
+      {} as VisibilityState,
+    ),
   );
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
   const [pagination, setPagination] = useState({
@@ -199,7 +199,9 @@ export function DataTable<TData>({
         header: () => <div className="text-right">Actions</div>,
         enableSorting: false,
         cell: ({ row }) => (
-          <div className="flex justify-end gap-2">{renderActions(row.original)}</div>
+          <div className="flex justify-end gap-2">
+            {renderActions(row.original)}
+          </div>
         ),
       }
     : null;
@@ -211,6 +213,7 @@ export function DataTable<TData>({
     cols.push(...userColumns);
     if (actionsColumn) cols.push(actionsColumn);
     return cols;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [enableRowSelection, userColumns, renderActions]);
 
   // Table Instance
@@ -242,7 +245,7 @@ export function DataTable<TData>({
         const newSelection =
           typeof updater === "function" ? updater(rowSelection) : updater;
         const selectedRowIndices = Object.keys(newSelection).filter(
-          (key) => newSelection[key]
+          (key) => newSelection[key],
         );
         const selectedRows = selectedRowIndices
           .map((index) => data[Number.parseInt(index)])
@@ -271,7 +274,7 @@ export function DataTable<TData>({
       const column = table.getColumn(filterId);
       if (column) {
         // Check if the first row's value is boolean
-        const firstRowValue = data[0]?.[filterId as keyof typeof data[0]];
+        const firstRowValue = data[0]?.[filterId as keyof (typeof data)[0]];
         if (typeof firstRowValue === "boolean") {
           column.setFilterValue(value === "true");
         } else {
@@ -296,7 +299,7 @@ export function DataTable<TData>({
     // For select type filters, find the matching option label
     if (filterConfig.type === "select" && filterConfig.options) {
       const option = filterConfig.options.find(
-        (opt) => opt.value === String(filterValue)
+        (opt) => opt.value === String(filterValue),
       );
       if (option) return option.label;
     }
@@ -316,7 +319,7 @@ export function DataTable<TData>({
     1;
   const endRow = Math.min(
     startRow + table.getState().pagination.pageSize - 1,
-    table.getFilteredRowModel().rows.length
+    table.getFilteredRowModel().rows.length,
   );
   const totalRows = table.getFilteredRowModel().rows.length;
 
@@ -376,8 +379,9 @@ export function DataTable<TData>({
                     {filter.type === "select" && filter.options && (
                       <Select
                         value={
-                          (table.getColumn(filter.id)?.getFilterValue() as string) ||
-                          "all"
+                          (table
+                            .getColumn(filter.id)
+                            ?.getFilterValue() as string) || "all"
                         }
                         onValueChange={(value) =>
                           handleFilterChange(filter.id, value)
@@ -401,8 +405,9 @@ export function DataTable<TData>({
                       <Input
                         placeholder={`Search ${filter.label}...`}
                         value={
-                          (table.getColumn(filter.id)?.getFilterValue() as string) ||
-                          ""
+                          (table
+                            .getColumn(filter.id)
+                            ?.getFilterValue() as string) || ""
                         }
                         onChange={(e) =>
                           handleFilterChange(filter.id, e.target.value)
@@ -430,7 +435,9 @@ export function DataTable<TData>({
                 .getAllColumns()
                 .filter(
                   (column) =>
-                    column.getCanHide() && column.id !== "select" && column.id !== "actions"
+                    column.getCanHide() &&
+                    column.id !== "select" &&
+                    column.id !== "actions",
                 )
                 .map((column) => (
                   <DropdownMenuCheckboxItem
@@ -466,7 +473,7 @@ export function DataTable<TData>({
           )}
           {columnFilters.map((filter) => {
             const filterConfig = externalColumnFilters.find(
-              (f) => f.id === filter.id
+              (f) => f.id === filter.id,
             );
             const displayLabel = getFilterLabel(filter.id, filter.value);
 
@@ -524,91 +531,91 @@ export function DataTable<TData>({
         <div className="rounded-2xl border-2 border-[#E8DFD6] bg-white shadow-sm h-full flex flex-col overflow-hidden">
           <div className="flex-1 overflow-auto">
             <Table>
-          <TableHeader>
-            {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow
-                key={headerGroup.id}
-                className="bg-gradient-to-r from-[#FAF8F5] to-[#F5F0EA] hover:from-[#FAF8F5] hover:to-[#F5F0EA] border-b-2 border-[#E8DFD6]"
-              >
-                {headerGroup.headers.map((header) => (
-                  <TableHead
-                    key={header.id}
-                    className="font-semibold text-[#3E2723]"
+              <TableHeader>
+                {table.getHeaderGroups().map((headerGroup) => (
+                  <TableRow
+                    key={headerGroup.id}
+                    className="bg-gradient-to-r from-[#FAF8F5] to-[#F5F0EA] hover:from-[#FAF8F5] hover:to-[#F5F0EA] border-b-2 border-[#E8DFD6]"
                   >
-                    {header.isPlaceholder ? null : (
-                      <div
-                        className={
-                          header.column.getCanSort()
-                            ? "flex items-center gap-2 cursor-pointer select-none"
-                            : ""
-                        }
-                        onClick={header.column.getToggleSortingHandler()}
+                    {headerGroup.headers.map((header) => (
+                      <TableHead
+                        key={header.id}
+                        className="font-semibold text-[#3E2723]"
                       >
-                        {flexRender(
-                          header.column.columnDef.header,
-                          header.getContext()
-                        )}
-                        {header.column.getCanSort() && (
-                          <>
-                            {header.column.getIsSorted() === "asc" ? (
-                              <ArrowUp className="h-4 w-4 text-[#6D4C41]" />
-                            ) : header.column.getIsSorted() === "desc" ? (
-                              <ArrowDown className="h-4 w-4 text-[#6D4C41]" />
-                            ) : (
-                              <ArrowUpDown className="h-4 w-4 text-[#6D4C41] opacity-50" />
+                        {header.isPlaceholder ? null : (
+                          <div
+                            className={
+                              header.column.getCanSort()
+                                ? "flex items-center gap-2 cursor-pointer select-none"
+                                : ""
+                            }
+                            onClick={header.column.getToggleSortingHandler()}
+                          >
+                            {flexRender(
+                              header.column.columnDef.header,
+                              header.getContext(),
                             )}
-                          </>
+                            {header.column.getCanSort() && (
+                              <>
+                                {header.column.getIsSorted() === "asc" ? (
+                                  <ArrowUp className="h-4 w-4 text-[#6D4C41]" />
+                                ) : header.column.getIsSorted() === "desc" ? (
+                                  <ArrowDown className="h-4 w-4 text-[#6D4C41]" />
+                                ) : (
+                                  <ArrowUpDown className="h-4 w-4 text-[#6D4C41] opacity-50" />
+                                )}
+                              </>
+                            )}
+                          </div>
                         )}
-                      </div>
-                    )}
-                  </TableHead>
+                      </TableHead>
+                    ))}
+                  </TableRow>
                 ))}
-              </TableRow>
-            ))}
-          </TableHeader>
-          <TableBody>
-            {/* Loading State */}
-            {isLoading ? (
-              <TableSkeleton rows={pagination.pageSize} />
-            ) : /* Error State */ error ? (
-              <TableRow>
-                <TableCell
-                  colSpan={columns.length}
-                  className="h-[400px] text-center"
-                >
-                  <TableError error={error} onRetry={onRetry} />
-                </TableCell>
-              </TableRow>
-            ) : /* Empty State */ table.getRowModel().rows.length === 0 ? (
-              <TableRow>
-                <TableCell
-                  colSpan={columns.length}
-                  className="h-24 text-center text-[#5D4037]"
-                >
-                  {emptyMessage}
-                </TableCell>
-              </TableRow>
-            ) : (
-              /* Data Rows */
-              table.getRowModel().rows.map((row) => (
-                <TableRow
-                  key={row.id}
-                  data-state={row.getIsSelected() && "selected"}
-                  className="hover:bg-[#FAF8F5] transition-colors border-b border-[#E8DFD6]"
-                >
-                  {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id} className="text-[#5D4037]">
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext()
-                      )}
+              </TableHeader>
+              <TableBody>
+                {/* Loading State */}
+                {isLoading ? (
+                  <TableSkeleton rows={pagination.pageSize} />
+                ) : /* Error State */ error ? (
+                  <TableRow>
+                    <TableCell
+                      colSpan={columns.length}
+                      className="h-[400px] text-center"
+                    >
+                      <TableError error={error} onRetry={onRetry} />
                     </TableCell>
-                  ))}
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
+                  </TableRow>
+                ) : /* Empty State */ table.getRowModel().rows.length === 0 ? (
+                  <TableRow>
+                    <TableCell
+                      colSpan={columns.length}
+                      className="h-24 text-center text-[#5D4037]"
+                    >
+                      {emptyMessage}
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  /* Data Rows */
+                  table.getRowModel().rows.map((row) => (
+                    <TableRow
+                      key={row.id}
+                      data-state={row.getIsSelected() && "selected"}
+                      className="hover:bg-[#FAF8F5] transition-colors border-b border-[#E8DFD6]"
+                    >
+                      {row.getVisibleCells().map((cell) => (
+                        <TableCell key={cell.id} className="text-[#5D4037]">
+                          {flexRender(
+                            cell.column.columnDef.cell,
+                            cell.getContext(),
+                          )}
+                        </TableCell>
+                      ))}
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
           </div>
         </div>
       </div>
