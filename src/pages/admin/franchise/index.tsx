@@ -70,8 +70,8 @@ const FranchiseList = () => {
   };
 
   return (
-    <div className="p-6 bg-gradient-to-br from-[#FAF8F5] via-[#F5F1EB] to-[#EDE7DD] min-h-screen">
-      <div className="max-w-7xl mx-auto">
+    <div className="h-full flex flex-col">
+      <div className="flex-1 flex flex-col min-h-0 max-w-7xl mx-auto w-full">
         <PageHeader
           title="Franchise Management"
           description="Manage all your franchise locations"
@@ -86,7 +86,7 @@ const FranchiseList = () => {
           }
         />
 
-        <div className="bg-white rounded-2xl shadow-lg border border-[#E8DFD6] p-6">
+        <div className="flex-1 min-h-0 flex flex-col bg-white rounded-2xl shadow-lg border border-[#E8DFD6] p-6">
           <FranchiseTable
             franchises={franchises}
             isLoading={isLoading}

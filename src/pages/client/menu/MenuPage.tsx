@@ -3,9 +3,30 @@ import { CATEGORIES, type Category } from '@/const/categories.const';
 import { PRODUCTS_CLIENT } from '@/const/product-client.const';
 import { createProductSlug } from '@/lib/slugify';
 import { Link } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
+import { Plus } from 'lucide-react';
+import { useCart } from '../cart/useCart';
+import { toast } from 'sonner';
 
 const MenuPage: React.FC = () => {
   const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
+  const { addItem } = useCart();
+
+  // Handle add to cart for products
+  const handleAddToCart = (e: React.MouseEvent, product: any) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    // Use the product price (min_price as default)
+    const price = product.min_price;
+    
+    addItem(product.id, product.name, price, 1);
+    
+    toast.success(`${product.name} đã được thêm vào giỏ hàng!`, {
+      description: `Giá: ${price.toLocaleString('vi-VN')}₫`,
+      duration: 2000,
+    });
+  };
 
   // Get active categories only
   const activeCategories: Category[] = CATEGORIES.filter(
@@ -136,6 +157,16 @@ const MenuPage: React.FC = () => {
                           loading="lazy"
                         />
                       </div>
+
+                      {/* Add to Cart Button - Outside Circle, Upper Left */}
+                      <Button
+                        onClick={(e) => handleAddToCart(e, product)}
+                        size="sm"
+                        className="absolute -top-4 left-1/2 transform -translate-x-20 h-8 w-8 rounded-full bg-[#5B4037] hover:bg-[#4A2C20] text-white shadow-lg transition-all duration-200 p-0 border-2 border-white"
+                        aria-label={`Thêm ${product.name} vào giỏ hàng`}
+                      >
+                        <Plus className="h-4 w-4" />
+                      </Button>
                     </div>
                     
                     {/* Product Name */}

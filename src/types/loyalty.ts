@@ -10,10 +10,10 @@ export type LoyaltyTransactionType = "EARN" | "REDEEM" | "ADJUST";
  */
 export interface LoyaltyTransaction extends BaseTimestamp, SoftDeletable {
   id: ID;
-  customer_franchise_id: ID;
-  order_id: ID;
+  customerFranchiseId: ID;
+  orderId: ID;
   type: LoyaltyTransactionType;
-  point_change: number; // + / -
+  pointChange: number; // + / -
   reason: string | null;
-  created_by: ID; // Staff / Manager
+  createdBy: ID; // Staff / Manager
 }

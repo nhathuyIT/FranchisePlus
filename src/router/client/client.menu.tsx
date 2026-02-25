@@ -24,6 +24,14 @@ export const CLIENT_MENU: ClientMenuItem[] = [
   {
     label: "Product Detail",
     path: ROUTER_URL.CLIENT_ROUTER.PRODUCT_DETAIL,
-    component: React.lazy(() => import("@/pages/client/products/components/ProductDetail")),
+    component: React.lazy(
+      () => import("@/pages/client/products/components/ProductDetail"),
+    ),
+  },
+  {
+    label: "Payment",
+    path: ROUTER_URL.CLIENT_ROUTER.PAYMENT,
+    component: React.lazy(() => import("@/pages/client/payment/PaymentPage")),
+    isEnd: true,
   },
 ];

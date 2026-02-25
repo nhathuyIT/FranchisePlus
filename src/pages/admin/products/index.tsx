@@ -147,15 +147,15 @@ const ProductsPage = () => {
   };
 
   return (
-    <div className="p-6 bg-gradient-to-br from-[#FAF8F5] via-[#F5F1EB] to-[#EDE7DD] min-h-screen">
-      <div className="max-w-7xl mx-auto">
+    <div className="h-full flex flex-col">
+      <div className="flex-1 flex flex-col min-h-0 max-w-7xl mx-auto w-full">
         <PageHeader
           title="Product Management"
           description="Manage all products and pricing"
           action={
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
               <DialogTrigger asChild>
-                <Button 
+                <Button
                   onClick={handleCreate}
                   className="bg-[#6D4C41] hover:bg-[#5D4037] text-white rounded-full shadow-md hover:shadow-lg transition-all duration-300 cursor-pointer"
                 >
@@ -355,7 +355,7 @@ const ProductsPage = () => {
           }
         />
 
-        <div className="bg-white rounded-2xl shadow-lg border border-[#E8DFD6] p-6">
+        <div className="flex-1 min-h-0 flex flex-col bg-white rounded-2xl shadow-lg border border-[#E8DFD6] p-6">
           <ProductTable
             products={products}
             isLoading={isLoading}

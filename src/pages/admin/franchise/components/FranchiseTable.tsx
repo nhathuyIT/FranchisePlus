@@ -64,6 +64,7 @@ export const FranchiseTable = ({
       // NEW FEATURES
       enableRowSelection={!!onBulkDelete}
       enableColumnVisibility
+      defaultHiddenColumns={["address"]}
       columnFilters={columnFilters}
       bulkActions={bulkActions}
       renderActions={(franchise) => (
