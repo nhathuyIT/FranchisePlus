@@ -79,7 +79,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         user: {
           ...authUser.user,
           ...data,
-          updated_at: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
         },
       };
       set({ authUser: updatedAuthUser });
@@ -104,8 +104,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     if (!targetFranchiseId) return false;
 
     return authUser.franchiseRoles.some((fr) => {
-      const role = authUser.roles.find((r) => r.id === fr.role_id);
-      return role?.code === roleCode && fr.franchise_id === targetFranchiseId;
+      const role = authUser.roles.find((r) => r.id === fr.roleId);
+      return role?.code === roleCode && fr.franchiseId === targetFranchiseId;
     });
   },
 

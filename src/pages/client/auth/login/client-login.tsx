@@ -41,7 +41,7 @@ const ClientLogin = () => {
       // TODO: This should use Customer entity, not User entity
       // For now, using User mock data for demonstration
       const user = UserDataMock.find(
-        (u) => u.email === data.email && u.password_hash === data.password,
+        (u) => u.email === data.email && u.passwordHash === data.password,
       );
 
       if (!user) {
@@ -53,10 +53,10 @@ const ClientLogin = () => {
 
       // Get user's roles and franchise assignments
       const userFranchiseRoles = UserFranchiseRoleDataMock.filter(
-        (ufr) => ufr.user_id === user.id,
+        (ufr) => ufr.userId === user.id,
       );
       const roles = RoleDataMock.filter((role) =>
-        userFranchiseRoles.some((ufr) => ufr.role_id === role.id),
+        userFranchiseRoles.some((ufr) => ufr.roleId === role.id),
       );
 
       // Build AuthUser object
@@ -64,7 +64,7 @@ const ClientLogin = () => {
         user,
         roles,
         franchiseRoles: userFranchiseRoles,
-        currentFranchiseId: userFranchiseRoles[0]?.franchise_id || null,
+        currentFranchiseId: userFranchiseRoles[0]?.franchiseId || null,
       };
 
       login(authUser);
