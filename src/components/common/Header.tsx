@@ -69,6 +69,12 @@ const Header = () => {
           >
             Contact
           </Link>
+          <Link
+            to="/locations"
+            className="text-2xl font-coffee tracking-wide text-[#5D4037] hover:text-[#6D4C41] transition-colors duration-200"
+          >
+            Locations
+          </Link>
         </nav>
 
         <div className="flex items-center gap-6">

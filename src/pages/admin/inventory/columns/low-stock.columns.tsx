@@ -13,11 +13,11 @@ export const lowStockColumns: ColumnDef<InventoryItemView>[] = [
     ),
   },
   {
-    accessorKey: "product.SKU",
+    accessorKey: "product.sku",
     header: "SKU",
     cell: ({ row }) => (
       <span className="text-[#5D4037] font-mono text-sm">
-        {row.original.product.SKU}
+        {row.original.product.sku}
       </span>
     ),
   },

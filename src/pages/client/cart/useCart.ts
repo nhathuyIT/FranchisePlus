@@ -23,14 +23,14 @@ function getInitialCart(): Cart {
   return {
     id: 'draft',
     code: 'DRAFT',
-    franchise_id: 1,
-    customer_id: 1,
+    franchiseId: 1,
+    customerId: 1,
     type: 'ONLINE',
     status: 'DRAFT',
-    total_amount: 0,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-    is_deleted: false,
+    totalAmount: 0,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    isDeleted: false,
     items: [],
   };
 }
@@ -46,18 +46,18 @@ export function useCart() {
   // Add item to cart or increase quantity if exists
   const addItem = (productId: number, productName: string, price: number, quantity: number = 1) => {
     setCart(prev => {
-      const existing = prev.items.find(item => item.product_franchise_id === productId);
+      const existing = prev.items.find(item => item.productFranchiseId === productId);
       
       if (existing) {
         // Update existing item
         return {
           ...prev,
           items: prev.items.map(item =>
-            item.product_franchise_id === productId
+            item.productFranchiseId === productId
               ? {
                   ...item,
                   quantity: item.quantity + quantity,
-                  line_total: (item.quantity + quantity) * item.price_snapshot
+                  line_total: (item.quantity + quantity) * item.priceSnapshot
                 }
               : item
           ),
@@ -68,15 +68,15 @@ export function useCart() {
       // Add new item
       const newItem: CartItem = {
         id: Date.now(), // Simple ID generation
-        order_id: 0, // Will be set when order is created
-        product_franchise_id: productId,
-        product_name_snapshot: productName,
-        price_snapshot: price,
+        orderId: 0, // Will be set when order is created
+        productFranchiseId: productId,
+        productNameSnapshot: productName,
+        priceSnapshot: price,
         quantity: quantity,
-        line_total: price * quantity,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        is_deleted: false,
+        lineTotal: price * quantity,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        isDeleted: false,
       };
       
       return {
@@ -97,11 +97,11 @@ export function useCart() {
     setCart(prev => ({
       ...prev,
       items: prev.items.map(item =>
-        item.product_franchise_id === productId
+        item.productFranchiseId === productId
           ? {
               ...item,
               quantity: newQuantity,
-              line_total: newQuantity * item.price_snapshot
+              line_total: newQuantity * item.priceSnapshot
             }
           : item
       ),
@@ -113,13 +113,13 @@ export function useCart() {
   const removeItem = (productId: number) => {
     setCart(prev => ({
       ...prev,
-      items: prev.items.filter(item => item.product_franchise_id !== productId),
+      items: prev.items.filter(item => item.productFranchiseId !== productId),
       updated_at: new Date().toISOString(),
     }));
   };
 
   // Calculate totals
-  const subtotal = cart.items.reduce((sum, item) => sum + item.line_total, 0);
+  const subtotal = cart.items.reduce((sum, item) => sum + item.lineTotal, 0);
   const totalAmount = subtotal; // Add taxes/fees here if needed
 
   // Clear cart

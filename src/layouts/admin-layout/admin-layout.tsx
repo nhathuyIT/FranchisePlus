@@ -8,7 +8,7 @@ const AdminLayout = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   return (
-    <div className="flex h-screen overflow-hidden bg-stone-50">
+    <div className="flex h-screen overflow-hidden bg-[#FAF8F5]">
       <AdminSidebar collapsed={sidebarCollapsed} />
 
       <div className="flex-1 flex flex-col overflow-hidden">
@@ -24,8 +24,8 @@ const AdminLayout = () => {
           <div className="flex-1"></div>
         </header>
 
-        <main className="flex-1 overflow-y-auto">
-          <div className="container mx-auto p-6">
+        <main className="flex-1 overflow-hidden flex flex-col bg-gradient-to-br from-[#FAF8F5] via-[#F5F1EB] to-[#EDE7DD]">
+          <div className="flex-1 overflow-hidden container mx-auto p-6 flex flex-col">
             <Outlet />
           </div>
         </main>

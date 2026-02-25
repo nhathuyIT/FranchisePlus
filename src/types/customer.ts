@@ -5,16 +5,16 @@ export interface Customer extends BaseTimestamp, SoftDeletable, Activatable {
   phone: string; // unique
   email: string | null;
   name: string;
-  avatar_url: string | null;
+  avatarUrl: string | null;
 }
 
 export interface CustomerFranchise
   extends BaseTimestamp, SoftDeletable, Activatable {
   id: ID;
-  customer_id: ID;
-  franchise_id: ID;
-  loyalty_point: number; // default 0
-  loyalty_tier: "Silver" | "Gold" | "Platinum" | null;
-  first_order_at: string | null;
-  last_order_at: string | null;
+  customerId: ID;
+  franchiseId: ID;
+  loyaltyPoint: number; // default 0
+  loyaltyTier: "Silver" | "Gold" | "Platinum" | null;
+  firstOrderAt: string | null;
+  lastOrderAt: string | null;
 }

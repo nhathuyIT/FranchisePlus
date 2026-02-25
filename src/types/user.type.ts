@@ -6,10 +6,10 @@ import type { ID, BaseTimestamp, SoftDeletable, Activatable } from "./common";
 export interface User extends BaseTimestamp, SoftDeletable, Activatable {
   id: ID;
   email: string; // unique
-  password_hash: string;
+  passwordHash: string;
   name: string;
   phone: string | null;
-  avatar_url: string | null;
+  avatarUrl: string | null;
 }
 
 /**
@@ -29,7 +29,7 @@ export interface Role extends BaseTimestamp, SoftDeletable {
  */
 export interface UserFranchiseRole extends BaseTimestamp, SoftDeletable {
   id: ID;
-  franchise_id: ID | null; // null if role is GLOBAL
-  role_id: ID;
-  user_id: ID;
+  franchiseId: ID | null; // null if role is GLOBAL
+  roleId: ID;
+  userId: ID;
 }

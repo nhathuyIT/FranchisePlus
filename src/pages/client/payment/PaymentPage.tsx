@@ -489,13 +489,13 @@ const PaymentPage = () => {
               <div className="space-y-3 mb-4 max-h-64 overflow-y-auto">
                 {cart.items.map((item) => (
                   <div
-                    key={item.product_franchise_id}
+                    key={item.productFranchiseId}
                     className="flex items-start gap-3 pb-3 border-b border-gray-100"
                   >
                     <div className="w-16 h-16 bg-amber-50 rounded-lg border border-gray-200 overflow-hidden shrink-0">
                       <img
-                        src={getProductImage(item.product_franchise_id)}
-                        alt={item.product_name_snapshot}
+                        src={getProductImage(item.productFranchiseId)}
+                        alt={item.productNameSnapshot}
                         className="w-full h-full object-cover"
                         onError={(e) => {
                           const target = e.target as HTMLImageElement;
@@ -507,14 +507,14 @@ const PaymentPage = () => {
                     </div>
                     <div className="flex-1 min-w-0">
                       <h4 className="font-medium text-gray-900 text-sm truncate">
-                        {item.product_name_snapshot}
+                        {item.productNameSnapshot}
                       </h4>
                       <p className="text-xs text-gray-500 mt-1">
-                        {item.price_snapshot.toLocaleString("vi-VN")} VND ×{" "}
+                        {item.priceSnapshot.toLocaleString("vi-VN")} VND ×{" "}
                         {item.quantity}
                       </p>
                       <p className="text-sm font-semibold text-[#B8860B] mt-1">
-                        {item.line_total.toLocaleString("vi-VN")} VND
+                        {item.lineTotal.toLocaleString("vi-VN")} VND
                       </p>
                     </div>
                   </div>
