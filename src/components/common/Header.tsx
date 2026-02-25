@@ -97,9 +97,9 @@ const Header = () => {
                     variant="ghost"
                     className="relative h-10 w-10 rounded-full"
                   >
-                    <Avatar className="h-12 w-12  mt-5">
+                    <Avatar className="h-12 w-12">
                       <AvatarImage
-                        src={user?.avatar_url || undefined}
+                        src={user?.avatarUrl || undefined}
                         alt={user?.name}
                       />
                       <AvatarFallback>
@@ -108,7 +108,7 @@ const Header = () => {
                     </Avatar>
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuContent align="center" className="w-56">
                   <div className="flex items-center justify-start gap-2 p-2">
                     <div className="flex flex-col space-y-1">
                       <p className="text-sm font-medium leading-none">
