@@ -5,10 +5,10 @@ import type { ID, BaseTimestamp, SoftDeletable, Activatable } from "./common";
  */
 export interface Shift extends BaseTimestamp, SoftDeletable, Activatable {
   id: ID;
-  franchise_id: ID;
+  franchiseId: ID;
   name: string; // Morning / Evening
-  start_time: string; // time format
-  end_time: string; // time format
+  startTime: string; // time format
+  endTime: string; // time format
 }
 
 /**
@@ -22,9 +22,9 @@ export type ShiftAssignmentStatus = "ASSIGNED" | "COMPLETED" | "ABSENT";
  */
 export interface ShiftAssignment extends BaseTimestamp, SoftDeletable {
   id: ID;
-  shift_id: ID;
-  user_id: ID;
-  work_date: string; // date - Ngày làm việc
-  assigned_by: ID; // Manager assign
+  shiftId: ID;
+  userId: ID;
+  workDate: string; // date - Ngày làm việc
+  assignedBy: ID; // Manager assign
   status: ShiftAssignmentStatus;
 }

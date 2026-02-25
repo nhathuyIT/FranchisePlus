@@ -21,15 +21,15 @@ export type OrderStatus =
 export interface Order extends BaseTimestamp, SoftDeletable {
   id: ID;
   code: string; // unique
-  franchise_id: ID;
-  customer_id: ID;
+  franchiseId: ID;
+  customerId: ID;
   type: OrderType;
   status: OrderStatus;
-  total_amount: number; // decimal - snapshot, không tính lại từ product
-  confirmed_at: string | null; // Chốt đơn
-  completed_at: string | null; // Hoàn tất
-  cancelled_at: string | null; // Huỷ
-  created_by: ID | null; // Staff tạo (POS)
+  totalAmount: number; // decimal - snapshot, không tính lại từ product
+  confirmedAt: string | null; // Chốt đơn
+  completedAt: string | null; // Hoàn tất
+  cancelledAt: string | null; // Huỷ
+  createdBy: ID | null; // Staff tạo (POS)
 }
 
 /**
@@ -37,10 +37,10 @@ export interface Order extends BaseTimestamp, SoftDeletable {
  */
 export interface OrderItem extends BaseTimestamp, SoftDeletable {
   id: ID;
-  order_id: ID;
-  product_franchise_id: ID;
-  product_name_snapshot: string; // Tên tại thời điểm mua
-  price_snapshot: number; // decimal - Giá tại thời điểm mua
+  orderId: ID;
+  productFranchiseId: ID;
+  productNameSnapshot: string; // Tên tại thời điểm mua
+  priceSnapshot: number; // decimal - Giá tại thời điểm mua
   quantity: number;
-  line_total: number; // decimal - price × quantity
+  lineTotal: number; // decimal - price × quantity
 }

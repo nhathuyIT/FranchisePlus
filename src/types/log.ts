@@ -6,11 +6,11 @@ import type { OrderStatus } from "./order";
  */
 export interface ProductFranchisePriceLog extends BaseTimestamp {
   id: ID;
-  product_franchise_id: ID;
-  old_price: number; // decimal
-  new_price: number; // decimal
+  productFranchiseId: ID;
+  oldPrice: number; // decimal
+  newPrice: number; // decimal
   reason: string | null;
-  changed_by: ID;
+  changedBy: ID;
 }
 
 /**
@@ -18,10 +18,10 @@ export interface ProductFranchisePriceLog extends BaseTimestamp {
  */
 export interface OrderStatusLog extends BaseTimestamp {
   id: ID;
-  order_id: ID;
-  from_status: OrderStatus;
-  to_status: OrderStatus;
-  changed_by: ID;
+  orderId: ID;
+  fromStatus: OrderStatus;
+  toStatus: OrderStatus;
+  changedBy: ID;
   note: string | null;
 }
 
@@ -35,11 +35,11 @@ export type AuditAction = "CREATE" | "UPDATE" | "DELETE" | "SOFT_DELETE";
  */
 export interface AuditLog extends BaseTimestamp {
   id: ID;
-  entity_type: string; // order / product / user / …
-  entity_id: ID;
+  entityType: string; // order / product / user / …
+  entityId: ID;
   action: AuditAction;
-  old_data: Record<string, unknown> | null; // JSON
-  new_data: Record<string, unknown> | null; // JSON
-  changed_by: ID;
+  oldData: Record<string, unknown> | null; // JSON
+  newData: Record<string, unknown> | null; // JSON
+  changedBy: ID;
   note: string | null;
 }

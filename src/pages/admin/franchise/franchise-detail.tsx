@@ -28,23 +28,21 @@ const FranchiseDetail = () => {
 
   if (!franchise) {
     return (
-      <div className="p-6 bg-gradient-to-br from-[#FAF8F5] via-[#F5F1EB] to-[#EDE7DD] min-h-screen">
-        <div className="max-w-7xl mx-auto text-center">
-          <h1 className="text-2xl font-bold text-[#3E2723]">Franchise not found</h1>
-          <Link to={`${ROUTER_URL.ADMIN}/${ROUTER_URL.ADMIN_ROUTER.FRANCHISES}`}>
-            <Button className="mt-4 bg-[#6D4C41] hover:bg-[#5D4037] rounded-full shadow-md hover:shadow-lg transition-all duration-300 cursor-pointer">
-              Back to Franchises
-            </Button>
-          </Link>
-        </div>
+      <div className="h-full flex flex-col items-center justify-center">
+        <h1 className="text-2xl font-bold text-[#3E2723]">Franchise not found</h1>
+        <Link to={`${ROUTER_URL.ADMIN}/${ROUTER_URL.ADMIN_ROUTER.FRANCHISES}`}>
+          <Button className="mt-4 bg-[#6D4C41] hover:bg-[#5D4037] rounded-full shadow-md hover:shadow-lg transition-all duration-300 cursor-pointer">
+            Back to Franchises
+          </Button>
+        </Link>
       </div>
     );
   }
 
   return (
-    <div className="p-6 bg-gradient-to-br from-[#FAF8F5] via-[#F5F1EB] to-[#EDE7DD] min-h-screen">
-      <div className="max-w-7xl mx-auto">
-        <div className="mb-6">
+    <div className="h-full flex flex-col">
+      <div className="flex-1 flex flex-col min-h-0 max-w-7xl mx-auto w-full">
+        <div className="mb-6 shrink-0">
           <Link to={`${ROUTER_URL.ADMIN}/${ROUTER_URL.ADMIN_ROUTER.FRANCHISES}`}>
             <Button variant="outline" className="mb-4 border-2 border-[#6D4C41] text-[#6D4C41] hover:bg-[#6D4C41] hover:text-white rounded-full transition-all duration-300 cursor-pointer">
               <ArrowLeft className="mr-2 h-4 w-4" />
@@ -70,8 +68,8 @@ const FranchiseDetail = () => {
           </div>
         </div>
 
-        <Tabs defaultValue="general" className="w-full">
-          <TabsList className="bg-white border border-[#E8DFD6] rounded-xl">
+        <Tabs defaultValue="general" className="flex-1 flex flex-col min-h-0">
+          <TabsList className="bg-white border border-[#E8DFD6] rounded-xl shrink-0">
             <TabsTrigger value="general" className="data-[state=active]:bg-[#6D4C41] data-[state=active]:text-white rounded-lg transition-colors duration-200">
               General Info
             </TabsTrigger>
@@ -83,15 +81,15 @@ const FranchiseDetail = () => {
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="general" className="mt-6">
+          <TabsContent value="general" className="mt-6 flex-1 min-h-0 overflow-auto">
             <FranchiseInfoCard franchise={franchise} />
           </TabsContent>
 
-          <TabsContent value="staff" className="mt-6">
+          <TabsContent value="staff" className="mt-6 flex-1 min-h-0 overflow-auto">
             <FranchiseStaffTab staffList={staffList} onAddStaff={handleAddStaff} />
           </TabsContent>
 
-          <TabsContent value="inventory" className="mt-6">
+          <TabsContent value="inventory" className="mt-6 flex-1 min-h-0 flex flex-col">
             <FranchiseInventoryTab inventoryItems={franchiseInventory} />
           </TabsContent>
         </Tabs>
