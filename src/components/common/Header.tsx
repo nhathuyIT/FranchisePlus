@@ -99,7 +99,7 @@ const Header = () => {
                   >
                     <Avatar className="h-12 w-12  mt-5">
                       <AvatarImage
-                        src={user?.avatar_url || undefined}
+                        src={user?.avatarUrl || undefined}
                         alt={user?.name}
                       />
                       <AvatarFallback>

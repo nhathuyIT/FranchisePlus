@@ -6,13 +6,13 @@ import type { Franchise } from "@/types/franchise";
 
 export const franchiseColumns: ColumnDef<Franchise>[] = [
   {
-    accessorKey: "logo_url",
+    accessorKey: "logoUrl",
     header: "Logo",
     enableSorting: false,
     cell: ({ row }) => (
       <Avatar className="h-12 w-12 rounded-lg border-2 border-[#E8DFD6]">
         <AvatarImage
-          src={row.original.logo_url || undefined}
+          src={row.original.logoUrl || undefined}
           alt={row.original.name}
           className="object-cover"
         />
@@ -46,33 +46,33 @@ export const franchiseColumns: ColumnDef<Franchise>[] = [
     ),
   },
   {
-    accessorKey: "opened_at",
+    accessorKey: "openedAt",
     header: "Opened Date",
     cell: ({ row }) => (
       <span className="text-[#5D4037]">
-        {row.original.opened_at
-          ? new Date(row.original.opened_at).toLocaleDateString()
+        {row.original.openedAt
+          ? new Date(row.original.openedAt).toLocaleDateString()
           : "N/A"}
       </span>
     ),
   },
   {
-    accessorKey: "is_active",
+    accessorKey: "isActive",
     header: "Status",
     filterFn: (row, _columnId, filterValue) => {
       // filterValue will be boolean after conversion in DataTable
-      return row.original.is_active === filterValue;
+      return row.original.isActive === filterValue;
     },
     cell: ({ row }) => (
       <Badge
-        variant={row.original.is_active ? "default" : "secondary"}
+        variant={row.original.isActive ? "default" : "secondary"}
         className={
-          row.original.is_active
+          row.original.isActive
             ? "bg-green-600 hover:bg-green-700 rounded-full"
             : "bg-gray-500 hover:bg-gray-600 rounded-full"
         }
       >
-        {row.original.is_active ? "Active" : "Inactive"}
+        {row.original.isActive ? "Active" : "Inactive"}
       </Badge>
     ),
   },
