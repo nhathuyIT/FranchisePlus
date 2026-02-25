@@ -161,14 +161,14 @@ export const addInventoryItemConfig: CrudConfig<
         product: {
           id: 1,
           name: "New Product",
-          SKU: "TEMP-SKU",
+          sku: "TEMP-SKU",
           description: "Temporary product",
         },
         productFranchise: {
           id: data.product_franchise_id,
-          franchise_id: 1,
-          product_id: 1,
-          price_base: 0,
+          franchiseId: 1,
+          productId: 1,
+          priceBase: 0,
           is_active: true,
           is_deleted: false,
           created_at: new Date().toISOString(),

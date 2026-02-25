@@ -18,7 +18,7 @@ export interface Inventory extends BaseTimestamp, SoftDeletable, Activatable {
  */
 export interface InventoryItemView {
   inventory: Inventory;
-  product: Pick<Product, "id" | "name" | "SKU" | "description">; 
+  product: Pick<Product, "id" | "name" | "sku" | "description">; 
   productFranchise: ProductFranchise; 
   franchiseName: string; 
   franchiseCode: string;
