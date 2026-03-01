@@ -12,7 +12,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { useAuthStore } from "./stores/auth-store";
 import { useEffect } from "react";
 import LoadingLayout from "./layouts/loading-layout";
-
+import ScrollToTop from "./components/scroll-top";
 function App() {
   const { hydrate, isInitialized } = useAuthStore();
 
@@ -27,6 +27,7 @@ function App() {
   return (
     <>
       <BrowserRouter>
+        <ScrollToTop />
         <Routes>
           {AdminAuthRoute}
           {AdminRoutes}

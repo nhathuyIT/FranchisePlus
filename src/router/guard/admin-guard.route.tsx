@@ -1,16 +1,31 @@
+import { Navigate } from "react-router-dom";
 import { useAuthStore } from "@/stores/auth-store";
-import { Navigate, Outlet } from "react-router-dom";
+import type { Permission } from "@/config/permission";
+import { userCanAccess } from "@/config/permission-mapping";
 
-const AdminGuard = () => {
-  const { authUser, isInitialized, isAdmin } = useAuthStore();
+interface PermissionGuardProps {
+  requiredPermissions: Permission[];
+  redirectTo?: string;
+  children: React.ReactNode;
+}
 
-  if (!isInitialized) return null;
+export const PermissionGuard = ({
+  requiredPermissions,
+  redirectTo = "/unauthorized",
+  children,
+}: PermissionGuardProps) => {
+  const { authUser, getCurrentPermissions } = useAuthStore();
 
-  if (!authUser || !isAdmin()) {
-    return <Navigate to="/" replace />;
+  if (!authUser) {
+    return <Navigate to="/admin/login" replace />;
   }
 
-  return <Outlet />;
-};
+  const userPermissions = getCurrentPermissions();
+  const canAccess = userCanAccess(requiredPermissions, userPermissions);
 
-export default AdminGuard;
+  if (!canAccess) {
+    return <Navigate to={redirectTo} replace />;
+  }
+
+  return <>{children}</>;
+};

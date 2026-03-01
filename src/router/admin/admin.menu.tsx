@@ -1,6 +1,8 @@
 import type { JSX } from "react";
 import { ROUTER_URL } from "../route.const";
 import React from "react";
+import type { Permission } from "@/config/permission";
+import { Permission as PermissionEnum } from "@/config/permission";
 
 export type AdminMenuItem = {
   label: string;
@@ -8,6 +10,7 @@ export type AdminMenuItem = {
   icon: string;
   component: React.LazyExoticComponent<() => JSX.Element>;
   isEnd?: boolean;
+  permissions?: Permission[];
 };
 
 export const ADMIN_MENU: AdminMenuItem[] = [
@@ -17,6 +20,7 @@ export const ADMIN_MENU: AdminMenuItem[] = [
     icon: "dashboard",
     component: React.lazy(() => import("@/pages/admin/dashboard/index")),
     isEnd: true,
+    permissions: [PermissionEnum.VIEW_DASHBOARD],
   },
   {
     label: "User Control",
@@ -24,6 +28,7 @@ export const ADMIN_MENU: AdminMenuItem[] = [
     icon: "user",
     component: React.lazy(() => import("@/pages/admin/user-crud/index")),
     isEnd: true,
+    permissions: [PermissionEnum.VIEW_USERS],
   },
   {
     label: "User Create",
@@ -31,6 +36,7 @@ export const ADMIN_MENU: AdminMenuItem[] = [
     icon: "user",
     component: React.lazy(() => import("@/pages/admin/user-crud/create")),
     isEnd: true,
+    permissions: [PermissionEnum.MANAGE_USERS],
   },
   {
     label: "User Edit",
@@ -38,6 +44,7 @@ export const ADMIN_MENU: AdminMenuItem[] = [
     icon: "user",
     component: React.lazy(() => import("@/pages/admin/user-crud/edit")),
     isEnd: true,
+    permissions: [PermissionEnum.MANAGE_USERS],
   },
   {
     label: "Franchises",
@@ -45,6 +52,7 @@ export const ADMIN_MENU: AdminMenuItem[] = [
     icon: "store",
     component: React.lazy(() => import("@/pages/admin/franchise/index")),
     isEnd: true,
+    permissions: [PermissionEnum.VIEW_FRANCHISES],
   },
   {
     label: "Franchise Detail",
@@ -54,6 +62,7 @@ export const ADMIN_MENU: AdminMenuItem[] = [
       () => import("@/pages/admin/franchise/franchise-detail"),
     ),
     isEnd: true,
+    permissions: [PermissionEnum.VIEW_FRANCHISES],
   },
   {
     label: "Inventory",
@@ -61,6 +70,7 @@ export const ADMIN_MENU: AdminMenuItem[] = [
     icon: "package",
     component: React.lazy(() => import("@/pages/admin/inventory/index")),
     isEnd: true,
+    permissions: [PermissionEnum.VIEW_INVENTORY],
   },
   {
     label: "Low Stock Alert",
@@ -69,6 +79,7 @@ export const ADMIN_MENU: AdminMenuItem[] = [
     component: React.lazy(
       () => import("@/pages/admin/inventory/low-stock-alert"),
     ),
+    permissions: [PermissionEnum.VIEW_INVENTORY],
   },
   {
     label: "Categories",
@@ -76,6 +87,7 @@ export const ADMIN_MENU: AdminMenuItem[] = [
     icon: "category",
     component: React.lazy(() => import("@/pages/admin/categories/index")),
     isEnd: true,
+    permissions: [PermissionEnum.VIEW_PRODUCTS],
   },
   {
     label: "Products",
@@ -83,5 +95,6 @@ export const ADMIN_MENU: AdminMenuItem[] = [
     icon: "product",
     component: React.lazy(() => import("@/pages/admin/products/index")),
     isEnd: true,
+    permissions: [PermissionEnum.VIEW_PRODUCTS],
   },
 ];
