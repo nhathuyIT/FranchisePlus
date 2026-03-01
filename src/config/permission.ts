@@ -1,5 +1,5 @@
-import type { Franchise } from "./franchise";
-import type { Role, UserFranchiseRole } from "./user.type";
+import type { Franchise } from "@/types/franchise";
+import type { Role, UserFranchiseRole } from "@/types/user.type";
 
 export interface RoleContext {
   role: Role;

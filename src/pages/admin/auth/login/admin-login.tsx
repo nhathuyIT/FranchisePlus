@@ -1,32 +1,25 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useNavigate } from "react-router-dom";
 import { Coffee, Lock, Mail, AlertCircle } from "lucide-react";
-import { toast } from "sonner";
+import { Link } from "react-router-dom";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useAuthStore } from "@/stores/auth-store";
-import {
-  UserDataMock,
-  RoleDataMock,
-  UserFranchiseRoleDataMock,
-} from "@/const/user.const";
-import { ROUTER_URL } from "@/router/route.const";
 import {
   AdminLoginZod,
   type AdminLoginZodType,
 } from "./admin-zod/admin-login-zod";
+import { useLogin } from "@/hooks/auth/useAuth.hooks";
+import { ROUTER_URL } from "@/router/route.const";
 
 const AdminLogin = () => {
-  const navigate = useNavigate();
-  const { login } = useAuthStore();
+  const loginMutation = useLogin();
 
   const {
     register,
     handleSubmit,
-    formState: { errors, isSubmitting },
+    formState: { errors },
   } = useForm<AdminLoginZodType>({
     resolver: zodResolver(AdminLoginZod),
     defaultValues: {
@@ -35,57 +28,11 @@ const AdminLogin = () => {
     },
   });
 
-  const onSubmit = async (data: AdminLoginZodType) => {
-    try {
-      await new Promise((resolve) => setTimeout(resolve, 800));
-      const user = UserDataMock.find(
-        (u) => u.email === data.email && u.passwordHash === data.password,
-      );
-
-      if (!user) {
-        toast.error("Invalid credentials", {
-          description: "Email or password is incorrect",
-        });
-        return;
-      }
-
-      // Get user's roles and franchise assignments
-      const userFranchiseRoles = UserFranchiseRoleDataMock.filter(
-        (ufr) => ufr.userId === user.id,
-      );
-      const roles = RoleDataMock.filter((role) =>
-        userFranchiseRoles.some((ufr) => ufr.roleId === role.id),
-      );
-
-      // Check if user has staff role (ADMIN, MANAGER, or STAFF)
-      const hasStaffRole = roles.some((role) =>
-        ["ADMIN", "MANAGER", "STAFF"].includes(role.code),
-      );
-
-      if (!hasStaffRole) {
-        toast.error("Access Denied", {
-          description: "This portal is for staff only",
-        });
-        return;
-      }
-
-      // Build AuthUser object
-      const authUser = {
-        user,
-        roles,
-        franchiseRoles: userFranchiseRoles,
-        currentFranchiseId: userFranchiseRoles[0]?.franchiseId || null,
-      };
-
-      login(authUser);
-
-      navigate(ROUTER_URL.ADMIN + "/" + ROUTER_URL.ADMIN_ROUTER.DASHBOARD);
-    } catch (error) {
-      toast.error(
-        "Login failed",
-        error instanceof Error ? { description: error.message } : undefined,
-      );
-    }
+  const onSubmit = (data: AdminLoginZodType) => {
+    loginMutation.mutate({
+      email: data.email,
+      password: data.password,
+    });
   };
 
   return (
@@ -109,11 +56,18 @@ const AdminLogin = () => {
           </div>
         </div>
 
-        {/* Card */}
         <div className="bg-white dark:bg-stone-800 rounded-2xl shadow-2xl p-8 pt-16 border border-amber-200 dark:border-amber-900">
-          {/* Login Form */}
+          {/* Header */}
+          <div className="text-center mb-8">
+            <h1 className="text-3xl font-bold text-amber-900 dark:text-amber-50 mb-2">
+              Staff Portal
+            </h1>
+            <p className="text-sm text-amber-700 dark:text-amber-300">
+              Sign in to access the management system
+            </p>
+          </div>
+
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-            {/* Email Field */}
             <div className="space-y-2">
               <Label
                 htmlFor="email"
@@ -146,12 +100,20 @@ const AdminLogin = () => {
 
             {/* Password Field */}
             <div className="space-y-2">
-              <Label
-                htmlFor="password"
-                className="text-amber-900 dark:text-amber-100 font-medium"
-              >
-                Password
-              </Label>
+              <div className="flex items-center justify-between">
+                <Label
+                  htmlFor="password"
+                  className="text-amber-900 dark:text-amber-100 font-medium"
+                >
+                  Password
+                </Label>
+                <Link
+                  to={ROUTER_URL.ADMIN_ROUTER.Forgot_PASSWORD}
+                  className="text-xs text-amber-700 dark:text-amber-300 hover:text-amber-900 dark:hover:text-amber-100 transition-colors"
+                >
+                  Forgot password?
+                </Link>
+              </div>
               <div className="relative">
                 <Lock
                   className="absolute left-3 top-1/2 -translate-y-1/2 text-amber-600 dark:text-amber-400"
@@ -178,10 +140,10 @@ const AdminLogin = () => {
             {/* Submit Button */}
             <Button
               type="submit"
-              disabled={isSubmitting}
+              disabled={loginMutation.isPending}
               className="w-full bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white font-semibold py-6 rounded-lg shadow-lg hover:shadow-xl transition-all duration-200"
             >
-              {isSubmitting ? (
+              {loginMutation.isPending ? (
                 <span className="flex items-center gap-2">
                   <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
                   Signing in...

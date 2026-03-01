@@ -101,7 +101,7 @@ const PaymentPage = () => {
   // Helper function to get product image
   const getProductImage = (productId: number): string => {
     const product = PRODUCTS_CLIENT.find((p) => p.id === productId);
-    return product?.image || "";
+    return product?.imageUrl || "";
   };
 
   const handleInputChange = (

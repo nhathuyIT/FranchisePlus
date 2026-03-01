@@ -153,7 +153,10 @@ const Header = () => {
                     </>
                   )}
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={logout} className="cursor-pointer">
+                  <DropdownMenuItem
+                    onClick={async () => await logout()}
+                    className="cursor-pointer"
+                  >
                     <LogOut className="mr-2 h-4 w-4" />
                     <span className="text-md">Log out</span>
                   </DropdownMenuItem>

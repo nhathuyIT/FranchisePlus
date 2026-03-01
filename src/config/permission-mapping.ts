@@ -1,5 +1,5 @@
-import { Permission } from "@/types/permission";
 import type { Role } from "@/types/user.type";
+import { Permission } from "./permission";
 
 const ROLE_PERMISSIONS: Record<string, Permission[]> = {
   ADMIN: [
@@ -55,7 +55,10 @@ const ROLE_PERMISSIONS: Record<string, Permission[]> = {
 };
 
 export function getRolePermissions(role: Role): Permission[] {
-  return ROLE_PERMISSIONS[role.code] || [];
+  // Support both 'code' field (type definition) and 'role' field (API response)
+  const roleCode = role.code || (role as unknown as { role?: string }).role;
+  if (!roleCode) return [];
+  return ROLE_PERMISSIONS[roleCode] || [];
 }
 
 export function userCanAccess(

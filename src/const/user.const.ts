@@ -73,6 +73,18 @@ export const UserDataMock: User[] = [
     createdAt: new Date("2024-02-05T00:00:00Z").toISOString(),
     updatedAt: new Date("2024-02-05T00:00:00Z").toISOString(),
   },
+  {
+    id: 7,
+    phone: "0912345678",
+    email: "multi@franchiseplus.com",
+    name: "Multi Role User",
+    passwordHash: "12345678",
+    avatarUrl: "https://api.dicebear.com/7.x/avataaars/svg?seed=multi",
+    isActive: true,
+    isDeleted: false,
+    createdAt: new Date("2024-02-10T00:00:00Z").toISOString(),
+    updatedAt: new Date("2024-02-10T00:00:00Z").toISOString(),
+  },
 ];
 
 export const RoleDataMock: Role[] = [
@@ -163,5 +175,32 @@ export const UserFranchiseRoleDataMock: UserFranchiseRole[] = [
     isDeleted: false,
     createdAt: new Date("2024-02-01T00:00:00Z").toISOString(),
     updatedAt: new Date("2024-02-01T00:00:00Z").toISOString(),
+  },
+  {
+    id: 6,
+    userId: 7, // Multi Role User
+    franchiseId: 1, // Franchise 1
+    roleId: 2, // MANAGER
+    isDeleted: false,
+    createdAt: new Date("2024-02-10T00:00:00Z").toISOString(),
+    updatedAt: new Date("2024-02-10T00:00:00Z").toISOString(),
+  },
+  {
+    id: 7,
+    userId: 7, // Multi Role User
+    franchiseId: 2, // Franchise 2
+    roleId: 3, // STAFF
+    isDeleted: false,
+    createdAt: new Date("2024-02-10T00:00:00Z").toISOString(),
+    updatedAt: new Date("2024-02-10T00:00:00Z").toISOString(),
+  },
+  {
+    id: 8,
+    userId: 7, // Multi Role User
+    franchiseId: 3, // Franchise 3
+    roleId: 2, // MANAGER
+    isDeleted: false,
+    createdAt: new Date("2024-02-10T00:00:00Z").toISOString(),
+    updatedAt: new Date("2024-02-10T00:00:00Z").toISOString(),
   },
 ];
