@@ -16,8 +16,7 @@ export interface LoginResponse {
 
 // AUTH-02: Switch Context Request & Response
 export interface SwitchContextRequest {
-  roleId: number;
-  franchiseId: number | null;
+  franchise_id: string;
 }
 
 export interface SwitchContextResponse {
@@ -62,11 +61,31 @@ export interface VerifyTokenRequest {
 }
 
 export interface VerifyTokenResponse {
-  valid: boolean;
-  email?: string;
+  success: boolean;
+  data?: unknown;
+  message?: string;
 }
 
 // AUTH-09: Resend Token Request
 export interface ResendTokenRequest {
   email: string;
+}
+
+// AUTH-10: Register Request & Response
+export interface RegisterRequest {
+  email: string;
+  password: string;
+  name: string;
+  phone: string;
+  address: string;
+}
+export interface RegisterAdminRequest {
+  email: string;
+  password: string;
+  name: string;
+  phone: string;
+}
+export interface RegisterResponse {
+  user: User;
+  message: string;
 }

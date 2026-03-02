@@ -6,9 +6,12 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useSwitchContext } from "@/hooks/auth/useAuth.hooks";
+import type { AvailableContext } from "@/config/permission";
 
 export const RoleSwitcher = () => {
   const { authUser, getAvailableContexts, switchRole } = useAuthStore();
+  const switchContextMutation = useSwitchContext();
 
   if (!authUser) return null;
 
@@ -21,6 +24,22 @@ export const RoleSwitcher = () => {
   );
 
   if (availableContexts.length <= 1) return null;
+
+  const handleSwitchRole = async (ctx: AvailableContext) => {
+    try {
+      // Call API to switch context
+      if (ctx.franchiseId) {
+        await switchContextMutation.mutateAsync({
+          franchise_id: ctx.franchiseId,
+        });
+      }
+
+      // Update local state
+      switchRole(ctx);
+    } catch (error) {
+      console.error("Failed to switch role:", error);
+    }
+  };
 
   return (
     <DropdownMenu>
@@ -50,7 +69,8 @@ export const RoleSwitcher = () => {
           return (
             <DropdownMenuItem
               key={ctx.id}
-              onClick={() => switchRole(ctx)}
+              onClick={() => handleSwitchRole(ctx)}
+              disabled={switchContextMutation.isPending}
               className={`flex items-start gap-3 py-2.5 cursor-pointer ${
                 isActive ? "bg-amber-50" : ""
               }`}
