@@ -64,7 +64,7 @@ const AuthAnimatedLayout = () => {
   };
 
   return (
-    <div className="relative w-full min-h-screen overflow-hidden bg-[#faf7f2] dark:bg-stone-950">
+    <div className="relative w-full overflow-hidden bg-[#faf7f2] dark:bg-stone-950">
       <AnimatePresence mode="wait" initial={false}>
         <motion.div
           key={location.pathname}
@@ -73,7 +73,7 @@ const AuthAnimatedLayout = () => {
           animate="animate"
           exit={getExit()}
           transition={pageTransition}
-          className="w-full min-h-screen"
+          className="w-full h-full"
         >
           {outlet}
         </motion.div>

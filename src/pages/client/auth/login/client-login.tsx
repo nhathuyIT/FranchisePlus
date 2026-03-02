@@ -77,7 +77,8 @@ const ClientLogin = () => {
         initial={{ opacity: 0, x: -40, scale: 0.98 }}
         animate={{ opacity: 1, x: 0, scale: 1 }}
         transition={{ type: "spring", stiffness: 180, damping: 28, delay: 0.1 }}
-        className="hidden lg:flex lg:w-[55%] relative overflow-hidden rounded-r-3xl">
+        className="hidden lg:flex lg:w-[55%] relative overflow-hidden rounded-r-3xl"
+      >
         {/* Background Image */}
         <img
           src={coffeeImg}
@@ -92,24 +93,23 @@ const ClientLogin = () => {
         <div className="relative z-10 flex flex-col justify-between p-10 w-full">
           {/* Top - Logo */}
           <Link to="/">
-          <div className="flex items-center gap-3">
-            <div className="w-11 h-11 rounded-2xl  flex items-center justify-center ">
-              <img
-              className="object-contain group-hover:scale-110 transition-transform"
-              src={"/coffee-beans.png"}
-              alt="Coffee Franchise"
-              
-            />
+            <div className="flex items-center gap-3">
+              <div className="w-11 h-11 rounded-2xl  flex items-center justify-center ">
+                <img
+                  className="object-contain group-hover:scale-110 transition-transform"
+                  src={"/coffee-beans.png"}
+                  alt="Coffee Franchise"
+                />
+              </div>
+              <div>
+                <span className="text-white font-bold text-lg tracking-tight">
+                  FranchisePlus
+                </span>
+                <span className="text-amber-300/80 text-xs block -mt-0.5">
+                  Coffee
+                </span>
+              </div>
             </div>
-            <div>
-              <span className="text-white font-bold text-lg tracking-tight">
-                FranchisePlus
-              </span>
-              <span className="text-amber-300/80 text-xs block -mt-0.5">
-                Coffee
-              </span>
-            </div>
-          </div>
           </Link>
 
           {/* Middle - Hero Text */}
@@ -173,7 +173,7 @@ const ClientLogin = () => {
       </motion.div>
 
       {/* Right Side - Login Form */}
-      <div className="w-full lg:w-[45%] flex flex-col min-h-screen relative lg:rounded-l-3xl">
+      <div className="w-full lg:w-[45%] flex flex-col h-full relative lg:rounded-l-3xl">
         {/* Decorative elements */}
         <div className="absolute top-0 right-0 w-72 h-72 bg-amber-200/20 dark:bg-amber-900/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 pointer-events-none" />
         <div className="absolute bottom-0 left-0 w-56 h-56 bg-orange-200/20 dark:bg-orange-900/10 rounded-full blur-3xl translate-y-1/3 -translate-x-1/3 pointer-events-none" />
@@ -193,7 +193,7 @@ const ClientLogin = () => {
         </div>
 
         {/* Form Container */}
-        <div className="flex-1 flex flex-col justify-center px-6 sm:px-10 lg:px-16 xl:px-20 relative z-10">
+        <div className="flex-1 flex flex-col justify-center px-6 sm:px-10 lg:px-16 xl:px-20 py-4 relative z-10 overflow-y-auto">
           <motion.div
             variants={stagger}
             initial="hidden"
@@ -225,7 +225,11 @@ const ClientLogin = () => {
             </motion.div>
 
             {/* Form */}
-            <motion.form variants={fadeUp} onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+            <motion.form
+              variants={fadeUp}
+              onSubmit={handleSubmit(onSubmit)}
+              className="space-y-5"
+            >
               {/* Email */}
               <div className="space-y-2">
                 <Label
@@ -255,9 +259,7 @@ const ClientLogin = () => {
                     type="email"
                     placeholder="your.email@example.com"
                     className={`pl-16 h-[70px] rounded-2xl border-stone-200/80 dark:border-stone-700/80 bg-white dark:bg-stone-900 text-stone-800 dark:text-stone-100 placeholder:text-stone-300 dark:placeholder:text-stone-600 focus:border-amber-500 dark:focus:border-amber-600 transition-all duration-200 text-lg ${
-                      errors.email
-                        ? "border-red-400 dark:border-red-500"
-                        : ""
+                      errors.email ? "border-red-400 dark:border-red-500" : ""
                     }`}
                     {...register("email")}
                     onFocus={() => setFocusedField("email")}
@@ -356,10 +358,7 @@ const ClientLogin = () => {
                   )}
                 </Button>
 
-                <Link
-                  to={ROUTER_URL.CLIENT_ROUTER.REGISTER}
-                  className="block"
-                >
+                <Link to={ROUTER_URL.CLIENT_ROUTER.REGISTER} className="block">
                   <Button
                     type="button"
                     className="w-full h-[70px] bg-transparent border-2 border-stone-200 dark:border-stone-700 text-stone-600 dark:text-stone-300 font-semibold rounded-2xl hover:bg-stone-50 dark:hover:bg-stone-800/50 hover:border-stone-300 dark:hover:border-stone-600 transition-all duration-300 text-lg"
@@ -371,7 +370,10 @@ const ClientLogin = () => {
             </motion.form>
 
             {/* Divider with trust badges */}
-            <motion.div variants={fadeUp} className="mt-8 pt-6 border-t border-stone-200/60 dark:border-stone-800">
+            <motion.div
+              variants={fadeUp}
+              className="mt-8 pt-6 border-t border-stone-200/60 dark:border-stone-800"
+            >
               <div className="flex items-center justify-center gap-6 text-stone-300 dark:text-stone-700">
                 <div className="flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-wider">
                   <svg

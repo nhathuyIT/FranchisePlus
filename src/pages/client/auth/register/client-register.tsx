@@ -100,9 +100,9 @@ const ClientRegister = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col lg:flex-row bg-[#faf7f2] dark:bg-stone-950 overflow-hidden">
+    <div className="h-full flex flex-col lg:flex-row bg-[#faf7f2] dark:bg-stone-950 overflow-hidden">
       {/* Left Side - Register Form */}
-      <div className="w-full lg:w-[50%] flex flex-col min-h-screen relative lg:rounded-r-3xl lg:z-10">
+      <div className="w-full lg:w-[50%] flex flex-col h-full relative lg:rounded-r-3xl lg:z-10">
         {/* Decorative blurs */}
         <div className="absolute top-0 left-0 w-72 h-72 bg-amber-200/20 dark:bg-amber-900/10 rounded-full blur-3xl -translate-y-1/2 -translate-x-1/3 pointer-events-none" />
         <div className="absolute bottom-0 right-0 w-56 h-56 bg-orange-200/20 dark:bg-orange-900/10 rounded-full blur-3xl translate-y-1/3 translate-x-1/3 pointer-events-none" />

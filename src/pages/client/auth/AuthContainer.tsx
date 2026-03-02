@@ -42,7 +42,7 @@ import coffeeImg from "@/assets/mike-kenneally-tNALoIZhqVM-unsplash.jpg";
    ================================================================ */
 
 const iconBox = (field: string, focusedField: string | null) =>
-  `absolute left-4 top-1/2 -translate-y-1/2 rounded-xl p-2.5 transition-colors duration-200 ${
+  `absolute left-4 top-1/2 -translate-y-1/2 rounded-xl p-2 transition-colors duration-200 ${
     focusedField === field
       ? "bg-[#6D4C41] text-white"
       : "bg-stone-100 dark:bg-stone-800 text-stone-400"
@@ -56,7 +56,7 @@ const ringClass = (field: string, focusedField: string | null) =>
   }`;
 
 const inputBase =
-  "pl-16 h-[62px] rounded-2xl border-stone-200/80 dark:border-stone-700/80 bg-white dark:bg-stone-900 text-stone-800 dark:text-stone-100 placeholder:text-stone-300 dark:placeholder:text-stone-600 focus:border-[#6D4C41] dark:focus:border-[#8B181B] transition-all duration-200 text-lg";
+  "pl-14 h-[46px] rounded-2xl border-stone-200/80 dark:border-stone-700/80 bg-white dark:bg-stone-900 text-stone-800 dark:text-stone-100 placeholder:text-stone-300 dark:placeholder:text-stone-600 focus:border-[#6D4C41] dark:focus:border-[#8B181B] transition-all duration-200 text-sm";
 
 const ErrorMsg = ({ message }: { message?: string }) =>
   message ? (
@@ -91,19 +91,19 @@ const LoginForm = ({ onToggle }: { onToggle: () => void }) => {
   return (
     <div>
       {/* Header */}
-      <div className="mb-10">
-        <p className="text-[#8B181B] text-base font-semibold tracking-wide mb-2 flex items-center gap-2">
-          <span className="w-10 h-[2px] bg-[#8B181B] rounded-full" />
+      <div className="mb-6">
+        <p className="text-[#8B181B] text-xs font-semibold tracking-wide mb-1.5 flex items-center gap-2">
+          <span className="w-8 h-[2px] bg-[#8B181B] rounded-full" />
           WELCOME BACK
         </p>
-        <h1 className="text-4xl font-extrabold text-stone-900 dark:text-stone-50 tracking-tight leading-tight">
+        <h1 className="text-2xl font-extrabold text-stone-900 dark:text-stone-50 tracking-tight leading-tight">
           Sign in to your
           <br />
           <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#6D4C41] to-[#8B181B]">
             account
           </span>
         </h1>
-        <p className="text-stone-400 dark:text-stone-500 text-base mt-3">
+        <p className="text-stone-400 dark:text-stone-500 text-xs mt-2">
           Don&apos;t have an account?{" "}
           <button
             type="button"
@@ -116,9 +116,9 @@ const LoginForm = ({ onToggle }: { onToggle: () => void }) => {
       </div>
 
       {/* Form */}
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         {/* Email */}
-        <div className="space-y-2">
+        <div className="space-y-1.5">
           <Label
             htmlFor="login-email"
             className="text-stone-500 dark:text-stone-400 text-sm font-semibold tracking-widest uppercase"
@@ -133,7 +133,7 @@ const LoginForm = ({ onToggle }: { onToggle: () => void }) => {
               id="login-email"
               type="email"
               placeholder="your.email@example.com"
-              className={`${inputBase} h-[70px] ${
+              className={`${inputBase} ${
                 errors.email ? "border-red-400 dark:border-red-500" : ""
               }`}
               {...register("email")}
@@ -145,7 +145,7 @@ const LoginForm = ({ onToggle }: { onToggle: () => void }) => {
         </div>
 
         {/* Password */}
-        <div className="space-y-2">
+        <div className="space-y-1.5">
           <div className="flex items-center justify-between">
             <Label
               htmlFor="login-password"
@@ -168,7 +168,7 @@ const LoginForm = ({ onToggle }: { onToggle: () => void }) => {
               id="login-password"
               type={showPassword ? "text" : "password"}
               placeholder="Enter your password"
-              className={`${inputBase} h-[70px] pr-14 ${
+              className={`${inputBase} pr-12 ${
                 errors.password ? "border-red-400 dark:border-red-500" : ""
               }`}
               {...register("password")}
@@ -187,11 +187,11 @@ const LoginForm = ({ onToggle }: { onToggle: () => void }) => {
         </div>
 
         {/* Actions */}
-        <div className="pt-2 space-y-3">
+        <div className="pt-1 space-y-2.5">
           <Button
             type="submit"
             disabled={loginMutation.isPending}
-            className="w-full h-[68px] bg-gradient-to-r from-[#6D4C41] to-[#8B181B] hover:from-[#5D3C31] hover:to-[#7B0811] text-white font-bold rounded-2xl shadow-[0_8px_30px_-6px_rgba(109,76,65,0.4)] hover:shadow-[0_12px_40px_-6px_rgba(139,24,27,0.5)] transition-all duration-300 group text-lg tracking-wide"
+            className="w-full h-[50px] bg-gradient-to-r from-[#6D4C41] to-[#8B181B] hover:from-[#5D3C31] hover:to-[#7B0811] text-white font-bold rounded-2xl shadow-[0_8px_30px_-6px_rgba(109,76,65,0.4)] hover:shadow-[0_12px_40px_-6px_rgba(139,24,27,0.5)] transition-all duration-300 group text-base tracking-wide"
           >
             {loginMutation.isPending ? (
               <span className="flex items-center gap-2">
@@ -212,7 +212,7 @@ const LoginForm = ({ onToggle }: { onToggle: () => void }) => {
           <Button
             type="button"
             onClick={onToggle}
-            className="w-full h-[68px] bg-transparent border-2 border-stone-200 dark:border-stone-700 text-stone-600 dark:text-stone-300 font-semibold rounded-2xl hover:bg-stone-50 dark:hover:bg-stone-800/50 hover:border-[#6D4C41]/30 transition-all duration-300 text-lg"
+            className="w-full h-[50px] bg-transparent border-2 border-stone-200 dark:border-stone-700 text-stone-600 dark:text-stone-300 font-semibold rounded-2xl hover:bg-stone-50 dark:hover:bg-stone-800/50 hover:border-[#6D4C41]/30 transition-all duration-300 text-base"
           >
             Create an Account
           </Button>
@@ -261,19 +261,19 @@ const RegisterForm = ({ onToggle }: { onToggle: () => void }) => {
   return (
     <div>
       {/* Header */}
-      <div className="mb-8">
-        <p className="text-[#8B181B] text-base font-semibold tracking-wide mb-2 flex items-center gap-2">
-          <span className="w-10 h-[2px] bg-[#8B181B] rounded-full" />
+      <div className="mb-5">
+        <p className="text-[#8B181B] text-xs font-semibold tracking-wide mb-1.5 flex items-center gap-2">
+          <span className="w-8 h-[2px] bg-[#8B181B] rounded-full" />
           GET STARTED
         </p>
-        <h1 className="text-4xl font-extrabold text-stone-900 dark:text-stone-50 tracking-tight leading-tight">
+        <h1 className="text-2xl font-extrabold text-stone-900 dark:text-stone-50 tracking-tight leading-tight">
           Create your
           <br />
           <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#6D4C41] to-[#8B181B]">
             account
           </span>
         </h1>
-        <p className="text-stone-400 dark:text-stone-500 text-base mt-2">
+        <p className="text-stone-400 dark:text-stone-500 text-xs mt-1.5">
           Already have an account?{" "}
           <button
             type="button"
@@ -286,9 +286,9 @@ const RegisterForm = ({ onToggle }: { onToggle: () => void }) => {
       </div>
 
       {/* Form */}
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-3">
         {/* Name & Phone */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {/* Name */}
           <div className="space-y-1.5">
             <Label
@@ -398,7 +398,7 @@ const RegisterForm = ({ onToggle }: { onToggle: () => void }) => {
             <Textarea
               id="reg-address"
               placeholder="FTOWN-1, FPT Software, Ho Chi Minh"
-              className={`pl-16 pt-4 rounded-2xl border-stone-200/80 dark:border-stone-700/80 bg-white dark:bg-stone-900 text-stone-800 dark:text-stone-100 placeholder:text-stone-300 dark:placeholder:text-stone-600 focus:border-[#6D4C41] dark:focus:border-[#8B181B] transition-all duration-200 text-base min-h-[70px] resize-none ${
+              className={`pl-14 pt-3 rounded-2xl border-stone-200/80 dark:border-stone-700/80 bg-white dark:bg-stone-900 text-stone-800 dark:text-stone-100 placeholder:text-stone-300 dark:placeholder:text-stone-600 focus:border-[#6D4C41] dark:focus:border-[#8B181B] transition-all duration-200 text-sm min-h-[58px] resize-none ${
                 errors.address ? "border-red-400 dark:border-red-500" : ""
               }`}
               {...register("address")}
@@ -410,7 +410,7 @@ const RegisterForm = ({ onToggle }: { onToggle: () => void }) => {
         </div>
 
         {/* Password & Confirm */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {/* Password */}
           <div className="space-y-1.5">
             <Label
@@ -475,11 +475,7 @@ const RegisterForm = ({ onToggle }: { onToggle: () => void }) => {
                 onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                 className="absolute right-4 top-1/2 -translate-y-1/2 text-stone-300 dark:text-stone-600 hover:text-stone-500 dark:hover:text-stone-400 transition-colors p-1"
               >
-                {showConfirmPassword ? (
-                  <EyeOff size={18} />
-                ) : (
-                  <Eye size={18} />
-                )}
+                {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
               </button>
             </div>
             <ErrorMsg message={errors.confirmPassword?.message} />
@@ -491,7 +487,7 @@ const RegisterForm = ({ onToggle }: { onToggle: () => void }) => {
           <Button
             type="submit"
             disabled={registerMutation.isPending}
-            className="w-full h-[66px] bg-gradient-to-r from-[#6D4C41] to-[#8B181B] hover:from-[#5D3C31] hover:to-[#7B0811] text-white font-bold rounded-2xl shadow-[0_8px_30px_-6px_rgba(109,76,65,0.4)] hover:shadow-[0_12px_40px_-6px_rgba(139,24,27,0.5)] transition-all duration-300 group text-lg tracking-wide"
+            className="w-full h-[50px] bg-gradient-to-r from-[#6D4C41] to-[#8B181B] hover:from-[#5D3C31] hover:to-[#7B0811] text-white font-bold rounded-2xl shadow-[0_8px_30px_-6px_rgba(109,76,65,0.4)] hover:shadow-[0_12px_40px_-6px_rgba(139,24,27,0.5)] transition-all duration-300 group text-base tracking-wide"
           >
             {registerMutation.isPending ? (
               <span className="flex items-center gap-2">
@@ -547,7 +543,6 @@ const formVariants = {
 };
 
 /* ================================================================
-   Auth Container  â€“  unified login / register
    ================================================================ */
 
 const AuthContainer = () => {
@@ -572,7 +567,7 @@ const AuthContainer = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#FAF8F5] dark:bg-stone-950 flex items-center justify-center p-4 lg:p-6">
+    <div className="h-screen overflow-hidden bg-[#FAF8F5] dark:bg-stone-950 flex items-center justify-center p-4 lg:p-6">
       {/* Subtle background decorations */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden">
         <div className="absolute top-[-20%] right-[-10%] w-[600px] h-[600px] bg-[#6D4C41]/5 rounded-full blur-3xl" />
@@ -590,9 +585,8 @@ const AuthContainer = () => {
             mass: 0.8,
           },
         }}
-        className="relative z-10 w-[90vw] min-h-[90vh] bg-white dark:bg-stone-900 rounded-[2rem] shadow-[0_25px_80px_-12px_rgba(0,0,0,0.15)] dark:shadow-[0_25px_80px_-12px_rgba(0,0,0,0.5)] overflow-hidden flex flex-col lg:flex-row"
+        className="relative z-10 w-[90vw] h-[90vh] bg-white dark:bg-stone-900 rounded-[2rem] shadow-[0_25px_80px_-12px_rgba(0,0,0,0.15)] dark:shadow-[0_25px_80px_-12px_rgba(0,0,0,0.5)] overflow-hidden flex flex-col lg:flex-row"
       >
-        {/* â”€â”€ Left â€” Image Panel â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
         <div className="hidden lg:flex lg:w-[42%] relative overflow-hidden">
           <img
             src={coffeeImg}
@@ -678,7 +672,7 @@ const AuthContainer = () => {
           </div>
 
           {/* Scrollable form area */}
-          <div className="flex-1 flex flex-col justify-center px-6 sm:px-10 lg:px-14 xl:px-20 py-8 lg:py-10 overflow-y-auto">
+          <div className="flex-1 flex flex-col justify-center px-6 sm:px-10 lg:px-12 xl:px-16 py-4 lg:py-6 overflow-y-auto">
             <AnimatePresence mode="wait" custom={direction}>
               <motion.div
                 key={isLogin ? "login" : "register"}
