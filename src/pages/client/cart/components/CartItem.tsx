@@ -19,10 +19,10 @@ const CartItemComponent: React.FC<CartItemProps> = ({
       {/* Product Info */}
       <div className="flex-1">
         <h3 className="font-semibold text-[#5B4037] text-lg">
-          {item.product_name_snapshot}
+          {item.productNameSnapshot}
         </h3>
         <p className="text-gray-600 text-sm">
-          {item.price_snapshot.toLocaleString('vi-VN')}₫ × {item.quantity}
+          {item.priceSnapshot.toLocaleString('vi-VN')}₫ × {item.quantity}
         </p>
       </div>
 
@@ -48,7 +48,7 @@ const CartItemComponent: React.FC<CartItemProps> = ({
       {/* Price & Remove */}
       <div className="text-right">
         <p className="font-bold text-[#5B4037] text-lg">
-          {item.line_total.toLocaleString('vi-VN')}₫
+          {item.lineTotal.toLocaleString('vi-VN')}₫
         </p>
         <button
           onClick={onRemove}
