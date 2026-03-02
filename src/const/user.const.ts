@@ -2,7 +2,7 @@ import type { User, Role, UserFranchiseRole } from "@/types/user.type";
 
 export const UserDataMock: User[] = [
   {
-    id: 1,
+    id: "1",
     name: "Admin User",
     email: "admin@franchiseplus.com",
     passwordHash: "12345678",
@@ -14,7 +14,7 @@ export const UserDataMock: User[] = [
     updatedAt: new Date("2024-01-01T00:00:00Z").toISOString(),
   },
   {
-    id: 2,
+    id: "2",
     name: "Manager User",
     email: "manager@franchiseplus.com",
     passwordHash: "12345678",
@@ -26,7 +26,7 @@ export const UserDataMock: User[] = [
     updatedAt: new Date("2024-01-01T00:00:00Z").toISOString(),
   },
   {
-    id: 3,
+    id: "3",
     name: "Staff User",
     email: "staff@franchiseplus.com",
     passwordHash: "12345678",
@@ -38,7 +38,7 @@ export const UserDataMock: User[] = [
     updatedAt: new Date("2024-01-01T00:00:00Z").toISOString(),
   },
   {
-    id: 4,
+    id: "4",
     name: "Staff User 2",
     email: "staff2@franchiseplus.com",
     passwordHash: "12345678",
@@ -50,7 +50,7 @@ export const UserDataMock: User[] = [
     updatedAt: new Date("2024-01-15T00:00:00Z").toISOString(),
   },
   {
-    id: 5,
+    id: "5",
     phone: "0901000001",
     email: "client1@gmail.com",
     name: "Nguyen Van A",
@@ -62,7 +62,7 @@ export const UserDataMock: User[] = [
     updatedAt: new Date("2024-02-01T00:00:00Z").toISOString(),
   },
   {
-    id: 6,
+    id: "6",
     phone: "0901000002",
     email: "client2@gmail.com",
     name: "Tran Thi B",
@@ -74,7 +74,7 @@ export const UserDataMock: User[] = [
     updatedAt: new Date("2024-02-05T00:00:00Z").toISOString(),
   },
   {
-    id: 7,
+    id: "7",
     phone: "0912345678",
     email: "multi@franchiseplus.com",
     name: "Multi Role User",
@@ -133,7 +133,7 @@ export const RoleDataMock: Role[] = [
 export const UserFranchiseRoleDataMock: UserFranchiseRole[] = [
   {
     id: 1,
-    userId: 1, // Admin User
+    userId: "1", // Admin User
     franchiseId: null, // Global role
     roleId: 1, // ADMIN
     isDeleted: false,
@@ -142,8 +142,8 @@ export const UserFranchiseRoleDataMock: UserFranchiseRole[] = [
   },
   {
     id: 2,
-    userId: 2, // Manager User
-    franchiseId: 1, // Franchise 1
+    userId: "2", // Manager User
+    franchiseId: "1", // Franchise 1
     roleId: 2, // MANAGER
     isDeleted: false,
     createdAt: new Date("2024-01-01T00:00:00Z").toISOString(),
@@ -151,8 +151,8 @@ export const UserFranchiseRoleDataMock: UserFranchiseRole[] = [
   },
   {
     id: 3,
-    userId: 3, // Staff User
-    franchiseId: 1, // Franchise 1
+    userId: "3", // Staff User
+    franchiseId: "1", // Franchise 1
     roleId: 3, // STAFF
     isDeleted: false,
     createdAt: new Date("2024-01-01T00:00:00Z").toISOString(),
@@ -160,8 +160,8 @@ export const UserFranchiseRoleDataMock: UserFranchiseRole[] = [
   },
   {
     id: 4,
-    userId: 4, // Staff User 2
-    franchiseId: 2, // Franchise 2
+    userId: "4", // Staff User 2
+    franchiseId: "2", // Franchise 2
     roleId: 3, // STAFF
     isDeleted: false,
     createdAt: new Date("2024-01-15T00:00:00Z").toISOString(),
@@ -169,7 +169,7 @@ export const UserFranchiseRoleDataMock: UserFranchiseRole[] = [
   },
   {
     id: 5,
-    userId: 5, // Client User 1
+    userId: "5", // Client User 1
     franchiseId: null,
     roleId: 4, // CLIENT
     isDeleted: false,
@@ -178,8 +178,8 @@ export const UserFranchiseRoleDataMock: UserFranchiseRole[] = [
   },
   {
     id: 6,
-    userId: 7, // Multi Role User
-    franchiseId: 1, // Franchise 1
+    userId: "7", // Multi Role User
+    franchiseId: "1", // Franchise 1
     roleId: 2, // MANAGER
     isDeleted: false,
     createdAt: new Date("2024-02-10T00:00:00Z").toISOString(),
@@ -187,8 +187,8 @@ export const UserFranchiseRoleDataMock: UserFranchiseRole[] = [
   },
   {
     id: 7,
-    userId: 7, // Multi Role User
-    franchiseId: 2, // Franchise 2
+    userId: "7", // Multi Role User
+    franchiseId: "2", // Franchise 2
     roleId: 3, // STAFF
     isDeleted: false,
     createdAt: new Date("2024-02-10T00:00:00Z").toISOString(),
@@ -196,8 +196,8 @@ export const UserFranchiseRoleDataMock: UserFranchiseRole[] = [
   },
   {
     id: 8,
-    userId: 7, // Multi Role User
-    franchiseId: 3, // Franchise 3
+    userId: "7", // Multi Role User
+    franchiseId: "3", // Franchise 3
     roleId: 2, // MANAGER
     isDeleted: false,
     createdAt: new Date("2024-02-10T00:00:00Z").toISOString(),

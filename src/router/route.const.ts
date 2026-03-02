@@ -10,14 +10,14 @@ export const ROUTER_URL = {
   CLIENT_ROUTER: {
     LOGIN: "/client/login",
     FORGOT_PASSWORD: "/client/forgot-password",
-    REGISTER: "register",
+    REGISTER: "/client/register",
     CART: "cart",
     MENU: "menu",
     PRODUCTS: "products",
     PRODUCT_DETAIL: "products/:slug",
     PAYMENT: "payment",
   },
-
+  VERIFY_EMAIL: "verify-customer-email/:id",
   ACCOUNT: "/account",
   ACCOUNT_ROUTER: {
     MY_PROFILE: "my-profile",

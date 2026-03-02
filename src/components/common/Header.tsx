@@ -10,9 +10,11 @@ import { Button } from "../ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import { FileText, LogOut, Settings, User, ShoppingCart } from "lucide-react";
 import { useAuthStore } from "@/stores/auth-store";
+import { useLogoutCustomer } from "@/hooks/client/useClient.hooks";
 
 const Header = () => {
-  const { authUser, logout, isAdmin } = useAuthStore();
+  const { authUser, isAdmin } = useAuthStore();
+  const logoutMutation = useLogoutCustomer();
   const user = authUser?.user;
 
   const primaryRole = authUser?.roles[0]?.name || "User";
@@ -154,7 +156,7 @@ const Header = () => {
                   )}
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
-                    onClick={async () => await logout()}
+                    onClick={() => logoutMutation.mutate()}
                     className="cursor-pointer"
                   >
                     <LogOut className="mr-2 h-4 w-4" />
@@ -171,7 +173,7 @@ const Header = () => {
                   asChild
                   className="bg-[#6D4C41] hover:bg-[#5D4037] text-white text-md"
                 >
-                  <Link to="/client/signup">Sign Up</Link>
+                  <Link to="/client/register">Sign Up</Link>
                 </Button>
               </>
             )}
