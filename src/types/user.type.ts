@@ -10,6 +10,7 @@ export interface User extends BaseTimestamp, SoftDeletable, Activatable {
   name: string;
   phone: string | null;
   avatarUrl: string | null;
+  address: string | null;
 }
 
 /**

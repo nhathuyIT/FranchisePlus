@@ -9,6 +9,7 @@ import type {
   VerifyTokenRequest,
   LoginRequest,
 } from "@/types/auth.type";
+import type { ProfileRequest } from "@/types/customer";
 
 /**
  * Hook to logout customer
@@ -107,6 +108,7 @@ export const useClientLogin = () => {
           name: customerData.name,
           phone: customerData.phone || null,
           avatarUrl: customerData.avatar_url || null,
+          address: customerData.address || null,
           isActive: customerData.is_active,
           isDeleted: customerData.is_deleted,
           createdAt: customerData.created_at,
@@ -127,6 +129,46 @@ export const useClientLogin = () => {
     onError: (error) => {
       toast.error("Login failed", {
         description: error.message || "Invalid credentials",
+      });
+    },
+  });
+};
+
+/**
+ * Hook to update customer profile
+ */
+export const useUpdateClientProfile = () => {
+  const { authUser, updateProfile } = useAuthStore();
+
+  return useMutation({
+    mutationFn: (data: ProfileRequest) => {
+      if (!authUser?.user?.id) {
+        throw new Error("User ID not found");
+      }
+      return customerApi.updateClientProfile(authUser.user.id, data);
+    },
+    onSuccess: (response) => {
+      // Transform snake_case response to camelCase for auth store
+      const updatedUser = {
+        id: response.id,
+        email: response.email,
+        passwordHash: "",
+        name: response.name,
+        phone: response.phone || null,
+        avatarUrl: response.avatar_url || null,
+        address: response.address || null,
+        isActive: response.is_active,
+        isDeleted: response.is_deleted,
+        createdAt: response.created_at,
+        updatedAt: response.updated_at,
+      };
+
+      updateProfile(updatedUser);
+      toast.success("Profile updated successfully");
+    },
+    onError: (error) => {
+      toast.error("Update failed", {
+        description: error.message || "Could not update profile",
       });
     },
   });
