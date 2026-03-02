@@ -1,0 +1,209 @@
+/**
+ * AUTH API IMPLEMENTATION - USAGE EXAMPLES
+ *
+ * All 9 AUTH endpoints have been implemented with TanStack Query
+ */
+
+// ============================================
+// EXAMPLE 1: Login Form
+// ============================================
+import { useLogin } from "@/hooks/auth/useAuth.hooks";
+
+function LoginForm() {
+  const loginMutation = useLogin();
+
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+
+    loginMutation.mutate({
+      email: formData.get("email") as string,
+      password: formData.get("password") as string,
+    });
+  };
+
+  return (
+    <form onSubmit={handleSubmit}>
+      <input name="email" type="email" required />
+      <input name="password" type="password" required />
+      <button type="submit" disabled={loginMutation.isPending}>
+        {loginMutation.isPending ? "Logging in..." : "Login"}
+      </button>
+    </form>
+  );
+}
+
+// ============================================
+// EXAMPLE 2: Profile Display
+// ============================================
+import { useProfile } from "@/hooks/auth/useAuth.hooks";
+
+function ProfileDisplay() {
+  const { data: profile, isLoading, error } = useProfile();
+
+  if (isLoading) return <div>Loading profile...</div>;
+  if (error) return <div>Error: {error.message}</div>;
+  if (!profile) return null;
+
+  return (
+    <div>
+      <h2>{profile.user.name}</h2>
+      <p>{profile.user.email}</p>
+      <p>Role: {profile.roles[0]?.name}</p>
+    </div>
+  );
+}
+
+// ============================================
+// EXAMPLE 3: Role Switcher with API
+// ============================================
+import { useSwitchContext } from "@/hooks/auth/useAuth.hooks";
+import { useAuthStore } from "@/stores/auth-store";
+
+function RoleSwitcherWithAPI() {
+  const { getAvailableContexts } = useAuthStore();
+  const switchMutation = useSwitchContext();
+  const contexts = getAvailableContexts();
+
+  const handleSwitch = (roleId: number, franchiseId: number | null) => {
+    switchMutation.mutate({ roleId, franchiseId });
+  };
+
+  return (
+    <select
+      onChange={(e) => {
+        const [roleId, franchiseId] = e.target.value.split("-");
+        handleSwitch(Number(roleId), franchiseId ? Number(franchiseId) : null);
+      }}
+    >
+      {contexts.map((ctx) => (
+        <option key={ctx.id} value={`${ctx.roleId}-${ctx.franchiseId || ""}`}>
+          {ctx.roleName}
+        </option>
+      ))}
+    </select>
+  );
+}
+
+// ============================================
+// EXAMPLE 4: Forgot Password
+// ============================================
+import { useForgotPassword } from "@/hooks/auth/useAuth.hooks";
+
+function ForgotPasswordForm() {
+  const forgotPasswordMutation = useForgotPassword();
+
+  const handleSubmit = (email: string) => {
+    forgotPasswordMutation.mutate({ email });
+  };
+
+  return (
+    <div>
+      <input type="email" id="email" />
+      <button
+        onClick={() => {
+          const email = (document.getElementById("email") as HTMLInputElement)
+            .value;
+          handleSubmit(email);
+        }}
+      >
+        Send Reset Link
+      </button>
+    </div>
+  );
+}
+
+// ============================================
+// EXAMPLE 5: Change Password
+// ============================================
+import { useChangePassword } from "@/hooks/auth/useAuth.hooks";
+
+function ChangePasswordForm() {
+  const changePasswordMutation = useChangePassword();
+
+  const handleSubmit = (data: {
+    email: string;
+    token: string;
+    newPassword: string;
+    confirmPassword: string;
+  }) => {
+    changePasswordMutation.mutate(data);
+  };
+
+  return (
+    <form
+      onSubmit={(e) => {
+        e.preventDefault();
+        const formData = new FormData(e.currentTarget);
+        handleSubmit({
+          email: formData.get("email") as string,
+          token: formData.get("token") as string,
+          newPassword: formData.get("newPassword") as string,
+          confirmPassword: formData.get("confirmPassword") as string,
+        });
+      }}
+    >
+      <input name="email" type="email" />
+      <input name="token" type="text" />
+      <input name="newPassword" type="password" />
+      <input name="confirmPassword" type="password" />
+      <button type="submit">Change Password</button>
+    </form>
+  );
+}
+
+// ============================================
+// EXAMPLE 6: Logout Button
+// ============================================
+import { useLogout } from "@/hooks/auth/useAuth.hooks";
+
+function LogoutButton() {
+  const logoutMutation = useLogout();
+
+  return (
+    <button
+      onClick={() => logoutMutation.mutate()}
+      disabled={logoutMutation.isPending}
+    >
+      {logoutMutation.isPending ? "Logging out..." : "Logout"}
+    </button>
+  );
+}
+
+// ============================================
+// EXAMPLE 7: Verify Token
+// ============================================
+import { useVerifyToken } from "@/hooks/auth/useAuth.hooks";
+import { useEffect } from "react";
+
+function VerifyTokenPage({ token }: { token: string }) {
+  const verifyMutation = useVerifyToken();
+
+  useEffect(() => {
+    verifyMutation.mutate({ token });
+  }, [token]);
+
+  if (verifyMutation.isPending) return <div>Verifying...</div>;
+  if (verifyMutation.isError) return <div>Invalid token</div>;
+  if (verifyMutation.data?.valid) return <div>Token is valid!</div>;
+
+  return null;
+}
+
+// ============================================
+// EXAMPLE 8: Resend Verification Token
+// ============================================
+import { useResendToken } from "@/hooks/auth/useAuth.hooks";
+
+function ResendTokenButton({ email }: { email: string }) {
+  const resendMutation = useResendToken();
+
+  return (
+    <button
+      onClick={() => resendMutation.mutate({ email })}
+      disabled={resendMutation.isPending}
+    >
+      Resend Verification Email
+    </button>
+  );
+}

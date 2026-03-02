@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { z } from "zod";
 import type { UseFormReturn, FieldValues } from "react-hook-form";
 
@@ -62,7 +63,10 @@ export interface FieldConfig<TFormData extends FieldValues = any> {
 /**
  * CRUD configuration for an entity
  */
-export interface CrudConfig<TEntity = any, TFormData extends FieldValues = any> {
+export interface CrudConfig<
+  TEntity = any,
+  TFormData extends FieldValues = any,
+> {
   // Entity metadata
   entityName: string; // "Franchise", "Inventory"
   entityNamePlural: string; // "Franchises", "Inventory Items"

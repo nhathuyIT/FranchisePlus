@@ -65,7 +65,7 @@ export const CategoryTable = ({
   // Column Filters Configuration
   const columnFilters: ColumnFilter[] = [
     {
-      id: "is_active",
+      id: "isActive",
       type: "select",
       label: "Status",
       options: [

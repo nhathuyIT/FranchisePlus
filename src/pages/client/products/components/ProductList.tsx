@@ -10,7 +10,7 @@ const ProductList: React.FC<ProductListProps> = ({ selectedCategoryId }) => {
   const filteredProducts = useMemo(() => {
     return PRODUCTS_CLIENT.filter(product => {
       // Only show active products
-      if (!product.is_active) return false;
+      if (!product.isActive) return false;
       
       // If no category selected, show all active products
       if (!selectedCategoryId) return true;

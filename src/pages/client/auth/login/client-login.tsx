@@ -1,31 +1,25 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useNavigate } from "react-router-dom";
 import { Coffee, Lock, Mail, AlertCircle } from "lucide-react";
-import { toast } from "sonner";
+import { Link } from "react-router-dom";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useAuthStore } from "@/stores/auth-store";
-import {
-  UserDataMock,
-  RoleDataMock,
-  UserFranchiseRoleDataMock,
-} from "@/const/user.const";
 import {
   ClientLoginZod,
   type ClientLoginZodType,
 } from "./client-zod/client-login-zod";
+import { useClientLogin } from "@/hooks/auth/useAuth.hooks";
+import { ROUTER_URL } from "@/router/route.const";
 
 const ClientLogin = () => {
-  const navigate = useNavigate();
-  const { login } = useAuthStore();
+  const loginMutation = useClientLogin();
 
   const {
     register,
     handleSubmit,
-    formState: { errors, isSubmitting },
+    formState: { errors },
   } = useForm<ClientLoginZodType>({
     resolver: zodResolver(ClientLoginZod),
     defaultValues: {
@@ -34,48 +28,11 @@ const ClientLogin = () => {
     },
   });
 
-  const onSubmit = async (data: ClientLoginZodType) => {
-    try {
-      await new Promise((resolve) => setTimeout(resolve, 800));
-
-      // TODO: This should use Customer entity, not User entity
-      // For now, using User mock data for demonstration
-      const user = UserDataMock.find(
-        (u) => u.email === data.email && u.password_hash === data.password,
-      );
-
-      if (!user) {
-        toast.error("Invalid credentials", {
-          description: "Email or password is incorrect",
-        });
-        return;
-      }
-
-      // Get user's roles and franchise assignments
-      const userFranchiseRoles = UserFranchiseRoleDataMock.filter(
-        (ufr) => ufr.user_id === user.id,
-      );
-      const roles = RoleDataMock.filter((role) =>
-        userFranchiseRoles.some((ufr) => ufr.role_id === role.id),
-      );
-
-      // Build AuthUser object
-      const authUser = {
-        user,
-        roles,
-        franchiseRoles: userFranchiseRoles,
-        currentFranchiseId: userFranchiseRoles[0]?.franchise_id || null,
-      };
-
-      login(authUser);
-
-      navigate("/");
-    } catch (error) {
-      toast.error(
-        "Login failed",
-        error instanceof Error ? { description: error.message } : undefined,
-      );
-    }
+  const onSubmit = (data: ClientLoginZodType) => {
+    loginMutation.mutate({
+      email: data.email,
+      password: data.password,
+    });
   };
 
   return (
@@ -146,12 +103,20 @@ const ClientLogin = () => {
 
             {/* Password Field */}
             <div className="space-y-2">
-              <Label
-                htmlFor="password"
-                className="text-orange-900 dark:text-orange-100 font-medium"
-              >
-                Password
-              </Label>
+              <div className="flex items-center justify-between">
+                <Label
+                  htmlFor="password"
+                  className="text-orange-900 dark:text-orange-100 font-medium"
+                >
+                  Password
+                </Label>
+                <Link
+                  to={ROUTER_URL.CLIENT_ROUTER.FORGOT_PASSWORD}
+                  className="text-sm text-orange-600 dark:text-orange-400 hover:text-orange-700 dark:hover:text-orange-300 transition-colors"
+                >
+                  Forgot password?
+                </Link>
+              </div>
               <div className="relative">
                 <Lock
                   className="absolute left-3 top-1/2 -translate-y-1/2 text-orange-600 dark:text-orange-400"
@@ -178,10 +143,10 @@ const ClientLogin = () => {
             {/* Submit Button */}
             <Button
               type="submit"
-              disabled={isSubmitting}
+              disabled={loginMutation.isPending}
               className="w-full bg-gradient-to-r from-orange-600 to-orange-700 hover:from-orange-700 hover:to-orange-800 text-white font-semibold py-6 rounded-lg shadow-lg hover:shadow-xl transition-all duration-200"
             >
-              {isSubmitting ? (
+              {loginMutation.isPending ? (
                 <span className="flex items-center gap-2">
                   <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
                   Signing in...

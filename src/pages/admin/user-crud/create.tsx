@@ -6,7 +6,7 @@ interface CustomerFormData {
   name: string;
   phone: string;
   email: string;
-  avatar_url: string;
+  avatarUrl: string;
 }
 
 export default function CreateCustomer() {
@@ -15,7 +15,7 @@ export default function CreateCustomer() {
     name: "",
     phone: "",
     email: "",
-    avatar_url: "",
+    avatarUrl: "",
   });
   const [errors, setErrors] = useState<Partial<CustomerFormData>>({});
   const [isLoading, setIsLoading] = useState(false);
@@ -70,13 +70,13 @@ export default function CreateCustomer() {
         name: formData.name,
         phone: formData.phone,
         email: formData.email || null,
-        avatar_url:
-          formData.avatar_url ||
+        avatarUrl:
+          formData.avatarUrl ||
           `https://api.dicebear.com/7.x/avataaars/svg?seed=${formData.name}`,
-        is_active: true,
-        is_deleted: false,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
+        isActive: true,
+        isDeleted: false,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
       };
 
       console.log("Creating customer:", newCustomer);
@@ -168,8 +168,8 @@ export default function CreateCustomer() {
               </label>
               <input
                 type="url"
-                name="avatar_url"
-                value={formData.avatar_url}
+                name="avatarUrl"
+                value={formData.avatarUrl}
                 onChange={handleInputChange}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-500"
                 placeholder="https://example.com/avatar.jpg (optional)"

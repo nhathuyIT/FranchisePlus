@@ -25,13 +25,13 @@ export const updateStockConfig: CrudConfig<
   fields: [
     // Read-only context fields
     {
-      name: "product_name",
+      name: "productName",
       type: "text",
       label: "Product Name",
       disabled: true,
     },
     {
-      name: "current_quantity",
+      name: "currentQuantity",
       type: "number",
       label: "Current Quantity (kg)",
       disabled: true,
@@ -71,8 +71,8 @@ export const updateStockConfig: CrudConfig<
 
   transform: {
     toForm: (item) => ({
-      product_name: item.product.name,
-      current_quantity: item.inventory.quantity,
+      productName: item.product.name,
+      currentQuantity: item.inventory.quantity,
       alertThreshold: item.inventory.alertThreshold,
       quantity: item.inventory.quantity,
     }),
@@ -210,19 +210,19 @@ export const adjustThresholdConfig: CrudConfig<
   fields: [
     // Read-only context fields
     {
-      name: "product_name",
+      name: "productName",
       type: "text",
       label: "Product Name",
       disabled: true,
     },
     {
-      name: "current_threshold",
+      name: "currentThreshold",
       type: "number",
       label: "Current Threshold (kg)",
       disabled: true,
     },
     {
-      name: "current_quantity",
+      name: "currentQuantity",
       type: "number",
       label: "Current Stock (kg)",
       disabled: true,
@@ -256,9 +256,9 @@ export const adjustThresholdConfig: CrudConfig<
 
   transform: {
     toForm: (item) => ({
-      product_name: item.product.name,
-      current_threshold: item.inventory.alertThreshold,
-      current_quantity: item.inventory.quantity,
+      productName: item.product.name,
+      currentThreshold: item.inventory.alertThreshold,
+      currentQuantity: item.inventory.quantity,
       alertThreshold: item.inventory.alertThreshold,
     }),
   },

@@ -40,7 +40,7 @@ const productSchema = z.object({
   categoryId: z.string().min(1, "Category is required"),
   minPrice: z.number().min(0, "Min price must be positive"),
   maxPrice: z.number().min(0, "Max price must be positive"),
-  is_active: z.boolean(),
+  isActive: z.boolean(),
 }).refine((data) => data.maxPrice >= data.minPrice, {
   message: "Max price must be greater than or equal to min price",
   path: ["maxPrice"],
@@ -75,7 +75,7 @@ const ProductsPage = () => {
       categoryId: "",
       minPrice: 0,
       maxPrice: 0,
-      is_active: true,
+      isActive: true,
     },
   });
 
@@ -103,7 +103,7 @@ const ProductsPage = () => {
     setValue("categoryId", categoryId?.toString() || "");
     setValue("minPrice", product.minPrice);
     setValue("maxPrice", product.maxPrice);
-    setValue("is_active", product.is_active);
+    setValue("isActive", product.isActive);
     setIsDialogOpen(true);
   };
 
@@ -246,7 +246,7 @@ const ProductsPage = () => {
                           <SelectValue placeholder="Select a category" />
                         </SelectTrigger>
                         <SelectContent>
-                          {CATEGORIES.filter((cat) => cat.is_active && !cat.is_deleted).map((cat) => (
+                          {CATEGORIES.filter((cat) => cat.isActive && !cat.isDeleted).map((cat) => (
                             <SelectItem key={cat.id} value={cat.id.toString()}>
                               {cat.name}
                             </SelectItem>
@@ -320,11 +320,11 @@ const ProductsPage = () => {
                     <div className="flex items-center gap-2">
                       <input
                         type="checkbox"
-                        id="is_active"
-                        {...register("is_active")}
+                        id="isActive"
+                        {...register("isActive")}
                         className="w-4 h-4 text-[#6D4C41] border-gray-300 rounded focus:ring-[#6D4C41]"
                       />
-                      <Label htmlFor="is_active" className="text-[#3E2723] font-medium cursor-pointer">
+                      <Label htmlFor="isActive" className="text-[#3E2723] font-medium cursor-pointer">
                         Active
                       </Label>
                     </div>

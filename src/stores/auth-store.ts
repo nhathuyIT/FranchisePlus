@@ -7,11 +7,15 @@ import {
   removeItemInLocalStorage,
   setItemInLocalStorage,
 } from "@/utils/localstorgae.utils";
+import type { AvailableContext, Permission } from "@/config/permission";
+import { getRolePermissions } from "@/config/permission-mapping";
+import * as authApi from "@/api/auth.api";
 
 interface AuthUser {
   user: User;
   roles: Role[];
-  franchiseRoles: UserFranchiseRole[];
+  franchiseRoles: UserFranchiseRole[] | null;
+  currentRoleId: number | null;
   currentFranchiseId: number | null;
 }
 
@@ -21,12 +25,16 @@ interface AuthState {
   isInitialized: boolean;
 
   login: (authUser: AuthUser) => void;
-  logout: () => void;
+  logout: () => Promise<void>;
   hydrate: () => void;
-  setCurrentFranchise: (franchiseId: number | null) => void;
+  updateProfile: (
+    data: Partial<Pick<User, "name" | "email" | "phone">>,
+  ) => void;
 
-  hasGlobalRole: (roleCode: string) => boolean;
-  hasFranchiseRole: (roleCode: string, franchiseId?: number) => boolean;
+  getAvailableContexts: () => AvailableContext[];
+  switchRole: (context: AvailableContext) => void;
+  getCurrentPermissions: () => Permission[];
+  getCurrentRole: () => Role | null;
   isAdmin: () => boolean;
 }
 
@@ -40,7 +48,16 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     set({ authUser, isLoggedIn: true });
   },
 
-  logout: () => {
+  logout: async () => {
+    try {
+      // Step 1: Call API to clear backend session/cookies
+      await authApi.logout();
+    } catch (error) {
+      // Log error but continue with local logout
+      console.error("[logout] API call failed:", error);
+    }
+
+    // Step 2: Clear local storage and state
     removeItemInLocalStorage(LOCAL_STORAGE.ACCOUNT_ADMIN);
     set({ authUser: null, isLoggedIn: false });
   },
@@ -56,41 +73,101 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     }
   },
 
-  setCurrentFranchise: (franchiseId) => {
+  updateProfile: (data) => {
     const { authUser } = get();
     if (authUser) {
       const updatedAuthUser = {
         ...authUser,
-        currentFranchiseId: franchiseId,
+        user: {
+          ...authUser.user,
+          ...data,
+          updatedAt: new Date().toISOString(),
+        },
       };
       set({ authUser: updatedAuthUser });
       setItemInLocalStorage(LOCAL_STORAGE.ACCOUNT_ADMIN, updatedAuthUser);
     }
   },
 
-  hasGlobalRole: (roleCode: string) => {
+  getAvailableContexts: () => {
     const { authUser } = get();
-    if (!authUser) return false;
+    if (
+      !authUser ||
+      !authUser.franchiseRoles ||
+      !authUser.franchiseRoles.length
+    )
+      return [];
 
-    return authUser.roles.some(
-      (role) => role.code === roleCode && role.scope === "GLOBAL",
-    );
-  },
-
-  hasFranchiseRole: (roleCode: string, franchiseId?: number) => {
-    const { authUser } = get();
-    if (!authUser) return false;
-
-    const targetFranchiseId = franchiseId ?? authUser.currentFranchiseId;
-    if (!targetFranchiseId) return false;
-
-    return authUser.franchiseRoles.some((fr) => {
-      const role = authUser.roles.find((r) => r.id === fr.role_id);
-      return role?.code === roleCode && fr.franchise_id === targetFranchiseId;
+    return authUser.franchiseRoles.map((fr) => {
+      const role = authUser.roles.find((r) => r.id === fr.roleId);
+      return {
+        id: `${fr.roleId}-${fr.franchiseId || "global"}`,
+        roleId: fr.roleId,
+        roleName: role?.name || "Unknown Role",
+        roleCode: role?.code || "UNKNOWN",
+        franchiseId: fr.franchiseId,
+        franchiseName: null,
+        isGlobal: !fr.franchiseId,
+      };
     });
   },
 
+  switchRole: (context: AvailableContext) => {
+    const { authUser } = get();
+    if (!authUser) return;
+
+    const updatedAuthUser = {
+      ...authUser,
+      currentRoleId: context.roleId,
+      currentFranchiseId: context.franchiseId,
+    };
+    set({ authUser: updatedAuthUser });
+    setItemInLocalStorage(LOCAL_STORAGE.ACCOUNT_ADMIN, updatedAuthUser);
+  },
+
+  getCurrentPermissions: () => {
+    const { authUser } = get();
+    if (!authUser) return [];
+
+    // Try to find role by currentRoleId first
+    if (authUser.currentRoleId) {
+      const currentRole = authUser.roles.find(
+        (role) => role.id === authUser.currentRoleId,
+      );
+      if (currentRole) {
+        return getRolePermissions(currentRole);
+      }
+    }
+
+    // Fallback: use first role (for ADMIN or when currentRoleId is null)
+    if (authUser.roles.length > 0) {
+      return getRolePermissions(authUser.roles[0]);
+    }
+
+    return [];
+  },
+
+  getCurrentRole: () => {
+    const { authUser } = get();
+    if (!authUser) return null;
+
+    // Try to find role by currentRoleId first
+    if (authUser.currentRoleId) {
+      const role = authUser.roles.find(
+        (role) => role.id === authUser.currentRoleId,
+      );
+      if (role) return role;
+    }
+
+    // Fallback: return first role (for ADMIN or when currentRoleId is null)
+    return authUser.roles[0] || null;
+  },
+
   isAdmin: () => {
-    return get().hasGlobalRole("ADMIN");
+    const currentRole = get().getCurrentRole();
+    // Support both 'code' field (type definition) and 'role' field (API response)
+    const roleCode =
+      currentRole?.code || (currentRole as unknown as { role?: string })?.role;
+    return roleCode === "ADMIN";
   },
 }));
