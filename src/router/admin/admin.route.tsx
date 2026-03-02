@@ -2,11 +2,30 @@ import { Navigate, Route } from "react-router-dom";
 import { ROUTER_URL } from "../route.const";
 import { ADMIN_MENU } from "./admin.menu";
 import { AdminLayout } from "@/layouts";
-import AdminGuard from "../guard/admin-guard.route";
+import { PermissionGuard } from "../guard/admin-guard.route";
+import { Permission } from "@/config/permission";
+import React from "react";
+
+const RoleSelectorPage = React.lazy(
+  () => import("@/pages/admin/role-selector/role-selector-page"),
+);
 
 export const AdminRoutes = (
-  <Route element={<AdminGuard />}>
-    <Route element={<AdminLayout />}>
+  <>
+    <Route path={ROUTER_URL.ADMIN}>
+      <Route
+        path={ROUTER_URL.ADMIN_ROUTER.ROLE_SELECTOR}
+        element={<RoleSelectorPage />}
+      />
+    </Route>
+
+    <Route
+      element={
+        <PermissionGuard requiredPermissions={[Permission.ACCESS_ADMIN_PORTAL]}>
+          <AdminLayout />
+        </PermissionGuard>
+      }
+    >
       <Route path={ROUTER_URL.ADMIN}>
         <Route
           index
@@ -17,10 +36,18 @@ export const AdminRoutes = (
           <Route
             key={item.path}
             path={item.path}
-            element={<item.component />}
+            element={
+              item.permissions && item.permissions.length > 0 ? (
+                <PermissionGuard requiredPermissions={item.permissions}>
+                  <item.component />
+                </PermissionGuard>
+              ) : (
+                <item.component />
+              )
+            }
           />
         ))}
       </Route>
     </Route>
-  </Route>
+  </>
 );

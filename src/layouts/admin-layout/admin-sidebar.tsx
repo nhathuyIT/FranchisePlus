@@ -15,6 +15,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuthStore } from "@/stores/auth-store";
 import { ADMIN_MENU } from "@/router/admin/admin.menu";
 import { ROUTER_URL } from "@/router/route.const";
+import { RoleSwitcher } from "@/pages/admin/role-selector/role-switcher";
 
 const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   dashboard: LayoutDashboard,
@@ -43,12 +44,33 @@ interface AdminSidebarProps {
 const AdminSideBar = ({ collapsed = false }: AdminSidebarProps) => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { authUser, logout } = useAuthStore();
+  const {
+    authUser,
+    logout,
+    getAvailableContexts,
+    getCurrentPermissions,
+    getCurrentRole,
+  } = useAuthStore();
   const user = authUser?.user;
-  const primaryRole = authUser?.roles[0]?.name || "User";
+  const currentRole = getCurrentRole();
+  const roleName = currentRole?.name || "User";
+  const availableContexts = getAvailableContexts();
+  const userPermissions = getCurrentPermissions();
 
-  const handleLogout = () => {
-    logout();
+  // Filter menu items based on user permissions
+  const visibleMenuItems = sidebarMenuItems.filter((item) => {
+    // If no permissions defined, show to everyone
+    if (!item.permissions || item.permissions.length === 0) {
+      return true;
+    }
+    // Check if user has at least one of the required permissions
+    return item.permissions.some((permission) =>
+      userPermissions.includes(permission),
+    );
+  });
+
+  const handleLogout = async () => {
+    await logout();
     navigate(`/${ROUTER_URL.ADMIN_ROUTER.LOGIN}`);
   };
 
@@ -95,7 +117,7 @@ const AdminSideBar = ({ collapsed = false }: AdminSidebarProps) => {
             </Avatar>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-semibold truncate">{user?.name}</p>
-              <p className="text-xs text-amber-300 truncate">{primaryRole}</p>
+              <p className="text-xs text-amber-300 truncate">{roleName}</p>
             </div>
           </div>
         </div>
@@ -115,7 +137,7 @@ const AdminSideBar = ({ collapsed = false }: AdminSidebarProps) => {
       {/* Navigation */}
       <nav className="flex-1 overflow-y-auto py-4 px-2">
         <ul className="space-y-1">
-          {sidebarMenuItems.map((item) => {
+          {visibleMenuItems.map((item) => {
             const Icon = iconMap[item.icon];
             const active = isActive(item.path);
 
@@ -157,19 +179,28 @@ const AdminSideBar = ({ collapsed = false }: AdminSidebarProps) => {
       </nav>
 
       {/* Footer */}
-      <div className="p-4 border-t border-amber-800/50">
-        <Button
-          variant="ghost"
-          onClick={handleLogout}
-          className={cn(
-            "w-full gap-3 text-amber-200 hover:text-amber-50 hover:bg-amber-800/50",
-            collapsed ? "justify-center px-2" : "justify-start",
-          )}
-          title={collapsed ? "Logout" : undefined}
-        >
-          <LogOut size={20} />
-          {!collapsed && <span>Logout</span>}
-        </Button>
+      <div className="border-t border-amber-800/50">
+        {/* Role Switcher - Only show if multiple roles available */}
+        {!collapsed && availableContexts.length > 1 && (
+          <div className="p-3 border-b border-amber-800/50">
+            <RoleSwitcher />
+          </div>
+        )}
+
+        <div className="p-4">
+          <Button
+            variant="ghost"
+            onClick={handleLogout}
+            className={cn(
+              "w-full gap-3 text-amber-200 hover:text-amber-50 hover:bg-amber-800/50",
+              collapsed ? "justify-center px-2" : "justify-start",
+            )}
+            title={collapsed ? "Logout" : undefined}
+          >
+            <LogOut size={20} />
+            {!collapsed && <span>Logout</span>}
+          </Button>
+        </div>
       </div>
     </aside>
   );
