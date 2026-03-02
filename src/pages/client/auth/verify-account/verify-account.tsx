@@ -1,7 +1,12 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Coffee, CheckCircle, XCircle, Loader2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import {
+  Loader2,
+  CheckCircle2,
+  XCircle,
+  ArrowLeft,
+  MailCheck,
+} from "lucide-react";
 import { ROUTER_URL } from "@/router/route.const";
 import { useVerifyClientToken } from "@/hooks/client/useClient.hooks";
 
@@ -9,146 +14,190 @@ const VerifyAccount = () => {
   const { id: token } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const verifyMutation = useVerifyClientToken();
-  const [verificationStatus, setVerificationStatus] = useState<
-    "verifying" | "success" | "error"
-  >("verifying");
 
+  // Trigger on mount
   useEffect(() => {
     if (token) {
-      // Automatically verify when component mounts
-      verifyMutation.mutate(
-        { token },
-        {
-          onSuccess: (data) => {
-            if (data.success) {
-              setVerificationStatus("success");
-              setTimeout(() => {
-                navigate("/");
-              }, 3000);
-            } else {
-              setVerificationStatus("error");
-            }
-          },
-          onError: () => {
-            setVerificationStatus("error");
-          },
-        },
-      );
+      verifyMutation.mutate({ token });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token]);
 
+  // Redirect to login after success
+  useEffect(() => {
+    if (!verifyMutation.isSuccess) return;
+    const timer = setTimeout(() => {
+      navigate(ROUTER_URL.CLIENT_ROUTER.LOGIN);
+    }, 3000);
+    return () => clearTimeout(timer);
+  }, [verifyMutation.isSuccess, navigate]);
+
+  const errorMessage =
+    verifyMutation.error instanceof Error
+      ? verifyMutation.error.message
+      : "Token xác thực không hợp lệ hoặc đã hết hạn.";
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-orange-50 via-amber-50 to-orange-100 p-4">
-      {/* Background Decoration */}
-      <div className="absolute inset-0 opacity-5">
-        <div className="absolute top-10 left-10 text-orange-900">
-          <Coffee size={120} />
-        </div>
-        <div className="absolute bottom-20 right-20 text-orange-900">
-          <Coffee size={150} />
-        </div>
-        <div className="absolute top-1/2 left-1/4 text-orange-900">
-          <Coffee size={80} />
-        </div>
-      </div>
+    <div
+      className="min-h-screen flex items-center justify-center px-4"
+      style={{ background: "var(--cf-primary)" }}
+    >
+      {/* Ambient glow */}
+      <div
+        className="pointer-events-none fixed inset-0"
+        style={{
+          background:
+            "radial-gradient(ellipse at 50% 30%, rgba(221,184,146,0.12) 0%, transparent 70%)",
+        }}
+      />
 
-      <div className="w-full max-w-md relative">
-        {/* Logo */}
-        <div className="absolute -top-16 left-1/2 -translate-x-1/2">
-          <div className="bg-gradient-to-br from-orange-600 to-orange-800 rounded-full p-6 shadow-2xl">
-            <Coffee size={48} className="text-orange-50" strokeWidth={2.5} />
-          </div>
-        </div>
-
-        {/* Card */}
-        <div className="bg-white rounded-2xl shadow-2xl p-8 pt-16 border border-orange-200">
-          <div className="text-center">
-            {/* Verifying State */}
-            {verificationStatus === "verifying" && (
-              <>
-                <div className="mb-6 flex justify-center">
-                  <Loader2 className="text-orange-600 animate-spin" size={64} />
+      {/* Card */}
+      <div
+        className="relative w-full animate-[fadeInUp_0.5s_ease-out_both]"
+        style={{ maxWidth: 460 }}
+      >
+        <div
+          className="rounded-4xl p-10"
+          style={{
+            background: "rgba(255,255,255,0.08)",
+            backdropFilter: "blur(32px)",
+            WebkitBackdropFilter: "blur(32px)",
+            border: "1px solid rgba(255,255,255,0.08)",
+            boxShadow: "0 8px 40px rgba(0,0,0,0.25)",
+          }}
+        >
+          {/* Content — fixed min-height to prevent layout shift */}
+          <div
+            className="flex flex-col items-center justify-center gap-6"
+            style={{ minHeight: 240 }}
+          >
+            {/* ── Loading ── */}
+            {verifyMutation.isPending && (
+              <div className="flex flex-col items-center gap-5 animate-[fadeIn_0.4s_ease-out_both]">
+                <Loader2
+                  className="w-16 h-16 animate-spin"
+                  style={{ color: "var(--cf-accent-light)" }}
+                  strokeWidth={1.5}
+                />
+                <div className="text-center space-y-2">
+                  <h2 className="text-xl font-semibold text-white/90">
+                    Đang xác thực
+                  </h2>
+                  <p className="text-sm text-white/50 leading-relaxed">
+                    Vui lòng chờ trong giây lát…
+                  </p>
                 </div>
-                <h1 className="text-3xl font-bold text-orange-900 mb-4">
-                  Verifying Your Account
-                </h1>
-                <p className="text-orange-700">
-                  Please wait while we verify your email address...
-                </p>
-              </>
+              </div>
             )}
 
-            {/* Success State */}
-            {verificationStatus === "success" && (
-              <>
-                <div className="mb-6 flex justify-center">
-                  <div className="bg-green-100 rounded-full p-4">
-                    <CheckCircle className="text-green-600" size={64} />
-                  </div>
+            {/* ── Success ── */}
+            {verifyMutation.isSuccess && (
+              <div className="flex flex-col items-center gap-5 animate-[fadeIn_0.4s_ease-out_both]">
+                <CheckCircle2
+                  className="w-16 h-16 animate-[scaleIn_0.4s_ease-out_both]"
+                  style={{ color: "#6BBF7B" }}
+                  strokeWidth={1.5}
+                />
+                <div className="text-center space-y-2">
+                  <h2 className="text-xl font-semibold text-white/90">
+                    Xác thực thành công!
+                  </h2>
+                  <p className="text-sm text-white/50 leading-relaxed">
+                    Email của bạn đã được xác thực.
+                    <br />
+                    Đang chuyển hướng đến trang đăng nhập…
+                  </p>
                 </div>
-                <h1 className="text-3xl font-bold text-green-900 mb-4">
-                  Account Verified!
-                </h1>
-                <p className="text-green-700 mb-6">
-                  Your email has been successfully verified. You can now login
-                  to your account.
-                </p>
-                <p className="text-sm text-orange-600 mb-6">
-                  Redirecting to home page in 3 seconds...
-                </p>
-                <Button
-                  onClick={() => navigate("/")}
-                  className="w-full bg-gradient-to-r from-orange-600 to-orange-700 hover:from-orange-700 hover:to-orange-800 text-white font-semibold py-6 rounded-lg shadow-lg hover:shadow-xl transition-all duration-200"
+                {/* Progress bar */}
+                <div
+                  className="w-full max-w-50 h-1 rounded-full overflow-hidden"
+                  style={{ background: "rgba(255,255,255,0.06)" }}
                 >
-                  Go to Home
-                </Button>
-              </>
+                  <div
+                    className="h-full rounded-full animate-[progressShrink_3s_linear_forwards]"
+                    style={{ background: "var(--cf-accent-light)" }}
+                  />
+                </div>
+              </div>
             )}
 
-            {/* Error State */}
-            {verificationStatus === "error" && (
-              <>
-                <div className="mb-6 flex justify-center">
-                  <div className="bg-red-100 rounded-full p-4">
-                    <XCircle className="text-red-600" size={64} />
+            {/* ── Error ── */}
+            {(verifyMutation.isError || !token) &&
+              !verifyMutation.isPending && (
+                <div className="flex flex-col items-center gap-5 animate-[fadeIn_0.4s_ease-out_both]">
+                  <XCircle
+                    className="w-16 h-16 animate-[scaleIn_0.4s_ease-out_both]"
+                    style={{ color: "#E06C6C" }}
+                    strokeWidth={1.5}
+                  />
+                  <div className="text-center space-y-2">
+                    <h2 className="text-xl font-semibold text-white/90">
+                      Xác thực thất bại
+                    </h2>
+                    <p className="text-sm text-white/50 leading-relaxed">
+                      {verifyMutation.isError
+                        ? errorMessage
+                        : "Token xác thực không hợp lệ."}
+                    </p>
                   </div>
-                </div>
-                <h1 className="text-3xl font-bold text-red-900 mb-4">
-                  Verification Failed
-                </h1>
-                <p className="text-red-700 mb-6">
-                  We couldn't verify your email. The link may be invalid or
-                  expired.
-                </p>
-                <div className="space-y-3">
-                  <Button
-                    onClick={() => navigate(ROUTER_URL.CLIENT_ROUTER.REGISTER)}
-                    className="w-full bg-gradient-to-r from-orange-600 to-orange-700 hover:from-orange-700 hover:to-orange-800 text-white font-semibold py-6 rounded-lg shadow-lg hover:shadow-xl transition-all duration-200"
-                  >
-                    Register Again
-                  </Button>
-                  <Button
+                  <button
                     onClick={() => navigate(ROUTER_URL.CLIENT_ROUTER.LOGIN)}
-                    variant="outline"
-                    className="w-full border-orange-600 text-orange-600 hover:bg-orange-50 font-semibold py-6 rounded-lg"
+                    className="cursor-pointer mt-1 px-8 py-2.5 rounded-xl text-sm font-medium text-white transition-all duration-300 flex items-center gap-2"
+                    style={{
+                      background: "var(--cf-secondary)",
+                      boxShadow: "0 0 0 0 rgba(176,137,104,0)",
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background =
+                        "var(--cf-accent-light)";
+                      e.currentTarget.style.boxShadow =
+                        "0 0 20px rgba(176,137,104,0.3)";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = "var(--cf-secondary)";
+                      e.currentTarget.style.boxShadow =
+                        "0 0 0 0 rgba(176,137,104,0)";
+                    }}
                   >
-                    Back to Login
-                  </Button>
+                    <ArrowLeft className="w-4 h-4" />
+                    Quay lại đăng nhập
+                  </button>
                 </div>
-              </>
-            )}
+              )}
+          </div>
+
+          {/* Divider + Footer */}
+          <div
+            className="mt-8 pt-5"
+            style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}
+          >
+            <p className="text-center text-xs text-white/35 flex items-center justify-center gap-1.5">
+              <MailCheck className="w-3.5 h-3.5" />
+              Boutique Brews · Xác thực tài khoản
+            </p>
           </div>
         </div>
-
-        {/* Bottom Decoration */}
-        <div className="mt-8 text-center">
-          <p className="text-sm text-orange-700 flex items-center justify-center gap-2">
-            <Coffee size={16} />
-            <span>FranchisePlus Coffee - Your Coffee, Your Way</span>
-          </p>
-        </div>
       </div>
+
+      {/* Keyframe animations */}
+      <style>{`
+        @keyframes fadeInUp {
+          from { opacity: 0; transform: translateY(24px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes fadeIn {
+          from { opacity: 0; }
+          to   { opacity: 1; }
+        }
+        @keyframes scaleIn {
+          from { opacity: 0; transform: scale(0.6); }
+          to   { opacity: 1; transform: scale(1); }
+        }
+        @keyframes progressShrink {
+          from { width: 100%; }
+          to   { width: 0%; }
+        }
+      `}</style>
     </div>
   );
 };
