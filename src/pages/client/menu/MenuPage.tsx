@@ -1,57 +1,62 @@
-import { useState, useEffect } from 'react';
-import { CATEGORIES, type Category } from '@/const/categories.const';
-import { PRODUCTS_CLIENT } from '@/const/product-client.const';
-import { createProductSlug } from '@/lib/slugify';
-import { Link } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import { Plus } from 'lucide-react';
-import { useCart } from '../cart/useCart';
-import { toast } from 'sonner';
+import { useState, useMemo } from "react";
+import { CATEGORIES, type Category } from "@/const/categories.const";
+import { PRODUCTS_CLIENT } from "@/const/product-client.const";
+import { createProductSlug } from "@/lib/slugify";
+import { Link } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { Plus } from "lucide-react";
+import { useCart } from "../cart/useCart";
+import { toast } from "sonner";
+import type { Product } from "@/types/product.type";
 
 const MenuPage: React.FC = () => {
-  const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
   const { addItem } = useCart();
 
+  // Get active categories only - Memoized to prevent re-computation
+  const activeCategories: Category[] = useMemo(
+    () =>
+      CATEGORIES.filter(
+        (category) =>
+          category.isActive === true && category.isDeleted === false,
+      ),
+    [],
+  );
+
+  // Initialize with first category ID
+  const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(
+    activeCategories.length > 0 ? activeCategories[0].id : null,
+  );
+
   // Handle add to cart for products
-  const handleAddToCart = (e: React.MouseEvent, product: any) => {
+  const handleAddToCart = (e: React.MouseEvent, product: Product) => {
     e.preventDefault();
     e.stopPropagation();
-    
+
     // Use the product price (minPrice as default)
     const price = product.minPrice;
-    
+
     addItem(product.id, product.name, price, 1);
-    
+
     toast.success(`${product.name} đã được thêm vào giỏ hàng!`, {
-      description: `Giá: ${price.toLocaleString('vi-VN')}₫`,
+      description: `Giá: ${price.toLocaleString("vi-VN")}₫`,
       duration: 2000,
     });
   };
-
-  // Get active categories only
-  const activeCategories: Category[] = CATEGORIES.filter(
-    category => category.isActive === true && category.isDeleted === false
-  );
-
-  // Auto-select first category on load
-  useEffect(() => {
-    if (activeCategories.length > 0 && selectedCategoryId === null) {
-      setSelectedCategoryId(activeCategories[0].id);
-    }
-  }, [activeCategories, selectedCategoryId]);
 
   const handleCategorySelect = (categoryId: number) => {
     setSelectedCategoryId(categoryId);
   };
 
   // Get filtered products
-  const filteredProducts = PRODUCTS_CLIENT.filter(product => {
+  const filteredProducts = PRODUCTS_CLIENT.filter((product) => {
     if (!product.isActive) return false;
     if (!selectedCategoryId) return true;
     return product.category_id === selectedCategoryId;
   });
 
-  const selectedCategory = activeCategories.find(cat => cat.id === selectedCategoryId);
+  const selectedCategory = activeCategories.find(
+    (cat) => cat.id === selectedCategoryId,
+  );
 
   return (
     <div className="min-h-screen bg-white">
@@ -84,9 +89,10 @@ const MenuPage: React.FC = () => {
                   onClick={() => handleCategorySelect(category.id)}
                   className={`
                     w-full text-left px-3 py-2 text-lg font-semibold transition-colors rounded
-                    ${selectedCategoryId === category.id
-                      ? 'text-brown-700 bg-amber-50' 
-                      : 'text-gray-700 hover:text-amber-700 hover:bg-amber-50'
+                    ${
+                      selectedCategoryId === category.id
+                        ? "text-brown-700 bg-amber-50"
+                        : "text-gray-700 hover:text-amber-700 hover:bg-amber-50"
                     }
                   `}
                 >
@@ -101,13 +107,15 @@ const MenuPage: React.FC = () => {
         <div className="flex-1 p-8">
           {/* Breadcrumb */}
           <div className="mb-4">
-            <span className="text-gray-500 text-sm">Menu / {selectedCategory?.name || 'All'}</span>
+            <span className="text-gray-500 text-sm">
+              Menu / {selectedCategory?.name || "All"}
+            </span>
           </div>
 
           {/* Category Title */}
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-gray-900 mb-2">
-              {selectedCategory?.name || 'All Products'}
+              {selectedCategory?.name || "All Products"}
             </h1>
             {selectedCategory?.description && (
               <p className="text-gray-600">{selectedCategory.description}</p>
@@ -117,7 +125,7 @@ const MenuPage: React.FC = () => {
           {/* Mobile Category Selector */}
           <div className="lg:hidden mb-6">
             <select
-              value={selectedCategoryId || ''}
+              value={selectedCategoryId || ""}
               onChange={(e) => handleCategorySelect(Number(e.target.value))}
               className="w-full p-3 border border-gray-200 rounded-lg text-sm"
             >
@@ -134,8 +142,12 @@ const MenuPage: React.FC = () => {
           {filteredProducts.length === 0 ? (
             <div className="text-center py-16">
               <div className="text-6xl text-gray-300 mb-4">☕</div>
-              <h3 className="text-xl font-semibold text-gray-700 mb-2">No products found</h3>
-              <p className="text-gray-500">Try selecting a different category.</p>
+              <h3 className="text-xl font-semibold text-gray-700 mb-2">
+                No products found
+              </h3>
+              <p className="text-gray-500">
+                Try selecting a different category.
+              </p>
             </div>
           ) : (
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
@@ -151,7 +163,7 @@ const MenuPage: React.FC = () => {
                     <div className="relative mb-4">
                       <div className="w-32 h-32 mx-auto rounded-full overflow-hidden bg-amber-50 border-4 border-[#5B4037] group-hover:border-amber-800 transition-colors">
                         <img
-                          src={product.imageUrl || '/placeholder-coffee.jpg'}
+                          src={product.imageUrl || "/placeholder-coffee.jpg"}
                           alt={product.name}
                           className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
                           loading="lazy"
@@ -168,18 +180,17 @@ const MenuPage: React.FC = () => {
                         <Plus className="h-4 w-4" />
                       </Button>
                     </div>
-                    
+
                     {/* Product Name */}
                     <h3 className="font-semibold text-gray-900 group-hover:text-amber-800 transition-colors text-sm leading-tight">
                       {product.name}
                     </h3>
-                    
+
                     {/* Price */}
                     <p className="text-amber-700 font-medium text-sm mt-1">
                       {product.minPrice === product.maxPrice
-                        ? `${product.minPrice.toLocaleString('vi-VN')}₫`
-                        : `${product.minPrice.toLocaleString('vi-VN')}₫ - ${product.maxPrice.toLocaleString('vi-VN')}₫`
-                      }
+                        ? `${product.minPrice.toLocaleString("vi-VN")}₫`
+                        : `${product.minPrice.toLocaleString("vi-VN")}₫ - ${product.maxPrice.toLocaleString("vi-VN")}₫`}
                     </p>
                   </Link>
                 );

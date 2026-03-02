@@ -16,7 +16,7 @@ interface AuthUser {
   roles: Role[];
   franchiseRoles: UserFranchiseRole[] | null;
   currentRoleId: number | null;
-  currentFranchiseId: number | null;
+  currentFranchiseId: string | null; // MongoDB ObjectId string
 }
 
 interface AuthState {
@@ -25,7 +25,7 @@ interface AuthState {
   isInitialized: boolean;
 
   login: (authUser: AuthUser) => void;
-  logout: () => Promise<void>;
+  logout: (callApi?: boolean) => Promise<void>;
   hydrate: () => void;
   updateProfile: (
     data: Partial<Pick<User, "name" | "email" | "phone">>,
@@ -48,16 +48,16 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     set({ authUser, isLoggedIn: true });
   },
 
-  logout: async () => {
-    try {
-      // Step 1: Call API to clear backend session/cookies
-      await authApi.logout();
-    } catch (error) {
-      // Log error but continue with local logout
-      console.error("[logout] API call failed:", error);
+  logout: async (callApi = true) => {
+    if (callApi) {
+      try {
+        await authApi.logout();
+      } catch (error) {
+        console.error("[logout] API call failed:", error);
+      }
     }
 
-    // Step 2: Clear local storage and state
+    // Clear local storage and state
     removeItemInLocalStorage(LOCAL_STORAGE.ACCOUNT_ADMIN);
     set({ authUser: null, isLoggedIn: false });
   },
@@ -103,10 +103,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       return {
         id: `${fr.roleId}-${fr.franchiseId || "global"}`,
         roleId: fr.roleId,
-        roleName: role?.name || "Unknown Role",
+        roleName: role?.name || role?.code || "Unknown Role",
         roleCode: role?.code || "UNKNOWN",
         franchiseId: fr.franchiseId,
-        franchiseName: null,
+        franchiseName: fr.franchiseName || null,
         isGlobal: !fr.franchiseId,
       };
     });

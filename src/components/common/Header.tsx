@@ -10,9 +10,11 @@ import { Button } from "../ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import { FileText, LogOut, Settings, User, ShoppingCart } from "lucide-react";
 import { useAuthStore } from "@/stores/auth-store";
+import { useLogoutCustomer } from "@/hooks/client/useClient.hooks";
 
 const Header = () => {
-  const { authUser, logout, isAdmin } = useAuthStore();
+  const { authUser, isAdmin } = useAuthStore();
+  const logoutMutation = useLogoutCustomer();
   const user = authUser?.user;
 
   const primaryRole = authUser?.roles[0]?.name || "User";
@@ -97,7 +99,7 @@ const Header = () => {
                     variant="ghost"
                     className="relative h-10 w-10 rounded-full"
                   >
-                    <Avatar className="h-12 w-12  mt-5">
+                    <Avatar className="h-12 w-12">
                       <AvatarImage
                         src={user?.avatarUrl || undefined}
                         alt={user?.name}
@@ -108,7 +110,7 @@ const Header = () => {
                     </Avatar>
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuContent align="center" className="w-56">
                   <div className="flex items-center justify-start gap-2 p-2">
                     <div className="flex flex-col space-y-1">
                       <p className="text-sm font-medium leading-none">
@@ -154,7 +156,7 @@ const Header = () => {
                   )}
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
-                    onClick={async () => await logout()}
+                    onClick={() => logoutMutation.mutate()}
                     className="cursor-pointer"
                   >
                     <LogOut className="mr-2 h-4 w-4" />
@@ -171,7 +173,7 @@ const Header = () => {
                   asChild
                   className="bg-[#6D4C41] hover:bg-[#5D4037] text-white text-md"
                 >
-                  <Link to="/client/signup">Sign Up</Link>
+                  <Link to="/client/register">Sign Up</Link>
                 </Button>
               </>
             )}

@@ -1,12 +1,11 @@
 import { LOCAL_STORAGE } from "@/const/localstorage.const";
-import type { ID } from "@/types/common";
 import type { Role, User, UserFranchiseRole } from "@/types/user.type";
 
 export interface AuthUser {
   user: User;
   roles: Role[];
   franchiseRoles: UserFranchiseRole[];
-  currentFranchiseId: number | null;
+  currentFranchiseId: string | null;
 }
 
 export function setItemInLocalStorage<T>(key: string, value: T): void {
@@ -33,7 +32,7 @@ export function getCurrentUser(): User | null {
   return getCurrentAuthUser()?.user ?? null;
 }
 
-export function getCurrentUserId(): ID | null {
+export function getCurrentUserId(): string | null {
   return getCurrentUser()?.id ?? null;
 }
 
@@ -41,7 +40,7 @@ export function getCurrentUserRoles(): Role[] {
   return getCurrentAuthUser()?.roles ?? [];
 }
 
-export function getCurrentFranchiseId(): number | null {
+export function getCurrentFranchiseId(): string | null {
   return getCurrentAuthUser()?.currentFranchiseId ?? null;
 }
 

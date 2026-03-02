@@ -12,7 +12,7 @@ export interface AvailableContext {
   roleId: number;
   roleName: string;
   roleCode: string;
-  franchiseId: number | null;
+  franchiseId: string | null; // MongoDB ObjectId string
   franchiseName: string | null;
   isGlobal: boolean;
 }
