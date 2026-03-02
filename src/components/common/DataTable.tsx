@@ -25,6 +25,10 @@ import {
   X,
   Columns3,
   AlertCircle,
+  Download,
+  Upload,
+  Loader2,
+  EllipsisVertical,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -55,6 +59,8 @@ import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
@@ -97,6 +103,13 @@ export interface DataTableProps<TData> {
   enableColumnVisibility?: boolean;
   defaultHiddenColumns?: string[];
   renderActions?: (row: TData) => React.ReactNode;
+  // Import / Export Excel
+  onExport?: () => void;
+  isExporting?: boolean;
+  onImport?: (file: File) => void;
+  isImporting?: boolean;
+  exportLabel?: string;
+  importLabel?: string;
 }
 
 // Internal Components
@@ -151,6 +164,12 @@ export function DataTable<TData>({
   enableColumnVisibility = false,
   defaultHiddenColumns = [],
   renderActions,
+  onExport,
+  isExporting = false,
+  onImport,
+  isImporting = false,
+  exportLabel = "Export",
+  importLabel = "Import",
 }: DataTableProps<TData>) {
   // State Management
   const [sorting, setSorting] = useState<SortingState>([]);
@@ -445,6 +464,68 @@ export function DataTable<TData>({
                 ))}
             </DropdownMenuContent>
           </DropdownMenu>
+        )}
+
+        {/* Spacer to push three-dot menu to far right */}
+        {(onImport || onExport) && <div className="flex-1" />}
+
+        {/* Three-dot menu for Import / Export */}
+        {(onImport || onExport) && (
+          <>
+            {onImport && (
+              <input
+                type="file"
+                id="excel-import-input"
+                accept=".xlsx,.xls,.csv"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) {
+                    onImport(file);
+                    e.target.value = "";
+                  }
+                }}
+              />
+            )}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="h-9 w-9 border-[#E8DFD6] hover:bg-[#FAF8F5]"
+                >
+                  {(isImporting || isExporting) ? (
+                    <Loader2 className="h-4 w-4 animate-spin text-[#6D4C41]" />
+                  ) : (
+                    <EllipsisVertical className="h-4 w-4 text-[#5D4037]" />
+                  )}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                {onImport && (
+                  <DropdownMenuItem
+                    disabled={isImporting}
+                    onClick={() => document.getElementById("excel-import-input")?.click()}
+                    className="gap-2 cursor-pointer"
+                  >
+                    <Upload className="h-4 w-4" />
+                    {importLabel}
+                  </DropdownMenuItem>
+                )}
+                {onImport && onExport && <DropdownMenuSeparator />}
+                {onExport && (
+                  <DropdownMenuItem
+                    disabled={isExporting || data.length === 0}
+                    onClick={onExport}
+                    className="gap-2 cursor-pointer"
+                  >
+                    <Download className="h-4 w-4" />
+                    {exportLabel}
+                  </DropdownMenuItem>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </>
         )}
       </div>
 

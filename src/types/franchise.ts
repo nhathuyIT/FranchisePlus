@@ -6,13 +6,8 @@ export interface Franchise extends BaseTimestamp, SoftDeletable, Activatable {
   name: string;
   logoUrl: string | null;
   address: string;
-<<<<<<< HEAD
-  opened_at: string | null;
-  closed_at: string | null;
-=======
   openedAt: string | null;
   closedAt: string | null;
->>>>>>> dev
   lat?: number; // Latitude for map
   lng?: number; // Longitude for map
 }

@@ -38,21 +38,21 @@ export const categoryColumns: ColumnDef<Category>[] = [
     ),
   },
   {
-    accessorKey: "is_active",
+    accessorKey: "isActive",
     header: "Status",
     filterFn: (row, _columnId, filterValue) => {
-      return row.original.is_active === filterValue;
+      return row.original.isActive === filterValue;
     },
     cell: ({ row }) => (
       <Badge
-        variant={row.original.is_active ? "default" : "secondary"}
+        variant={row.original.isActive ? "default" : "secondary"}
         className={
-          row.original.is_active
+          row.original.isActive 
             ? "bg-green-600 hover:bg-green-700 rounded-full"
             : "bg-gray-500 hover:bg-gray-600 rounded-full"
         }
       >
-        {row.original.is_active ? "Active" : "Inactive"}
+        {row.original.isActive ? "Active" : "Inactive"}
       </Badge>
     ),
   },
