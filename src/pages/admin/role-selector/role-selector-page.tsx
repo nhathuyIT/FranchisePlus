@@ -7,6 +7,7 @@ import { useAuthStore } from "@/stores/auth-store";
 import { ROUTER_URL } from "@/router/route.const";
 import type { AvailableContext } from "@/config/permission";
 import type { Role, User, UserFranchiseRole } from "@/types/user.type";
+import { useSwitchContext } from "@/hooks/auth/useAuth.hooks";
 
 interface LocationState {
   user: User;
@@ -18,6 +19,7 @@ export const RoleSelectorPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { login } = useAuthStore();
+  const switchContextMutation = useSwitchContext();
 
   const state = location.state as LocationState | null;
 
@@ -27,26 +29,40 @@ export const RoleSelectorPage = () => {
     }
   }, [state, navigate]);
 
-  const handleSelectRole = (context: AvailableContext) => {
+  const handleSelectRole = async (context: AvailableContext) => {
     if (!state) return;
 
-    const authUser = {
-      user: state.user,
-      roles: state.roles,
-      franchiseRoles: state.franchiseRoles || [],
-      currentRoleId: context.roleId,
-      currentFranchiseId: context.franchiseId,
-    };
+    try {
+      // Call API to switch context
+      if (context.franchiseId) {
+        await switchContextMutation.mutateAsync({
+          franchise_id: context.franchiseId,
+        });
+      }
 
-    login(authUser);
+      const authUser = {
+        user: state.user,
+        roles: state.roles,
+        franchiseRoles: state.franchiseRoles || [],
+        currentRoleId: context.roleId,
+        currentFranchiseId: context.franchiseId,
+      };
 
-    toast.success("Role selected!", {
-      description: `You are now ${context.roleName}`,
-    });
+      login(authUser);
 
-    navigate(ROUTER_URL.ADMIN + "/" + ROUTER_URL.ADMIN_ROUTER.DASHBOARD, {
-      replace: true,
-    });
+      toast.success("Role selected!", {
+        description: `You are now ${context.roleName}`,
+      });
+
+      navigate(ROUTER_URL.ADMIN + "/" + ROUTER_URL.ADMIN_ROUTER.DASHBOARD, {
+        replace: true,
+      });
+    } catch (error) {
+      console.error("Failed to select role:", error);
+      toast.error("Failed to select role", {
+        description: "Please try again",
+      });
+    }
   };
 
   if (!state || !state.franchiseRoles || state.franchiseRoles.length === 0) {
@@ -59,10 +75,10 @@ export const RoleSelectorPage = () => {
       return {
         id: `${fr.roleId}-${fr.franchiseId || "global"}`,
         roleId: fr.roleId,
-        roleName: role.name,
+        roleName: role.name || role.code,
         roleCode: role.code,
         franchiseId: fr.franchiseId,
-        franchiseName: null,
+        franchiseName: fr.franchiseName || null,
         isGlobal: !fr.franchiseId,
       };
     },

@@ -11,6 +11,8 @@ import type {
   VerifyTokenRequest,
   VerifyTokenResponse,
   ResendTokenRequest,
+  RegisterAdminRequest,
+  RegisterResponse,
 } from "@/types/auth.type";
 
 export const login = async (data: LoginRequest): Promise<void> => {
@@ -73,7 +75,7 @@ export const changePassword = async (
 
 export const logout = async (): Promise<void> => {
   await httpClient.post<void, never>({
-    url: "/api/auth/log-out",
+    url: "/api/auth/logout",
   });
 };
 
@@ -95,4 +97,16 @@ export const resendToken = async (data: ResendTokenRequest): Promise<void> => {
     url: "/api/auth/resend-token",
     data,
   });
+};
+export const register = async (
+  data: RegisterAdminRequest,
+): Promise<RegisterResponse> => {
+  const response = await httpClient.post<
+    RegisterResponse,
+    RegisterAdminRequest
+  >({
+    url: "/api/auth",
+    data,
+  });
+  return response!;
 };

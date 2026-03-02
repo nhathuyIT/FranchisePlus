@@ -11,7 +11,17 @@ import type {
   ChangePasswordRequest,
   VerifyTokenRequest,
   ResendTokenRequest,
+  RegisterRequest,
 } from "@/types/auth.type";
+import type { Role, UserFranchiseRole } from "@/types/user.type";
+
+// API role format from backend
+interface ApiRoleResponse {
+  role: string;
+  scope: string;
+  franchise_id: string | null;
+  franchise_name: string | null;
+}
 
 export const useLogin = () => {
   const navigate = useNavigate();
@@ -32,14 +42,57 @@ export const useLogin = () => {
         return;
       }
 
-      if (data.franchiseRoles && data.franchiseRoles.length > 1) {
+      // Check if API returns roles in the format: {role, scope, franchise_id, franchise_name}
+      const apiRoles = data.roles as unknown as ApiRoleResponse[];
+      const transformedFranchiseRoles: UserFranchiseRole[] = [];
+      const transformedRoles: Role[] = [];
+
+      if (
+        apiRoles &&
+        apiRoles.length > 0 &&
+        apiRoles[0].franchise_id !== undefined
+      ) {
+        // Transform the roles to match expected format
+        apiRoles.forEach((r, index) => {
+          const roleId = index + 1; // Generate temporary IDs
+          transformedRoles.push({
+            id: roleId,
+            code: r.role,
+            name: r.role,
+            description: null,
+            scope: r.scope as "GLOBAL" | "FRANCHISE",
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+            isDeleted: false,
+          });
+          transformedFranchiseRoles.push({
+            id: index + 1,
+            franchiseId: r.franchise_id || null,
+            franchiseName: r.franchise_name || null,
+            roleId: roleId,
+            userId: data.user.id,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+            isDeleted: false,
+          });
+        });
+      }
+
+      const franchiseRoles =
+        transformedFranchiseRoles.length > 0
+          ? transformedFranchiseRoles
+          : data.franchiseRoles || [];
+
+      const roles = transformedRoles.length > 0 ? transformedRoles : data.roles;
+
+      if (franchiseRoles && franchiseRoles.length > 1) {
         navigate(
           ROUTER_URL.ADMIN + "/" + ROUTER_URL.ADMIN_ROUTER.ROLE_SELECTOR,
           {
             state: {
               user: data.user,
-              roles: data.roles,
-              franchiseRoles: data.franchiseRoles,
+              roles: roles,
+              franchiseRoles: franchiseRoles,
             },
           },
         );
@@ -48,16 +101,15 @@ export const useLogin = () => {
 
       const authUser = {
         user: data.user,
-        roles: data.roles,
-        franchiseRoles: data.franchiseRoles || [],
-        currentRoleId:
-          data.franchiseRoles?.[0]?.roleId || data.roles[0]?.id || null,
-        currentFranchiseId: data.franchiseRoles?.[0]?.franchiseId || null,
+        roles: roles,
+        franchiseRoles: franchiseRoles,
+        currentRoleId: franchiseRoles?.[0]?.roleId || roles[0]?.id || null,
+        currentFranchiseId: franchiseRoles?.[0]?.franchiseId || null,
       };
 
       setAuth(authUser);
       toast.success("Welcome back!", {
-        description: `Logged in as ${data.roles[0]?.name}`,
+        description: `Logged in as ${roles[0]?.name || roles[0]?.code}`,
       });
 
       navigate(ROUTER_URL.ADMIN + "/" + ROUTER_URL.ADMIN_ROUTER.DASHBOARD);
@@ -119,25 +171,20 @@ export const useClientLogin = () => {
  */
 export const useSwitchContext = () => {
   const queryClient = useQueryClient();
-  const { switchRole } = useAuthStore();
 
   return useMutation({
     mutationFn: (data: SwitchContextRequest) => authApi.switchContext(data),
-    onSuccess: (_data, variables) => {
-      switchRole({
-        id: `${variables.roleId}-${variables.franchiseId || "global"}`,
-        roleId: variables.roleId,
-        roleName: "", // Will be updated from store
-        roleCode: "",
-        franchiseId: variables.franchiseId,
-        franchiseName: null,
-        isGlobal: !variables.franchiseId,
-      });
-
-      // Invalidate profile query
+    onSuccess: () => {
+      // Invalidate profile query to refresh user data from backend
       queryClient.invalidateQueries({ queryKey: ["auth", "profile"] });
 
       toast.success("Role switched successfully");
+    },
+    onError: (error) => {
+      console.error("[useSwitchContext] Switch context error:", error);
+      toast.error("Failed to switch role", {
+        description: error.message || "Please try again",
+      });
     },
   });
 };
@@ -192,9 +239,14 @@ export const useLogout = () => {
   return useMutation({
     mutationFn: () => authApi.logout(),
     onSuccess: () => {
-      clearAuth();
+      clearAuth(false);
       queryClient.clear();
       toast.success("Logged out successfully");
+      navigate(ROUTER_URL.ADMIN_ROUTER.LOGIN);
+    },
+    onError: () => {
+      clearAuth(false);
+      queryClient.clear();
       navigate(ROUTER_URL.ADMIN_ROUTER.LOGIN);
     },
   });
@@ -212,6 +264,36 @@ export const useResendToken = () => {
     onSuccess: () => {
       toast.success("Verification email sent", {
         description: "Please check your email",
+      });
+    },
+  });
+};
+
+export const useRegister = () => {
+  const navigate = useNavigate();
+
+  return useMutation({
+    mutationFn: (data: RegisterRequest) => {
+      console.log("[useRegister] Sending data:", data);
+      return authApi.register(data);
+    },
+    onSuccess: () => {
+      toast.success("Registration successful!", {
+        description: "Please login with your credentials",
+      });
+      navigate(ROUTER_URL.CLIENT_ROUTER.LOGIN);
+    },
+    onError: (
+      error: Error & { response?: { data?: { message?: string } } },
+    ) => {
+      console.error("[useRegister] Registration error:", error);
+      console.error("[useRegister] Error response:", error.response?.data);
+      const errorMessage =
+        error.response?.data?.message ||
+        error.message ||
+        "Please check your information and try again";
+      toast.error("Registration failed", {
+        description: errorMessage,
       });
     },
   });

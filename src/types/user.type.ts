@@ -4,7 +4,7 @@ import type { ID, BaseTimestamp, SoftDeletable, Activatable } from "./common";
  * User entity - internal users (admin, manager, staff)
  */
 export interface User extends BaseTimestamp, SoftDeletable, Activatable {
-  id: ID;
+  id: string; // MongoDB ObjectId
   email: string; // unique
   passwordHash: string;
   name: string;
@@ -29,7 +29,8 @@ export interface Role extends BaseTimestamp, SoftDeletable {
  */
 export interface UserFranchiseRole extends BaseTimestamp, SoftDeletable {
   id: ID;
-  franchiseId: ID | null; // null if role is GLOBAL
+  franchiseId: string | null; // MongoDB ObjectId string, null if role is GLOBAL
   roleId: ID;
-  userId: ID;
+  userId: string; // MongoDB ObjectId string
+  franchiseName?: string | null; // optional franchise name from API
 }
