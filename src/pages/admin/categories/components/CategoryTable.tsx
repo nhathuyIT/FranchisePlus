@@ -3,6 +3,14 @@ import { DataTable, type ColumnFilter, type BulkAction } from "@/components/comm
 import { categoryColumns } from "../columns/category.columns";
 import { Button } from "@/components/ui/button";
 import type { Category } from "@/types/category";
+import { toast } from "sonner";
+import {
+  useExcelExport,
+  useExcelImport,
+  CategoryImportSchema,
+  CATEGORY_HEADER_MAPPING,
+  CATEGORY_REVERSE_HEADER_MAPPING,
+} from "@/lib/excel";
 
 interface CategoryTableProps {
   categories: Category[];
@@ -23,6 +31,37 @@ export const CategoryTable = ({
   onDelete,
   onBulkDelete,
 }: CategoryTableProps) => {
+  // Excel Export
+  const { exportToExcel, isExporting } = useExcelExport({
+    headerMapping: CATEGORY_REVERSE_HEADER_MAPPING,
+    fileName: "categories",
+    sheetName: "Categories",
+  });
+
+  // Excel Import
+  const { importFromExcel, isImporting } = useExcelImport({
+    schema: CategoryImportSchema,
+    headerMapping: CATEGORY_HEADER_MAPPING,
+  });
+
+  const handleExport = () => {
+    exportToExcel(categories as unknown as Record<string, unknown>[]).then(() => {
+      toast.success("Excel exported successfully!");
+    }).catch(() => {
+      toast.error("Excel export failed!");
+    });
+  };
+
+  const handleImport = async (file: File) => {
+    const result = await importFromExcel(file);
+    if (result.success) {
+      toast.success(`Successfully imported ${result.validRows} rows`);
+    } else {
+      toast.error(`Import failed: ${result.validRows} valid, ${result.invalidRows} errors`);
+      result.errors.forEach((err) => console.warn(`Row ${err.row} - ${err.field}: ${err.message}`));
+    }
+  };
+
   // Column Filters Configuration
   const columnFilters: ColumnFilter[] = [
     {
@@ -63,6 +102,13 @@ export const CategoryTable = ({
       enableColumnVisibility
       columnFilters={columnFilters}
       bulkActions={bulkActions}
+      // Excel Import/Export
+      onExport={handleExport}
+      isExporting={isExporting}
+      onImport={handleImport}
+      isImporting={isImporting}
+      exportLabel="Export Excel"
+      importLabel="Import Excel"
       renderActions={(category) => (
         <>
           {onEdit && (
