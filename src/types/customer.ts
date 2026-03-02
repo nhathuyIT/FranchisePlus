@@ -60,3 +60,21 @@ export interface CustomerFranchise
   firstOrderAt: string | null;
   lastOrderAt: string | null;
 }
+
+// Pagination Info
+export interface PageInfo {
+  pageNum: number;
+  pageSize: number;
+  totalItems: number;
+  totalPages: number;
+}
+
+// Generic Paginated Response
+export interface PaginatedResponse<T> {
+  success: boolean;
+  data: T[];
+  pageInfo: PageInfo;
+}
+
+// Customer List Response (paginated)
+export type CustomerListResponse = PaginatedResponse<CustomerProfile>;

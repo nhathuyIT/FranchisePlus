@@ -97,7 +97,7 @@ export const RoleSelectorPage = () => {
 
       <div className="w-full max-w-md relative">
         <div className="absolute -top-16 left-1/2 -translate-x-1/2">
-          <div className="bg-linear-to-br from-amber-600 to-amber-800 rounded-full p-6 shadow-2xl">
+          <div className="bg-gradien-to-br from-amber-600 to-amber-800 rounded-full p-6 shadow-2xl">
             <Coffee size={48} className="text-amber-50" strokeWidth={2.5} />
           </div>
         </div>
