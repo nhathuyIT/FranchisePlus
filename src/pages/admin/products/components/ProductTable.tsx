@@ -65,7 +65,7 @@ export const ProductTable = ({
       searchable
       searchPlaceholder="Search by name, SKU, or category..."
       emptyMessage="No products found matching your search."
-      initialPageSize={10}
+      initialPageSize={5}
       enableRowSelection={!!onBulkDelete}
       enableColumnVisibility
       columnFilters={columnFilters}

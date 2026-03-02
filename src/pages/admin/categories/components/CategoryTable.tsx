@@ -58,7 +58,7 @@ export const CategoryTable = ({
       searchable
       searchPlaceholder="Search by name, code, or description..."
       emptyMessage="No categories found matching your search."
-      initialPageSize={10}
+      initialPageSize={5}
       enableRowSelection={!!onBulkDelete}
       enableColumnVisibility
       columnFilters={columnFilters}
