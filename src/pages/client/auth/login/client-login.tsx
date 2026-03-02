@@ -10,7 +10,7 @@ import {
   ClientLoginZod,
   type ClientLoginZodType,
 } from "./client-zod/client-login-zod";
-import { useClientLogin } from "@/hooks/auth/useAuth.hooks";
+import { useClientLogin } from "@/hooks/client/useClient.hooks";
 import { ROUTER_URL } from "@/router/route.const";
 
 const ClientLogin = () => {
@@ -156,6 +156,11 @@ const ClientLogin = () => {
               )}
             </Button>
           </form>
+          <Link to={ROUTER_URL.CLIENT_ROUTER.REGISTER} className="block mt-3">
+            <Button className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold py-6 rounded-lg shadow-lg hover:shadow-xl transition-all duration-200">
+              Register
+            </Button>
+          </Link>
 
           {/* Footer */}
           <div className="mt-6 text-center">

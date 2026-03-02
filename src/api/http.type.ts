@@ -30,6 +30,7 @@ export interface ApiSuccessResponse<T> {
 export interface ApiErrorResponse {
   success: false;
   message?: string | null;
+  errorCode?: string | null;
   errors?: ApiErrorItem[] | null;
 }
 
@@ -40,15 +41,18 @@ export interface ApiErrorItem {
 
 export class HttpError extends Error {
   status: number;
+  code?: string;
   errors?: ApiErrorItem[];
 
   constructor(params: {
     status: number;
     message: string;
+    code?: string;
     errors?: ApiErrorItem[];
   }) {
     super(params.message);
     this.status = params.status;
+    this.code = params.code;
     this.errors = params.errors;
   }
 }

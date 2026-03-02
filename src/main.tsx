@@ -3,8 +3,11 @@ import { createRoot } from "react-dom/client";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { queryClient } from "./config/tanstack.config";
+import { setupApi } from "./api/axios.config";
 import "./index.css";
 import App from "./App.tsx";
+
+setupApi();
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
