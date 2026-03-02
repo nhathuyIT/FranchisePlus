@@ -47,7 +47,7 @@ export const categoryColumns: ColumnDef<Category>[] = [
       <Badge
         variant={row.original.isActive ? "default" : "secondary"}
         className={
-          row.original.isActive
+          row.original.isActive 
             ? "bg-green-600 hover:bg-green-700 rounded-full"
             : "bg-gray-500 hover:bg-gray-600 rounded-full"
         }

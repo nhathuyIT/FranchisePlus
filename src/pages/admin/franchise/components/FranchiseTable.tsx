@@ -3,6 +3,14 @@ import { DataTable, type ColumnFilter, type BulkAction } from "@/components/comm
 import { franchiseColumns } from "../columns/franchise.columns";
 import { Button } from "@/components/ui/button";
 import type { Franchise } from "@/types/franchise";
+import { toast } from "sonner";
+import {
+  useExcelExport,
+  useExcelImport,
+  FranchiseImportSchema,
+  FRANCHISE_HEADER_MAPPING,
+  FRANCHISE_REVERSE_HEADER_MAPPING,
+} from "@/lib/excel";
 
 interface FranchiseTableProps {
   franchises: Franchise[];
@@ -25,6 +33,39 @@ export const FranchiseTable = ({
   onView,
   onDelete,
 }: FranchiseTableProps) => {
+  // Excel Export
+  const { exportToExcel, isExporting } = useExcelExport({
+    headerMapping: FRANCHISE_REVERSE_HEADER_MAPPING,
+    fileName: "franchises",
+    sheetName: "Franchises",
+    excludeColumns: ["logoUrl"],
+  });
+
+  // Excel Import
+  const { importFromExcel, isImporting } = useExcelImport({
+    schema: FranchiseImportSchema,
+    headerMapping: FRANCHISE_HEADER_MAPPING,
+  });
+
+  const handleExport = () => {
+    exportToExcel(franchises as unknown as Record<string, unknown>[]).then(() => {
+      toast.success("Excel exported successfully!");
+    }).catch(() => {
+      toast.error("Excel export failed!");
+    });
+  };
+
+  const handleImport = async (file: File) => {
+    const result = await importFromExcel(file);
+    if (result.success) {
+      toast.success(`Successfully imported ${result.validRows} rows`);
+      // TODO: call API to save result.data
+    } else {
+      toast.error(`Import failed: ${result.validRows} valid, ${result.invalidRows} errors`);
+      result.errors.forEach((err) => console.warn(`Row ${err.row} - ${err.field}: ${err.message}`));
+    }
+  };
+
   // Column Filters Configuration
   const columnFilters: ColumnFilter[] = [
     {
@@ -67,6 +108,13 @@ export const FranchiseTable = ({
       defaultHiddenColumns={["address"]}
       columnFilters={columnFilters}
       bulkActions={bulkActions}
+      // Excel Import/Export
+      onExport={handleExport}
+      isExporting={isExporting}
+      onImport={handleImport}
+      isImporting={isImporting}
+      exportLabel="Export Excel"
+      importLabel="Import Excel"
       renderActions={(franchise) => (
         <>
           {onView && (
