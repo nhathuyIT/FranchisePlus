@@ -22,7 +22,7 @@ const LowStockAlert = () => {
 
   const criticalItems = inventory.filter(
     (item) =>
-      (item.inventory.quantity / item.inventory.alert_threshold) * 100 <= 50
+      (item.inventory.quantity / item.inventory.alertThreshold) * 100 <= 50
   );
 
   const handleUpdateStock = (item: InventoryItemView) => {
@@ -56,9 +56,9 @@ const LowStockAlert = () => {
         "Status",
       ];
       const rows = selectedItems.map((item) => {
-        const shortage = item.inventory.alert_threshold - item.inventory.quantity;
+        const shortage = item.inventory.alertThreshold - item.inventory.quantity;
         const status =
-          (item.inventory.quantity / item.inventory.alert_threshold) * 100 <= 50
+          (item.inventory.quantity / item.inventory.alertThreshold) * 100 <= 50
             ? "Critical"
             : "Warning";
         return [
@@ -66,7 +66,7 @@ const LowStockAlert = () => {
           item.product.sku,
           item.franchiseName,
           `${item.inventory.quantity} kg`,
-          `${item.inventory.alert_threshold} kg`,
+          `${item.inventory.alertThreshold} kg`,
           `-${shortage} kg`,
           status,
         ];

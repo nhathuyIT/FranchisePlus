@@ -49,14 +49,14 @@ export const FranchiseInfoCard = ({ franchise }: FranchiseInfoCardProps) => {
           <div>
             <p className="text-sm text-[#5D4037]/70">Opened Date</p>
             <p className="text-base font-medium text-[#3E2723]">
-              {franchise.opened_at
-                ? new Date(franchise.opened_at).toLocaleDateString()
+              {franchise.openedAt
+                ? new Date(franchise.openedAt).toLocaleDateString()
                 : "N/A"}
             </p>
           </div>
         </div>
 
-        {franchise.closed_at && (
+        {franchise.closedAt && (
           <div className="flex items-start gap-3 p-3 rounded-lg hover:bg-white transition-colors duration-200">
             <div className="bg-red-500 rounded-full w-10 h-10 flex items-center justify-center flex-shrink-0">
               <Calendar className="h-5 w-5 text-white" />
@@ -64,7 +64,7 @@ export const FranchiseInfoCard = ({ franchise }: FranchiseInfoCardProps) => {
             <div>
               <p className="text-sm text-[#5D4037]/70">Closed Date</p>
               <p className="text-base font-medium text-[#EF4444]">
-                {new Date(franchise.closed_at).toLocaleDateString()}
+                {new Date(franchise.closedAt).toLocaleDateString()}
               </p>
             </div>
           </div>
@@ -77,7 +77,7 @@ export const FranchiseInfoCard = ({ franchise }: FranchiseInfoCardProps) => {
           <div>
             <p className="text-sm text-[#5D4037]/70">Created At</p>
             <p className="text-base font-medium text-[#3E2723]">
-              {new Date(franchise.created_at).toLocaleDateString()}
+              {new Date(franchise.createdAt).toLocaleDateString()}
             </p>
           </div>
         </div>
@@ -89,7 +89,7 @@ export const FranchiseInfoCard = ({ franchise }: FranchiseInfoCardProps) => {
           <div>
             <p className="text-sm text-[#5D4037]/70">Last Updated</p>
             <p className="text-base font-medium text-[#3E2723]">
-              {new Date(franchise.updated_at).toLocaleDateString()}
+              {new Date(franchise.updatedAt).toLocaleDateString()}
             </p>
           </div>
         </div>

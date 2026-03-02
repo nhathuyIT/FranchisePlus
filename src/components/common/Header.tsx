@@ -110,7 +110,7 @@ const Header = () => {
                   >
                     <Avatar className="h-12 w-12  mt-5">
                       <AvatarImage
-                        src={user?.avatar_url || undefined}
+                        src={user?.avatarUrl || undefined}
                         alt={user?.name}
                       />
                       <AvatarFallback>
@@ -164,7 +164,10 @@ const Header = () => {
                     </>
                   )}
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={logout} className="cursor-pointer">
+                  <DropdownMenuItem
+                    onClick={async () => await logout()}
+                    className="cursor-pointer"
+                  >
                     <LogOut className="mr-2 h-4 w-4" />
                     <span className="text-md">Log out</span>
                   </DropdownMenuItem>

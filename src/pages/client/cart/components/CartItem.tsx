@@ -1,5 +1,5 @@
-import React from 'react';
-import type { CartItem } from '../useCart';
+import React from "react";
+import type { CartItem } from "../useCart";
 
 interface CartItemProps {
   item: CartItem;
@@ -8,11 +8,11 @@ interface CartItemProps {
   onRemove: () => void;
 }
 
-const CartItemComponent: React.FC<CartItemProps> = ({ 
-  item, 
-  onIncrease, 
-  onDecrease, 
-  onRemove 
+const CartItemComponent: React.FC<CartItemProps> = ({
+  item,
+  onIncrease,
+  onDecrease,
+  onRemove,
 }) => {
   return (
     <div className="flex items-center justify-between p-4 border-b border-gray-200 hover:bg-amber-50 transition-colors">
