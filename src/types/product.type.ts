@@ -1,17 +1,20 @@
-import type { ID, BaseTimestamp, SoftDeletable, Activatable } from "./common";
+import type { BaseTimestamp, SoftDeletable, Activatable } from "./common";
 
 /**
  * Product entity - global product definition
+ * Mapped from API snake_case to camelCase
  */
 export interface Product extends BaseTimestamp, SoftDeletable, Activatable {
-  id: ID;
+  id: string;
   sku: string; // unique
   name: string;
   description: string | null;
   content: string | null;
   imageUrl: string | null;
+  imagesUrl: string[];
   minPrice: number;
   maxPrice: number;
+  isHaveTopping: boolean;
 }
 
 /**
