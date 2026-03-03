@@ -1,9 +1,14 @@
 <<<<<<< HEAD
+<<<<<<< HEAD
 import { useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 =======
 import { useEffect, useState } from "react";
 >>>>>>> 1306d5f (Fix switch context)
+=======
+import { useEffect } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+>>>>>>> c2f1c9b ([20260303][VuongND] feat(auth): update role context switching to include role_id)
 import { useNavigate, useLocation } from "react-router-dom";
 import { Coffee } from "lucide-react";
 import { toast } from "sonner";
@@ -42,10 +47,14 @@ export const RoleSelectorPage = () => {
     try {
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> c2f1c9b ([20260303][VuongND] feat(auth): update role context switching to include role_id)
       await switchContextMutation.mutateAsync({
         franchise_id: context.franchiseId ?? null,
         role_id: context.roleId,
       });
+<<<<<<< HEAD
 
       await queryClient.invalidateQueries({ queryKey: ["auth", "profile"] });
       await queryClient.invalidateQueries({ queryKey: ["franchise"] });
@@ -56,22 +65,11 @@ export const RoleSelectorPage = () => {
 >>>>>>> e1bb0d7 (Fix switch context)
       await authApi.switchContext({ franchiseId: context.franchiseId });
 >>>>>>> 1306d5f (Fix switch context)
+=======
+>>>>>>> c2f1c9b ([20260303][VuongND] feat(auth): update role context switching to include role_id)
 
-      // Step 2: Call getProfile to get the confirmed activeContext after the switch
-      const freshProfile = await authApi.getProfile();
-
-      // Resolve from activeContext returned by getProfile
-      const activeContext = freshProfile.activeContext ?? {
-        role: context.roleCode,
-        scope: context.isGlobal ? "GLOBAL" : "FRANCHISE",
-        franchiseId: context.franchiseId,
-      };
-
-      const matchedFR = (state.franchiseRoles || []).find(
-        (fr) =>
-          fr.franchiseId === activeContext.franchiseId ||
-          (!fr.franchiseId && !activeContext.franchiseId),
-      );
+      await queryClient.invalidateQueries({ queryKey: ["auth", "profile"] });
+      await queryClient.invalidateQueries({ queryKey: ["franchise"] });
 
       const authUser = {
         user: freshProfile.user,

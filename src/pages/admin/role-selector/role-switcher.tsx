@@ -12,11 +12,16 @@ import type { AvailableContext } from "@/config/permission";
 
 export const RoleSwitcher = () => {
 <<<<<<< HEAD
+<<<<<<< HEAD
   const queryClient = useQueryClient();
   const { authUser, getAvailableContexts, switchRole } = useAuthStore();
 =======
   const { authUser, getAvailableContexts } = useAuthStore();
 >>>>>>> 1306d5f (Fix switch context)
+=======
+  const queryClient = useQueryClient();
+  const { authUser, getAvailableContexts, switchRole } = useAuthStore();
+>>>>>>> c2f1c9b ([20260303][VuongND] feat(auth): update role context switching to include role_id)
   const switchContextMutation = useSwitchContext();
   const isPending = switchContextMutation.isPending;
 
@@ -51,9 +56,18 @@ export const RoleSwitcher = () => {
 =======
 >>>>>>> e1bb0d7 (Fix switch context)
       await switchContextMutation.mutateAsync({
-        franchiseId: ctx.franchiseId,
+        role_id: ctx.roleId,
+        franchise_id: ctx.franchiseId ?? null,
       });
+<<<<<<< HEAD
 >>>>>>> 1306d5f (Fix switch context)
+=======
+
+      await queryClient.invalidateQueries({ queryKey: ["auth", "profile"] });
+      await queryClient.invalidateQueries({ queryKey: ["franchise"] });
+
+      switchRole(ctx);
+>>>>>>> c2f1c9b ([20260303][VuongND] feat(auth): update role context switching to include role_id)
     } catch (error) {
       console.error("Failed to switch role:", error);
     }
