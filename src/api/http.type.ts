@@ -17,6 +17,8 @@ export interface HttpClient {
 
   put<T, D = unknown>(config: HttpRequestConfig<D>): Promise<T | null>;
 
+  patch<T, D = unknown>(config: HttpRequestConfig<D>): Promise<T | null>;
+
   delete<T, P extends Record<string, unknown> = Record<string, unknown>>(
     config: HttpRequestConfig<never, P>,
   ): Promise<T | null>;
