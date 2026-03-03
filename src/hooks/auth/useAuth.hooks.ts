@@ -6,7 +6,6 @@ import { useAuthStore } from "@/stores/auth-store";
 import { ROUTER_URL } from "@/router/route.const";
 import type {
   LoginRequest,
-  SwitchContextRequest,
   ForgotPasswordRequest,
   ChangePasswordRequest,
   VerifyTokenRequest,
@@ -170,14 +169,10 @@ export const useClientLogin = () => {
  * AUTH-02: Switch Context Mutation
  */
 export const useSwitchContext = () => {
-  const queryClient = useQueryClient();
-
   return useMutation({
-    mutationFn: (data: SwitchContextRequest) => authApi.switchContext(data),
+    mutationFn: (data: { franchise_id: string | null; role_id: number }) =>
+      authApi.switchContext(data),
     onSuccess: () => {
-      // Invalidate profile query to refresh user data from backend
-      queryClient.invalidateQueries({ queryKey: ["auth", "profile"] });
-
       toast.success("Role switched successfully");
     },
     onError: (error) => {
