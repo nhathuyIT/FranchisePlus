@@ -24,6 +24,8 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { ImageUpload } from "@/components/ui/image-upload";
+import { uploadFileToCloudinary } from "@/config/cloudinary";
 import { PRODUCTS, PRODUCT_CATEGORY_MAP } from "@/const/product.const";
 import { CATEGORIES } from "@/const/category.const";
 import { PageHeader } from "@/components/common/PageHeader";
@@ -49,7 +51,7 @@ const productSchema = z.object({
 type ProductFormData = z.infer<typeof productSchema>;
 
 const ProductsPage = () => {
-  const [products] = useState<Product[]>(PRODUCTS);
+  const [products, setProducts] = useState<Product[]>(PRODUCTS);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
@@ -81,10 +83,42 @@ const ProductsPage = () => {
 
   const onSubmit = (data: ProductFormData) => {
     if (editingProduct) {
-      console.log("Update product:", editingProduct.id, data);
+      // Update existing product
+      setProducts(prevProducts =>
+        prevProducts.map(p =>
+          p.id === editingProduct.id
+            ? {
+                ...p,
+                sku: data.sku,
+                name: data.name,
+                description: data.description || "",
+                content: data.content || "",
+                imageUrl: data.imageUrl || "",
+                minPrice: data.minPrice,
+                maxPrice: data.maxPrice,
+                isActive: data.isActive,
+              }
+            : p
+        )
+      );
       toast.success("Product updated successfully!");
     } else {
-      console.log("Create product:", data);
+      // Create new product
+      const newProduct: Product = {
+        id: Math.max(...products.map(p => p.id), 0) + 1,
+        sku: data.sku,
+        name: data.name,
+        description: data.description || "",
+        content: data.content || "",
+        imageUrl: data.imageUrl || "",
+        minPrice: data.minPrice,
+        maxPrice: data.maxPrice,
+        isActive: data.isActive,
+        createdAt: "",
+        updatedAt: "",
+        isDeleted: false
+      };
+      setProducts(prevProducts => [...prevProducts, newProduct]);
       toast.success("Product created successfully!");
     }
     setIsDialogOpen(false);
@@ -123,7 +157,7 @@ const ProductsPage = () => {
       `Are you sure you want to delete "${product.name}"? This action cannot be undone.`
     );
     if (confirmDelete) {
-      console.log("Delete product:", product.id);
+      setProducts(prevProducts => prevProducts.filter(p => p.id !== product.id));
       toast.success("Product deleted successfully!");
     }
   };
@@ -133,7 +167,8 @@ const ProductsPage = () => {
       `Are you sure you want to delete ${selectedProducts.length} product${selectedProducts.length > 1 ? 's' : ''}? This action cannot be undone.`
     );
     if (confirmDelete) {
-      console.log("Bulk delete products:", selectedProducts.map(p => p.id));
+      const selectedIds = selectedProducts.map(p => p.id);
+      setProducts(prevProducts => prevProducts.filter(p => !selectedIds.includes(p.id)));
       toast.success(`Successfully deleted ${selectedProducts.length} product${selectedProducts.length > 1 ? 's' : ''}`);
     }
   };
@@ -208,29 +243,16 @@ const ProductsPage = () => {
 
                     <div className="grid gap-2">
                       <Label htmlFor="imageUrl" className="text-[#3E2723] font-medium">
-                        Image URL
+                        Product Image
                       </Label>
-                      <Input
-                        id="imageUrl"
-                        type="url"
-                        placeholder="https://example.com/image.jpg"
-                        {...register("imageUrl")}
-                        className={errors.imageUrl ? "border-red-500" : ""}
+                      <ImageUpload
+                        value={watch("imageUrl") || ""}
+                        onChange={(url) => setValue("imageUrl", url)}
+                        onUpload={uploadFileToCloudinary}
+                        disabled={isLoading}
                       />
                       {errors.imageUrl && (
                         <p className="text-sm text-red-500">{errors.imageUrl.message}</p>
-                      )}
-                      {watch("imageUrl") && (
-                        <div className="mt-2">
-                          <img
-                            src={watch("imageUrl") || ""}
-                            alt="Preview"
-                            className="w-32 h-32 object-cover rounded-lg border border-[#E8DFD6]"
-                            onError={(e) => {
-                              e.currentTarget.style.display = 'none';
-                            }}
-                          />
-                        </div>
                       )}
                     </div>
 
