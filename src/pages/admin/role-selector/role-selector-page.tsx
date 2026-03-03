@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Coffee } from "lucide-react";
 import { toast } from "sonner";
@@ -16,6 +17,7 @@ interface LocationState {
 }
 
 export const RoleSelectorPage = () => {
+  const queryClient = useQueryClient();
   const navigate = useNavigate();
   const location = useLocation();
   const { login } = useAuthStore();
@@ -33,12 +35,13 @@ export const RoleSelectorPage = () => {
     if (!state) return;
 
     try {
-      // Call API to switch context
-      if (context.franchiseId) {
-        await switchContextMutation.mutateAsync({
-          franchise_id: context.franchiseId,
-        });
-      }
+      await switchContextMutation.mutateAsync({
+        franchise_id: context.franchiseId ?? null,
+        role_id: context.roleId,
+      });
+
+      await queryClient.invalidateQueries({ queryKey: ["auth", "profile"] });
+      await queryClient.invalidateQueries({ queryKey: ["franchise"] });
 
       const authUser = {
         user: state.user,

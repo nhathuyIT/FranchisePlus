@@ -1,3 +1,4 @@
+import { useQueryClient } from "@tanstack/react-query";
 import { useAuthStore } from "@/stores/auth-store";
 import { Building2, ChevronDown, CheckCircle2 } from "lucide-react";
 import {
@@ -10,6 +11,7 @@ import { useSwitchContext } from "@/hooks/auth/useAuth.hooks";
 import type { AvailableContext } from "@/config/permission";
 
 export const RoleSwitcher = () => {
+  const queryClient = useQueryClient();
   const { authUser, getAvailableContexts, switchRole } = useAuthStore();
   const switchContextMutation = useSwitchContext();
 
@@ -27,14 +29,14 @@ export const RoleSwitcher = () => {
 
   const handleSwitchRole = async (ctx: AvailableContext) => {
     try {
-      // Call API to switch context
-      if (ctx.franchiseId) {
-        await switchContextMutation.mutateAsync({
-          franchise_id: ctx.franchiseId,
-        });
-      }
+      await switchContextMutation.mutateAsync({
+        role_id: ctx.roleId,
+        franchise_id: ctx.franchiseId ?? null,
+      });
 
-      // Update local state
+      await queryClient.invalidateQueries({ queryKey: ["auth", "profile"] });
+      await queryClient.invalidateQueries({ queryKey: ["franchise"] });
+
       switchRole(ctx);
     } catch (error) {
       console.error("Failed to switch role:", error);

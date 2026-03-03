@@ -16,13 +16,11 @@ export interface LoginResponse {
 
 // AUTH-02: Switch Context Request & Response
 export interface SwitchContextRequest {
-  franchise_id: string;
+  franchise_id: string | null;
 }
 
 export interface SwitchContextResponse {
   accessToken: string;
-  currentRoleId: number;
-  currentFranchiseId: number | null;
 }
 
 // AUTH-03: Get Profile Response
@@ -30,8 +28,6 @@ export interface GetProfileResponse {
   user: User;
   roles: Role[];
   franchiseRoles: UserFranchiseRole[] | null;
-  currentRoleId: number;
-  currentFranchiseId: number | null;
 }
 
 // AUTH-04: Refresh Token Response
