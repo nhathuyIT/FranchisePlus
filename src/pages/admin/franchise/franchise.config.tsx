@@ -1,11 +1,12 @@
 import type { CrudConfig } from "@/lib/crud/types";
 import { FranchiseSchema, type FranchiseFormData } from "@/lib/schemas/franchise.schema";
 import type { Franchise } from "@/types/franchise";
+import * as franchiseApi from "@/api/franchise/franchise.api";
+import type {
+  FranchiseCreateRequest,
+  FranchiseUpdateRequest,
+} from "@/api/franchise/franchise.type";
 
-/**
- * Franchise CRUD configuration
- * Defines form fields, validation, and API endpoints
- */
 export const franchiseConfig: CrudConfig<Franchise, FranchiseFormData> = {
   entityName: "Franchise",
   entityNamePlural: "Franchises",
@@ -27,6 +28,13 @@ export const franchiseConfig: CrudConfig<Franchise, FranchiseFormData> = {
       required: true,
     },
     {
+      name: "hotline",
+      type: "text",
+      label: "Hotline",
+      placeholder: "e.g., 0909123456",
+      description: "Contact phone number (10-11 digits)",
+    },
+    {
       name: "logoUrl",
       type: "image-upload",
       label: "Logo",
@@ -43,16 +51,17 @@ export const franchiseConfig: CrudConfig<Franchise, FranchiseFormData> = {
     },
     {
       name: "openedAt",
-      type: "date",
-      label: "Opening Date",
-      description: "Date the franchise started operations",
+      type: "time",
+      label: "Opening Time",
+      placeholder: "e.g., 08:00",
+      description: "Daily opening time (HH:mm format)",
     },
     {
       name: "closedAt",
-      type: "date",
-      label: "Closing Date",
-      description: "Leave empty if franchise is still active",
-      hidden: (form) => form.watch("isActive") === true,
+      type: "time",
+      label: "Closing Time",
+      placeholder: "e.g., 22:00",
+      description: "Daily closing time (HH:mm format)",
     },
     {
       name: "isActive",
@@ -70,48 +79,71 @@ export const franchiseConfig: CrudConfig<Franchise, FranchiseFormData> = {
 
   api: {
     create: async (data) => {
-      // TODO: Replace with actual API call
-      await new Promise((resolve) => setTimeout(resolve, 800));
-
-      const newFranchise: Franchise = {
-        id: Date.now(),
+      const apiData: FranchiseCreateRequest = {
         code: data.code,
         name: data.name,
+        hotline: data.hotline || undefined,
         logoUrl: data.logoUrl || null,
         address: data.address,
         openedAt: data.openedAt || null,
         closedAt: data.closedAt || null,
-        isActive: data.isActive,
-        isDeleted: false,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
       };
 
-      return newFranchise;
+      const response = await franchiseApi.create(apiData);
+
+      if (!response) {
+        throw new Error("Failed to create franchise");
+      }
+
+      if (response.isActive === data.isActive) {
+        return response;
+      }
+
+      await franchiseApi.updateStatus(response.id, { isActive: data.isActive });
+
+      const fresh = await franchiseApi.getById(response.id);
+
+      if (!fresh) {
+        throw new Error("Failed to load created franchise");
+      }
+
+      return fresh;
     },
 
     update: async (_id, data) => {
-      // TODO: Replace with actual API call
-      await new Promise((resolve) => setTimeout(resolve, 800));
-
-      return {
-        id: Number(_id),
+      const apiData: FranchiseUpdateRequest = {
         code: data.code,
         name: data.name,
+        hotline: data.hotline || undefined,
         logoUrl: data.logoUrl || null,
         address: data.address,
         openedAt: data.openedAt || null,
         closedAt: data.closedAt || null,
-        isActive: data.isActive,
-        isDeleted: false,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      } as Franchise;
+      };
+
+      const response = await franchiseApi.update(String(_id), apiData);
+
+      if (!response) {
+        throw new Error("Failed to update franchise");
+      }
+
+      if (response.isActive === data.isActive) {
+        return response;
+      }
+
+      await franchiseApi.updateStatus(String(_id), { isActive: data.isActive });
+
+      const fresh = await franchiseApi.getById(String(_id));
+
+      if (!fresh) {
+        throw new Error("Failed to load updated franchise");
+      }
+
+      return fresh;
     },
 
     delete: async (_id) => {
-      // TODO: Replace with actual API call
-      await new Promise((resolve) => setTimeout(resolve, 500));
+      await franchiseApi.remove(String(_id));
     },
   },
 
@@ -125,6 +157,7 @@ export const franchiseConfig: CrudConfig<Franchise, FranchiseFormData> = {
     toForm: (entity) => ({
       code: entity.code,
       name: entity.name,
+      hotline: entity.hotline || "",
       logoUrl: entity.logoUrl || "",
       address: entity.address,
       openedAt: entity.openedAt || "",
@@ -134,10 +167,11 @@ export const franchiseConfig: CrudConfig<Franchise, FranchiseFormData> = {
     fromForm: (formData) => ({
       code: formData.code,
       name: formData.name,
-      logoUrl: formData.logoUrl || null,
+      hotline: formData.hotline || undefined,
+      logoUrl: formData.logoUrl || undefined,
       address: formData.address,
-      openedAt: formData.openedAt || null,
-      closedAt: formData.closedAt || null,
+      openedAt: formData.openedAt || undefined,
+      closedAt: formData.closedAt || undefined,
       isActive: formData.isActive,
     }),
   },
