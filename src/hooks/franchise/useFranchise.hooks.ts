@@ -9,17 +9,43 @@ import type {
 } from "@/api/franchise/franchise.type";
 import type { Franchise } from "@/types/franchise";
 
+// =============================================================================
+// Query Keys
+// =============================================================================
+
 export const franchiseKeys = {
   all: ["franchise"] as const,
   lists: () => [...franchiseKeys.all, "list"] as const,
-  list: (filters: FranchiseSearchRequest) => [...franchiseKeys.lists(), filters] as const,
+  list: (filters: FranchiseSearchRequest) =>
+    [...franchiseKeys.lists(), filters] as const,
   details: () => [...franchiseKeys.all, "detail"] as const,
   detail: (id: string, scopeKey = "default") =>
     [...franchiseKeys.details(), scopeKey, id] as const,
   select: () => [...franchiseKeys.all, "select"] as const,
 };
 
-const transformCreateToApi = (data: Partial<Franchise>): FranchiseCreateRequest => ({
+// =============================================================================
+// Internal Helpers
+// =============================================================================
+
+/**
+ * Generate scope key based on current auth context
+ * Ensures cache isolation between different user/role/franchise contexts
+ */
+const useFranchiseScopeKey = () => {
+  const authUser = useAuthStore((state) => state.authUser);
+
+  if (!authUser) {
+    return "anonymous";
+  }
+
+  return `${authUser.user.id}-${authUser.currentRoleId ?? "none"}-${authUser.currentFranchiseId ?? "global"}`;
+};
+
+/**
+ * Transform Partial<Franchise> to FranchiseCreateRequest
+ */
+const toCreateRequest = (data: Partial<Franchise>): FranchiseCreateRequest => ({
   code: data.code ?? "",
   name: data.name ?? "",
   hotline: data.hotline,
@@ -31,17 +57,11 @@ const transformCreateToApi = (data: Partial<Franchise>): FranchiseCreateRequest 
   lng: data.lng,
 });
 
-const useFranchiseScopeKey = () => {
-  const authUser = useAuthStore((state) => state.authUser);
-
-  if (!authUser) {
-    return "anonymous";
-  }
-
-  return `${authUser.user.id}-${authUser.currentRoleId ?? "none"}-${authUser.currentFranchiseId ?? "global"}`;
-};
-
-const transformUpdateToApi = (data: Partial<Franchise>): FranchiseUpdateRequest => {
+/**
+ * Transform Partial<Franchise> to FranchiseUpdateRequest
+ * Only includes defined fields
+ */
+const toUpdateRequest = (data: Partial<Franchise>): FranchiseUpdateRequest => {
   const payload: FranchiseUpdateRequest = {};
 
   if (data.code !== undefined) payload.code = data.code;
@@ -57,50 +77,82 @@ const transformUpdateToApi = (data: Partial<Franchise>): FranchiseUpdateRequest 
   return payload;
 };
 
+// =============================================================================
+// Query Hooks
+// =============================================================================
+
+/**
+ * Fetch franchise options for select/dropdown
+ */
 export const useFranchiseSelect = () => {
   const scopeKey = useFranchiseScopeKey();
 
   return useQuery({
     queryKey: [...franchiseKeys.select(), scopeKey],
-    queryFn: async () => {
-      const data = await franchiseApi.getSelect();
-      return data;
-    },
-    staleTime: 10 * 60 * 1000,
+    queryFn: () => franchiseApi.getSelect(),
+    staleTime: 10 * 60 * 1000, // 10 minutes
   });
 };
 
-export const useFranchises = (enabled = true, scopeKey = "default") => {
-  const defaultParams: FranchiseSearchRequest = {
+/**
+ * Search franchises with pagination
+ *
+ * @param params - Search parameters (optional, defaults to non-deleted with pagination)
+ * @param options - Query options
+ */
+export const useFranchiseSearch = (
+  params?: Partial<FranchiseSearchRequest>,
+  options?: { enabled?: boolean; scopeKey?: string }
+) => {
+  const defaultScopeKey = useFranchiseScopeKey();
+  const scopeKey = options?.scopeKey ?? defaultScopeKey;
+
+  const searchParams: FranchiseSearchRequest = {
     searchCondition: {
       isDeleted: false,
+      ...params?.searchCondition,
     },
     pageInfo: {
       pageNum: 1,
       pageSize: 100,
+      ...params?.pageInfo,
     },
   };
 
   return useQuery({
-    queryKey: [...franchiseKeys.lists(), scopeKey],
-    queryFn: async () => {
-      const response = await franchiseApi.search(defaultParams);
-      return response.pageData;
-    },
-    enabled,
+    queryKey: [...franchiseKeys.list(searchParams), scopeKey],
+    queryFn: () => franchiseApi.search(searchParams),
+    enabled: options?.enabled ?? true,
   });
 };
 
-export const useFranchiseSearch = (params: FranchiseSearchRequest) => {
-  return useQuery({
-    queryKey: franchiseKeys.list(params),
-    queryFn: async () => {
-      const response = await franchiseApi.search(params);
-      return response;
+/**
+ * Fetch all franchises (convenience wrapper for useFranchiseSearch)
+ *
+ * Returns flattened `data: Franchise[]` for simple use cases.
+ * Use `useFranchiseSearch` directly when you need pagination info.
+ *
+ * @param enabled - Whether to enable the query (default: true)
+ * @param scopeKey - Cache scope key for isolation (default: "default")
+ */
+export const useFranchises = (enabled = true, scopeKey = "default") => {
+  const searchResult = useFranchiseSearch(
+    {
+      searchCondition: { isDeleted: false },
+      pageInfo: { pageNum: 1, pageSize: 100 },
     },
-  });
+    { enabled, scopeKey }
+  );
+
+  return {
+    ...searchResult,
+    data: searchResult.data?.pageData ?? [],
+  };
 };
 
+/**
+ * Fetch single franchise by ID
+ */
 export const useFranchise = (
   id: string,
   options?: {
@@ -108,27 +160,31 @@ export const useFranchise = (
     scopeKey?: string;
   }
 ) => {
+  const defaultScopeKey = useFranchiseScopeKey();
   const isEnabled = options?.enabled ?? true;
-  const scopeKey = options?.scopeKey ?? "default";
+  const scopeKey = options?.scopeKey ?? defaultScopeKey;
 
   return useQuery({
     queryKey: franchiseKeys.detail(id, scopeKey),
-    queryFn: async () => {
-      const data = await franchiseApi.getById(id);
-      return data;
-    },
+    queryFn: () => franchiseApi.getById(id),
     enabled: !!id && isEnabled,
   });
 };
 
+// =============================================================================
+// Mutation Hooks
+// =============================================================================
+
+/**
+ * Create new franchise
+ */
 export const useCreateFranchise = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (data: Partial<Franchise>) => {
-      const apiData = transformCreateToApi(data);
-      const response = await franchiseApi.create(apiData);
-      return response;
+      const apiData = toCreateRequest(data);
+      return franchiseApi.create(apiData);
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: franchiseKeys.lists() });
@@ -145,14 +201,16 @@ export const useCreateFranchise = () => {
   });
 };
 
+/**
+ * Update existing franchise
+ */
 export const useUpdateFranchise = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async ({ id, data }: { id: string; data: Partial<Franchise> }) => {
-      const apiData = transformUpdateToApi(data);
-      const response = await franchiseApi.update(id, apiData);
-      return response;
+      const apiData = toUpdateRequest(data);
+      return franchiseApi.update(id, apiData);
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: franchiseKeys.lists() });
@@ -170,6 +228,9 @@ export const useUpdateFranchise = () => {
   });
 };
 
+/**
+ * Delete franchise (soft delete)
+ */
 export const useDeleteFranchise = (options?: { suppressToast?: boolean }) => {
   const queryClient = useQueryClient();
 
@@ -197,6 +258,9 @@ export const useDeleteFranchise = (options?: { suppressToast?: boolean }) => {
   });
 };
 
+/**
+ * Restore deleted franchise
+ */
 export const useRestoreFranchise = () => {
   const queryClient = useQueryClient();
 
@@ -220,6 +284,9 @@ export const useRestoreFranchise = () => {
   });
 };
 
+/**
+ * Update franchise active status
+ */
 export const useUpdateFranchiseStatus = () => {
   const queryClient = useQueryClient();
 

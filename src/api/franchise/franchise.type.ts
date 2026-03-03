@@ -2,80 +2,13 @@ import type { Franchise } from "@/types/franchise";
 
 /**
  * Franchise API types
- * - API layer talks to backend using snake_case DTOs
- * - App layer uses camelCase types
+ *
+ * NOTE: axios.config.ts đã tự động convert snake_case ↔ camelCase
+ * nên chỉ cần define camelCase types cho app layer.
  */
 
 // =============================================================================
-// API DTOs (snake_case from backend)
-// =============================================================================
-
-export interface ApiFranchise {
-  id: string;
-  code: string;
-  name: string;
-  hotline?: string | null;
-  logo_url: string | null;
-  address: string;
-  opened_at: string | null;
-  closed_at: string | null;
-  lat?: number;
-  lng?: number;
-  is_active: boolean;
-  is_deleted: boolean;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface ApiFranchiseSelect {
-  value: string;
-  code: string;
-  name: string;
-}
-
-export interface ApiFranchiseSearchCondition {
-  keyword?: string;
-  opened_at?: string;
-  closed_at?: string;
-  is_active?: boolean;
-  is_deleted?: boolean;
-}
-
-export interface ApiFranchiseSearchRequest {
-  searchCondition: ApiFranchiseSearchCondition;
-  pageInfo: PageInfo;
-}
-
-export interface ApiFranchiseCreateRequest {
-  code: string;
-  name: string;
-  hotline?: string;
-  logo_url?: string | null;
-  address: string;
-  opened_at?: string | null;
-  closed_at?: string | null;
-  lat?: number;
-  lng?: number;
-}
-
-export interface ApiFranchiseUpdateRequest {
-  code?: string;
-  name?: string;
-  hotline?: string;
-  logo_url?: string | null;
-  address?: string;
-  opened_at?: string | null;
-  closed_at?: string | null;
-  lat?: number;
-  lng?: number;
-}
-
-export interface ApiFranchiseStatusRequest {
-  is_active: boolean;
-}
-
-// =============================================================================
-// App-facing types (camelCase)
+// Search & Pagination Types
 // =============================================================================
 
 export interface FranchiseSearchCondition {
@@ -100,6 +33,10 @@ export interface FranchiseSearchRequest {
   searchCondition: FranchiseSearchCondition;
   pageInfo: PageInfo;
 }
+
+// =============================================================================
+// CRUD Request Types
+// =============================================================================
 
 export interface FranchiseCreateRequest {
   code: string;
@@ -130,26 +67,7 @@ export interface FranchiseStatusRequest {
 }
 
 // =============================================================================
-// API envelopes
-// =============================================================================
-
-export interface ApiResponse<T> {
-  success: boolean;
-  data: T;
-  message?: string;
-}
-
-export interface PaginatedApiResponse<T> {
-  success: boolean;
-  data: T[];
-  pageInfo: PageInfoResponse;
-  message?: string;
-}
-
-export type FranchiseSearchApiResponse = PaginatedApiResponse<ApiFranchise>;
-
-// =============================================================================
-// App-facing response types
+// Response Types
 // =============================================================================
 
 export interface FranchiseSearchResponse {
@@ -158,5 +76,24 @@ export interface FranchiseSearchResponse {
 }
 
 export type FranchiseListResponse = Franchise[];
-export type FranchiseSelectResponse = ApiFranchiseSelect[];
+
+export interface FranchiseSelectItem {
+  value: string;
+  code: string;
+  name: string;
+}
+
+export type FranchiseSelectResponse = FranchiseSelectItem[];
+
 export type FranchiseDetailResponse = Franchise;
+
+// =============================================================================
+// API Response Wrappers (for httpClient compatibility)
+// =============================================================================
+
+export interface PaginatedApiResponse<T> {
+  success: boolean;
+  data: T[];
+  pageInfo: PageInfoResponse;
+  message?: string;
+}
