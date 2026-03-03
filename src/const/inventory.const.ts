@@ -219,7 +219,7 @@ export function createInventoryItemView(inventory: Inventory): InventoryItemView
     },
     productFranchise: {
       id: inventory.productFranchiseId,
-      franchiseId: franchise.id,
+      franchiseId: Number(franchise.id), // Convert string to number for legacy mock compatibility
       productId: mockProduct.id,
       priceBase: mockProduct.minPrice,
       isActive: true,
@@ -244,9 +244,9 @@ export function getInventoryItemViews(): InventoryItemView[] {
 /**
  * Get inventory items for a specific franchise
  */
-export function getInventoryByFranchiseId(franchiseId: number): InventoryItemView[] {
+export function getInventoryByFranchiseId(franchiseId: string): InventoryItemView[] {
   return getInventoryItemViews().filter(
-    view => view.productFranchise.franchiseId === franchiseId
+    view => String(view.productFranchise.franchiseId) === franchiseId
   );
 }
 
