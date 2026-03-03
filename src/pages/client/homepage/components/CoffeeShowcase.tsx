@@ -1,25 +1,35 @@
 import { Button } from "@/components/ui/button";
-import { COFFEE_PRODUCTS } from "@/const/coffee.const";
+import {
+  PRODUCTS_CLIENT,
+  type ProductClient,
+} from "@/const/product-client.const";
 import { Star, ArrowRight, Plus } from "lucide-react";
 import { useCart } from "../../cart/useCart";
 import { toast } from "sonner";
+import { Link } from "react-router-dom";
+import { createProductSlug } from "@/lib/slugify";
 
 export const CoffeeShowcase = () => {
   const { addItem } = useCart();
 
+  // Filter only coffee products (category_id === 2) and limit to 6 items
+  const coffeeProducts = PRODUCTS_CLIENT.filter(
+    (product) => product.category_id === 2 && product.isActive,
+  ).slice(0, 6);
+
   // Handle add to cart for coffee products
-  const handleAddToCart = (e: React.MouseEvent, coffee: any, index: number) => {
+  const handleAddToCart = (e: React.MouseEvent, product: ProductClient) => {
     e.preventDefault();
     e.stopPropagation();
-    
-    // Use index + 1 as product ID and set a default price
-    const productId = index + 1;
-    const defaultPrice = 45000; // Default price for coffee products (45,000 VND)
-    
-    addItem(productId, coffee.name, defaultPrice, 1);
-    
-    toast.success(`${coffee.name} đã được thêm vào giỏ hàng!`, {
-      description: `Giá: ${defaultPrice.toLocaleString('vi-VN')}₫`,
+
+    // Use the product's actual ID and minPrice
+    const productId = product.id;
+    const price = product.minPrice;
+
+    addItem(productId, product.name, price, 1);
+
+    toast.success(`${product.name} đã được thêm vào giỏ hàng!`, {
+      description: `Giá: ${price.toLocaleString("vi-VN")}₫`,
       duration: 2000,
     });
   };
@@ -81,8 +91,8 @@ export const CoffeeShowcase = () => {
 
         {/* Coffee Products - Elegant Masonry Style */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 lg:gap-10">
-          {COFFEE_PRODUCTS.map((coffee, index) => (
-            <div key={index} className="group relative">
+          {coffeeProducts.map((product, index) => (
+            <div key={product.id} className="group relative">
               {/* Card */}
               <div className="relative bg-white rounded-sm overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-500 border border-[#E8DFD6]">
                 {/* Vintage corner accents */}
@@ -94,8 +104,8 @@ export const CoffeeShowcase = () => {
                 {/* Image Container */}
                 <div className="relative h-80 overflow-hidden">
                   <img
-                    src={coffee.image}
-                    alt={coffee.name}
+                    src={product.imageUrl || "/placeholder-coffee.jpg"}
+                    alt={product.name}
                     className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 ease-out"
                     loading="lazy"
                   />
@@ -104,10 +114,10 @@ export const CoffeeShowcase = () => {
 
                   {/* Add to Cart Button - Top Left Corner */}
                   <Button
-                    onClick={(e) => handleAddToCart(e, coffee, index)}
+                    onClick={(e) => handleAddToCart(e, product)}
                     size="sm"
                     className="absolute top-4 left-4 h-10 w-10 rounded-full bg-[#C4A77D] hover:bg-[#A68B5B] text-white shadow-xl transition-all duration-200 hover:scale-110 z-30 p-0 border-2 border-white/30"
-                    aria-label={`Thêm ${coffee.name} vào giỏ hàng`}
+                    aria-label={`Thêm ${product.name} vào giỏ hàng`}
                   >
                     <Plus className="h-5 w-5" />
                   </Button>
@@ -151,14 +161,34 @@ export const CoffeeShowcase = () => {
 
                   {/* Title */}
                   <h3 className="text-2xl font-serif font-bold text-[#3E2723] mb-3 group-hover:text-[#6D4C41] transition-colors duration-300">
-                    {coffee.name}
+                    {product.name}
                   </h3>
 
                   {/* Description */}
-                  <p className="text-[#6D4C41]/70 leading-relaxed text-sm mb-6 font-light">
-                    {coffee.description}. Roasted in small batches to preserve
-                    the delicate flavors and aromatic complexity.
+                  <p className="text-[#6D4C41]/70 leading-relaxed text-sm mb-4 font-light min-h-15">
+                    {product.description ||
+                      "Roasted in small batches to preserve the delicate flavors and aromatic complexity."}
                   </p>
+
+                  {/* Price Display */}
+                  <div className="mb-6 py-3 border-y border-[#E8DFD6]">
+                    <div className="flex items-baseline justify-center gap-2">
+                      <span className="text-2xl font-serif font-bold text-[#C4A77D]">
+                        {product.minPrice.toLocaleString("vi-VN")}₫
+                      </span>
+                      {product.minPrice !== product.maxPrice && (
+                        <>
+                          <span className="text-[#8B7355]">-</span>
+                          <span className="text-2xl font-serif font-bold text-[#C4A77D]">
+                            {product.maxPrice.toLocaleString("vi-VN")}₫
+                          </span>
+                        </>
+                      )}
+                    </div>
+                    <p className="text-center text-[10px] text-[#8B7355] uppercase tracking-wider mt-1">
+                      Premium Quality
+                    </p>
+                  </div>
 
                   {/* Flavor profile indicators */}
                   <div className="flex items-center gap-4 mb-6 py-4 border-y border-[#E8DFD6]">
@@ -212,17 +242,30 @@ export const CoffeeShowcase = () => {
                   </div>
 
                   {/* Footer */}
-                  <div className="flex items-center justify-between">
+                  <div className="flex flex-col items-center gap-4">
                     <span className="text-xs text-[#8B7355] italic font-serif">
                       100% Arabica
                     </span>
-                    <Button
-                      variant="ghost"
-                      className="group/btn text-[#6D4C41] hover:text-[#C4A77D] hover:bg-transparent font-medium text-sm px-0 py-0 transition-all duration-300"
+                    <Link
+                      to={`/client/products/${createProductSlug(product.name, product.id)}`}
+                      className="w-full"
                     >
-                      Discover
-                      <ArrowRight className="w-4 h-4 ml-2 group-hover/btn:translate-x-1 transition-transform duration-300" />
-                    </Button>
+                      <Button
+                        variant="ghost"
+                        className="group/btn relative w-full h-12 rounded-sm border-2 border-[#C4A77D] bg-transparent text-[#3E2723] hover:bg-[#3E2723] hover:text-white hover:border-[#3E2723] font-serif font-semibold text-sm tracking-[0.15em] uppercase transition-all duration-500 overflow-hidden"
+                      >
+                        {/* Decorative left ornament */}
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#C4A77D] group-hover/btn:text-white/60 transition-colors duration-500 text-xs">
+                          ✦
+                        </span>
+                        Discover
+                        <ArrowRight className="w-4 h-4 ml-2 group-hover/btn:translate-x-1.5 transition-transform duration-500" />
+                        {/* Decorative right ornament */}
+                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[#C4A77D] group-hover/btn:text-white/60 transition-colors duration-500 text-xs">
+                          ✦
+                        </span>
+                      </Button>
+                    </Link>
                   </div>
                 </div>
               </div>
@@ -236,12 +279,14 @@ export const CoffeeShowcase = () => {
             <p className="text-[#6D4C41]/60 text-sm mb-6 font-light italic">
               "Every cup tells a story of tradition and excellence"
             </p>
-            <Button className="group bg-[#3E2723] hover:bg-[#5D4037] text-white font-medium px-10 py-6 rounded-sm transition-all duration-300 shadow-lg hover:shadow-xl">
-              <span className="tracking-wider uppercase text-sm">
-                View Full Collection
-              </span>
-              <ArrowRight className="w-4 h-4 ml-3 group-hover:translate-x-1 transition-transform duration-300" />
-            </Button>
+            <Link to="/client/menu">
+              <Button className="group bg-[#3E2723] hover:bg-[#5D4037] text-white font-medium px-10 py-6 rounded-sm transition-all duration-300 shadow-lg hover:shadow-xl">
+                <span className="tracking-wider uppercase text-sm">
+                  View Full Collection
+                </span>
+                <ArrowRight className="w-4 h-4 ml-3 group-hover:translate-x-1 transition-transform duration-300" />
+              </Button>
+            </Link>
             <div className="flex items-center gap-3 mt-6">
               <div className="w-8 h-px bg-[#C4A77D]/50" />
               <span className="text-[10px] text-[#8B7355] uppercase tracking-[0.3em]">

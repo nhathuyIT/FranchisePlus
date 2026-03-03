@@ -3,6 +3,12 @@ import { DataTable, type ColumnFilter, type BulkAction } from "@/components/comm
 import { inventoryColumns } from "../columns/inventory.columns";
 import { Button } from "@/components/ui/button";
 import type { InventoryItemView } from "@/types/inventory";
+import { toast } from "sonner";
+import {
+  useExcelExport,
+  INVENTORY_REVERSE_HEADER_MAPPING,
+  flattenInventoryItem,
+} from "@/lib/excel";
 
 interface InventoryTableProps {
   items: InventoryItemView[];
@@ -21,6 +27,24 @@ export const InventoryTable = ({
   onEdit,
   onBulkExport,
 }: InventoryTableProps) => {
+  // Excel Export (flatten nested InventoryItemView for export)
+  const { exportToExcel, isExporting } = useExcelExport({
+    headerMapping: INVENTORY_REVERSE_HEADER_MAPPING,
+    fileName: "inventory",
+    sheetName: "Inventory",
+  });
+
+  const handleExport = () => {
+    const flatData = items.map((item) =>
+      flattenInventoryItem(item as unknown as Record<string, unknown>)
+    );
+    exportToExcel(flatData).then(() => {
+      toast.success("Inventory exported successfully!");
+    }).catch(() => {
+      toast.error("Inventory export failed!");
+    });
+  };
+
   // Column Filters Configuration
   const columnFilters: ColumnFilter[] = [
     {
@@ -67,6 +91,10 @@ export const InventoryTable = ({
       enableColumnVisibility
       columnFilters={columnFilters}
       bulkActions={bulkActions}
+      // Excel Export only (no import for nested view model)
+      onExport={handleExport}
+      isExporting={isExporting}
+      exportLabel="Export Excel"
       renderActions={
         onEdit
           ? (item) => (
