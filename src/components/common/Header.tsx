@@ -8,7 +8,14 @@ import {
 } from "../ui/dropdown-menu";
 import { Button } from "../ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
-import { FileText, LogOut, Settings, User, ShoppingCart } from "lucide-react";
+import {
+  FileText,
+  LogOut,
+  Settings,
+  User,
+  ShoppingCart,
+  Key,
+} from "lucide-react";
 import { useAuthStore } from "@/stores/auth-store";
 import { useLogoutCustomer } from "@/hooks/client/useClient.hooks";
 
@@ -16,7 +23,6 @@ const Header = () => {
   const { authUser, isAdmin } = useAuthStore();
   const logoutMutation = useLogoutCustomer();
   const user = authUser?.user;
-
   const primaryRole = authUser?.roles[0]?.name || "User";
 
   return (
@@ -137,7 +143,7 @@ const Header = () => {
                       className="flex items-center cursor-pointer"
                     >
                       <FileText className="mr-2 h-4 w-4" />
-                      <span>My Posts</span>
+                      <span>My Order</span>
                     </Link>
                   </DropdownMenuItem>
                   {isAdmin() && (
@@ -154,13 +160,27 @@ const Header = () => {
                       </DropdownMenuItem>
                     </>
                   )}
+
                   <DropdownMenuSeparator />
+                  <DropdownMenuItem asChild className="cursor-pointer">
+                    <Link
+                      to="/client/change-password"
+                      title="Change password"
+                      className="flex items-center"
+                    >
+                      <Key className="mr-2 h-4 w-4" />{" "}
+                      {/* Thêm icon Key cho đồng bộ */}
+                      <span>Change password</span>
+                    </Link>
+                  </DropdownMenuItem>
+
+                  {/* Item Log Out */}
                   <DropdownMenuItem
                     onClick={() => logoutMutation.mutate()}
-                    className="cursor-pointer"
+                    className="cursor-pointer flex items-center text-red-600 focus:text-red-600 focus:bg-red-50"
                   >
                     <LogOut className="mr-2 h-4 w-4" />
-                    <span className="text-md">Log out</span>
+                    <span>Log out</span>
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
