@@ -8,7 +8,6 @@ import { ROUTER_URL } from "@/router/route.const";
 import type { AvailableContext } from "@/config/permission";
 import type { Role, User, UserFranchiseRole } from "@/types/user.type";
 import * as authApi from "@/api/auth.api";
-import { useQueryClient } from "@tanstack/react-query";
 
 interface LocationState {
   user: User;
@@ -17,7 +16,6 @@ interface LocationState {
 }
 
 export const RoleSelectorPage = () => {
-  const queryClient = useQueryClient();
   const navigate = useNavigate();
   const location = useLocation();
   const { login } = useAuthStore();
@@ -37,7 +35,10 @@ export const RoleSelectorPage = () => {
     setIsLoading(true);
     try {
       // Step 1: Call switchContext to set the selected role/franchise on the backend
-      await authApi.switchContext({ franchiseId: context.franchiseId });
+      await authApi.switchContext({
+        franchiseId: context.franchiseId,
+        role_id: context.roleId,
+      });
 
       // Step 2: Call getProfile to get the confirmed activeContext after the switch
       const freshProfile = await authApi.getProfile();

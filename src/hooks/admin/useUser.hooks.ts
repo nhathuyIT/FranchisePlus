@@ -3,26 +3,26 @@ import { toast } from "sonner";
 import * as userApi from "@/api/user/user.api";
 import type {
   UserSearchRequest,
-  UserSearchItem,
-  CreateUserRequest,
-} from "@/types/user.type";
-import type { ApiPaginatedResponse } from "@/api/http.type";
+  UserCreateRequest,
+  PageInfoResponse,
+} from "@/api/user/user.type";
 import type { Customer } from "@/types/customer";
+import type { User } from "@/types/user.type";
 import { invalidateQueries } from "@/lib/tanstack-helpers";
 
 /**
- * Map UserSearchItem (snake_case from API) → Customer (camelCase for UI)
+ * Map User (camelCase from API) → Customer (UI type)
  */
-const mapUserToCustomer = (user: UserSearchItem): Customer => ({
+const mapUserToCustomer = (user: User): Customer => ({
   id: user.id as unknown as Customer["id"],
   name: user.name,
-  phone: user.phone,
+  phone: user.phone ?? "",
   email: user.email || null,
-  avatarUrl: user.avatar_url || null,
-  isActive: user.is_active,
-  isDeleted: user.is_deleted,
-  createdAt: user.created_at,
-  updatedAt: user.updated_at,
+  avatarUrl: user.avatarUrl || null,
+  isActive: user.isActive,
+  isDeleted: user.isDeleted,
+  createdAt: user.createdAt,
+  updatedAt: user.updatedAt,
 });
 
 /**
@@ -40,15 +40,15 @@ export const useSearchUsers = (params: UserSearchRequest) => {
       "users",
       "search",
       params.searchCondition.keyword,
-      params.searchCondition.is_active,
-      params.searchCondition.is_deleted,
+      params.searchCondition.isActive,
+      params.searchCondition.isDeleted,
       params.pageInfo.pageNum,
       params.pageInfo.pageSize,
     ],
     queryFn: async () => {
-      const res = await userApi.searchUsers(params);
+      const res = await userApi.search(params);
       return {
-        users: res.data.map(mapUserToCustomer),
+        users: res.pageData.map(mapUserToCustomer),
         pageInfo: res.pageInfo,
       };
     },
@@ -58,7 +58,7 @@ export const useSearchUsers = (params: UserSearchRequest) => {
 
 export type UseSearchUsersResult = {
   users: Customer[];
-  pageInfo: ApiPaginatedResponse<UserSearchItem>["pageInfo"];
+  pageInfo: PageInfoResponse;
 };
 
 /**
@@ -67,7 +67,7 @@ export type UseSearchUsersResult = {
  */
 export const useCreateUser = () => {
   return useMutation({
-    mutationFn: (data: CreateUserRequest) => userApi.createUser(data),
+    mutationFn: (data: UserCreateRequest) => userApi.create(data),
     onSuccess: () => {
       toast.success("User created successfully!");
       invalidateQueries(["users", "search"]);

@@ -16,7 +16,7 @@ import type {
 } from "@/types/auth.type";
 
 interface RuntimeSwitchContextRequest extends SwitchContextRequest {
-  role_id: number;
+  role_id?: number;
 }
 
 interface RuntimeSwitchContextResponse extends SwitchContextResponse {

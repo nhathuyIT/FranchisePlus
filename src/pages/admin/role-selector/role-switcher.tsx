@@ -1,4 +1,3 @@
-import { useQueryClient } from "@tanstack/react-query";
 import { useAuthStore } from "@/stores/auth-store";
 import { Building2, ChevronDown, CheckCircle2, Loader2 } from "lucide-react";
 import {
