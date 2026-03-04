@@ -71,60 +71,56 @@ const FranchiseList = () => {
   const handleSubmit = async (
     data: FranchiseFormData
   ): Promise<SubmitResult | void> => {
-    try {
-      if (dialog.mode === "edit" && dialog.data) {
-        // Update existing franchise
-        const apiData: FranchiseUpdateRequest = {
-          code: data.code,
-          name: data.name,
-          hotline: data.hotline || undefined,
-          logoUrl: data.logoUrl || null,
-          address: data.address,
-          openedAt: data.openedAt || null,
-          closedAt: data.closedAt || null,
-        };
+    if (dialog.mode === "edit" && dialog.data) {
+      // Update existing franchise
+      const apiData: FranchiseUpdateRequest = {
+        code: data.code,
+        name: data.name,
+        hotline: data.hotline || undefined,
+        logoUrl: data.logoUrl || null,
+        address: data.address,
+        openedAt: data.openedAt || null,
+        closedAt: data.closedAt || null,
+      };
 
-        const response = await franchiseApi.update(String(dialog.data.id), apiData);
+      const response = await franchiseApi.update(String(dialog.data.id), apiData);
 
-        if (!response) {
-          throw new Error("Failed to update franchise");
-        }
-
-        // Update status if changed
-        if (response.isActive !== data.isActive) {
-          await franchiseApi.updateStatus(String(dialog.data.id), { isActive: data.isActive });
-        }
-
-        toast.success("Franchise updated successfully");
-      } else {
-        // Create new franchise
-        const apiData: FranchiseCreateRequest = {
-          code: data.code,
-          name: data.name,
-          hotline: data.hotline || undefined,
-          logoUrl: data.logoUrl || null,
-          address: data.address,
-          openedAt: data.openedAt || null,
-          closedAt: data.closedAt || null,
-        };
-
-        const response = await franchiseApi.create(apiData);
-
-        if (!response) {
-          throw new Error("Failed to create franchise");
-        }
-
-        // Update status if needed
-        if (response.isActive !== data.isActive) {
-          await franchiseApi.updateStatus(response.id, { isActive: data.isActive });
-        }
-
-        toast.success("Franchise created successfully");
+      if (!response) {
+        throw new Error("Failed to update franchise");
       }
-    } catch (error: unknown) {
-      // Re-throw to let FormDialog handle error mapping
-      throw error;
+
+      // Update status if changed
+      if (response.isActive !== data.isActive) {
+        await franchiseApi.updateStatus(String(dialog.data.id), { isActive: data.isActive });
+      }
+
+      toast.success("Franchise updated successfully");
+    } else {
+      // Create new franchise
+      const apiData: FranchiseCreateRequest = {
+        code: data.code,
+        name: data.name,
+        hotline: data.hotline || undefined,
+        logoUrl: data.logoUrl || null,
+        address: data.address,
+        openedAt: data.openedAt || null,
+        closedAt: data.closedAt || null,
+      };
+
+      const response = await franchiseApi.create(apiData);
+
+      if (!response) {
+        throw new Error("Failed to create franchise");
+      }
+
+      // Update status if needed
+      if (response.isActive !== data.isActive) {
+        await franchiseApi.updateStatus(response.id, { isActive: data.isActive });
+      }
+
+      toast.success("Franchise created successfully");
     }
+    // Errors are automatically caught by FormDialog and mapped to form fields
   };
 
   // ── Delete Handler ───────────────────────────────────────────────────────
