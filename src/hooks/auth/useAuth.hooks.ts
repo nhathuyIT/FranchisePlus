@@ -6,7 +6,6 @@ import { useAuthStore } from "@/stores/auth-store";
 import { ROUTER_URL } from "@/router/route.const";
 import type {
   LoginRequest,
-  SwitchContextRequest,
   ForgotPasswordRequest,
   ChangePasswordRequest,
   VerifyTokenRequest,
@@ -14,6 +13,7 @@ import type {
   RegisterRequest,
   ApiRoleItem,
   ActiveContext,
+  SwitchContextRequest,
 } from "@/types/auth.type";
 import type { Role, UserFranchiseRole } from "@/types/user.type";
 

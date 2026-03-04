@@ -15,6 +15,13 @@ import {
  * Kiểm tra xem object có nên được transform hay không
  * Loại trừ các browser native objects và special types
  */
+declare module "axios" {
+  interface InternalAxiosRequestConfig {
+    _retry?: boolean;
+    _rawData?: unknown;
+    _rawParams?: unknown;
+  }
+}
 const shouldTransform = (obj: unknown): boolean => {
   if (obj === null || typeof obj !== "object") return false;
   if (!isPlainObject(obj)) return false;
@@ -101,11 +108,17 @@ export const requestInterceptor = () => {
     (config) => {
       // TỰ ĐỘNG CONVERT: FE (camelCase) -> BE (snake_case)
       // shouldTransform() sẽ tự động skip FormData, File, Blob, etc.
+      if (config.data && !config._retry) {
+        config._rawData = config.data;
+      }
+      if (config.params && !config._retry) {
+        config._rawParams = config.params;
+      }
+
+      // TỰ ĐỘNG CONVERT: FE (camelCase) -> BE (snake_case)
       if (config.data) {
         config.data = toSnake(config.data);
       }
-
-      // Transform query params
       if (config.params) {
         config.params = toSnake(config.params);
       }
@@ -115,6 +128,26 @@ export const requestInterceptor = () => {
     (error) => Promise.reject(error),
   );
 };
+
+/**
+ * Tạo config mới từ originalRequest để retry sau khi refresh.
+ * QUAN TRỌNG: KHÔNG reuse originalRequest trực tiếp — Axios đã serialize
+ * headers cũ (bao gồm stale cookies) vào object đó. Tạo config mới giúp
+ * Axios build lại headers từ đầu và browser sẽ attach cookie mới
+ * (access_token vừa được refresh) vào retry request.
+ */
+const buildRetryConfig = (
+  originalRequest: InternalAxiosRequestConfig & { _retry?: boolean },
+) => ({
+  method: originalRequest.method,
+  url: originalRequest.url,
+  // ✅ Dùng raw data gốc (camelCase) → request interceptor sẽ toSnake() đúng 1 lần
+  data: originalRequest._rawData ?? originalRequest.data,
+  params: originalRequest._rawParams ?? originalRequest.params,
+  withCredentials: true,
+  _retry: true,
+  // Không copy _rawData/_rawParams → retry request không lưu lại nữa
+});
 
 export const responseInterceptor = () => {
   axiosClient.interceptors.response.use(
@@ -126,8 +159,30 @@ export const responseInterceptor = () => {
       return response;
     },
     async (error) => {
+      const originalRequest = error.config as InternalAxiosRequestConfig & {
+        _retry?: boolean;
+      };
+
       // ═══════════════════════════════════════════════════════════════
-      // 1. XỬ LÝ NETWORK ERRORS (Không có response từ server)
+      // 1. VALIDATE CONFIG
+      // ═══════════════════════════════════════════════════════════════
+      if (!originalRequest) {
+        throw new HttpError({
+          status: 0,
+          message: "Invalid request configuration",
+          code: "INVALID_REQUEST",
+        });
+      }
+
+      // ═══════════════════════════════════════════════════════════════
+      // 2. XỬ LÝ REQUEST BỊ HUỶ (AbortController / component unmount)
+      // ═══════════════════════════════════════════════════════════════
+      if (axios.isCancel(error)) {
+        return Promise.reject(null);
+      }
+
+      // ═══════════════════════════════════════════════════════════════
+      // 3. XỬ LÝ NETWORK ERRORS (Không có response từ server)
       // ═══════════════════════════════════════════════════════════════
       if (!error.response) {
         const message =
@@ -145,64 +200,80 @@ export const responseInterceptor = () => {
       }
 
       // ═══════════════════════════════════════════════════════════════
-      // 2. CONVERT ERROR RESPONSE DATA
+      // 4. CONVERT ERROR RESPONSE DATA
       // ═══════════════════════════════════════════════════════════════
       if (error.response.data) {
         error.response.data = toCamel(error.response.data);
       }
 
-      const originalRequest = error.config as InternalAxiosRequestConfig & {
-        _retry?: boolean;
-      };
-
       const status = error.response.status;
-      const data = error.response.data as ApiErrorResponse | undefined;
-      const errorCode = data?.errorCode ?? null;
+      const data = error.response.data as
+        | (ApiErrorResponse & { data?: unknown })
+        | undefined;
+
+      // errorCode value comes from the backend as SCREAMING_SNAKE_CASE.
+      // toCamel only transforms object *keys*, not string *values*, so the value is unchanged.
+      // - Admin:    { success: false, message: "ACCESS_TOKEN_EXPIRED", error: [] }  → data.message
+      // - Customer: { success: true,  data: "CUSTOMER_ACCESS_TOKEN_EXPIRED" }       → data.data
+      const rawCode =
+        data?.errorCode ??
+        (typeof data?.data === "string" ? data.data : null) ??
+        data?.message ??
+        null;
+      const errorCode = rawCode ?? null;
 
       // ═══════════════════════════════════════════════════════════════
-      // 3. XỬ LÝ REFRESH TOKEN (401 - Access Token Expired)
+      // 5. XỬ LÝ REFRESH TOKEN (401 - Access Token Expired)
       // ═══════════════════════════════════════════════════════════════
       if (
         status === 401 &&
-        errorCode === ACCESS_TOKEN_EXPIRED &&
+        typeof errorCode === "string" &&
+        errorCode.endsWith(ACCESS_TOKEN_EXPIRED) &&
         !originalRequest._retry &&
-        !originalRequest.url?.includes("/api/auth/refresh-token")
+        !originalRequest.url?.includes("refresh-token")
       ) {
         originalRequest._retry = true;
 
-        // Nếu đang refresh, đưa request vào queue
+        // Xác định endpoint refresh phù hợp dựa theo context
+        const isAdminContext = window.location.pathname.startsWith("/admin");
+        const refreshPath = isAdminContext
+          ? "/api/auth/refresh-token"
+          : "/api/customer-auth/refresh-token";
+
+        // Build full URL, xử lý trailing slash từ ENV.API_URL
+        const baseUrl = ENV.API_URL.replace(/\/+$/, "");
+
+        // Nếu đang refresh, đưa request vào queue chờ
         if (isRefreshing) {
           return new Promise<void>((resolve, reject) => {
             refreshQueue.push({ resolve, reject });
-          }).then(() => axiosClient(originalRequest));
+          }).then(() => axiosClient(buildRetryConfig(originalRequest)));
         }
 
         isRefreshing = true;
 
         try {
           // Dùng fetch native để tránh vòng lặp interceptor
-          const refreshRes = await fetch(
-            `${ENV.API_URL}/api/auth/refresh-token`,
-            {
-              method: "GET",
-              credentials: "include",
-              cache: "no-store",
-            },
-          );
+          // cache: 'no-store' BẮT BUỘC — tránh 304 (cached), 304 không xử lý Set-Cookie
+          const refreshRes = await fetch(`${baseUrl}${refreshPath}`, {
+            method: "GET",
+            credentials: "include",
+            cache: "no-store",
+          });
 
           if (!refreshRes.ok) {
             throw new Error(`Refresh failed: ${refreshRes.status}`);
           }
 
-          // Delay nhỏ để đảm bảo cookie được set
-          await new Promise((r) => setTimeout(r, 50));
+          // Chờ browser xử lý Set-Cookie từ response
+          await new Promise((r) => setTimeout(r, 100));
 
           // Retry tất cả requests trong queue
           flushQueue();
-          return axiosClient(originalRequest);
+          return axiosClient(buildRetryConfig(originalRequest));
         } catch (refreshError) {
           flushQueue(refreshError);
-          forceLogout();
+          await forceLogout();
           throw new HttpError({
             status: 401,
             message: "Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại.",
@@ -210,11 +281,12 @@ export const responseInterceptor = () => {
           });
         } finally {
           isRefreshing = false;
+          refreshQueue = [];
         }
       }
 
       // ═══════════════════════════════════════════════════════════════
-      // 4. XỬ LÝ CÁC LỖI KHÁC
+      // 6. XỬ LÝ CÁC LỖI KHÁC
       // ═══════════════════════════════════════════════════════════════
       const message =
         data?.message ??
@@ -232,10 +304,15 @@ export const responseInterceptor = () => {
   );
 };
 
-const forceLogout = () => {
-  import("@/stores/auth-store").then(({ useAuthStore }) => {
-    useAuthStore.getState().logout(false);
-  });
+const forceLogout = async () => {
+  // Dùng dynamic import để tránh circular dependency:
+  // axios.config → auth-store → auth.api → httpClient → axios.config
+  try {
+    const { useAuthStore } = await import("@/stores/auth-store");
+    await useAuthStore.getState().logout(false);
+  } catch {
+    // Bỏ qua lỗi logout — ưu tiên redirect
+  }
 
   const isAdminPath = window.location.pathname.startsWith("/admin");
   const loginPath = isAdminPath ? "/admin/login" : "/client/login";

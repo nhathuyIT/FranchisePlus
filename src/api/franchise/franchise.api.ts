@@ -1,4 +1,8 @@
 import { httpClient } from "../httpClient.api";
+<<<<<<< HEAD
+=======
+import { axiosClient } from "../axios.config";
+>>>>>>> dev
 import type {
   FranchiseCreateRequest,
   FranchiseSearchRequest,
@@ -17,8 +21,11 @@ const encodeId = (id: string) => encodeURIComponent(id);
 
 /**
  * Get franchise list for dropdown/select
+<<<<<<< HEAD
  *
  * Uses httpClient → interceptor auto-converts snake_case ↔ camelCase
+=======
+>>>>>>> dev
  */
 export const getSelect = async (): Promise<FranchiseSelectResponse> => {
   const response = await httpClient.get<FranchiseSelectResponse, never>({
@@ -29,8 +36,11 @@ export const getSelect = async (): Promise<FranchiseSelectResponse> => {
 
 /**
  * Get all franchises (không có pagination)
+<<<<<<< HEAD
  *
  * Uses httpClient → interceptor auto-converts snake_case ↔ camelCase
+=======
+>>>>>>> dev
  */
 export const getAll = async (): Promise<FranchiseListResponse> => {
   const response = await httpClient.get<Franchise[], never>({
@@ -42,15 +52,21 @@ export const getAll = async (): Promise<FranchiseListResponse> => {
 /**
  * Search franchises with pagination
  *
+<<<<<<< HEAD
  * Uses postPaginatedRaw to bypass automatic snake_case conversion.
  * Backend expects:
  * - searchCondition fields: snake_case (is_deleted, is_active, opened_at, closed_at)
  * - pageInfo: camelCase (pageNum, pageSize)
  * Response is auto-converted by interceptor (snake_case → camelCase).
+=======
+ * NOTE: Sử dụng axiosClient trực tiếp vì response structure khác
+ * (có pageInfo ngoài data wrapper)
+>>>>>>> dev
  */
 export const search = async (
   data: FranchiseSearchRequest
 ): Promise<FranchiseSearchResponse> => {
+<<<<<<< HEAD
   const payload = {
     searchCondition: {
       keyword: data.searchCondition.keyword,
@@ -69,6 +85,10 @@ export const search = async (
     url: `${BASE_URL}/search`,
     data: payload,
   });
+=======
+  const res = await axiosClient.post(`${BASE_URL}/search`, data);
+  const response = res.data;
+>>>>>>> dev
 
   if (!response?.success) {
     throw new Error("Failed to search franchises");
@@ -89,8 +109,11 @@ export const search = async (
 
 /**
  * Get franchise by ID
+<<<<<<< HEAD
  *
  * Uses httpClient → interceptor auto-converts snake_case ↔ camelCase
+=======
+>>>>>>> dev
  */
 export const getById = async (id: string): Promise<Franchise | null> => {
   return httpClient.get<Franchise, never>({
@@ -100,10 +123,13 @@ export const getById = async (id: string): Promise<Franchise | null> => {
 
 /**
  * Create new franchise
+<<<<<<< HEAD
  *
  * Uses httpClient → interceptor auto-converts:
  * - Request: camelCase → snake_case
  * - Response: snake_case → camelCase
+=======
+>>>>>>> dev
  */
 export const create = async (
   data: FranchiseCreateRequest
@@ -116,8 +142,11 @@ export const create = async (
 
 /**
  * Update franchise
+<<<<<<< HEAD
  *
  * Uses httpClient → interceptor auto-converts snake_case ↔ camelCase
+=======
+>>>>>>> dev
  */
 export const update = async (
   id: string,
@@ -131,6 +160,7 @@ export const update = async (
 
 /**
  * Soft delete franchise
+<<<<<<< HEAD
  *
  * Uses httpClient → interceptor handles response
  */
@@ -140,6 +170,10 @@ export const remove = async (id: string): Promise<void> => {
     throw new Error("Invalid franchise ID");
   }
 
+=======
+ */
+export const remove = async (id: string): Promise<void> => {
+>>>>>>> dev
   await httpClient.delete<null, never>({
     url: `${BASE_URL}/${encodeId(id)}`,
   });
@@ -147,8 +181,11 @@ export const remove = async (id: string): Promise<void> => {
 
 /**
  * Restore deleted franchise
+<<<<<<< HEAD
  *
  * Uses httpClient → interceptor handles response
+=======
+>>>>>>> dev
  */
 export const restore = async (id: string): Promise<void> => {
   await httpClient.patch<null, never>({
@@ -158,9 +195,12 @@ export const restore = async (id: string): Promise<void> => {
 
 /**
  * Update franchise status (active/inactive)
+<<<<<<< HEAD
  *
  * Uses httpClient → interceptor auto-converts:
  * - Request: { isActive } → { is_active }
+=======
+>>>>>>> dev
  */
 export const updateStatus = async (
   id: string,

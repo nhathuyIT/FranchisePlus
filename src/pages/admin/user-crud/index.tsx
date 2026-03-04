@@ -9,8 +9,32 @@ import { customerConfig } from "./customer.config";
 import { useUserSearch, useDeleteUser } from "@/hooks/user";
 import type { UserSearchRequest } from "@/api/user/user.type";
 import type { User } from "@/types/user.type";
+import { useUserSearch, useDeleteUser } from "@/hooks/user";
+import type { UserSearchRequest } from "@/api/user/user.type";
+import type { User } from "@/types/user.type";
 
 const UserCRUD = () => {
+  const [searchParams] = useState<UserSearchRequest>({
+    searchCondition: {
+      keyword: "",
+      isActive: undefined,
+      isDeleted: false,
+    },
+    pageInfo: {
+      pageNum: 1,
+      pageSize: 10,
+    },
+  });
+
+  const {
+    data: searchResult,
+    isLoading,
+    error,
+    refetch,
+  } = useUserSearch(searchParams);
+  const deleteUser = useDeleteUser();
+
+  const users = searchResult?.pageData ?? [];
   const [searchParams] = useState<UserSearchRequest>({
     searchCondition: {
       keyword: "",
@@ -36,9 +60,12 @@ const UserCRUD = () => {
   // CRUD Dialog state
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const dialog = useCrudDialog<any>();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const dialog = useCrudDialog<any>();
 
   // Refresh data after CRUD operations
   const refreshData = () => {
+    refetch();
     refetch();
     dialog.close();
   };
@@ -46,6 +73,7 @@ const UserCRUD = () => {
   // Bulk Delete Handler
   const handleBulkDelete = async (selectedUsers: User[]) => {
     const confirmDelete = window.confirm(
+      `Are you sure you want to delete ${selectedUsers.length} user(s)? This action cannot be undone.`,
       `Are you sure you want to delete ${selectedUsers.length} user(s)? This action cannot be undone.`,
     );
 
@@ -58,6 +86,7 @@ const UserCRUD = () => {
 
   // Retry Handler
   const handleRetry = () => {
+    refetch();
     refetch();
   };
 
@@ -81,7 +110,15 @@ const UserCRUD = () => {
         <div className="flex-1 min-h-0 flex flex-col bg-white rounded-2xl shadow-lg border border-[#E8DFD6] p-6">
           <CustomerTable
             customers={users}
+            customers={users}
             isLoading={isLoading}
+            error={
+              error
+                ? error instanceof Error
+                  ? error
+                  : new Error("Failed to load users")
+                : null
+            }
             error={
               error
                 ? error instanceof Error
@@ -93,7 +130,7 @@ const UserCRUD = () => {
             onBulkDelete={handleBulkDelete}
             onEdit={dialog.openUpdate}
             onView={dialog.openView}
-            onDelete={dialog.openDelete}
+            onDelete={handleSingleDelete}
           />
         </div>
 

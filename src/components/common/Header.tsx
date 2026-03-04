@@ -8,15 +8,24 @@ import {
 } from "../ui/dropdown-menu";
 import { Button } from "../ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
-import { FileText, LogOut, Settings, User, ShoppingCart } from "lucide-react";
+import {
+  FileText,
+  LogOut,
+  Settings,
+  User,
+  ShoppingCart,
+  Key,
+} from "lucide-react";
 import { useAuthStore } from "@/stores/auth-store";
 import { useLogoutCustomer } from "@/hooks/client/useClient.hooks";
+import { useCart } from "@/pages/client/cart/useCart";
+import { Badge } from "../ui/badge";
 
 const Header = () => {
   const { authUser, isAdmin } = useAuthStore();
+  const { itemCount } = useCart();
   const logoutMutation = useLogoutCustomer();
   const user = authUser?.user;
-
   const primaryRole = authUser?.roles[0]?.name || "User";
 
   return (
@@ -89,6 +98,14 @@ const Header = () => {
                 className="relative h-12 w-12 text-[#5D4037] hover:text-[#6D4C41] hover:bg-[#FAF8F5]"
               >
                 <ShoppingCart className="h-7 w-7" strokeWidth={2} />
+                {itemCount > 0 && (
+                  <Badge
+                    variant="destructive"
+                    className="absolute -top-1 -right-1 h-6 w-6 text-xs font-bold flex items-center justify-center p-0 min-w-[1.5rem]"
+                  >
+                    {itemCount > 99 ? "99+" : itemCount}
+                  </Badge>
+                )}
               </Button>
             </Link>
 
@@ -137,7 +154,7 @@ const Header = () => {
                       className="flex items-center cursor-pointer"
                     >
                       <FileText className="mr-2 h-4 w-4" />
-                      <span>My Posts</span>
+                      <span>My Order</span>
                     </Link>
                   </DropdownMenuItem>
                   {isAdmin() && (
@@ -154,13 +171,27 @@ const Header = () => {
                       </DropdownMenuItem>
                     </>
                   )}
+
                   <DropdownMenuSeparator />
+                  <DropdownMenuItem asChild className="cursor-pointer">
+                    <Link
+                      to="/client/change-password"
+                      title="Change password"
+                      className="flex items-center"
+                    >
+                      <Key className="mr-2 h-4 w-4" />{" "}
+                      {/* Thêm icon Key cho đồng bộ */}
+                      <span>Change password</span>
+                    </Link>
+                  </DropdownMenuItem>
+
+                  {/* Item Log Out */}
                   <DropdownMenuItem
                     onClick={() => logoutMutation.mutate()}
-                    className="cursor-pointer"
+                    className="cursor-pointer flex items-center text-red-600 focus:text-red-600 focus:bg-red-50"
                   >
                     <LogOut className="mr-2 h-4 w-4" />
-                    <span className="text-md">Log out</span>
+                    <span>Log out</span>
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
