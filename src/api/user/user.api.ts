@@ -1,8 +1,5 @@
 import { httpClient } from "../httpClient.api";
-<<<<<<< HEAD
-=======
 import { axiosClient } from "../axios.config";
->>>>>>> dev
 import type {
   ApiUser,
   ApiUserCreateRequest,
@@ -26,21 +23,12 @@ const toUser = (raw: ApiUser): User => ({
   email: raw.email,
   name: raw.name,
   phone: raw.phone,
-<<<<<<< HEAD
-  avatarUrl: raw.avatar_url || null,
-  passwordHash: "",
-  isActive: raw.is_active,
-  isDeleted: raw.is_deleted,
-  createdAt: raw.created_at,
-  updatedAt: raw.updated_at,
-=======
   avatarUrl: raw.avatarUrl || null,
   passwordHash: "",
   isActive: raw.isActive,
   isDeleted: raw.isDeleted,
   createdAt: raw.createdAt,
   updatedAt: raw.updatedAt,
->>>>>>> dev
 });
 
 const toApiCreateRequest = (
@@ -87,14 +75,9 @@ export const getAll = async (): Promise<UserListResponse> => {
 /**
  * Search users with pagination
  *
-<<<<<<< HEAD
- * Uses postPaginatedRaw to bypass automatic snake_case conversion.
- * Backend search APIs expect camelCase keys (pageInfo, pageNum, etc.).
-=======
  * NOTE: Payload is JSON.stringify-d before sending to bypass the automatic
  * camelCase → snake_case interceptor (the user search API expects camelCase
  * keys such as `pageInfo` / `pageNum`, not `page_info` / `page_num`).
->>>>>>> dev
  */
 export const search = async (
   data: UserSearchRequest,
@@ -102,13 +85,8 @@ export const search = async (
   const payload = {
     searchCondition: {
       keyword: data.searchCondition.keyword,
-<<<<<<< HEAD
-      isActive: data.searchCondition.isActive,
-      isDeleted: data.searchCondition.isDeleted,
-=======
       is_active: data.searchCondition.isActive,
       is_deleted: data.searchCondition.isDeleted,
->>>>>>> dev
     },
     pageInfo: {
       pageNum: data.pageInfo.pageNum,
@@ -116,19 +94,12 @@ export const search = async (
     },
   };
 
-<<<<<<< HEAD
-  const response = await httpClient.postPaginatedRaw<ApiUser, typeof payload>({
-    url: `${BASE_URL}/search`,
-    data: payload,
-  });
-=======
   const res = await axiosClient.post(
     `${BASE_URL}/search`,
     JSON.stringify(payload),
     { headers: { "Content-Type": "application/json" } },
   );
   const response = res.data;
->>>>>>> dev
 
   if (!response?.success) {
     throw new Error("Failed to search users");
