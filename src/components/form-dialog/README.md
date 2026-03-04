@@ -221,6 +221,46 @@ dialog.openView(entity); // Open in view mode (readonly)
 dialog.close(); // Close dialog
 ```
 
+### DeleteDialog
+
+Standalone delete confirmation dialog:
+
+```tsx
+import { DeleteDialog } from "@/components/form-dialog";
+
+const [deleteTarget, setDeleteTarget] = useState<Entity | null>(null);
+
+<DeleteDialog
+  open={!!deleteTarget}
+  onOpenChange={(open) => !open && setDeleteTarget(null)}
+  entity={deleteTarget}
+  entityName="User"
+  onConfirm={async () => {
+    await deleteUser(deleteTarget.id);
+    setDeleteTarget(null);
+  }}
+  isDeleting={isDeleting}
+  deleteMessage={(entity) => `Delete "${entity.name}"? This cannot be undone.`}
+/>
+```
+
+### FormContent
+
+Standalone form component (without dialog wrapper):
+
+```tsx
+import { FormContent } from "@/components/form-dialog";
+
+<FormContent
+  schema={userSchema}
+  fields={userFields}
+  defaultValues={{ role: "user" }}
+  onSubmit={handleSubmit}
+  onSuccess={handleSuccess}
+  columns={2}
+/>
+```
+
 ### useFormSubmit
 
 Low-level hook for custom form handling:
@@ -269,4 +309,64 @@ const dialog = useFormDialog<Entity>();
   onSubmit={handleSubmit}
   onSuccess={dialog.close}
 />
+```
+
+## File Structure
+
+```
+form-dialog/
+├── index.ts                 # Main exports
+├── types.ts                 # TypeScript types & interfaces
+├── FormDialog.tsx           # Main dialog component
+├── FormContent.tsx          # Standalone form body
+├── DeleteDialog.tsx         # Delete confirmation dialog
+├── FormErrorBanner.tsx      # Error display banner
+├── FormFooter.tsx           # Submit/Cancel buttons
+├── hooks/
+│   ├── index.ts
+│   ├── useFormDialog.ts     # Dialog state management
+│   └── useFormSubmit.ts     # Form submission with error mapping
+└── fields/
+    ├── index.ts             # Field exports
+    ├── render-field.tsx     # Dynamic field renderer
+    ├── TextField.tsx
+    ├── SelectField.tsx
+    └── ... (other field components)
+```
+
+## Exports
+
+```tsx
+// Components
+import {
+  FormDialog,
+  FormContent,
+  DeleteDialog,
+  FormErrorBanner,
+  FormFooter,
+} from "@/components/form-dialog";
+
+// Hooks
+import { useFormDialog, useFormSubmit } from "@/components/form-dialog";
+
+// Field components (for custom layouts)
+import {
+  TextField,
+  SelectField,
+  CheckboxField,
+  // ... etc
+  renderField,
+  getFieldColSpanClass,
+} from "@/components/form-dialog";
+
+// Types
+import type {
+  FormDialogProps,
+  FormDialogMode,
+  SubmitResult,
+  UseFormDialogReturn,
+} from "@/components/form-dialog";
+
+// Field config types (from lib)
+import type { FieldConfig, FieldType, SelectOption } from "@/lib/form/field-config";
 ```
