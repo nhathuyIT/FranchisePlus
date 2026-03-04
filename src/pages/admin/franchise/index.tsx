@@ -7,66 +7,61 @@ import { CrudDialog } from "@/components/crud/CrudDialog";
 import { useCrudDialog } from "@/hooks/crud";
 import { franchiseConfig } from "./franchise.config";
 import type { Franchise } from "@/types/franchise";
-import { useFranchises, useDeleteFranchise, useFranchise } from "@/hooks/franchise";
+import { useFranchises, useDeleteFranchise } from "@/hooks/franchise";
 import { Permission } from "@/config/permission";
 import { useAuthStore } from "@/stores/auth-store";
 
+/**
+ * Franchise List Page
+ *
+ * Permission-based access:
+ * - ADMIN: Full access (view all, create, update, delete, restore, change status)
+ * - MANAGER: No access to franchise list (backend returns 403 for search API)
+ *   → Menu hidden via permission-mapping.ts (no VIEW_FRANCHISES)
+ * - STAFF: No access to franchise list
+ */
 const FranchiseList = () => {
   const { authUser, getCurrentPermissions } = useAuthStore();
   const userPermissions = getCurrentPermissions();
+
+  // Permission checks
   const canViewFranchises = userPermissions.includes(Permission.VIEW_FRANCHISES);
   const canManageFranchises = userPermissions.includes(Permission.MANAGE_FRANCHISES);
   const canManageOwnFranchise = userPermissions.includes(Permission.MANAGE_OWN_FRANCHISE);
-  const isOwnScopeOnly =
-    canViewFranchises && canManageOwnFranchise && !canManageFranchises;
-  const hasCurrentFranchiseId = Boolean(authUser?.currentFranchiseId);
-  const shouldFetchAllFranchises = canViewFranchises && !isOwnScopeOnly;
-  const shouldFetchOwnFranchise = isOwnScopeOnly && hasCurrentFranchiseId;
+
+  // Cache scope key for query isolation
   const franchiseScopeKey = authUser
     ? `${authUser.user.id}-${authUser.currentRoleId ?? "none"}-${authUser.currentFranchiseId ?? "global"}`
     : "anonymous";
 
+  // Fetch all franchises if user has VIEW_FRANCHISES permission
   const {
     data: franchises = [],
     isLoading,
     error,
     refetch,
-  } = useFranchises(shouldFetchAllFranchises, franchiseScopeKey);
+  } = useFranchises(canViewFranchises, franchiseScopeKey);
 
   const currentFranchiseId = authUser?.currentFranchiseId
     ? String(authUser.currentFranchiseId)
     : null;
 
-  const ownFranchiseQuery = useFranchise(currentFranchiseId ?? "", {
-    enabled: shouldFetchOwnFranchise,
-    scopeKey: franchiseScopeKey,
-  });
-
   const deleteMutation = useDeleteFranchise({ suppressToast: true });
   const listError = error instanceof Error ? error : null;
-  const ownError = ownFranchiseQuery.error instanceof Error ? ownFranchiseQuery.error : null;
-
-  const scopedFranchises = !canViewFranchises
-    ? []
-    : isOwnScopeOnly
-      ? ownFranchiseQuery.data
-        ? [ownFranchiseQuery.data]
-        : []
-      : franchises;
 
   const dialog = useCrudDialog<Franchise>();
 
   const refreshData = () => {
-    if (shouldFetchAllFranchises) {
-      refetch();
-    }
-    if (shouldFetchOwnFranchise) {
-      ownFranchiseQuery.refetch();
-    }
+    refetch();
     dialog.close();
   };
 
   const handleBulkDelete = async (selectedFranchises: Franchise[]) => {
+    if (!canManageFranchises) {
+      toast.error("You do not have permission to delete franchises.");
+      return;
+    }
+
     if (!canManageFranchises) {
       toast.error("You do not have permission to delete franchises.");
       return;
@@ -99,13 +94,14 @@ const FranchiseList = () => {
   };
 
   const handleEdit = (franchise: Franchise) => {
+    // Admin can edit any franchise
     if (canManageFranchises) {
       dialog.openUpdate(franchise);
       return;
     }
 
+    // Manager can edit their own franchise
     const franchiseId = String(franchise.id);
-
     if (canManageOwnFranchise && franchiseId === currentFranchiseId) {
       dialog.openUpdate(franchise);
       return;
@@ -120,23 +116,8 @@ const FranchiseList = () => {
       return;
     }
 
-    const franchiseId = String(franchise.id);
-
-    if (canManageFranchises || (canManageOwnFranchise && franchiseId === currentFranchiseId)) {
-      dialog.openView(franchise);
-      return;
-    }
-
-    toast.error("You do not have permission to view this franchise.");
-  };
-
-  const handleRetry = () => {
-    if (shouldFetchAllFranchises) {
-      refetch();
-    }
-    if (shouldFetchOwnFranchise) {
-      ownFranchiseQuery.refetch();
-    }
+    // All users with VIEW_FRANCHISES can view any franchise details
+    dialog.openView(franchise);
   };
 
   return (
@@ -160,10 +141,10 @@ const FranchiseList = () => {
 
         <div className="flex-1 min-h-0 flex flex-col bg-white rounded-2xl shadow-lg border border-[#E8DFD6] p-6">
           <FranchiseTable
-            franchises={scopedFranchises}
-            isLoading={isLoading || (shouldFetchOwnFranchise && ownFranchiseQuery.isLoading) || deleteMutation.isPending}
-            error={listError ?? (shouldFetchOwnFranchise ? ownError : null)}
-            onRetry={handleRetry}
+            franchises={canViewFranchises ? franchises : []}
+            isLoading={isLoading || deleteMutation.isPending}
+            error={listError}
+            onRetry={refetch}
             onBulkDelete={canManageFranchises ? handleBulkDelete : undefined}
             onEdit={canManageFranchises || canManageOwnFranchise ? handleEdit : undefined}
             onView={canViewFranchises ? handleView : undefined}

@@ -1,125 +1,96 @@
-import { useState } from "react";
-import {
-  Mail,
-  Phone,
-  Calendar,
-  Shield,
-  User as UserIcon,
-  Pencil,
-} from "lucide-react";
 import type { User } from "@/types/user.type";
-import { Button } from "@/components/ui/button";
-import { EditProfileDialog } from "./edit-profile-dialog";
 
 interface ProfileDetailsProps {
   user: User;
 }
 
 export const ProfileDetails = ({ user }: ProfileDetailsProps) => {
-  const [editDialogOpen, setEditDialogOpen] = useState(false);
-  const details = [
-    {
-      icon: UserIcon,
-      label: "Full Name",
-      value: user.name,
-    },
-    {
-      icon: Mail,
-      label: "Email Address",
-      value: user.email,
-    },
-    {
-      icon: Phone,
-      label: "Phone Number",
-      value: user.phone || "Not provided",
-    },
-    {
-      icon: Shield,
-      label: "Account Status",
-      value: user.isActive ? "Active" : "Inactive",
-      badge: true,
-      badgeColor: user.isActive
-        ? "bg-green-100 text-green-700"
-        : "bg-red-100 text-red-700",
-    },
-    {
-      icon: Calendar,
-      label: "Created At",
-      value: new Date(user.createdAt).toLocaleDateString("en-US", {
-        year: "numeric",
-        month: "long",
-        day: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-      }),
-    },
-    {
-      icon: Calendar,
-      label: "Last Updated",
-      value: new Date(user.updatedAt).toLocaleDateString("en-US", {
-        year: "numeric",
-        month: "long",
-        day: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-      }),
-    },
-  ];
-
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-[#E8E0D8] overflow-hidden">
-      <div className="px-6 py-4 border-b border-[#E8E0D8] bg-[#EFEBE9]/30 flex items-center justify-between">
-        <div>
-          <h2 className="text-lg font-bold text-[#3E2723]">
-            Personal Information
-          </h2>
-          <p className="text-sm text-[#8D6E63]">
-            Your account details and contact information
-          </p>
-        </div>
-        <Button
-          size="icon"
-          variant="ghost"
-          className="h-9 w-9 rounded-full text-[#A1887F] hover:text-[#6D4C41] hover:bg-[#EFEBE9]"
-          onClick={() => setEditDialogOpen(true)}
-        >
-          <Pencil className="w-4 h-4" />
-        </Button>
-      </div>
+    <div className="bg-white rounded-2xl shadow-lg shadow-[#D7CCC8]/40 border border-[#E8E0D8] overflow-hidden">
+      {/* Divider line */}
+      <div className="h-px bg-linear-to-r from-transparent via-[#D7CCC8] to-transparent mx-8 mt-6" />
 
-      <EditProfileDialog
-        user={user}
-        open={editDialogOpen}
-        onOpenChange={setEditDialogOpen}
-      />
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-0 md:gap-0 divide-y md:divide-y-0 md:divide-x divide-[#E8E0D8]">
+        {/* ─── Contact Information ─── */}
+        <div className="p-8">
+          <h3 className="font-coffee text-xl text-[#3E2723] mb-6">
+            Contact Information
+          </h3>
 
-      <div className="divide-y divide-[#F5F0EB]">
-        {details.map((item) => (
-          <div
-            key={item.label}
-            className="flex items-center gap-4 px-6 py-4 hover:bg-[#FAF8F5] transition-colors"
-          >
-            <div className="shrink-0 w-10 h-10 rounded-xl bg-[#EFEBE9] flex items-center justify-center">
-              <item.icon className="w-5 h-5 text-[#6D4C41]" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-xs text-[#A1887F] font-medium uppercase tracking-wider">
-                {item.label}
-              </p>
-              {item.badge ? (
-                <span
-                  className={`inline-block mt-1 px-3 py-0.5 rounded-full text-sm font-medium ${item.badgeColor}`}
-                >
-                  {item.value}
-                </span>
-              ) : (
-                <p className="text-sm font-medium text-[#3E2723] truncate">
-                  {item.value}
+          <div className="space-y-6">
+            {/* Phone */}
+            <div className="flex items-start gap-4">
+              <div className="shrink-0 w-11 h-11 rounded-2xl bg-[#FFF3E0] flex items-center justify-center shadow-md">
+                <img
+                  src="https://cdn-icons-png.flaticon.com/512/3059/3059457.png"
+                  alt="Phone"
+                  className="w-6 h-6"
+                />
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-[#C97B3D] uppercase tracking-wider mb-1">
+                  Phone Number
                 </p>
-              )}
+                <p className="text-sm font-medium text-[#3E2723]">
+                  {user.phone || "Not provided"}
+                </p>
+              </div>
+            </div>
+
+            {/* Email */}
+            <div className="flex items-start gap-4">
+              <div className="shrink-0 w-11 h-11 rounded-2xl bg-[#FFF3E0] flex items-center justify-center shadow-md">
+                <img
+                  src="https://cdn-icons-png.flaticon.com/512/2549/2549872.png"
+                  alt="Email"
+                  className="w-6 h-6"
+                />
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-[#C97B3D] uppercase tracking-wider mb-1">
+                  Email Address
+                </p>
+                <p className="text-sm font-medium text-[#3E2723]">
+                  {user.email}
+                </p>
+              </div>
             </div>
           </div>
-        ))}
+        </div>
+
+        {/* ─── Shipping Address ─── */}
+        <div className="p-8">
+          <h3 className="font-coffee text-xl text-[#3E2723] mb-6">
+            Shipping Address
+          </h3>
+
+          <div className="space-y-6">
+            {/* Primary Residence */}
+            <div className="flex items-start gap-4">
+              <div className="shrink-0 w-11 h-11 rounded-2xl bg-[#FFF3E0] flex items-center justify-center shadow-md">
+                <img
+                  src="https://cdn-icons-png.flaticon.com/512/684/684908.png"
+                  alt="Location"
+                  className="w-6 h-6"
+                />
+              </div>
+              <div className="flex-1">
+                <p className="text-xs font-semibold text-[#C97B3D] uppercase tracking-wider mb-1">
+                  Primary Residence
+                </p>
+                {user.address ? (
+                  <p className="text-sm font-medium text-[#3E2723] leading-relaxed whitespace-pre-line">
+                    {user.address}
+                  </p>
+                ) : (
+                  <p className="text-sm text-[#A1887F] italic">
+                    No address provided
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
