@@ -17,6 +17,7 @@ export type FieldType =
   | "select"
   | "multiselect"
   | "date"
+  | "time"
   | "datetime"
   | "image-upload"
   | "file-upload"

@@ -6,7 +6,7 @@ import {
 } from "@/components/common/DataTable";
 import { customerColumns } from "../columns/customer.columns";
 import { Button } from "@/components/ui/button";
-import type { Customer } from "@/types/customer";
+import type { User } from "@/types/user.type";
 import { toast } from "sonner";
 import {
   useExcelExport,
@@ -17,14 +17,14 @@ import {
 } from "@/lib/excel";
 
 interface CustomerTableProps {
-  customers: Customer[];
+  customers: User[];
   isLoading?: boolean;
   error?: Error | null;
   onRetry?: () => void;
-  onBulkDelete?: (customers: Customer[]) => void;
-  onEdit?: (customer: Customer) => void;
-  onView?: (customer: Customer) => void;
-  onDelete?: (customer: Customer) => void;
+  onBulkDelete?: (customers: User[]) => void;
+  onEdit?: (customer: User) => void;
+  onView?: (customer: User) => void;
+  onDelete?: (customer: User) => void;
 }
 
 export const CustomerTable = ({
@@ -79,7 +79,7 @@ export const CustomerTable = ({
   // Column Filters Configuration
   const columnFilters: ColumnFilter[] = [
     {
-      id: "is_active",
+      id: "isActive",
       type: "select",
       label: "Status",
       options: [
@@ -90,7 +90,7 @@ export const CustomerTable = ({
   ];
 
   // Bulk Actions Configuration
-  const bulkActions: BulkAction<Customer>[] = [];
+  const bulkActions: BulkAction<User>[] = [];
 
   if (onBulkDelete) {
     bulkActions.push({
@@ -115,7 +115,7 @@ export const CustomerTable = ({
       // NEW FEATURES
       enableRowSelection={!!onBulkDelete}
       enableColumnVisibility
-      defaultHiddenColumns={["email"]}
+      defaultHiddenColumns={[]}
       columnFilters={columnFilters}
       bulkActions={bulkActions}
       // Excel Import/Export

@@ -15,6 +15,20 @@ import type {
   RegisterResponse,
 } from "@/types/auth.type";
 
+interface RuntimeSwitchContextRequest extends SwitchContextRequest {
+  role_id?: number;
+}
+
+interface RuntimeSwitchContextResponse extends SwitchContextResponse {
+  currentRoleId?: number;
+  currentFranchiseId?: string | null;
+}
+
+interface RuntimeGetProfileResponse extends GetProfileResponse {
+  currentRoleId?: number;
+  currentFranchiseId?: string | null;
+}
+
 export const login = async (data: LoginRequest): Promise<void> => {
   await httpClient.post<LoginResponse, LoginRequest>({
     url: "/api/auth",
@@ -24,11 +38,11 @@ export const login = async (data: LoginRequest): Promise<void> => {
 };
 
 export const switchContext = async (
-  data: SwitchContextRequest,
-): Promise<SwitchContextResponse> => {
+  data: RuntimeSwitchContextRequest,
+): Promise<RuntimeSwitchContextResponse> => {
   const response = await httpClient.post<
-    SwitchContextResponse,
-    SwitchContextRequest
+    RuntimeSwitchContextResponse,
+    RuntimeSwitchContextRequest
   >({
     url: "/api/auth/switch-context",
     data,
@@ -36,8 +50,8 @@ export const switchContext = async (
   return response!;
 };
 
-export const getProfile = async (): Promise<GetProfileResponse> => {
-  const response = await httpClient.get<GetProfileResponse, never>({
+export const getProfile = async (): Promise<RuntimeGetProfileResponse> => {
+  const response = await httpClient.get<RuntimeGetProfileResponse, never>({
     url: "/api/auth",
   });
 

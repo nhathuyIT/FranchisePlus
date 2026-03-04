@@ -1,5 +1,6 @@
 import { axiosClient } from "./axios.config";
 import type {
+  ApiPaginatedResponse,
   ApiSuccessResponse,
   HttpClient,
   HttpRequestConfig,
@@ -42,8 +43,28 @@ export const httpClient: HttpClient = {
     return res.data.data;
   },
 
+  async postPaginated<T, D>(
+    config: HttpRequestConfig<D>,
+  ): Promise<ApiPaginatedResponse<T>> {
+    const res = await axiosClient.post<ApiPaginatedResponse<T>>(
+      config.url,
+      config.data,
+      { headers: config.headers },
+    );
+    return res.data;
+  },
+
   async put<T, D>(config: HttpRequestConfig<D>): Promise<T | null> {
     const res = await axiosClient.put<ApiSuccessResponse<T>>(
+      config.url,
+      config.data,
+      { headers: config.headers },
+    );
+    return res.data.data;
+  },
+
+  async patch<T, D>(config: HttpRequestConfig<D>): Promise<T | null> {
+    const res = await axiosClient.patch<ApiSuccessResponse<T>>(
       config.url,
       config.data,
       { headers: config.headers },
