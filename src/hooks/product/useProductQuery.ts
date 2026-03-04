@@ -17,7 +17,7 @@ import type {
 const PRODUCT_KEYS = {
   all: ["products"] as const,
   search: (params: ProductSearchRequest) => ["products", params] as const,
-  detail: (id: string) => ["products", id] as const,
+  detail: (id: number) => ["products", id] as const,
 };
 
 // ── Queries ─────────────────────────────────────────────────────────────────
@@ -35,7 +35,7 @@ export const useProductsQuery = (searchParams: ProductSearchRequest) => {
   });
 };
 
-export const useProductDetailQuery = (id: string, enabled = true) => {
+export const useProductDetailQuery = (id: number, enabled = true) => {
   return useQuery({
     queryKey: PRODUCT_KEYS.detail(id),
     queryFn: () => productApi.getProduct(id),
@@ -66,7 +66,7 @@ export const useUpdateProductMutation = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: UpdateProductRequest }) =>
+    mutationFn: ({ id, data }: { id: number; data: UpdateProductRequest }) =>
       productApi.updateProduct(id, data),
     onSuccess: (updatedProduct) => {
       console.log("[Product API] Update success:", updatedProduct);
@@ -85,7 +85,7 @@ export const useDeleteProductMutation = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (id: string) => productApi.deleteProduct(id),
+    mutationFn: (id: number) => productApi.deleteProduct(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: PRODUCT_KEYS.all });
       toast.success("Product deleted successfully!");
@@ -102,7 +102,7 @@ export const useRestoreProductMutation = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (id: string) => productApi.restoreProduct(id),
+    mutationFn: (id: number) => productApi.restoreProduct(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: PRODUCT_KEYS.all });
       toast.success("Product restored successfully!");
