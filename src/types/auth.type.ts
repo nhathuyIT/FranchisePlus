@@ -16,7 +16,7 @@ export interface LoginResponse {
 
 // AUTH-02: Switch Context Request & Response
 export interface SwitchContextRequest {
-  franchise_id: string;
+  franchiseId: string | null;
 }
 
 export interface SwitchContextResponse {

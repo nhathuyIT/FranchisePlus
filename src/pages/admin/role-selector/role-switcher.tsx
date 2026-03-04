@@ -10,7 +10,7 @@ import { useSwitchContext } from "@/hooks/auth/useAuth.hooks";
 import type { AvailableContext } from "@/config/permission";
 
 export const RoleSwitcher = () => {
-  const { authUser, getAvailableContexts, switchRole } = useAuthStore();
+  const { authUser, getAvailableContexts } = useAuthStore();
   const switchContextMutation = useSwitchContext();
 
   if (!authUser) return null;
@@ -27,15 +27,11 @@ export const RoleSwitcher = () => {
 
   const handleSwitchRole = async (ctx: AvailableContext) => {
     try {
-      // Call API to switch context
-      if (ctx.franchiseId) {
-        await switchContextMutation.mutateAsync({
-          franchise_id: ctx.franchiseId,
-        });
-      }
-
-      // Update local state
-      switchRole(ctx);
+      // Always call switchContext — useSwitchContext will also call getProfile
+      // and update the store with fresh context while preserving all roles/franchiseRoles
+      await switchContextMutation.mutateAsync({
+        franchiseId: ctx.franchiseId,
+      });
     } catch (error) {
       console.error("Failed to switch role:", error);
     }

@@ -15,12 +15,12 @@ import type {
 } from "@/types/auth.type";
 import type { Role, UserFranchiseRole } from "@/types/user.type";
 
-// API role format from backend
+// API role format from backend (after axios camelCase interceptor)
 interface ApiRoleResponse {
   role: string;
   scope: string;
-  franchise_id: string | null;
-  franchise_name: string | null;
+  franchiseId: string | null;
+  franchiseName: string | null;
 }
 
 export const useLogin = () => {
@@ -42,16 +42,13 @@ export const useLogin = () => {
         return;
       }
 
-      // Check if API returns roles in the format: {role, scope, franchise_id, franchise_name}
+      // Check if API returns roles in the format: {role, scope, franchiseId, franchiseName}
+      // (after axios interceptor converts snake_case → camelCase)
       const apiRoles = data.roles as unknown as ApiRoleResponse[];
       const transformedFranchiseRoles: UserFranchiseRole[] = [];
       const transformedRoles: Role[] = [];
 
-      if (
-        apiRoles &&
-        apiRoles.length > 0 &&
-        apiRoles[0].franchise_id !== undefined
-      ) {
+      if (apiRoles && apiRoles.length > 0 && "role" in apiRoles[0]) {
         // Transform the roles to match expected format
         apiRoles.forEach((r, index) => {
           const roleId = index + 1; // Generate temporary IDs
@@ -67,8 +64,8 @@ export const useLogin = () => {
           });
           transformedFranchiseRoles.push({
             id: index + 1,
-            franchiseId: r.franchise_id || null,
-            franchiseName: r.franchise_name || null,
+            franchiseId: r.franchiseId || null,
+            franchiseName: r.franchiseName || null,
             roleId: roleId,
             userId: data.user.id,
             createdAt: new Date().toISOString(),
@@ -168,16 +165,32 @@ export const useClientLogin = () => {
 
 /**
  * AUTH-02: Switch Context Mutation
+ * Flow: switchContext API → getProfile API → update store (preserve all roles/franchiseRoles for future switching)
  */
 export const useSwitchContext = () => {
-  const queryClient = useQueryClient();
+  const { authUser, login } = useAuthStore();
 
   return useMutation({
-    mutationFn: (data: SwitchContextRequest) => authApi.switchContext(data),
-    onSuccess: () => {
-      // Invalidate profile query to refresh user data from backend
-      queryClient.invalidateQueries({ queryKey: ["auth", "profile"] });
+    mutationFn: async (data: SwitchContextRequest) => {
+      await authApi.switchContext(data);
+      // After switching, call getProfile to get fresh context (currentRoleId, currentFranchiseId, etc.)
+      const freshProfile = await authApi.getProfile();
+      return freshProfile;
+    },
+    onSuccess: (freshProfile) => {
+      if (!freshProfile || !authUser) return;
 
+      // Update context from fresh profile, but PRESERVE all roles & franchiseRoles so user can switch again
+      const updatedAuthUser = {
+        ...authUser,
+        user: freshProfile.user,
+        currentRoleId: freshProfile.currentRoleId ?? authUser.currentRoleId,
+        currentFranchiseId: freshProfile.currentFranchiseId
+          ? String(freshProfile.currentFranchiseId)
+          : null,
+      };
+
+      login(updatedAuthUser);
       toast.success("Role switched successfully");
     },
     onError: (error) => {
