@@ -42,26 +42,26 @@ export interface ProductCategoryFranchise
  * Product size info for client menu
  */
 export interface ProductSizeInfo {
-  product_franchise_id: ID;
+  productFranchiseId: ID;
   size: "DEFAULT" | "SMALL" | "MEDIUM" | "LARGE";
   price: number;
-  is_available: boolean;
+  isAvailable: boolean;
 }
 
 /**
  * Product list item for client menu
  */
 export interface ProductListItem {
-  product_id: ID;
-  category_id: ID;
-  category_name: string;
-  category_display_order: number;
-  product_display_order: number;
-  SKU: string;
+  productId: ID;
+  categoryId: ID;
+  categoryName: string;
+  categoryDisplayOrder: number;
+  productDisplayOrder: number;
+  sku: string;
   name: string;
   description: string;
-  image_url: string;
-  is_have_topping: boolean | null;
+  imageUrl: string;
+  isHaveTopping: boolean | null;
   sizes: ProductSizeInfo[];
 }
 

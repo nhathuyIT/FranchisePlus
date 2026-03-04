@@ -16,13 +16,13 @@ export interface CategoryFranchise
 }
 
 export interface CategoryList {
-  category_id: ID;
-  category_name: string;
-  category_code: string;
-  franchise_id: ID;
-  franchise_name: string;
-  franchise_code: string;
-  display_order: number;
+  categoryId: ID;
+  categoryName: string;
+  categoryCode: string;
+  franchiseId: ID;
+  franchiseName: string;
+  franchiseCode: string;
+  displayOrder: number;
 }
 
 export interface CategoryListResponse {

@@ -1,25 +1,25 @@
 import type { ID } from "./common";
 
 export interface ProductSize {
-  product_franchise_id: ID;
+  productFranchiseId: ID;
   size: "DEFAULT" | "SMALL" | "MEDIUM" | "LARGE";
   price: number;
-  is_available: boolean;
+  isAvailable: boolean;
 }
 
 export interface MenuProduct {
-  product_id: ID;
+  productId: ID;
   name: string;
   description: string;
-  image_url: string;
-  is_have_topping: boolean | null;
+  imageUrl: string;
+  isHaveTopping: boolean | null;
   sizes: ProductSize[];
 }
 
 export interface MenuCategory {
-  category_id: ID;
-  category_name: string;
-  category_display_order: number;
+  categoryId: ID;
+  categoryName: string;
+  categoryDisplayOrder: number;
   products: MenuProduct[];
 }
 

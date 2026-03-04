@@ -38,7 +38,7 @@ export const getProductByFranchiseFilterByCategory = async (
   categoryID: string,
 ): Promise<ProductListItem[]> => {
   const response = await httpClient.get<ProductListItem[]>({
-    url: `/api/clients/product?franchiseId=${franchiseID}&categoryId=${categoryID}`,
+    url: `/api/clients/products?franchiseId=${franchiseID}&categoryId=${categoryID}`,
   });
 
   return response!;

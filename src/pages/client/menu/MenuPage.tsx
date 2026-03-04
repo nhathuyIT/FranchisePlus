@@ -23,9 +23,9 @@ import type { ProductListItem } from "@/types/product.type";
 const formatPrice = (price: number) => price.toLocaleString("vi-VN") + "₫";
 
 const getMinPrice = (
-  sizes: { price: number; is_available: boolean }[],
+  sizes: { price: number; isAvailable: boolean }[],
 ): number | null => {
-  const available = sizes.filter((s) => s.is_available);
+  const available = sizes.filter((s) => s.isAvailable);
   if (available.length === 0) return null;
   return Math.min(...available.map((s) => s.price));
 };
@@ -88,7 +88,7 @@ const MenuProductCard = ({
       {/* Image */}
       <div className="relative overflow-hidden bg-stone-100 h-52">
         <img
-          src={product.image_url || "/placeholder-coffee.jpg"}
+          src={product.imageUrl || "/placeholder-coffee.jpg"}
           alt={product.name}
           className="h-full w-full object-cover transition-transform duration-700 ease-out
                      group-hover:scale-110"
@@ -101,7 +101,7 @@ const MenuProductCard = ({
         />
 
         {/* Has topping badge */}
-        {product.is_have_topping && (
+        {product.isHaveTopping && (
           <span
             className="absolute top-3 left-3 flex items-center gap-1 px-2.5 py-1 
                         bg-amber-600/90 text-white text-xs font-medium rounded-full
@@ -115,7 +115,7 @@ const MenuProductCard = ({
         {/* View detail button */}
         <button
           type="button"
-          onClick={() => onViewDetail(product.product_id)}
+          onClick={() => onViewDetail(product.productId)}
           className="absolute bottom-3 right-3 flex items-center gap-1.5 px-3 py-1.5 
                      bg-white/90 text-stone-800 text-xs font-semibold rounded-full
                      shadow-lg backdrop-blur-sm
@@ -152,7 +152,7 @@ const MenuProductCard = ({
               className={`inline-flex items-center px-2.5 py-1 text-xs rounded-full font-medium
                           transition-colors duration-200 
                           ${
-                            s.is_available
+                            s.isAvailable
                               ? "bg-amber-50 text-amber-800 border border-amber-200/60"
                               : "bg-stone-100 text-stone-400 line-through border border-stone-200/40"
                           }`}
@@ -206,7 +206,7 @@ const ToppingCard = ({
       {/* Image */}
       <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-xl bg-stone-100">
         <img
-          src={product.image_url || "/placeholder-coffee.jpg"}
+          src={product.imageUrl || "/placeholder-coffee.jpg"}
           alt={product.name}
           className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
           loading="lazy"
@@ -228,7 +228,7 @@ const ToppingCard = ({
         )}
         <div className="mt-1.5 flex flex-wrap gap-1">
           {product.sizes
-            .filter((s) => s.is_available)
+            .filter((s) => s.isAvailable)
             .map((s) => (
               <span
                 key={s.size}
@@ -250,7 +250,7 @@ const ToppingCard = ({
         )}
         <button
           type="button"
-          onClick={() => onViewDetail(product.product_id)}
+          onClick={() => onViewDetail(product.productId)}
           className="flex items-center gap-1 px-2.5 py-1 text-xs font-medium
                      text-amber-700 hover:text-white bg-amber-50 hover:bg-amber-600
                      rounded-full border border-amber-200 hover:border-amber-600
@@ -334,7 +334,7 @@ const MenuPage = () => {
   const activeCategoryId = useMemo(() => {
     if (selectedCategoryId) return selectedCategoryId;
     if (categories && categories.length > 0)
-      return String(categories[0].category_id);
+      return String(categories[0].categoryId);
     return "";
   }, [selectedCategoryId, categories]);
 
@@ -351,7 +351,7 @@ const MenuPage = () => {
   );
 
   const selectedCategory = useMemo(
-    () => categories?.find((c) => String(c.category_id) === activeCategoryId),
+    () => categories?.find((c) => String(c.categoryId) === activeCategoryId),
     [categories, activeCategoryId],
   );
 
@@ -395,7 +395,7 @@ const MenuPage = () => {
     <div className="min-h-screen bg-[#FAF7F2]">
       {/* ── Hero Banner ────────────────────────────────────────────────── */}
       <section
-        className="relative overflow-hidden bg-linear-to-br from-stone-900 via-stone-800 to-amber-900 
+        className="relative bg-linear-to-br from-stone-900 via-stone-800 to-amber-900 
                     pt-28 pb-16"
       >
         {/* Decorative pattern */}
@@ -524,13 +524,13 @@ const MenuPage = () => {
           ) : categories && categories.length > 0 ? (
             <div className="flex flex-wrap gap-2 justify-center">
               {categories.map((cat) => {
-                const isActive = String(cat.category_id) === activeCategoryId;
+                const isActive = String(cat.categoryId) === activeCategoryId;
                 return (
                   <button
-                    key={cat.category_id}
+                    key={cat.categoryId}
                     type="button"
                     onClick={() =>
-                      setSelectedCategoryId(String(cat.category_id))
+                      setSelectedCategoryId(String(cat.categoryId))
                     }
                     className={`relative px-5 py-2.5 rounded-full text-sm font-medium
                                transition-all duration-300 ease-out
@@ -550,7 +550,7 @@ const MenuPage = () => {
             </div>
           ) : (
             !isLoadingFranchises && (
-              <p className="text-center text-stone-400 italic font-serif">
+              <p className="text-center text-stone-400 italic font-serif pt-3">
                 Không có danh mục nào cho chi nhánh này
               </p>
             )
@@ -564,7 +564,7 @@ const MenuPage = () => {
               {selectedFranchise?.name}
             </p>
             <h2 className="font-serif text-3xl md:text-4xl font-bold text-stone-800 mb-2">
-              {selectedCategory.category_name}
+              {selectedCategory.categoryName}
             </h2>
             <div className="flex items-center justify-center gap-3">
               <div className="h-px w-12 bg-amber-400/40" />
@@ -618,7 +618,7 @@ const MenuPage = () => {
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                   {menuProducts.map((product) => (
                     <MenuProductCard
-                      key={product.product_id}
+                      key={product.productId}
                       product={product}
                       onViewDetail={handleViewDetail}
                     />
@@ -649,7 +649,7 @@ const MenuPage = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {toppings.map((product) => (
                     <ToppingCard
-                      key={product.product_id}
+                      key={product.productId}
                       product={product}
                       onViewDetail={handleViewDetail}
                     />
