@@ -10,6 +10,7 @@ interface UserFormData {
   avatarUrl: string;
 }
 
+console.log("");
 export default function EditCustomer() {
   const { id } = useParams<{ id: string }>();
   const { data: user, isLoading: isLoadingUser } = useUser(id ?? "");
