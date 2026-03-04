@@ -10,6 +10,10 @@ const AdminChangePassword = React.lazy(
   () => import("@/pages/admin/auth/change-password/admin-change-password"),
 );
 
+const AdminProfile = React.lazy(
+  () => import("@/pages/admin/auth/profile/admin-profile"),
+);
+
 const RoleSelectorPage = React.lazy(
   () => import("@/pages/admin/role-selector/role-selector-page"),
 );
@@ -51,6 +55,10 @@ export const AdminRoutes = (
             }
           />
         ))}
+        <Route
+          path={ROUTER_URL.ADMIN_ROUTER.MY_PROFILE}
+          element={<AdminProfile />}
+        />
         <Route
           path={ROUTER_URL.ADMIN_ROUTER.CHANGE_PASSWORD}
           element={<AdminChangePassword />}

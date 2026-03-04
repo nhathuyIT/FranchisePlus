@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Coffee, LogOut, KeyRound } from "lucide-react";
+import { Coffee, LogOut, KeyRound, UserCircle } from "lucide-react";
 import {
   LayoutDashboard,
   Users,
@@ -183,6 +183,19 @@ const AdminSideBar = ({ collapsed = false }: AdminSidebarProps) => {
         )}
 
         <div className="p-4 flex flex-col gap-1">
+          <Button
+            variant="ghost"
+            onClick={() => navigate("/admin/my-profile")}
+            className={cn(
+              "w-full gap-3 text-amber-200 hover:text-amber-50 hover:bg-amber-800/50",
+              location.pathname === "/admin/my-profile" && "bg-amber-800/50 text-amber-50 font-semibold",
+              collapsed ? "justify-center px-2" : "justify-start",
+            )}
+            title={collapsed ? "My Profile" : undefined}
+          >
+            <UserCircle size={20} />
+            {!collapsed && <span>My Profile</span>}
+          </Button>
           <Button
             variant="ghost"
             onClick={() => navigate("/admin/change-password")}

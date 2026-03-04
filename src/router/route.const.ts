@@ -29,6 +29,7 @@ export const ROUTER_URL = {
     LOGIN: "/admin/login",
     Forgot_PASSWORD: "/admin/forgot-password",
     CHANGE_PASSWORD: "change-password",
+    MY_PROFILE: "my-profile",
     ROLE_SELECTOR: "select-role",
     DASHBOARD: "dashboard",
     USER_CONTROL: "user-control",
