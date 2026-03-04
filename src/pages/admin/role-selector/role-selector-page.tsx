@@ -1,5 +1,4 @@
-import { useEffect } from "react";
-import { useQueryClient } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Coffee } from "lucide-react";
 import { toast } from "sonner";
@@ -8,7 +7,7 @@ import { useAuthStore } from "@/stores/auth-store";
 import { ROUTER_URL } from "@/router/route.const";
 import type { AvailableContext } from "@/config/permission";
 import type { Role, User, UserFranchiseRole } from "@/types/user.type";
-import { useSwitchContext } from "@/hooks/auth/useAuth.hooks";
+import * as authApi from "@/api/auth.api";
 
 interface LocationState {
   user: User;
@@ -21,7 +20,7 @@ export const RoleSelectorPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { login } = useAuthStore();
-  const switchContextMutation = useSwitchContext();
+  const [isLoading, setIsLoading] = useState(false);
 
   const state = location.state as LocationState | null;
 
@@ -32,23 +31,36 @@ export const RoleSelectorPage = () => {
   }, [state, navigate]);
 
   const handleSelectRole = async (context: AvailableContext) => {
-    if (!state) return;
+    if (!state || isLoading) return;
 
+    setIsLoading(true);
     try {
-      await switchContextMutation.mutateAsync({
-        franchise_id: context.franchiseId ?? null,
-        role_id: context.roleId,
-      });
+      // Step 1: Call switchContext to set the selected role/franchise on the backend
+      await authApi.switchContext({ franchiseId: context.franchiseId });
 
-      await queryClient.invalidateQueries({ queryKey: ["auth", "profile"] });
-      await queryClient.invalidateQueries({ queryKey: ["franchise"] });
+      // Step 2: Call getProfile to get the confirmed activeContext after the switch
+      const freshProfile = await authApi.getProfile();
+
+      // Resolve from activeContext returned by getProfile
+      const activeContext = freshProfile.activeContext ?? {
+        role: context.roleCode,
+        scope: context.isGlobal ? "GLOBAL" : "FRANCHISE",
+        franchiseId: context.franchiseId,
+      };
+
+      const matchedFR = (state.franchiseRoles || []).find(
+        (fr) =>
+          fr.franchiseId === activeContext.franchiseId ||
+          (!fr.franchiseId && !activeContext.franchiseId),
+      );
 
       const authUser = {
-        user: state.user,
+        user: freshProfile.user,
+        // PRESERVE original roles & franchiseRoles so user can switch again later
         roles: state.roles,
         franchiseRoles: state.franchiseRoles || [],
-        currentRoleId: context.roleId,
-        currentFranchiseId: context.franchiseId,
+        currentRoleId: matchedFR?.roleId ?? context.roleId,
+        currentFranchiseId: activeContext.franchiseId ?? context.franchiseId,
       };
 
       login(authUser);
@@ -65,6 +77,8 @@ export const RoleSelectorPage = () => {
       toast.error("Failed to select role", {
         description: "Please try again",
       });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -118,6 +132,7 @@ export const RoleSelectorPage = () => {
           <RoleSelector
             availableRoles={availableContexts}
             onSelectRole={handleSelectRole}
+            isLoading={isLoading}
           />
         </div>
 

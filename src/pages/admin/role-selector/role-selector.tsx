@@ -4,14 +4,16 @@ import { ShieldCheck, Building2, ChevronRight } from "lucide-react";
 export const RoleSelector = ({
   availableRoles,
   onSelectRole,
+  isLoading = false,
 }: RoleSelectionProps) => {
   return (
     <div className="space-y-3">
       {availableRoles.map((context) => (
         <button
           key={context.id}
-          onClick={() => onSelectRole(context)}
-          className="w-full p-4 border-2 border-amber-200 rounded-lg hover:border-amber-500 hover:bg-amber-50 transition-all duration-200 group"
+          onClick={() => !isLoading && onSelectRole(context)}
+          disabled={isLoading}
+          className="w-full p-4 border-2 border-amber-200 rounded-lg hover:border-amber-500 hover:bg-amber-50 transition-all duration-200 group disabled:opacity-60 disabled:cursor-not-allowed"
         >
           <div className="flex items-center gap-3">
             {context.isGlobal ? (
