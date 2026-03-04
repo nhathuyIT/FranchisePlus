@@ -3,11 +3,9 @@ import { axiosClient } from "../axios.config";
 import type {
   ApiUser,
   ApiUserCreateRequest,
-  ApiUserSearchRequest,
   ApiUserStatusRequest,
   ApiUserUpdateRequest,
   UserCreateRequest,
-  UserSearchCondition,
   UserSearchRequest,
   UserSearchResponse,
   UserStatusRequest,
@@ -31,14 +29,6 @@ const toUser = (raw: ApiUser): User => ({
   isDeleted: raw.is_deleted,
   createdAt: raw.created_at,
   updatedAt: raw.updated_at,
-});
-
-const toApiSearchCondition = (
-  condition: UserSearchCondition,
-): ApiUserSearchRequest["searchCondition"] => ({
-  keyword: condition.keyword,
-  is_active: condition.isActive,
-  is_deleted: condition.isDeleted,
 });
 
 const toApiCreateRequest = (
@@ -84,16 +74,31 @@ export const getAll = async (): Promise<UserListResponse> => {
 
 /**
  * Search users with pagination
+ *
+ * NOTE: Payload is JSON.stringify-d before sending to bypass the automatic
+ * camelCase → snake_case interceptor (the user search API expects camelCase
+ * keys such as `pageInfo` / `pageNum`, not `page_info` / `page_num`).
  */
 export const search = async (
   data: UserSearchRequest,
 ): Promise<UserSearchResponse> => {
-  const apiPayload: ApiUserSearchRequest = {
-    searchCondition: toApiSearchCondition(data.searchCondition),
-    pageInfo: data.pageInfo,
+  const payload = {
+    searchCondition: {
+      keyword: data.searchCondition.keyword,
+      isActive: data.searchCondition.isActive,
+      isDeleted: data.searchCondition.isDeleted,
+    },
+    pageInfo: {
+      pageNum: data.pageInfo.pageNum,
+      pageSize: data.pageInfo.pageSize,
+    },
   };
 
-  const res = await axiosClient.post(`${BASE_URL}/search`, apiPayload);
+  const res = await axiosClient.post(
+    `${BASE_URL}/search`,
+    JSON.stringify(payload),
+    { headers: { "Content-Type": "application/json" } },
+  );
   const response = res.data;
 
   if (!response?.success) {

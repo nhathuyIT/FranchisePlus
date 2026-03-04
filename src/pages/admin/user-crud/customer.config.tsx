@@ -75,8 +75,8 @@ export const customerConfig: CrudConfig<Customer, CustomerFormData> = {
 
       // Map API response (snake_case) → Customer (camelCase)
       return {
-        id: response.id as unknown as Customer["id"],
-        name: response.name,
+        id: response?.id as unknown as Customer["id"],
+        name: response?.name,
         phone: response.phone,
         email: response.email || null,
         avatarUrl: response.avatar_url || null,

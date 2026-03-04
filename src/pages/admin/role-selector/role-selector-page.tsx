@@ -8,6 +8,7 @@ import { ROUTER_URL } from "@/router/route.const";
 import type { AvailableContext } from "@/config/permission";
 import type { Role, User, UserFranchiseRole } from "@/types/user.type";
 import * as authApi from "@/api/auth.api";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface LocationState {
   user: User;
