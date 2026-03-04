@@ -23,12 +23,12 @@ const toUser = (raw: ApiUser): User => ({
   email: raw.email,
   name: raw.name,
   phone: raw.phone,
-  avatarUrl: raw.avatar_url || null,
+  avatarUrl: raw.avatarUrl || null,
   passwordHash: "",
-  isActive: raw.is_active,
-  isDeleted: raw.is_deleted,
-  createdAt: raw.created_at,
-  updatedAt: raw.updated_at,
+  isActive: raw.isActive,
+  isDeleted: raw.isDeleted,
+  createdAt: raw.createdAt,
+  updatedAt: raw.updatedAt,
 });
 
 const toApiCreateRequest = (
@@ -85,8 +85,8 @@ export const search = async (
   const payload = {
     searchCondition: {
       keyword: data.searchCondition.keyword,
-      isActive: data.searchCondition.isActive,
-      isDeleted: data.searchCondition.isDeleted,
+      is_active: data.searchCondition.isActive,
+      is_deleted: data.searchCondition.isDeleted,
     },
     pageInfo: {
       pageNum: data.pageInfo.pageNum,

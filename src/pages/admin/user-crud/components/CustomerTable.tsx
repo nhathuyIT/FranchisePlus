@@ -79,7 +79,7 @@ export const CustomerTable = ({
   // Column Filters Configuration
   const columnFilters: ColumnFilter[] = [
     {
-      id: "is_active",
+      id: "isActive",
       type: "select",
       label: "Status",
       options: [
@@ -115,7 +115,7 @@ export const CustomerTable = ({
       // NEW FEATURES
       enableRowSelection={!!onBulkDelete}
       enableColumnVisibility
-      defaultHiddenColumns={["email"]}
+      defaultHiddenColumns={[]}
       columnFilters={columnFilters}
       bulkActions={bulkActions}
       // Excel Import/Export
