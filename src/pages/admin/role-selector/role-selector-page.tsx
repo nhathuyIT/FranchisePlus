@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Coffee } from "lucide-react";
 import { toast } from "sonner";
@@ -31,8 +31,9 @@ export const RoleSelectorPage = () => {
   }, [state, navigate]);
 
   const handleSelectRole = async (context: AvailableContext) => {
-    if (!state) return;
+    if (!state || isLoading) return;
 
+    setIsLoading(true);
     try {
       // Step 1: Call switchContext to set the selected role/franchise on the backend
       await authApi.switchContext({ franchiseId: context.franchiseId });
