@@ -1,14 +1,4 @@
-<<<<<<< HEAD
-<<<<<<< HEAD
 import { useEffect } from "react";
-import { useQueryClient } from "@tanstack/react-query";
-=======
-import { useEffect, useState } from "react";
->>>>>>> 1306d5f (Fix switch context)
-=======
-import { useEffect } from "react";
-import { useQueryClient } from "@tanstack/react-query";
->>>>>>> c2f1c9b ([20260303][VuongND] feat(auth): update role context switching to include role_id)
 import { useNavigate, useLocation } from "react-router-dom";
 import { Coffee } from "lucide-react";
 import { toast } from "sonner";
@@ -41,43 +31,22 @@ export const RoleSelectorPage = () => {
   }, [state, navigate]);
 
   const handleSelectRole = async (context: AvailableContext) => {
-    if (!state || isLoading) return;
+    if (!state) return;
 
-    setIsLoading(true);
     try {
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> c2f1c9b ([20260303][VuongND] feat(auth): update role context switching to include role_id)
-      await switchContextMutation.mutateAsync({
-        franchise_id: context.franchiseId ?? null,
-        role_id: context.roleId,
-      });
-<<<<<<< HEAD
-
-      await queryClient.invalidateQueries({ queryKey: ["auth", "profile"] });
-      await queryClient.invalidateQueries({ queryKey: ["franchise"] });
-=======
-      // Step 1: Always call switchContext to set the selected role/franchise on the backend
-=======
-      // Step 1: Call switchContext to set the selected role/franchise on the backend
->>>>>>> e1bb0d7 (Fix switch context)
-      await authApi.switchContext({ franchiseId: context.franchiseId });
->>>>>>> 1306d5f (Fix switch context)
-=======
->>>>>>> c2f1c9b ([20260303][VuongND] feat(auth): update role context switching to include role_id)
-
-      await queryClient.invalidateQueries({ queryKey: ["auth", "profile"] });
-      await queryClient.invalidateQueries({ queryKey: ["franchise"] });
+      // Call API to switch context
+      if (context.franchiseId) {
+        await switchContextMutation.mutateAsync({
+          franchise_id: context.franchiseId,
+        });
+      }
 
       const authUser = {
-        user: freshProfile.user,
-        // PRESERVE original roles & franchiseRoles so user can switch again later
+        user: state.user,
         roles: state.roles,
         franchiseRoles: state.franchiseRoles || [],
-        currentRoleId: matchedFR?.roleId ?? context.roleId,
-        currentFranchiseId: activeContext.franchiseId ?? context.franchiseId,
+        currentRoleId: context.roleId,
+        currentFranchiseId: context.franchiseId,
       };
 
       login(authUser);

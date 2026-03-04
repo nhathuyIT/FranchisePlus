@@ -11,17 +11,7 @@ import { useSwitchContext } from "@/hooks/auth/useAuth.hooks";
 import type { AvailableContext } from "@/config/permission";
 
 export const RoleSwitcher = () => {
-<<<<<<< HEAD
-<<<<<<< HEAD
-  const queryClient = useQueryClient();
-  const { authUser, getAvailableContexts, switchRole } = useAuthStore();
-=======
   const { authUser, getAvailableContexts } = useAuthStore();
->>>>>>> 1306d5f (Fix switch context)
-=======
-  const queryClient = useQueryClient();
-  const { authUser, getAvailableContexts, switchRole } = useAuthStore();
->>>>>>> c2f1c9b ([20260303][VuongND] feat(auth): update role context switching to include role_id)
   const switchContextMutation = useSwitchContext();
   const isPending = switchContextMutation.isPending;
 
@@ -39,35 +29,11 @@ export const RoleSwitcher = () => {
 
   const handleSwitchRole = async (ctx: AvailableContext) => {
     try {
-<<<<<<< HEAD
-<<<<<<< HEAD
-      await switchContextMutation.mutateAsync({
-        role_id: ctx.roleId,
-        franchise_id: ctx.franchiseId ?? null,
-      });
-
-      await queryClient.invalidateQueries({ queryKey: ["auth", "profile"] });
-      await queryClient.invalidateQueries({ queryKey: ["franchise"] });
-
-      switchRole(ctx);
-=======
       // Always call switchContext — useSwitchContext will also call getProfile
       // and update the store with fresh context while preserving all roles/franchiseRoles
-=======
->>>>>>> e1bb0d7 (Fix switch context)
       await switchContextMutation.mutateAsync({
-        role_id: ctx.roleId,
-        franchise_id: ctx.franchiseId ?? null,
+        franchiseId: ctx.franchiseId,
       });
-<<<<<<< HEAD
->>>>>>> 1306d5f (Fix switch context)
-=======
-
-      await queryClient.invalidateQueries({ queryKey: ["auth", "profile"] });
-      await queryClient.invalidateQueries({ queryKey: ["franchise"] });
-
-      switchRole(ctx);
->>>>>>> c2f1c9b ([20260303][VuongND] feat(auth): update role context switching to include role_id)
     } catch (error) {
       console.error("Failed to switch role:", error);
     }

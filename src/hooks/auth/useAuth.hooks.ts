@@ -6,6 +6,7 @@ import { useAuthStore } from "@/stores/auth-store";
 import { ROUTER_URL } from "@/router/route.const";
 import type {
   LoginRequest,
+  SwitchContextRequest,
   ForgotPasswordRequest,
   ChangePasswordRequest,
   VerifyTokenRequest,
@@ -216,10 +217,40 @@ export const useClientLogin = () => {
  * Preserves all roles & franchiseRoles so user can switch again later.
  */
 export const useSwitchContext = () => {
+  const { authUser, login } = useAuthStore();
+
   return useMutation({
-    mutationFn: (data: { franchise_id: string | null; role_id: number }) =>
-      authApi.switchContext(data),
-    onSuccess: () => {
+    mutationFn: async (data: SwitchContextRequest) => {
+      await authApi.switchContext(data);
+      // getProfile returns the confirmed activeContext after the switch
+      const freshProfile = await authApi.getProfile();
+      return freshProfile;
+    },
+    onSuccess: (freshProfile) => {
+      if (!freshProfile || !authUser) return;
+
+      const { roles, franchiseRoles } = parseProfileRoles(
+        freshProfile.roles as unknown as ApiRoleItem[],
+        authUser.user.id,
+      );
+
+      const { currentRoleId, currentFranchiseId } = resolveContext(
+        freshProfile.activeContext,
+        roles,
+        franchiseRoles,
+      );
+
+      const updatedAuthUser = {
+        ...authUser,
+        user: freshProfile.user,
+        // PRESERVE original roles/franchiseRoles so user can switch again
+        roles: authUser.roles,
+        franchiseRoles: authUser.franchiseRoles,
+        currentRoleId,
+        currentFranchiseId,
+      };
+
+      login(updatedAuthUser);
       toast.success("Role switched successfully");
     },
     onError: (error) => {
