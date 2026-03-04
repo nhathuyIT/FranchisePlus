@@ -1,4 +1,5 @@
 import type {
+  ChangePasswordRequest,
   LoginRequest,
   RegisterRequest,
   RegisterResponse,
@@ -46,5 +47,13 @@ export const getClientProfile = async (): Promise<CustomerLoginResponse> => {
 export const logoutClient = async (): Promise<void> => {
   await httpClient.post<void, never>({
     url: "/api/customer-auth/logout",
+  });
+};
+export const changePasswordClient = async (
+  data: ChangePasswordRequest,
+): Promise<void> => {
+  await httpClient.put<void, ChangePasswordRequest>({
+    url: "/api/customer-auth/change-password",
+    data,
   });
 };

@@ -60,10 +60,8 @@ export interface ForgotPasswordRequest {
 
 // AUTH-06: Change Password Request
 export interface ChangePasswordRequest {
-  email: string;
-  token: string;
+  oldPassword: string;
   newPassword: string;
-  confirmPassword: string;
 }
 
 // AUTH-07: Logout (no request/response body)

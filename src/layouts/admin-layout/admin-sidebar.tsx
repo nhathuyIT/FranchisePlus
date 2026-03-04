@@ -1,5 +1,5 @@
-import { Link, useLocation } from "react-router-dom";
-import { Coffee, LogOut } from "lucide-react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Coffee, LogOut, KeyRound } from "lucide-react";
 import {
   LayoutDashboard,
   Users,
@@ -43,6 +43,7 @@ interface AdminSidebarProps {
 
 const AdminSideBar = ({ collapsed = false }: AdminSidebarProps) => {
   const location = useLocation();
+  const navigate = useNavigate();
   const logoutMutation = useLogout();
   const {
     authUser,
@@ -181,7 +182,19 @@ const AdminSideBar = ({ collapsed = false }: AdminSidebarProps) => {
           </div>
         )}
 
-        <div className="p-4">
+        <div className="p-4 flex flex-col gap-1">
+          <Button
+            variant="ghost"
+            onClick={() => navigate("/admin/change-password")}
+            className={cn(
+              "w-full gap-3 text-amber-200 hover:text-amber-50 hover:bg-amber-800/50",
+              collapsed ? "justify-center px-2" : "justify-start",
+            )}
+            title={collapsed ? "Change Password" : undefined}
+          >
+            <KeyRound size={20} />
+            {!collapsed && <span>Change Password</span>}
+          </Button>
           <Button
             variant="ghost"
             onClick={() => logoutMutation.mutate()}
