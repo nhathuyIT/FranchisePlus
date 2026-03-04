@@ -1,20 +1,12 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { Plus } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import {
   Dialog,
   DialogContent,
@@ -26,38 +18,100 @@ import {
 } from "@/components/ui/dialog";
 import { ImageUpload } from "@/components/ui/image-upload";
 import { uploadFileToCloudinary } from "@/config/cloudinary";
-import { PRODUCTS, PRODUCT_CATEGORY_MAP } from "@/const/product.const";
-import { CATEGORIES } from "@/const/category.const";
 import { PageHeader } from "@/components/common/PageHeader";
 import { ProductTable } from "./components/ProductTable";
 import { ViewProductModal } from "./components/ViewProductModal";
 import type { Product } from "@/types/product.type";
+import type { ProductSearchRequest } from "@/api/product/product.api";
+import {
+  useProductsQuery,
+  useCreateProductMutation,
+  useUpdateProductMutation,
+  useDeleteProductMutation,
+} from "@/hooks/product/useProductQuery";
 
-const productSchema = z.object({
-  sku: z.string().min(2, "SKU must be at least 2 characters"),
-  name: z.string().min(2, "Name must be at least 2 characters"),
-  description: z.string().optional(),
-  content: z.string().optional(),
-  imageUrl: z.string().url("Must be a valid URL").optional().or(z.literal("")),
-  categoryId: z.string().min(1, "Category is required"),
-  minPrice: z.number().min(0, "Min price must be positive"),
-  maxPrice: z.number().min(0, "Max price must be positive"),
-  isActive: z.boolean(),
-}).refine((data) => data.maxPrice >= data.minPrice, {
-  message: "Max price must be greater than or equal to min price",
-  path: ["maxPrice"],
-});
+// ── Form schema ─────────────────────────────────────────────────────────────
+
+const productSchema = z
+  .object({
+    sku: z.string().min(2, "SKU must be at least 2 characters"),
+    name: z.string().min(2, "Name must be at least 2 characters"),
+    description: z.string().optional(),
+    content: z.string().optional(),
+    imageUrl: z
+      .string()
+      .url("Must be a valid URL")
+      .optional()
+      .or(z.literal("")),
+    minPrice: z.number().min(0, "Min price must be positive"),
+    maxPrice: z.number().min(0, "Max price must be positive"),
+    isActive: z.boolean(),
+  })
+  .refine((data) => data.maxPrice >= data.minPrice, {
+    message: "Max price must be greater than or equal to min price",
+    path: ["maxPrice"],
+  });
 
 type ProductFormData = z.infer<typeof productSchema>;
 
+// ── Default search params ───────────────────────────────────────────────────
+
+const DEFAULT_SEARCH_PARAMS: ProductSearchRequest = {
+  searchCondition: {
+    keyword: "",
+    min_price: "",
+    max_price: "",
+    is_active: "",
+    is_deleted: false,
+  },
+  pageInfo: {
+    pageNum: 1,
+    pageSize: 10,
+  },
+};
+
+// ── Component ───────────────────────────────────────────────────────────────
+
 const ProductsPage = () => {
-  const [products, setProducts] = useState<Product[]>(PRODUCTS);
+  // Search & pagination state
+  const [searchParams, setSearchParams] =
+    useState<ProductSearchRequest>(DEFAULT_SEARCH_PARAMS);
+
+  // Dialog state
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [viewingProduct, setViewingProduct] = useState<Product | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<Error | null>(null);
+
+  // ── TanStack Query hooks ──────────────────────────────────────────────────
+  const {
+    data: searchResponse,
+    isLoading,
+    error,
+    refetch,
+  } = useProductsQuery(searchParams);
+
+  const createMutation = useCreateProductMutation();
+  const updateMutation = useUpdateProductMutation();
+  const deleteMutation = useDeleteProductMutation();
+
+  const products = searchResponse ?? [];
+  const isMutating =
+    createMutation.isPending ||
+    updateMutation.isPending ||
+    deleteMutation.isPending;
+
+  // ── Search handler ────────────────────────────────────────────────────────
+
+  const handleSearch = useCallback((keyword: string) => {
+    setSearchParams((prev) => ({
+      ...prev,
+      searchCondition: { ...prev.searchCondition, keyword },
+      pageInfo: { ...prev.pageInfo, pageNum: 1 },
+    }));  
+  }, []);
+
+  // ── Form ──────────────────────────────────────────────────────────────────
 
   const {
     register,
@@ -65,7 +119,7 @@ const ProductsPage = () => {
     reset,
     setValue,
     watch,
-    formState: { errors },
+    formState: { errors: formErrors },
   } = useForm<ProductFormData>({
     resolver: zodResolver(productSchema),
     defaultValues: {
@@ -74,7 +128,6 @@ const ProductsPage = () => {
       description: "",
       content: "",
       imageUrl: "",
-      categoryId: "",
       minPrice: 0,
       maxPrice: 0,
       isActive: true,
@@ -82,59 +135,47 @@ const ProductsPage = () => {
   });
 
   const onSubmit = (data: ProductFormData) => {
+    const payload = {
+      SKU: data.sku,
+      name: data.name,
+      description: data.description || null,
+      content: data.content || null,
+      image_url: data.imageUrl || null,
+      min_price: data.minPrice,
+      max_price: data.maxPrice,
+      is_active: data.isActive,
+    };
+
     if (editingProduct) {
-      // Update existing product
-      setProducts(prevProducts =>
-        prevProducts.map(p =>
-          p.id === editingProduct.id
-            ? {
-                ...p,
-                sku: data.sku,
-                name: data.name,
-                description: data.description || "",
-                content: data.content || "",
-                imageUrl: data.imageUrl || "",
-                minPrice: data.minPrice,
-                maxPrice: data.maxPrice,
-                isActive: data.isActive,
-              }
-            : p
-        )
+      updateMutation.mutate(
+        { id: editingProduct.id, data: payload },
+        {
+          onSuccess: () => {
+            setIsDialogOpen(false);
+            setEditingProduct(null);
+            reset();
+          },
+        },
       );
-      toast.success("Product updated successfully!");
     } else {
-      // Create new product
-      const newProduct: Product = {
-        id: Math.max(...products.map(p => p.id), 0) + 1,
-        sku: data.sku,
-        name: data.name,
-        description: data.description || "",
-        content: data.content || "",
-        imageUrl: data.imageUrl || "",
-        minPrice: data.minPrice,
-        maxPrice: data.maxPrice,
-        isActive: data.isActive,
-        createdAt: "",
-        updatedAt: "",
-        isDeleted: false
-      };
-      setProducts(prevProducts => [...prevProducts, newProduct]);
-      toast.success("Product created successfully!");
+      createMutation.mutate(payload, {
+        onSuccess: () => {
+          setIsDialogOpen(false);
+          reset();
+        },
+      });
     }
-    setIsDialogOpen(false);
-    setEditingProduct(null);
-    reset();
   };
+
+  // ── Handlers ──────────────────────────────────────────────────────────────
 
   const handleEdit = (product: Product) => {
     setEditingProduct(product);
-    const categoryId = PRODUCT_CATEGORY_MAP[Number(product.id)];
     setValue("sku", product.sku);
     setValue("name", product.name);
     setValue("description", product.description || "");
     setValue("content", product.content || "");
     setValue("imageUrl", product.imageUrl || "");
-    setValue("categoryId", categoryId?.toString() || "");
     setValue("minPrice", product.minPrice);
     setValue("maxPrice", product.maxPrice);
     setValue("isActive", product.isActive);
@@ -154,31 +195,24 @@ const ProductsPage = () => {
 
   const handleDelete = (product: Product) => {
     const confirmDelete = window.confirm(
-      `Are you sure you want to delete "${product.name}"? This action cannot be undone.`
+      `Are you sure you want to delete "${product.name}"? This action cannot be undone.`,
     );
     if (confirmDelete) {
-      setProducts(prevProducts => prevProducts.filter(p => p.id !== product.id));
-      toast.success("Product deleted successfully!");
+      deleteMutation.mutate(product.id);
     }
   };
 
   const handleBulkDelete = (selectedProducts: Product[]) => {
     const confirmDelete = window.confirm(
-      `Are you sure you want to delete ${selectedProducts.length} product${selectedProducts.length > 1 ? 's' : ''}? This action cannot be undone.`
+      `Are you sure you want to delete ${selectedProducts.length} product${selectedProducts.length > 1 ? "s" : ""}? This action cannot be undone.`,
     );
     if (confirmDelete) {
-      const selectedIds = selectedProducts.map(p => p.id);
-      setProducts(prevProducts => prevProducts.filter(p => !selectedIds.includes(p.id)));
-      toast.success(`Successfully deleted ${selectedProducts.length} product${selectedProducts.length > 1 ? 's' : ''}`);
+      selectedProducts.forEach((p) => deleteMutation.mutate(p.id));
     }
   };
 
   const handleRetry = () => {
-    setError(null);
-    setIsLoading(true);
-    setTimeout(() => {
-      setIsLoading(false);
-    }, 1000);
+    void refetch();
   };
 
   return (
@@ -204,85 +238,79 @@ const ProductsPage = () => {
                     {editingProduct ? "Edit Product" : "Create New Product"}
                   </DialogTitle>
                   <DialogDescription className="text-[#5D4037]">
-                    {editingProduct 
-                      ? "Update the product information below." 
+                    {editingProduct
+                      ? "Update the product information below."
                       : "Add a new product to your catalog. Fill in all required fields."}
                   </DialogDescription>
                 </DialogHeader>
                 <form onSubmit={handleSubmit(onSubmit)}>
                   <div className="grid gap-4 py-4">
                     <div className="grid gap-2">
-                      <Label htmlFor="name" className="text-[#3E2723] font-medium">
+                      <Label
+                        htmlFor="name"
+                        className="text-[#3E2723] font-medium"
+                      >
                         Name <span className="text-red-500">*</span>
                       </Label>
                       <Input
                         id="name"
                         placeholder="e.g., Caramel Macchiato"
                         {...register("name")}
-                        className={errors.name ? "border-red-500" : ""}
+                        className={formErrors.name ? "border-red-500" : ""}
                       />
-                      {errors.name && (
-                        <p className="text-sm text-red-500">{errors.name.message}</p>
+                      {formErrors.name && (
+                        <p className="text-sm text-red-500">
+                          {formErrors.name.message}
+                        </p>
                       )}
                     </div>
-                    
+
                     <div className="grid gap-2">
-                      <Label htmlFor="sku" className="text-[#3E2723] font-medium">
+                      <Label
+                        htmlFor="sku"
+                        className="text-[#3E2723] font-medium"
+                      >
                         SKU <span className="text-red-500">*</span>
                       </Label>
                       <Input
                         id="sku"
                         placeholder="e.g., ESP-001"
                         {...register("sku")}
-                        className={errors.sku ? "border-red-500" : ""}
+                        className={formErrors.sku ? "border-red-500" : ""}
                       />
-                      {errors.sku && (
-                        <p className="text-sm text-red-500">{errors.sku.message}</p>
+                      {formErrors.sku && (
+                        <p className="text-sm text-red-500">
+                          {formErrors.sku.message}
+                        </p>
                       )}
                     </div>
 
                     <div className="grid gap-2">
-                      <Label htmlFor="imageUrl" className="text-[#3E2723] font-medium">
+                      <Label
+                        htmlFor="imageUrl"
+                        className="text-[#3E2723] font-medium"
+                      >
                         Product Image
                       </Label>
                       <ImageUpload
                         value={watch("imageUrl") || ""}
                         onChange={(url) => setValue("imageUrl", url)}
                         onUpload={uploadFileToCloudinary}
-                        disabled={isLoading}
+                        disabled={isMutating}
                       />
-                      {errors.imageUrl && (
-                        <p className="text-sm text-red-500">{errors.imageUrl.message}</p>
-                      )}
-                    </div>
-
-                    <div className="grid gap-2">
-                      <Label htmlFor="categoryId" className="text-[#3E2723] font-medium">
-                        Category <span className="text-red-500">*</span>
-                      </Label>
-                      <Select
-                        value={watch("categoryId")}
-                        onValueChange={(value) => setValue("categoryId", value)}
-                      >
-                        <SelectTrigger className={errors.categoryId ? "border-red-500" : ""}>
-                          <SelectValue placeholder="Select a category" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {CATEGORIES.filter((cat) => cat.isActive && !cat.isDeleted).map((cat) => (
-                            <SelectItem key={cat.id} value={cat.id.toString()}>
-                              {cat.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      {errors.categoryId && (
-                        <p className="text-sm text-red-500">{errors.categoryId.message}</p>
+                      {formErrors.imageUrl && (
+                        <p className="text-sm text-red-500">
+                          {formErrors.imageUrl.message}
+                        </p>
                       )}
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">
                       <div className="grid gap-2">
-                        <Label htmlFor="minPrice" className="text-[#3E2723] font-medium">
+                        <Label
+                          htmlFor="minPrice"
+                          className="text-[#3E2723] font-medium"
+                        >
                           Min Price <span className="text-red-500">*</span>
                         </Label>
                         <Input
@@ -291,14 +319,21 @@ const ProductsPage = () => {
                           step="0.01"
                           placeholder="0.00"
                           {...register("minPrice", { valueAsNumber: true })}
-                          className={errors.minPrice ? "border-red-500" : ""}
+                          className={
+                            formErrors.minPrice ? "border-red-500" : ""
+                          }
                         />
-                        {errors.minPrice && (
-                          <p className="text-sm text-red-500">{errors.minPrice.message}</p>
+                        {formErrors.minPrice && (
+                          <p className="text-sm text-red-500">
+                            {formErrors.minPrice.message}
+                          </p>
                         )}
                       </div>
                       <div className="grid gap-2">
-                        <Label htmlFor="maxPrice" className="text-[#3E2723] font-medium">
+                        <Label
+                          htmlFor="maxPrice"
+                          className="text-[#3E2723] font-medium"
+                        >
                           Max Price <span className="text-red-500">*</span>
                         </Label>
                         <Input
@@ -307,16 +342,23 @@ const ProductsPage = () => {
                           step="0.01"
                           placeholder="0.00"
                           {...register("maxPrice", { valueAsNumber: true })}
-                          className={errors.maxPrice ? "border-red-500" : ""}
+                          className={
+                            formErrors.maxPrice ? "border-red-500" : ""
+                          }
                         />
-                        {errors.maxPrice && (
-                          <p className="text-sm text-red-500">{errors.maxPrice.message}</p>
+                        {formErrors.maxPrice && (
+                          <p className="text-sm text-red-500">
+                            {formErrors.maxPrice.message}
+                          </p>
                         )}
                       </div>
                     </div>
 
                     <div className="grid gap-2">
-                      <Label htmlFor="description" className="text-[#3E2723] font-medium">
+                      <Label
+                        htmlFor="description"
+                        className="text-[#3E2723] font-medium"
+                      >
                         Description
                       </Label>
                       <Textarea
@@ -328,7 +370,10 @@ const ProductsPage = () => {
                     </div>
 
                     <div className="grid gap-2">
-                      <Label htmlFor="content" className="text-[#3E2723] font-medium">
+                      <Label
+                        htmlFor="content"
+                        className="text-[#3E2723] font-medium"
+                      >
                         Content/Ingredients
                       </Label>
                       <Textarea
@@ -346,7 +391,10 @@ const ProductsPage = () => {
                         {...register("isActive")}
                         className="w-4 h-4 text-[#6D4C41] border-gray-300 rounded focus:ring-[#6D4C41]"
                       />
-                      <Label htmlFor="isActive" className="text-[#3E2723] font-medium cursor-pointer">
+                      <Label
+                        htmlFor="isActive"
+                        className="text-[#3E2723] font-medium cursor-pointer"
+                      >
                         Active
                       </Label>
                     </div>
@@ -366,9 +414,14 @@ const ProductsPage = () => {
                     </Button>
                     <Button
                       type="submit"
+                      disabled={isMutating}
                       className="bg-[#6D4C41] hover:bg-[#5D4037] text-white"
                     >
-                      {editingProduct ? "Update Product" : "Create Product"}
+                      {isMutating
+                        ? "Saving..."
+                        : editingProduct
+                          ? "Update Product"
+                          : "Create Product"}
                     </Button>
                   </DialogFooter>
                 </form>
@@ -381,12 +434,13 @@ const ProductsPage = () => {
           <ProductTable
             products={products}
             isLoading={isLoading}
-            error={error}
+            error={error instanceof Error ? error : null}
             onRetry={handleRetry}
             onView={handleView}
             onEdit={handleEdit}
             onDelete={handleDelete}
             onBulkDelete={handleBulkDelete}
+            onSearch={handleSearch}
           />
         </div>
 

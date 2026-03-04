@@ -6,8 +6,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { PRODUCT_CATEGORY_MAP } from "@/const/product.const";
-import { CATEGORIES } from "@/const/category.const";
 import type { Product } from "@/types/product.type";
 
 interface ViewProductModalProps {
@@ -15,11 +13,6 @@ interface ViewProductModalProps {
   isOpen: boolean;
   onClose: () => void;
 }
-
-const getCategoryName = (productId: number) => {
-  const categoryId = PRODUCT_CATEGORY_MAP[productId];
-  return CATEGORIES.find((cat) => cat.id === categoryId)?.name || "Uncategorized";
-};
 
 export const ViewProductModal = ({ product, isOpen, onClose }: ViewProductModalProps) => {
   if (!product) return null;
@@ -64,11 +57,6 @@ export const ViewProductModal = ({ product, isOpen, onClose }: ViewProductModalP
           <div>
             <h3 className="text-sm font-medium text-[#5D4037] mb-1">Name</h3>
             <p className="text-lg font-semibold text-[#3E2723]">{product.name}</p>
-          </div>
-
-          <div>
-            <h3 className="text-sm font-medium text-[#5D4037] mb-1">Category</h3>
-            <p className="text-base text-[#3E2723]">{getCategoryName(Number(product.id))}</p>
           </div>
 
           <div>

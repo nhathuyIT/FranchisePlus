@@ -154,7 +154,11 @@ const ClientRegister = () => {
             </motion.div>
 
             {/* Form */}
-            <motion.form variants={fadeUp} onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+            <motion.form
+              variants={fadeUp}
+              onSubmit={handleSubmit(onSubmit)}
+              className="space-y-4"
+            >
               {/* Name & Phone - side by side */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {/* Name */}
@@ -174,9 +178,7 @@ const ClientRegister = () => {
                       type="text"
                       placeholder="John Doe"
                       className={`${inputBaseClass} ${
-                        errors.name
-                          ? "border-red-400 dark:border-red-500"
-                          : ""
+                        errors.name ? "border-red-400 dark:border-red-500" : ""
                       }`}
                       {...register("name")}
                       onFocus={() => setFocusedField("name")}
@@ -208,9 +210,7 @@ const ClientRegister = () => {
                       type="tel"
                       placeholder="0938947221"
                       className={`${inputBaseClass} ${
-                        errors.phone
-                          ? "border-red-400 dark:border-red-500"
-                          : ""
+                        errors.phone ? "border-red-400 dark:border-red-500" : ""
                       }`}
                       {...register("phone")}
                       onFocus={() => setFocusedField("phone")}
@@ -243,9 +243,7 @@ const ClientRegister = () => {
                     type="email"
                     placeholder="your.email@example.com"
                     className={`${inputBaseClass} ${
-                      errors.email
-                        ? "border-red-400 dark:border-red-500"
-                        : ""
+                      errors.email ? "border-red-400 dark:border-red-500" : ""
                     }`}
                     {...register("email")}
                     onFocus={() => setFocusedField("email")}
@@ -288,9 +286,7 @@ const ClientRegister = () => {
                     id="address"
                     placeholder="FTOWN-1, FPT Software, Ho Chi Minh"
                     className={`pl-16 pt-4 rounded-2xl border-stone-200/80 dark:border-stone-700/80 bg-white dark:bg-stone-900 text-stone-800 dark:text-stone-100 placeholder:text-stone-300 dark:placeholder:text-stone-600 focus:border-amber-500 dark:focus:border-amber-600 transition-all duration-200 text-base min-h-[70px] resize-none ${
-                      errors.address
-                        ? "border-red-400 dark:border-red-500"
-                        : ""
+                      errors.address ? "border-red-400 dark:border-red-500" : ""
                     }`}
                     {...register("address")}
                     onFocus={() => setFocusedField("address")}
@@ -337,11 +333,7 @@ const ClientRegister = () => {
                       onClick={() => setShowPassword(!showPassword)}
                       className="absolute right-4 top-1/2 -translate-y-1/2 text-stone-300 dark:text-stone-600 hover:text-stone-500 dark:hover:text-stone-400 transition-colors p-1"
                     >
-                      {showPassword ? (
-                        <EyeOff size={18} />
-                      ) : (
-                        <Eye size={18} />
-                      )}
+                      {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                     </button>
                   </div>
                   {errors.password && (
@@ -426,7 +418,10 @@ const ClientRegister = () => {
             </motion.form>
 
             {/* Trust badges */}
-            <motion.div variants={fadeUp} className="mt-6 pt-4 border-t border-stone-200/60 dark:border-stone-800">
+            <motion.div
+              variants={fadeUp}
+              className="mt-6 pt-4 border-t border-stone-200/60 dark:border-stone-800"
+            >
               <div className="flex items-center justify-center gap-6 text-stone-300 dark:text-stone-700">
                 <div className="flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-wider">
                   <svg

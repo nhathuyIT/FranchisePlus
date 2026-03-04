@@ -8,6 +8,7 @@ import type {
   RegisterRequest,
   VerifyTokenRequest,
   LoginRequest,
+  ChangePasswordRequest,
 } from "@/types/auth.type";
 
 /**
@@ -128,6 +129,21 @@ export const useClientLogin = () => {
       toast.error("Login failed", {
         description: error.message || "Invalid credentials",
       });
+    },
+  });
+};
+
+export const useClientChangePassword = () => {
+  const navigate = useNavigate();
+
+  return useMutation({
+    mutationFn: (data: ChangePasswordRequest) =>
+      customerApi.changePasswordClient(data),
+    onSuccess: () => {
+      toast.success("Password changed successfully", {
+        description: "You can now login with your new password",
+      });
+      navigate(ROUTER_URL.CLIENT_ROUTER.LOGIN);
     },
   });
 };

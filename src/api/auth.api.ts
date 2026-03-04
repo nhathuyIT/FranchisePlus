@@ -73,7 +73,7 @@ export const forgotPassword = async (
   data: ForgotPasswordRequest,
 ): Promise<void> => {
   await httpClient.put<void, ForgotPasswordRequest>({
-    url: "/api/auth/forgot-password",
+    url: "/api/auth/for got-password",
     data,
   });
 };
