@@ -19,19 +19,32 @@ export interface SwitchContextRequest {
   franchiseId: string | null;
 }
 
+// Active context returned by backend inside getProfile / switchContext response
+export interface ActiveContext {
+  role: string;
+  scope: string;
+  franchiseId: string | null;
+}
+
+// Raw role item returned by backend (before/after interceptor camelCase conversion)
+export interface ApiRoleItem {
+  role: string;
+  scope: string;
+  franchiseId: string | null;
+  franchiseName: string | null;
+}
+
 export interface SwitchContextResponse {
-  accessToken: string;
-  currentRoleId: number;
-  currentFranchiseId: number | null;
+  user: User;
+  roles: ApiRoleItem[];
+  activeContext: ActiveContext;
 }
 
 // AUTH-03: Get Profile Response
 export interface GetProfileResponse {
   user: User;
-  roles: Role[];
-  franchiseRoles: UserFranchiseRole[] | null;
-  currentRoleId: number;
-  currentFranchiseId: number | null;
+  roles: ApiRoleItem[];
+  activeContext: ActiveContext | null;
 }
 
 // AUTH-04: Refresh Token Response

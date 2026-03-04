@@ -34,22 +34,32 @@ export const RoleSelectorPage = () => {
 
     setIsLoading(true);
     try {
-      // Step 1: Always call switchContext to set the selected role/franchise on the backend
+      // Step 1: Call switchContext to set the selected role/franchise on the backend
       await authApi.switchContext({ franchiseId: context.franchiseId });
 
-      // Step 2: Call getProfile to get the full, fresh context info (currentRoleId, currentFranchiseId, franchise details)
+      // Step 2: Call getProfile to get the confirmed activeContext after the switch
       const freshProfile = await authApi.getProfile();
 
-      // Step 3: Build authUser — use fresh profile for context, but PRESERVE all original
-      // roles & franchiseRoles from the initial login so the user can switch roles later
+      // Resolve from activeContext returned by getProfile
+      const activeContext = freshProfile.activeContext ?? {
+        role: context.roleCode,
+        scope: context.isGlobal ? "GLOBAL" : "FRANCHISE",
+        franchiseId: context.franchiseId,
+      };
+
+      const matchedFR = (state.franchiseRoles || []).find(
+        (fr) =>
+          fr.franchiseId === activeContext.franchiseId ||
+          (!fr.franchiseId && !activeContext.franchiseId),
+      );
+
       const authUser = {
         user: freshProfile.user,
+        // PRESERVE original roles & franchiseRoles so user can switch again later
         roles: state.roles,
         franchiseRoles: state.franchiseRoles || [],
-        currentRoleId: freshProfile.currentRoleId ?? context.roleId,
-        currentFranchiseId: freshProfile.currentFranchiseId
-          ? String(freshProfile.currentFranchiseId)
-          : null,
+        currentRoleId: matchedFR?.roleId ?? context.roleId,
+        currentFranchiseId: activeContext.franchiseId ?? context.franchiseId,
       };
 
       login(authUser);
