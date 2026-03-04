@@ -6,12 +6,87 @@ import { useAuthStore } from "@/stores/auth-store";
 import { ROUTER_URL } from "@/router/route.const";
 import type {
   LoginRequest,
-  SwitchContextRequest,
   ForgotPasswordRequest,
   ChangePasswordRequest,
   VerifyTokenRequest,
   ResendTokenRequest,
+  RegisterRequest,
+  ApiRoleItem,
+  ActiveContext,
+  SwitchContextRequest,
 } from "@/types/auth.type";
+import type { Role, UserFranchiseRole } from "@/types/user.type";
+
+/**
+ * Parse the backend roles array ({role, scope, franchiseId, franchiseName})
+ * into normalised Role[] and UserFranchiseRole[] used internally.
+ */
+const parseProfileRoles = (
+  apiRoles: ApiRoleItem[],
+  userId: string,
+): { roles: Role[]; franchiseRoles: UserFranchiseRole[] } => {
+  const roles: Role[] = [];
+  const franchiseRoles: UserFranchiseRole[] = [];
+
+  apiRoles.forEach((r, index) => {
+    const roleId = index + 1;
+    roles.push({
+      id: roleId,
+      code: r.role,
+      name: r.role,
+      description: null,
+      scope: r.scope as "GLOBAL" | "FRANCHISE",
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      isDeleted: false,
+    });
+    franchiseRoles.push({
+      id: roleId,
+      franchiseId: r.franchiseId || null,
+      franchiseName: r.franchiseName || null,
+      roleId,
+      userId,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      isDeleted: false,
+    });
+  });
+
+  return { roles, franchiseRoles };
+};
+
+/**
+ * Resolve currentRoleId + currentFranchiseId from activeContext.
+ * Matches by role code + franchiseId against the parsed franchiseRoles.
+ */
+const resolveContext = (
+  activeContext: ActiveContext | null | undefined,
+  roles: Role[],
+  franchiseRoles: UserFranchiseRole[],
+): { currentRoleId: number | null; currentFranchiseId: string | null } => {
+  if (!activeContext) {
+    return {
+      currentRoleId: franchiseRoles[0]?.roleId ?? roles[0]?.id ?? null,
+      currentFranchiseId: franchiseRoles[0]?.franchiseId ?? null,
+    };
+  }
+
+  // Find the role whose code matches activeContext.role
+  const matchedRole = roles.find((r) => r.code === activeContext.role);
+  // Find the franchiseRole whose franchiseId matches
+  const matchedFR = franchiseRoles.find(
+    (fr) =>
+      fr.roleId === matchedRole?.id &&
+      (fr.franchiseId === activeContext.franchiseId ||
+        (!fr.franchiseId && !activeContext.franchiseId)),
+  );
+
+  return {
+    currentRoleId: matchedFR?.roleId ?? matchedRole?.id ?? null,
+    currentFranchiseId:
+      matchedFR?.franchiseId ?? activeContext.franchiseId ?? null,
+  };
+};
 
 export const useLogin = () => {
   const navigate = useNavigate();
@@ -24,7 +99,7 @@ export const useLogin = () => {
       const profile = await authApi.getProfile();
       return profile;
     },
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
       if (!data) {
         toast.error("Login failed", {
           description: "Invalid response from server",
@@ -32,32 +107,60 @@ export const useLogin = () => {
         return;
       }
 
-      if (data.franchiseRoles && data.franchiseRoles.length > 1) {
+      const { roles, franchiseRoles } = parseProfileRoles(
+        data.roles as unknown as ApiRoleItem[],
+        data.user.id,
+      );
+
+      // If user has more than one role/franchise, show the role selector
+      if (franchiseRoles.length > 1) {
         navigate(
           ROUTER_URL.ADMIN + "/" + ROUTER_URL.ADMIN_ROUTER.ROLE_SELECTOR,
           {
             state: {
               user: data.user,
-              roles: data.roles,
-              franchiseRoles: data.franchiseRoles,
+              roles,
+              franchiseRoles,
             },
           },
         );
         return;
       }
 
+      // Single role — still need to call switchContext to set backend context
+      const singleFR = franchiseRoles[0];
+      const singleRole = roles[0];
+
+      if (singleFR && singleRole) {
+        try {
+          // Call switchContext to ensure backend knows the active role/franchise
+          await authApi.switchContext({
+            franchiseId: singleFR.franchiseId ?? null,
+            role_id: singleFR.roleId,
+          });
+        } catch (err) {
+          console.warn("[useLogin] switchContext failed for single role:", err);
+          // Continue anyway - activeContext from profile might still work
+        }
+      }
+
+      const { currentRoleId, currentFranchiseId } = resolveContext(
+        data.activeContext,
+        roles,
+        franchiseRoles,
+      );
+
       const authUser = {
         user: data.user,
-        roles: data.roles,
-        franchiseRoles: data.franchiseRoles || [],
-        currentRoleId:
-          data.franchiseRoles?.[0]?.roleId || data.roles[0]?.id || null,
-        currentFranchiseId: data.franchiseRoles?.[0]?.franchiseId || null,
+        roles,
+        franchiseRoles,
+        currentRoleId,
+        currentFranchiseId,
       };
 
       setAuth(authUser);
       toast.success("Welcome back!", {
-        description: `Logged in as ${data.roles[0]?.name}`,
+        description: `Logged in as ${roles[0]?.name || roles[0]?.code}`,
       });
 
       navigate(ROUTER_URL.ADMIN + "/" + ROUTER_URL.ADMIN_ROUTER.DASHBOARD);
@@ -89,13 +192,23 @@ export const useClientLogin = () => {
         });
         return;
       }
+
+      const { roles, franchiseRoles } = parseProfileRoles(
+        data.roles as unknown as ApiRoleItem[],
+        data.user.id,
+      );
+      const { currentRoleId, currentFranchiseId } = resolveContext(
+        data.activeContext,
+        roles,
+        franchiseRoles,
+      );
+
       const authUser = {
         user: data.user,
-        roles: data.roles,
-        franchiseRoles: data.franchiseRoles || [],
-        currentRoleId:
-          data.franchiseRoles?.[0]?.roleId || data.roles[0]?.id || null,
-        currentFranchiseId: data.franchiseRoles?.[0]?.franchiseId || null,
+        roles,
+        franchiseRoles,
+        currentRoleId,
+        currentFranchiseId,
       };
 
       setAuth(authUser);
@@ -116,28 +229,51 @@ export const useClientLogin = () => {
 
 /**
  * AUTH-02: Switch Context Mutation
+ * Flow: switchContext API → getProfile (get confirmed activeContext) → update store
+ * Preserves all roles & franchiseRoles so user can switch again later.
  */
 export const useSwitchContext = () => {
-  const queryClient = useQueryClient();
-  const { switchRole } = useAuthStore();
+  const { authUser, login } = useAuthStore();
 
   return useMutation({
-    mutationFn: (data: SwitchContextRequest) => authApi.switchContext(data),
-    onSuccess: (_data, variables) => {
-      switchRole({
-        id: `${variables.roleId}-${variables.franchiseId || "global"}`,
-        roleId: variables.roleId,
-        roleName: "", // Will be updated from store
-        roleCode: "",
-        franchiseId: variables.franchiseId,
-        franchiseName: null,
-        isGlobal: !variables.franchiseId,
-      });
+    mutationFn: async (data: SwitchContextRequest) => {
+      await authApi.switchContext(data);
+      // getProfile returns the confirmed activeContext after the switch
+      const freshProfile = await authApi.getProfile();
+      return freshProfile;
+    },
+    onSuccess: (freshProfile) => {
+      if (!freshProfile || !authUser) return;
 
-      // Invalidate profile query
-      queryClient.invalidateQueries({ queryKey: ["auth", "profile"] });
+      const { roles, franchiseRoles } = parseProfileRoles(
+        freshProfile.roles as unknown as ApiRoleItem[],
+        authUser.user.id,
+      );
 
+      const { currentRoleId, currentFranchiseId } = resolveContext(
+        freshProfile.activeContext,
+        roles,
+        franchiseRoles,
+      );
+
+      const updatedAuthUser = {
+        ...authUser,
+        user: freshProfile.user,
+        // PRESERVE original roles/franchiseRoles so user can switch again
+        roles: authUser.roles,
+        franchiseRoles: authUser.franchiseRoles,
+        currentRoleId,
+        currentFranchiseId,
+      };
+
+      login(updatedAuthUser);
       toast.success("Role switched successfully");
+    },
+    onError: (error) => {
+      console.error("[useSwitchContext] Switch context error:", error);
+      toast.error("Failed to switch role", {
+        description: error.message || "Please try again",
+      });
     },
   });
 };
@@ -192,9 +328,14 @@ export const useLogout = () => {
   return useMutation({
     mutationFn: () => authApi.logout(),
     onSuccess: () => {
-      clearAuth();
+      clearAuth(false);
       queryClient.clear();
       toast.success("Logged out successfully");
+      navigate(ROUTER_URL.ADMIN_ROUTER.LOGIN);
+    },
+    onError: () => {
+      clearAuth(false);
+      queryClient.clear();
       navigate(ROUTER_URL.ADMIN_ROUTER.LOGIN);
     },
   });
@@ -212,6 +353,36 @@ export const useResendToken = () => {
     onSuccess: () => {
       toast.success("Verification email sent", {
         description: "Please check your email",
+      });
+    },
+  });
+};
+
+export const useRegister = () => {
+  const navigate = useNavigate();
+
+  return useMutation({
+    mutationFn: (data: RegisterRequest) => {
+      console.log("[useRegister] Sending data:", data);
+      return authApi.register(data);
+    },
+    onSuccess: () => {
+      toast.success("Registration successful!", {
+        description: "Please login with your credentials",
+      });
+      navigate(ROUTER_URL.CLIENT_ROUTER.LOGIN);
+    },
+    onError: (
+      error: Error & { response?: { data?: { message?: string } } },
+    ) => {
+      console.error("[useRegister] Registration error:", error);
+      console.error("[useRegister] Error response:", error.response?.data);
+      const errorMessage =
+        error.response?.data?.message ||
+        error.message ||
+        "Please check your information and try again";
+      toast.error("Registration failed", {
+        description: errorMessage,
       });
     },
   });

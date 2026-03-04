@@ -10,14 +10,15 @@ export const ROUTER_URL = {
   CLIENT_ROUTER: {
     LOGIN: "/client/login",
     FORGOT_PASSWORD: "/client/forgot-password",
-    REGISTER: "register",
+    REGISTER: "/client/register",
+    CHANGE_PASSWORD: "/client/change-password",
     CART: "cart",
     MENU: "menu",
     PRODUCTS: "products",
     PRODUCT_DETAIL: "products/:slug",
     PAYMENT: "payment",
   },
-
+  VERIFY_EMAIL: "verify-customer-email/:id",
   ACCOUNT: "/account",
   ACCOUNT_ROUTER: {
     MY_PROFILE: "my-profile",
@@ -27,6 +28,7 @@ export const ROUTER_URL = {
   ADMIN_ROUTER: {
     LOGIN: "/admin/login",
     Forgot_PASSWORD: "/admin/forgot-password",
+    CHANGE_PASSWORD: "change-password",
     ROLE_SELECTOR: "select-role",
     DASHBOARD: "dashboard",
     USER_CONTROL: "user-control",

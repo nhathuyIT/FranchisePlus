@@ -16,23 +16,35 @@ export interface LoginResponse {
 
 // AUTH-02: Switch Context Request & Response
 export interface SwitchContextRequest {
-  roleId: number;
-  franchiseId: number | null;
+  franchiseId: string | null;
+}
+
+// Active context returned by backend inside getProfile / switchContext response
+export interface ActiveContext {
+  role: string;
+  scope: string;
+  franchiseId: string | null;
+}
+
+// Raw role item returned by backend (before/after interceptor camelCase conversion)
+export interface ApiRoleItem {
+  role: string;
+  scope: string;
+  franchiseId: string | null;
+  franchiseName: string | null;
 }
 
 export interface SwitchContextResponse {
-  accessToken: string;
-  currentRoleId: number;
-  currentFranchiseId: number | null;
+  user: User;
+  roles: ApiRoleItem[];
+  activeContext: ActiveContext;
 }
 
 // AUTH-03: Get Profile Response
 export interface GetProfileResponse {
   user: User;
-  roles: Role[];
-  franchiseRoles: UserFranchiseRole[] | null;
-  currentRoleId: number;
-  currentFranchiseId: number | null;
+  roles: ApiRoleItem[];
+  activeContext: ActiveContext | null;
 }
 
 // AUTH-04: Refresh Token Response
@@ -48,10 +60,8 @@ export interface ForgotPasswordRequest {
 
 // AUTH-06: Change Password Request
 export interface ChangePasswordRequest {
-  email: string;
-  token: string;
+  oldPassword: string;
   newPassword: string;
-  confirmPassword: string;
 }
 
 // AUTH-07: Logout (no request/response body)
@@ -62,11 +72,31 @@ export interface VerifyTokenRequest {
 }
 
 export interface VerifyTokenResponse {
-  valid: boolean;
-  email?: string;
+  success: boolean;
+  data?: unknown;
+  message?: string;
 }
 
 // AUTH-09: Resend Token Request
 export interface ResendTokenRequest {
   email: string;
+}
+
+// AUTH-10: Register Request & Response
+export interface RegisterRequest {
+  email: string;
+  password: string;
+  name: string;
+  phone: string;
+  address: string;
+}
+export interface RegisterAdminRequest {
+  email: string;
+  password: string;
+  name: string;
+  phone: string;
+}
+export interface RegisterResponse {
+  user: User;
+  message: string;
 }

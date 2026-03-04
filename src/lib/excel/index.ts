@@ -34,6 +34,17 @@ export {
   type ProductImportData,
 } from "./product-excel.config";
 
+// <<<<<<< HEAD
+// =======
+// Customer
+export {
+  CustomerImportSchema,
+  CUSTOMER_HEADER_MAPPING,
+  CUSTOMER_REVERSE_HEADER_MAPPING,
+  type CustomerImportData,
+} from "./customer-excel.config";
+
+// >>>>>>> dev
 // Inventory (export-only)
 export {
   INVENTORY_REVERSE_HEADER_MAPPING,

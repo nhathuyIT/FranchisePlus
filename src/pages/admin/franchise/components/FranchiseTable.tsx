@@ -33,7 +33,10 @@ export const FranchiseTable = ({
   onView,
   onDelete,
 }: FranchiseTableProps) => {
+<<<<<<< HEAD
   // Excel Export
+=======
+>>>>>>> dev
   const { exportToExcel, isExporting } = useExcelExport({
     headerMapping: FRANCHISE_REVERSE_HEADER_MAPPING,
     fileName: "franchises",
@@ -41,24 +44,38 @@ export const FranchiseTable = ({
     excludeColumns: ["logoUrl"],
   });
 
+<<<<<<< HEAD
   // Excel Import
+=======
+>>>>>>> dev
   const { importFromExcel, isImporting } = useExcelImport({
     schema: FranchiseImportSchema,
     headerMapping: FRANCHISE_HEADER_MAPPING,
   });
 
   const handleExport = () => {
+<<<<<<< HEAD
     exportToExcel(franchises as unknown as Record<string, unknown>[]).then(() => {
       toast.success("Excel exported successfully!");
     }).catch(() => {
       toast.error("Excel export failed!");
     });
+=======
+    exportToExcel(franchises as unknown as Record<string, unknown>[])
+      .then(() => {
+        toast.success("Excel exported successfully!");
+      })
+      .catch(() => {
+        toast.error("Excel export failed!");
+      });
+>>>>>>> dev
   };
 
   const handleImport = async (file: File) => {
     const result = await importFromExcel(file);
     if (result.success) {
       toast.success(`Successfully imported ${result.validRows} rows`);
+<<<<<<< HEAD
       // TODO: call API to save result.data
     } else {
       toast.error(`Import failed: ${result.validRows} valid, ${result.invalidRows} errors`);
@@ -67,9 +84,16 @@ export const FranchiseTable = ({
   };
 
   // Column Filters Configuration
+=======
+    } else {
+      toast.error(`Import failed: ${result.validRows} valid, ${result.invalidRows} errors`);
+    }
+  };
+
+>>>>>>> dev
   const columnFilters: ColumnFilter[] = [
     {
-      id: "is_active",
+      id: "isActive",
       type: "select",
       label: "Status",
       options: [
@@ -79,7 +103,6 @@ export const FranchiseTable = ({
     },
   ];
 
-  // Bulk Actions Configuration
   const bulkActions: BulkAction<Franchise>[] = [];
 
   if (onBulkDelete) {
@@ -102,13 +125,15 @@ export const FranchiseTable = ({
       searchPlaceholder="Search franchises by name, code, or address..."
       emptyMessage="No franchises found matching your search."
       initialPageSize={5}
-      // NEW FEATURES
       enableRowSelection={!!onBulkDelete}
       enableColumnVisibility
-      defaultHiddenColumns={["address"]}
+      defaultHiddenColumns={["address", "closedAt"]}
       columnFilters={columnFilters}
       bulkActions={bulkActions}
+<<<<<<< HEAD
       // Excel Import/Export
+=======
+>>>>>>> dev
       onExport={handleExport}
       isExporting={isExporting}
       onImport={handleImport}

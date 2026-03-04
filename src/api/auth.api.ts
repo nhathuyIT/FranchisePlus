@@ -11,7 +11,23 @@ import type {
   VerifyTokenRequest,
   VerifyTokenResponse,
   ResendTokenRequest,
+  RegisterAdminRequest,
+  RegisterResponse,
 } from "@/types/auth.type";
+
+interface RuntimeSwitchContextRequest extends SwitchContextRequest {
+  role_id?: number;
+}
+
+interface RuntimeSwitchContextResponse extends SwitchContextResponse {
+  currentRoleId?: number;
+  currentFranchiseId?: string | null;
+}
+
+interface RuntimeGetProfileResponse extends GetProfileResponse {
+  currentRoleId?: number;
+  currentFranchiseId?: string | null;
+}
 
 export const login = async (data: LoginRequest): Promise<void> => {
   await httpClient.post<LoginResponse, LoginRequest>({
@@ -22,11 +38,11 @@ export const login = async (data: LoginRequest): Promise<void> => {
 };
 
 export const switchContext = async (
-  data: SwitchContextRequest,
-): Promise<SwitchContextResponse> => {
+  data: RuntimeSwitchContextRequest,
+): Promise<RuntimeSwitchContextResponse> => {
   const response = await httpClient.post<
-    SwitchContextResponse,
-    SwitchContextRequest
+    RuntimeSwitchContextResponse,
+    RuntimeSwitchContextRequest
   >({
     url: "/api/auth/switch-context",
     data,
@@ -34,8 +50,8 @@ export const switchContext = async (
   return response!;
 };
 
-export const getProfile = async (): Promise<GetProfileResponse> => {
-  const response = await httpClient.get<GetProfileResponse, never>({
+export const getProfile = async (): Promise<RuntimeGetProfileResponse> => {
+  const response = await httpClient.get<RuntimeGetProfileResponse, never>({
     url: "/api/auth",
   });
 
@@ -57,7 +73,7 @@ export const forgotPassword = async (
   data: ForgotPasswordRequest,
 ): Promise<void> => {
   await httpClient.put<void, ForgotPasswordRequest>({
-    url: "/api/auth/forgot-password",
+    url: "/api/auth/for got-password",
     data,
   });
 };
@@ -73,7 +89,7 @@ export const changePassword = async (
 
 export const logout = async (): Promise<void> => {
   await httpClient.post<void, never>({
-    url: "/api/auth/log-out",
+    url: "/api/auth/logout",
   });
 };
 
@@ -95,4 +111,16 @@ export const resendToken = async (data: ResendTokenRequest): Promise<void> => {
     url: "/api/auth/resend-token",
     data,
   });
+};
+export const register = async (
+  data: RegisterAdminRequest,
+): Promise<RegisterResponse> => {
+  const response = await httpClient.post<
+    RegisterResponse,
+    RegisterAdminRequest
+  >({
+    url: "/api/auth",
+    data,
+  });
+  return response!;
 };

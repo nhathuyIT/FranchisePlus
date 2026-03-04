@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Coffee } from "lucide-react";
 import { toast } from "sonner";
@@ -7,6 +7,7 @@ import { useAuthStore } from "@/stores/auth-store";
 import { ROUTER_URL } from "@/router/route.const";
 import type { AvailableContext } from "@/config/permission";
 import type { Role, User, UserFranchiseRole } from "@/types/user.type";
+import * as authApi from "@/api/auth.api";
 
 interface LocationState {
   user: User;
@@ -18,6 +19,7 @@ export const RoleSelectorPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { login } = useAuthStore();
+  const [isLoading, setIsLoading] = useState(false);
 
   const state = location.state as LocationState | null;
 
@@ -27,26 +29,60 @@ export const RoleSelectorPage = () => {
     }
   }, [state, navigate]);
 
-  const handleSelectRole = (context: AvailableContext) => {
-    if (!state) return;
+  const handleSelectRole = async (context: AvailableContext) => {
+    if (!state || isLoading) return;
 
-    const authUser = {
-      user: state.user,
-      roles: state.roles,
-      franchiseRoles: state.franchiseRoles || [],
-      currentRoleId: context.roleId,
-      currentFranchiseId: context.franchiseId,
-    };
+    setIsLoading(true);
+    try {
+      // Step 1: Call switchContext to set the selected role/franchise on the backend
+      // Must send both roleId AND franchiseId for backend to properly set context
+      await authApi.switchContext({
+        franchiseId: context.franchiseId,
+        role_id: context.roleId,
+      });
 
-    login(authUser);
+      // Step 2: Call getProfile to get the confirmed activeContext after the switch
+      const freshProfile = await authApi.getProfile();
 
-    toast.success("Role selected!", {
-      description: `You are now ${context.roleName}`,
-    });
+      // Resolve from activeContext returned by getProfile
+      const activeContext = freshProfile.activeContext ?? {
+        role: context.roleCode,
+        scope: context.isGlobal ? "GLOBAL" : "FRANCHISE",
+        franchiseId: context.franchiseId,
+      };
 
-    navigate(ROUTER_URL.ADMIN + "/" + ROUTER_URL.ADMIN_ROUTER.DASHBOARD, {
-      replace: true,
-    });
+      const matchedFR = (state.franchiseRoles || []).find(
+        (fr) =>
+          fr.franchiseId === activeContext.franchiseId ||
+          (!fr.franchiseId && !activeContext.franchiseId),
+      );
+
+      const authUser = {
+        user: freshProfile.user,
+        // PRESERVE original roles & franchiseRoles so user can switch again later
+        roles: state.roles,
+        franchiseRoles: state.franchiseRoles || [],
+        currentRoleId: matchedFR?.roleId ?? context.roleId,
+        currentFranchiseId: activeContext.franchiseId ?? context.franchiseId,
+      };
+
+      login(authUser);
+
+      toast.success("Role selected!", {
+        description: `You are now ${context.roleName}`,
+      });
+
+      navigate(ROUTER_URL.ADMIN + "/" + ROUTER_URL.ADMIN_ROUTER.DASHBOARD, {
+        replace: true,
+      });
+    } catch (error) {
+      console.error("Failed to select role:", error);
+      toast.error("Failed to select role", {
+        description: "Please try again",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   if (!state || !state.franchiseRoles || state.franchiseRoles.length === 0) {
@@ -59,10 +95,10 @@ export const RoleSelectorPage = () => {
       return {
         id: `${fr.roleId}-${fr.franchiseId || "global"}`,
         roleId: fr.roleId,
-        roleName: role.name,
+        roleName: role.name || role.code,
         roleCode: role.code,
         franchiseId: fr.franchiseId,
-        franchiseName: null,
+        franchiseName: fr.franchiseName || null,
         isGlobal: !fr.franchiseId,
       };
     },
@@ -99,6 +135,7 @@ export const RoleSelectorPage = () => {
           <RoleSelector
             availableRoles={availableContexts}
             onSelectRole={handleSelectRole}
+            isLoading={isLoading}
           />
         </div>
 

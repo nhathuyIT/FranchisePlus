@@ -1,56 +1,121 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { CustomerDataMock } from "@/const/customer.const";
-import { ROUTER_URL } from "@/router/route.const";
+import { PageHeader } from "@/components/common/PageHeader";
 import { CustomerTable } from "./components/CustomerTable";
-import type { Customer } from "@/types/customer";
+import { CrudDialog } from "@/components/crud/CrudDialog";
+import { useCrudDialog } from "@/hooks/crud";
+import { customerConfig } from "./customer.config";
+import { useUserSearch, useDeleteUser } from "@/hooks/user";
+import type { UserSearchRequest } from "@/api/user/user.type";
+import type { User } from "@/types/user.type";
 
 const UserCRUD = () => {
-  const [customers] = useState<Customer[]>(CustomerDataMock);
-  const [searchTerm, setSearchTerm] = useState("");
+  const [searchParams] = useState<UserSearchRequest>({
+    searchCondition: {
+      keyword: "",
+      isActive: undefined,
+      isDeleted: false,
+    },
+    pageInfo: {
+      pageNum: 1,
+      pageSize: 10,
+    },
+  });
 
-  const filteredCustomers = customers.filter(
-    (customer) =>
-      customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      customer.phone.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      customer.email?.toLowerCase().includes(searchTerm.toLowerCase()),
-  );
+  const {
+    data: searchResult,
+    isLoading,
+    error,
+    refetch,
+  } = useUserSearch(searchParams);
+  const deleteUser = useDeleteUser();
+
+  const users = searchResult?.pageData ?? [];
+
+  // CRUD Dialog state
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const dialog = useCrudDialog<any>();
+
+  // Refresh data after CRUD operations
+  const refreshData = () => {
+    refetch();
+    dialog.close();
+  };
+
+  // Single Delete Handler
+  const handleSingleDelete = async (user: User) => {
+    const confirmDelete = window.confirm(
+      `Are you sure you want to delete user "${user.name}"? This action cannot be undone.`
+    );
+
+    if (!confirmDelete) return;
+
+    await deleteUser.mutateAsync(String(user.id));
+    refetch();
+  };
+
+  // Bulk Delete Handler
+  const handleBulkDelete = async (selectedUsers: User[]) => {
+    const confirmDelete = window.confirm(
+      `Are you sure you want to delete ${selectedUsers.length} user(s)? This action cannot be undone.`
+    );
+
+    if (!confirmDelete) return;
+
+    for (const user of selectedUsers) {
+      await deleteUser.mutateAsync(String(user.id));
+    }
+    refetch();
+  };
+
+  // Retry Handler
+  const handleRetry = () => {
+    refetch();
+  };
 
   return (
-    <div className="p-6 bg-gradient-to-br from-[#FAF8F5] via-[#F5F1EB] to-[#EDE7DD] min-h-screen">
-      <div className="max-w-7xl mx-auto">
-        <div className="flex justify-between items-center mb-6">
-          <div>
-            <h1 className="text-3xl font-bold text-[#3E2723]">
-              Customer Management
-            </h1>
-            <p className="text-[#5D4037] mt-1">Manage all your customers</p>
-          </div>
-          <Link
-            to={`${ROUTER_URL.ADMIN}/${ROUTER_URL.ADMIN_ROUTER.USER_CONTROL_CREATE}`}
-          >
-            <Button className="bg-[#6D4C41] hover:bg-[#5D4037] text-white rounded-full shadow-md hover:shadow-lg transition-all duration-300 cursor-pointer">
+    <div className="h-full flex flex-col">
+      <div className="flex-1 flex flex-col min-h-0 max-w-7xl mx-auto w-full">
+        <PageHeader
+          title="Customer Management"
+          description="Manage all your customers"
+          action={
+            <Button
+              onClick={dialog.openCreate}
+              className="bg-[#6D4C41] hover:bg-[#5D4037] text-white rounded-full shadow-md hover:shadow-lg transition-all duration-300 cursor-pointer"
+            >
               <Plus className="mr-2 h-4 w-4" />
               Add Customer
             </Button>
-          </Link>
+          }
+        />
+
+        <div className="flex-1 min-h-0 flex flex-col bg-white rounded-2xl shadow-lg border border-[#E8DFD6] p-6">
+          <CustomerTable
+            customers={users}
+            isLoading={isLoading}
+            error={
+              error
+                ? error instanceof Error
+                  ? error
+                  : new Error("Failed to load users")
+                : null
+            }
+            onRetry={handleRetry}
+            onBulkDelete={handleBulkDelete}
+            onEdit={dialog.openUpdate}
+            onView={dialog.openView}
+            onDelete={handleSingleDelete}
+          />
         </div>
 
-        <div className="bg-white rounded-2xl shadow-lg border border-[#E8DFD6] p-6">
-          <div className="mb-4">
-            <Input
-              placeholder="Search by name, phone, or email..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="max-w-md"
-            />
-          </div>
-
-          <CustomerTable customers={filteredCustomers} />
-        </div>
+        {/* CRUD Dialog */}
+        <CrudDialog
+          config={customerConfig}
+          dialog={dialog}
+          onSuccess={refreshData}
+        />
       </div>
     </div>
   );

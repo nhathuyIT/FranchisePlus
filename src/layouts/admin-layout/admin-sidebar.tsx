@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Coffee, LogOut } from "lucide-react";
+import { Coffee, LogOut, KeyRound } from "lucide-react";
 import {
   LayoutDashboard,
   Users,
@@ -12,9 +12,9 @@ import {
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { useAuthStore } from "@/stores/auth-store";
 import { ADMIN_MENU } from "@/router/admin/admin.menu";
-import { ROUTER_URL } from "@/router/route.const";
+import { useLogout } from "@/hooks/auth/useAuth.hooks";
+import { useAuthStore } from "@/stores/auth-store";
 import { RoleSwitcher } from "@/pages/admin/role-selector/role-switcher";
 
 const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
@@ -44,9 +44,9 @@ interface AdminSidebarProps {
 const AdminSideBar = ({ collapsed = false }: AdminSidebarProps) => {
   const location = useLocation();
   const navigate = useNavigate();
+  const logoutMutation = useLogout();
   const {
     authUser,
-    logout,
     getAvailableContexts,
     getCurrentPermissions,
     getCurrentRole,
@@ -68,11 +68,6 @@ const AdminSideBar = ({ collapsed = false }: AdminSidebarProps) => {
       userPermissions.includes(permission),
     );
   });
-
-  const handleLogout = async () => {
-    await logout();
-    navigate(`/${ROUTER_URL.ADMIN_ROUTER.LOGIN}`);
-  };
 
   const isActive = (path: string) => {
     const fullPath = `/admin/${path}`;
@@ -187,10 +182,22 @@ const AdminSideBar = ({ collapsed = false }: AdminSidebarProps) => {
           </div>
         )}
 
-        <div className="p-4">
+        <div className="p-4 flex flex-col gap-1">
           <Button
             variant="ghost"
-            onClick={handleLogout}
+            onClick={() => navigate("/admin/change-password")}
+            className={cn(
+              "w-full gap-3 text-amber-200 hover:text-amber-50 hover:bg-amber-800/50",
+              collapsed ? "justify-center px-2" : "justify-start",
+            )}
+            title={collapsed ? "Change Password" : undefined}
+          >
+            <KeyRound size={20} />
+            {!collapsed && <span>Change Password</span>}
+          </Button>
+          <Button
+            variant="ghost"
+            onClick={() => logoutMutation.mutate()}
             className={cn(
               "w-full gap-3 text-amber-200 hover:text-amber-50 hover:bg-amber-800/50",
               collapsed ? "justify-center px-2" : "justify-start",

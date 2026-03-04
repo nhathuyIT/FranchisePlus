@@ -8,6 +8,24 @@ export interface Customer extends BaseTimestamp, SoftDeletable, Activatable {
   avatarUrl: string | null;
 }
 
+// Customer Profile from API (snake_case)
+export interface CustomerProfile {
+  id: string;
+  email: string;
+  name: string;
+  phone: string;
+  address: string;
+  avatar_url: string;
+  is_active: boolean;
+  is_deleted: boolean;
+  is_verified: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+// Customer Login Response is directly the profile
+export type CustomerLoginResponse = CustomerProfile;
+
 export interface CustomerFranchise
   extends BaseTimestamp, SoftDeletable, Activatable {
   id: ID;
