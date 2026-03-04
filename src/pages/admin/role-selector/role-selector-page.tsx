@@ -105,7 +105,7 @@ export const RoleSelectorPage = () => {
   );
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-amber-50 via-orange-50 to-amber-100 p-4">
+    <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-amber-50 via-orange-50 to-amber-100 p-4">
       <div className="absolute inset-0 opacity-5">
         <div className="absolute top-10 left-10 text-amber-900">
           <Coffee size={120} />
@@ -117,7 +117,7 @@ export const RoleSelectorPage = () => {
 
       <div className="w-full max-w-md relative">
         <div className="absolute -top-16 left-1/2 -translate-x-1/2">
-          <div className="bg-gradient-to-br from-amber-600 to-amber-800 rounded-full p-6 shadow-2xl">
+          <div className="bg-linear-to-br from-amber-600 to-amber-800 rounded-full p-6 shadow-2xl">
             <Coffee size={48} className="text-amber-50" strokeWidth={2.5} />
           </div>
         </div>
