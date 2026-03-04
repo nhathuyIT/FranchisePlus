@@ -9,18 +9,25 @@ export const CustomerSchema = z.object({
     .min(1, "Customer name is required")
     .max(100, "Name too long - keep it under 100 characters"),
 
-  phone: z
-    .string()
-    .min(10, "Phone number must be at least 10 digits")
-    .max(15, "Phone number too long - maximum 15 digits")
-    .regex(
-      /^[0-9+\-\s()]+$/,
-      "Phone number can only contain digits, spaces, +, -, and parentheses",
-    ),
-
   email: z
     .string()
-    .email("Enter a valid email address")
+    .min(1, "Email is required")
+    .email("Enter a valid email address"),
+
+  password: z
+    .string()
+    .min(6, "Password must be at least 6 characters")
+    .max(50, "Password too long")
+    .optional()
+    .or(z.literal("")),
+
+  phone: z
+    .string()
+    .max(15, "Phone number too long - maximum 15 digits")
+    .regex(
+      /^[0-9+\-\s()]*$/,
+      "Phone number can only contain digits, spaces, +, -, and parentheses",
+    )
     .optional()
     .or(z.literal("")),
 

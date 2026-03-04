@@ -65,7 +65,7 @@ export function CrudDialog<TEntity, TFormData extends FieldValues>({
           <DeleteConfirmation
             config={config}
             entity={entity}
-            onConfirm={() => {}}
+            onConfirm={onSuccess}
             onCancel={close}
           />
         ) : (

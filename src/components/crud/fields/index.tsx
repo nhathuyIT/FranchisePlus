@@ -341,6 +341,17 @@ function renderFieldControl<TFormData extends FieldValues>(
         />
       );
 
+    case "time":
+      return (
+        <Input
+          {...field}
+          type="time"
+          placeholder={config.placeholder}
+          disabled={disabled}
+          className={inputClassName}
+        />
+      );
+
     case "datetime":
       return (
         <Input

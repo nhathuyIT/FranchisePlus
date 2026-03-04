@@ -1,10 +1,10 @@
 import type { ColumnDef } from "@tanstack/react-table";
-import { User } from "lucide-react";
+import { User as UserIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import type { Customer } from "@/types/customer";
+import type { User } from "@/types/user.type";
 
-export const customerColumns: ColumnDef<Customer>[] = [
+export const customerColumns: ColumnDef<User>[] = [
   {
     accessorKey: "avatarUrl",
     header: "Avatar",
@@ -17,7 +17,7 @@ export const customerColumns: ColumnDef<Customer>[] = [
           className="object-cover"
         />
         <AvatarFallback className="rounded-lg bg-[#6D4C41] text-white">
-          <User className="h-6 w-6" />
+          <UserIcon className="h-6 w-6" />
         </AvatarFallback>
       </Avatar>
     ),

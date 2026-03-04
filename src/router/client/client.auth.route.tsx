@@ -11,12 +11,13 @@ const ClientForgotPasswordPage = React.lazy(
   () => import("@/pages/client/auth/forgot-password/client-forgot-password"),
 );
 
+const ClientChangePasswordPage = React.lazy(
+  () => import("@/pages/client/auth/change-password/client-change-password"),
+);
+
 const ClientAuthRoute = (
   <>
-    <Route
-      path={ROUTER_URL.CLIENT_ROUTER.LOGIN}
-      element={<AuthContainer />}
-    />
+    <Route path={ROUTER_URL.CLIENT_ROUTER.LOGIN} element={<AuthContainer />} />
     <Route
       path={ROUTER_URL.CLIENT_ROUTER.REGISTER}
       element={<AuthContainer />}
@@ -24,6 +25,10 @@ const ClientAuthRoute = (
     <Route
       path={ROUTER_URL.CLIENT_ROUTER.FORGOT_PASSWORD}
       element={<ClientForgotPasswordPage />}
+    />
+    <Route
+      path={ROUTER_URL.CLIENT_ROUTER.CHANGE_PASSWORD}
+      element={<ClientChangePasswordPage />}
     />
     <Route path={ROUTER_URL.VERIFY_EMAIL} element={<VerifyAccount />} />
   </>
