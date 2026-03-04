@@ -12,16 +12,81 @@ import type {
   VerifyTokenRequest,
   ResendTokenRequest,
   RegisterRequest,
+  ApiRoleItem,
+  ActiveContext,
 } from "@/types/auth.type";
 import type { Role, UserFranchiseRole } from "@/types/user.type";
 
-// API role format from backend
-interface ApiRoleResponse {
-  role: string;
-  scope: string;
-  franchise_id: string | null;
-  franchise_name: string | null;
-}
+/**
+ * Parse the backend roles array ({role, scope, franchiseId, franchiseName})
+ * into normalised Role[] and UserFranchiseRole[] used internally.
+ */
+const parseProfileRoles = (
+  apiRoles: ApiRoleItem[],
+  userId: string,
+): { roles: Role[]; franchiseRoles: UserFranchiseRole[] } => {
+  const roles: Role[] = [];
+  const franchiseRoles: UserFranchiseRole[] = [];
+
+  apiRoles.forEach((r, index) => {
+    const roleId = index + 1;
+    roles.push({
+      id: roleId,
+      code: r.role,
+      name: r.role,
+      description: null,
+      scope: r.scope as "GLOBAL" | "FRANCHISE",
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      isDeleted: false,
+    });
+    franchiseRoles.push({
+      id: roleId,
+      franchiseId: r.franchiseId || null,
+      franchiseName: r.franchiseName || null,
+      roleId,
+      userId,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      isDeleted: false,
+    });
+  });
+
+  return { roles, franchiseRoles };
+};
+
+/**
+ * Resolve currentRoleId + currentFranchiseId from activeContext.
+ * Matches by role code + franchiseId against the parsed franchiseRoles.
+ */
+const resolveContext = (
+  activeContext: ActiveContext | null | undefined,
+  roles: Role[],
+  franchiseRoles: UserFranchiseRole[],
+): { currentRoleId: number | null; currentFranchiseId: string | null } => {
+  if (!activeContext) {
+    return {
+      currentRoleId: franchiseRoles[0]?.roleId ?? roles[0]?.id ?? null,
+      currentFranchiseId: franchiseRoles[0]?.franchiseId ?? null,
+    };
+  }
+
+  // Find the role whose code matches activeContext.role
+  const matchedRole = roles.find((r) => r.code === activeContext.role);
+  // Find the franchiseRole whose franchiseId matches
+  const matchedFR = franchiseRoles.find(
+    (fr) =>
+      fr.roleId === matchedRole?.id &&
+      (fr.franchiseId === activeContext.franchiseId ||
+        (!fr.franchiseId && !activeContext.franchiseId)),
+  );
+
+  return {
+    currentRoleId: matchedFR?.roleId ?? matchedRole?.id ?? null,
+    currentFranchiseId:
+      matchedFR?.franchiseId ?? activeContext.franchiseId ?? null,
+  };
+};
 
 export const useLogin = () => {
   const navigate = useNavigate();
@@ -42,69 +107,39 @@ export const useLogin = () => {
         return;
       }
 
-      // Check if API returns roles in the format: {role, scope, franchise_id, franchise_name}
-      const apiRoles = data.roles as unknown as ApiRoleResponse[];
-      const transformedFranchiseRoles: UserFranchiseRole[] = [];
-      const transformedRoles: Role[] = [];
+      const { roles, franchiseRoles } = parseProfileRoles(
+        data.roles as unknown as ApiRoleItem[],
+        data.user.id,
+      );
 
-      if (
-        apiRoles &&
-        apiRoles.length > 0 &&
-        apiRoles[0].franchise_id !== undefined
-      ) {
-        // Transform the roles to match expected format
-        apiRoles.forEach((r, index) => {
-          const roleId = index + 1; // Generate temporary IDs
-          transformedRoles.push({
-            id: roleId,
-            code: r.role,
-            name: r.role,
-            description: null,
-            scope: r.scope as "GLOBAL" | "FRANCHISE",
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-            isDeleted: false,
-          });
-          transformedFranchiseRoles.push({
-            id: index + 1,
-            franchiseId: r.franchise_id || null,
-            franchiseName: r.franchise_name || null,
-            roleId: roleId,
-            userId: data.user.id,
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-            isDeleted: false,
-          });
-        });
-      }
-
-      const franchiseRoles =
-        transformedFranchiseRoles.length > 0
-          ? transformedFranchiseRoles
-          : data.franchiseRoles || [];
-
-      const roles = transformedRoles.length > 0 ? transformedRoles : data.roles;
-
-      if (franchiseRoles && franchiseRoles.length > 1) {
+      // If user has more than one role/franchise, show the role selector
+      if (franchiseRoles.length > 1) {
         navigate(
           ROUTER_URL.ADMIN + "/" + ROUTER_URL.ADMIN_ROUTER.ROLE_SELECTOR,
           {
             state: {
               user: data.user,
-              roles: roles,
-              franchiseRoles: franchiseRoles,
+              roles,
+              franchiseRoles,
             },
           },
         );
         return;
       }
 
+      // Single role — use activeContext directly if available
+      const { currentRoleId, currentFranchiseId } = resolveContext(
+        data.activeContext,
+        roles,
+        franchiseRoles,
+      );
+
       const authUser = {
         user: data.user,
-        roles: roles,
-        franchiseRoles: franchiseRoles,
-        currentRoleId: franchiseRoles?.[0]?.roleId || roles[0]?.id || null,
-        currentFranchiseId: franchiseRoles?.[0]?.franchiseId || null,
+        roles,
+        franchiseRoles,
+        currentRoleId,
+        currentFranchiseId,
       };
 
       setAuth(authUser);
@@ -141,13 +176,23 @@ export const useClientLogin = () => {
         });
         return;
       }
+
+      const { roles, franchiseRoles } = parseProfileRoles(
+        data.roles as unknown as ApiRoleItem[],
+        data.user.id,
+      );
+      const { currentRoleId, currentFranchiseId } = resolveContext(
+        data.activeContext,
+        roles,
+        franchiseRoles,
+      );
+
       const authUser = {
         user: data.user,
-        roles: data.roles,
-        franchiseRoles: data.franchiseRoles || [],
-        currentRoleId:
-          data.franchiseRoles?.[0]?.roleId || data.roles[0]?.id || null,
-        currentFranchiseId: data.franchiseRoles?.[0]?.franchiseId || null,
+        roles,
+        franchiseRoles,
+        currentRoleId,
+        currentFranchiseId,
       };
 
       setAuth(authUser);
@@ -168,16 +213,44 @@ export const useClientLogin = () => {
 
 /**
  * AUTH-02: Switch Context Mutation
+ * Flow: switchContext API → getProfile (get confirmed activeContext) → update store
+ * Preserves all roles & franchiseRoles so user can switch again later.
  */
 export const useSwitchContext = () => {
-  const queryClient = useQueryClient();
+  const { authUser, login } = useAuthStore();
 
   return useMutation({
-    mutationFn: (data: SwitchContextRequest) => authApi.switchContext(data),
-    onSuccess: () => {
-      // Invalidate profile query to refresh user data from backend
-      queryClient.invalidateQueries({ queryKey: ["auth", "profile"] });
+    mutationFn: async (data: SwitchContextRequest) => {
+      await authApi.switchContext(data);
+      // getProfile returns the confirmed activeContext after the switch
+      const freshProfile = await authApi.getProfile();
+      return freshProfile;
+    },
+    onSuccess: (freshProfile) => {
+      if (!freshProfile || !authUser) return;
 
+      const { roles, franchiseRoles } = parseProfileRoles(
+        freshProfile.roles as unknown as ApiRoleItem[],
+        authUser.user.id,
+      );
+
+      const { currentRoleId, currentFranchiseId } = resolveContext(
+        freshProfile.activeContext,
+        roles,
+        franchiseRoles,
+      );
+
+      const updatedAuthUser = {
+        ...authUser,
+        user: freshProfile.user,
+        // PRESERVE original roles/franchiseRoles so user can switch again
+        roles: authUser.roles,
+        franchiseRoles: authUser.franchiseRoles,
+        currentRoleId,
+        currentFranchiseId,
+      };
+
+      login(updatedAuthUser);
       toast.success("Role switched successfully");
     },
     onError: (error) => {

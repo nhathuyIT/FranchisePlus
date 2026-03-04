@@ -1,24 +1,8 @@
 import type { ColumnDef } from "@tanstack/react-table";
 import { Badge } from "@/components/ui/badge";
-import { PRODUCT_CATEGORY_MAP } from "@/const/product.const";
-import { CATEGORIES } from "@/const/category.const";
 import type { Product } from "@/types/product.type";
 
-const getCategoryName = (productId: string | number) => {
-  const categoryId = PRODUCT_CATEGORY_MAP[Number(productId)];
-  return CATEGORIES.find((cat) => cat.id === categoryId)?.name || "Uncategorized";
-};
-
 export const productColumns: ColumnDef<Product>[] = [
-  {
-    accessorKey: "id",
-    header: "ID",
-    cell: ({ row }) => (
-      <span className="font-mono text-sm text-[#5D4037]">
-        {row.original.id}
-      </span>
-    ),
-  },
   {
     accessorKey: "sku",
     header: "SKU",
@@ -57,23 +41,13 @@ export const productColumns: ColumnDef<Product>[] = [
     ),
   },
   {
-    id: "category",
-    accessorFn: (row) => getCategoryName(row.id),
-    header: "Category",
-    cell: ({ row }) => (
-      <span className="text-[#5D4037]">
-        {getCategoryName(row.original.id)}
-      </span>
-    ),
-  },
-  {
     id: "price_range",
     accessorFn: (row) => `${row.minPrice}-${row.maxPrice}`,
     header: "Price Range",
     enableSorting: false,
     cell: ({ row }) => (
       <span className="text-[#5D4037]">
-        ${row.original.minPrice.toFixed(2)} - ${row.original.maxPrice.toFixed(2)}
+        {row.original.minPrice.toLocaleString()}₫ – {row.original.maxPrice.toLocaleString()}₫
       </span>
     ),
   },
