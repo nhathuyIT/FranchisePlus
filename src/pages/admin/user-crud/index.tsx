@@ -34,7 +34,8 @@ const UserCRUD = () => {
   const users = searchResult?.pageData ?? [];
 
   // CRUD Dialog state
-  const dialog = useCrudDialog<User>();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const dialog = useCrudDialog<any>();
 
   // Refresh data after CRUD operations
   const refreshData = () => {

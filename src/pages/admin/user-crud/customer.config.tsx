@@ -70,20 +70,20 @@ export const customerConfig: CrudConfig<Customer, CustomerFormData> = {
         password: data.password || "12345678",
         name: data.name || "",
         phone: data.phone || "",
-        avatar_url: data.avatarUrl || "",
+        avatarUrl: data.avatarUrl || "",
       });
 
       // Map API response (snake_case) → Customer (camelCase)
       return {
         id: response?.id as unknown as Customer["id"],
         name: response?.name,
-        phone: response.phone,
-        email: response.email || null,
-        avatarUrl: response.avatar_url || null,
-        isActive: response.is_active,
-        isDeleted: response.is_deleted,
-        createdAt: response.created_at,
-        updatedAt: response.updated_at,
+        phone: response?.phone,
+        email: response?.email || null,
+        avatarUrl: response?.avatarUrl || null,
+        isActive: response?.isActive,
+        isDeleted: response?.isDeleted,
+        createdAt: response?.createdAt,
+        updatedAt: response?.updatedAt,
       } as Customer;
     },
 

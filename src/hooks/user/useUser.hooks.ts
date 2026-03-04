@@ -35,7 +35,7 @@ const transformUpdateToApi = (
   if (data.email !== undefined) payload.email = data.email;
   if (data.password !== undefined) payload.password = data.password;
   if (data.name !== undefined) payload.name = data.name;
-  if (data.phone !== undefined) payload.phone = data.phone;
+  if (data.phone !== undefined) payload.phone = data.phone ?? undefined;
   if (data.avatarUrl !== undefined)
     payload.avatarUrl = data.avatarUrl ?? undefined;
 

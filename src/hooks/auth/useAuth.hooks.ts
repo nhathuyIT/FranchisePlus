@@ -14,6 +14,7 @@ import type {
   RegisterRequest,
   ApiRoleItem,
   ActiveContext,
+  SwitchContextRequest,
 } from "@/types/auth.type";
 import type { Role, UserFranchiseRole } from "@/types/user.type";
 
