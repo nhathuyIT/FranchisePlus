@@ -18,9 +18,11 @@ import {
 } from "lucide-react";
 import { useAuthStore } from "@/stores/auth-store";
 import { useLogoutCustomer } from "@/hooks/client/useClient.hooks";
+import { useCart } from "@/pages/client/cart/useCart";
 
 const Header = () => {
   const { authUser, isAdmin } = useAuthStore();
+  const { itemCount } = useCart();
   const logoutMutation = useLogoutCustomer();
   const user = authUser?.user;
   const primaryRole = authUser?.roles[0]?.name || "User";
@@ -95,6 +97,14 @@ const Header = () => {
                 className="relative h-12 w-12 text-[#5D4037] hover:text-[#6D4C41] hover:bg-[#FAF8F5]"
               >
                 <ShoppingCart className="h-7 w-7" strokeWidth={2} />
+                {itemCount > 0 && (
+                  <Badge 
+                    variant="destructive"
+                    className="absolute -top-1 -right-1 h-6 w-6 text-xs font-bold flex items-center justify-center p-0 min-w-[1.5rem]"
+                  >
+                    {itemCount > 99 ? '99+' : itemCount}
+                  </Badge>
+                )}
               </Button>
             </Link>
 
