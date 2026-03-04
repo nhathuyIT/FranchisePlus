@@ -1,4 +1,5 @@
 import type {
+  ChangePasswordRequest,
   LoginRequest,
   RegisterRequest,
   RegisterResponse,
@@ -58,4 +59,13 @@ export const updateClientProfile = async (
     data,
   });
   return response!;
+};
+
+export const changePasswordClient = async (
+  data: ChangePasswordRequest,
+): Promise<void> => {
+  await httpClient.put<void, ChangePasswordRequest>({
+    url: "/api/customer-auth/change-password",
+    data,
+  });
 };

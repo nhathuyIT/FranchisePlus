@@ -15,7 +15,28 @@ export interface HttpClient {
 
   post<T, D = unknown>(config: HttpRequestConfig<D>): Promise<T | null>;
 
+  /**
+   * POST request that bypasses the automatic camelCase → snake_case interceptor.
+   * Use this when the backend expects a specific format that differs from snake_case.
+   * The payload is sent exactly as provided (JSON stringified).
+   */
+  postRaw<T, D = unknown>(config: HttpRequestConfig<D>): Promise<T | null>;
+
+  postPaginated<T, D = unknown>(
+    config: HttpRequestConfig<D>,
+  ): Promise<ApiPaginatedResponse<T>>;
+
+  /**
+   * POST paginated request that bypasses the automatic camelCase → snake_case interceptor.
+   * Use this for search APIs where backend expects camelCase keys.
+   */
+  postPaginatedRaw<T, D = unknown>(
+    config: HttpRequestConfig<D>,
+  ): Promise<ApiPaginatedResponse<T>>;
+
   put<T, D = unknown>(config: HttpRequestConfig<D>): Promise<T | null>;
+
+  patch<T, D = unknown>(config: HttpRequestConfig<D>): Promise<T | null>;
 
   delete<T, P extends Record<string, unknown> = Record<string, unknown>>(
     config: HttpRequestConfig<never, P>,
@@ -25,6 +46,17 @@ export interface HttpClient {
 export interface ApiSuccessResponse<T> {
   success: true;
   data: T | null;
+}
+
+export interface ApiPaginatedResponse<T> {
+  success: true;
+  data: T[];
+  pageInfo: {
+    pageNum: number;
+    pageSize: number;
+    totalItems: number;
+    totalPages: number;
+  };
 }
 
 export interface ApiErrorResponse {

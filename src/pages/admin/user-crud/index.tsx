@@ -1,72 +1,77 @@
 import { useState } from "react";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { toast } from "sonner";
-import { CustomerDataMock } from "@/const/customer.const";
 import { PageHeader } from "@/components/common/PageHeader";
 import { CustomerTable } from "./components/CustomerTable";
 import { CrudDialog } from "@/components/crud/CrudDialog";
 import { useCrudDialog } from "@/hooks/crud";
 import { customerConfig } from "./customer.config";
-import type { Customer } from "@/types/customer";
+import { useUserSearch, useDeleteUser } from "@/hooks/user";
+import type { UserSearchRequest } from "@/api/user/user.type";
+import type { User } from "@/types/user.type";
 
 const UserCRUD = () => {
-  const [customers, setCustomers] = useState<Customer[]>(CustomerDataMock);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<Error | null>(null);
+  const [searchParams] = useState<UserSearchRequest>({
+    searchCondition: {
+      keyword: "",
+      isActive: undefined,
+      isDeleted: false,
+    },
+    pageInfo: {
+      pageNum: 1,
+      pageSize: 10,
+    },
+  });
+
+  const {
+    data: searchResult,
+    isLoading,
+    error,
+    refetch,
+  } = useUserSearch(searchParams);
+  const deleteUser = useDeleteUser();
+
+  const users = searchResult?.pageData ?? [];
 
   // CRUD Dialog state
-  const dialog = useCrudDialog<Customer>();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const dialog = useCrudDialog<any>();
 
   // Refresh data after CRUD operations
   const refreshData = () => {
-    // TODO: Replace with actual API call
-    setCustomers([...CustomerDataMock]);
+    refetch();
     dialog.close();
   };
 
-  // Bulk Delete Handler
-  const handleBulkDelete = async (selectedCustomers: Customer[]) => {
+  // Single Delete Handler
+  const handleSingleDelete = async (user: User) => {
     const confirmDelete = window.confirm(
-      `Are you sure you want to delete ${selectedCustomers.length} customer(s)? This action cannot be undone.`,
+      `Are you sure you want to delete user "${user.name}"? This action cannot be undone.`
     );
 
     if (!confirmDelete) return;
 
-    setIsLoading(true);
-    try {
-      // TODO: Replace with actual API call
-      // await deleteCustomers(selectedCustomers.map(c => c.id));
+    await deleteUser.mutateAsync(String(user.id));
+    refetch();
+  };
 
-      // Simulate API delay
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+  // Bulk Delete Handler
+  const handleBulkDelete = async (selectedUsers: User[]) => {
+    const confirmDelete = window.confirm(
+      `Are you sure you want to delete ${selectedUsers.length} user(s)? This action cannot be undone.`
+    );
 
-      // Remove deleted customers from state
-      const deletedIds = new Set(selectedCustomers.map((c) => c.id));
-      setCustomers((prev) => prev.filter((c) => !deletedIds.has(c.id)));
+    if (!confirmDelete) return;
 
-      toast.success(
-        `Successfully deleted ${selectedCustomers.length} customer(s)`,
-      );
-    } catch (err) {
-      toast.error("Failed to delete customers. Please try again.");
-      setError(
-        err instanceof Error ? err : new Error("Failed to delete customers"),
-      );
-    } finally {
-      setIsLoading(false);
+    for (const user of selectedUsers) {
+      await deleteUser.mutateAsync(String(user.id));
     }
+    refetch();
   };
 
   // Retry Handler
   const handleRetry = () => {
-    setError(null);
-    setIsLoading(true);
-
-    // TODO: Replace with actual data fetching
-    setTimeout(() => {
-      setIsLoading(false);
-    }, 1000);
+    refetch();
   };
 
   return (
@@ -88,14 +93,20 @@ const UserCRUD = () => {
 
         <div className="flex-1 min-h-0 flex flex-col bg-white rounded-2xl shadow-lg border border-[#E8DFD6] p-6">
           <CustomerTable
-            customers={customers}
+            customers={users}
             isLoading={isLoading}
-            error={error}
+            error={
+              error
+                ? error instanceof Error
+                  ? error
+                  : new Error("Failed to load users")
+                : null
+            }
             onRetry={handleRetry}
             onBulkDelete={handleBulkDelete}
             onEdit={dialog.openUpdate}
             onView={dialog.openView}
-            onDelete={dialog.openDelete}
+            onDelete={handleSingleDelete}
           />
         </div>
 

@@ -8,6 +8,7 @@ import type {
   RegisterRequest,
   VerifyTokenRequest,
   LoginRequest,
+  ChangePasswordRequest,
 } from "@/types/auth.type";
 import type { ProfileRequest } from "@/types/customer";
 
@@ -107,12 +108,12 @@ export const useClientLogin = () => {
           passwordHash: "",
           name: customerData.name,
           phone: customerData.phone || null,
-          avatarUrl: customerData.avatar_url || null,
+          avatarUrl: customerData.avatarUrl || null,
           address: customerData.address || null,
-          isActive: customerData.is_active,
-          isDeleted: customerData.is_deleted,
-          createdAt: customerData.created_at,
-          updatedAt: customerData.updated_at,
+          isActive: customerData.isActive,
+          isDeleted: customerData.isDeleted,
+          createdAt: customerData.createdAt,
+          updatedAt: customerData.updatedAt,
         },
         roles: [],
         franchiseRoles: [],
@@ -148,19 +149,19 @@ export const useUpdateClientProfile = () => {
       return customerApi.updateClientProfile(authUser.user.id, data);
     },
     onSuccess: (response) => {
-      // Transform snake_case response to camelCase for auth store
+      // Response is already camelCase from axios interceptor
       const updatedUser = {
         id: response.id,
         email: response.email,
         passwordHash: "",
         name: response.name,
         phone: response.phone || null,
-        avatarUrl: response.avatar_url || null,
+        avatarUrl: response.avatarUrl || null,
         address: response.address || null,
-        isActive: response.is_active,
-        isDeleted: response.is_deleted,
-        createdAt: response.created_at,
-        updatedAt: response.updated_at,
+        isActive: response.isActive,
+        isDeleted: response.isDeleted,
+        createdAt: response.createdAt,
+        updatedAt: response.updatedAt,
       };
 
       updateProfile(updatedUser);
@@ -170,6 +171,24 @@ export const useUpdateClientProfile = () => {
       toast.error("Update failed", {
         description: error.message || "Could not update profile",
       });
+    },
+  });
+};
+
+/**
+ * Hook to change customer password
+ */
+export const useClientChangePassword = () => {
+  const navigate = useNavigate();
+
+  return useMutation({
+    mutationFn: (data: ChangePasswordRequest) =>
+      customerApi.changePasswordClient(data),
+    onSuccess: () => {
+      toast.success("Password changed successfully", {
+        description: "You can now login with your new password",
+      });
+      navigate(ROUTER_URL.CLIENT_ROUTER.LOGIN);
     },
   });
 };

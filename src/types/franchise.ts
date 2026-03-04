@@ -1,9 +1,10 @@
-import type { ID, BaseTimestamp, SoftDeletable, Activatable } from "./common";
+import type { BaseTimestamp, SoftDeletable, Activatable } from "./common";
 
 export interface Franchise extends BaseTimestamp, SoftDeletable, Activatable {
-  id: ID;
+  id: string; // MongoDB ObjectId from API
   code: string; // Unique franchise code
   name: string;
+  hotline: string;
   logoUrl: string | null;
   address: string;
   openedAt: string | null;

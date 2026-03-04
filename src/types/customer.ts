@@ -9,19 +9,19 @@ export interface Customer extends BaseTimestamp, SoftDeletable, Activatable {
   avatarUrl: string | null;
 }
 
-// Customer Profile from API (snake_case)
+// Customer Profile from API (transformed to camelCase by axios interceptor)
 export interface CustomerProfile {
   id: string;
   email: string;
   name: string;
   phone: string;
   address: string;
-  avatar_url: string;
-  is_active: boolean;
-  is_deleted: boolean;
-  is_verified: boolean;
-  created_at: string;
-  updated_at: string;
+  avatarUrl: string;
+  isActive: boolean;
+  isDeleted: boolean;
+  isVerified: boolean;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface ProfileData {
@@ -29,7 +29,7 @@ export interface ProfileData {
   name: string;
   phone: string;
   address: string;
-  avatar_url: string;
+  avatarUrl: string;
 }
 
 export interface EditProfileDialogProps {

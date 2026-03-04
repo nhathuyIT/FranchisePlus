@@ -107,7 +107,7 @@ export const EditProfileDialog = ({
       email: trimmedEmail,
       phone: formData.phone.trim(),
       address: formData.address.trim(),
-      avatar_url: avatarUrl || user.avatarUrl || "",
+      avatarUrl: avatarUrl || user.avatarUrl || "",
     };
 
     updateProfileMutation.mutate(profileData, {
