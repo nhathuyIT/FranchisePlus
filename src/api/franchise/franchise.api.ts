@@ -40,12 +40,33 @@ export const getAll = async (): Promise<FranchiseListResponse> => {
  * Search franchises with pagination
  *
  * NOTE: Sử dụng axiosClient trực tiếp vì response structure khác
- * (có pageInfo ngoài data wrapper)
+ * (có pageInfo ngoài data wrapper).
+ *
+ * IMPORTANT: Backend expect camelCase keys (pageInfo, pageNum, etc.)
+ * nên phải JSON.stringify để bypass snake_case interceptor.
  */
 export const search = async (
   data: FranchiseSearchRequest
 ): Promise<FranchiseSearchResponse> => {
-  const res = await axiosClient.post(`${BASE_URL}/search`, data);
+  const payload = {
+    searchCondition: {
+      keyword: data.searchCondition.keyword,
+      openedAt: data.searchCondition.openedAt,
+      closedAt: data.searchCondition.closedAt,
+      isActive: data.searchCondition.isActive,
+      isDeleted: data.searchCondition.isDeleted,
+    },
+    pageInfo: {
+      pageNum: data.pageInfo.pageNum,
+      pageSize: data.pageInfo.pageSize,
+    },
+  };
+
+  const res = await axiosClient.post(
+    `${BASE_URL}/search`,
+    JSON.stringify(payload),
+    { headers: { "Content-Type": "application/json" } }
+  );
   const response = res.data;
 
   if (!response?.success) {
