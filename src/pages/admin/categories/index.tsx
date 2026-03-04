@@ -3,7 +3,6 @@ import { Plus } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -17,10 +16,16 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { CATEGORIES } from "@/const/category.const";
 import { PageHeader } from "@/components/common/PageHeader";
 import { CategoryTable } from "./components/CategoryTable";
 import type { Category } from "@/types/category";
+import type { CategorySearchRequest } from "@/api/category/category.api";
+import {
+  useCategoriesQuery,
+  useCreateCategoryMutation,
+  useUpdateCategoryMutation,
+  useDeleteCategoryMutation,
+} from "@/hooks/category/useCategoryQuery";
 
 const categorySchema = z.object({
   code: z.string().min(2, "Code must be at least 2 characters").max(50, "Code must be less than 50 characters"),
@@ -31,12 +36,45 @@ const categorySchema = z.object({
 
 type CategoryFormData = z.infer<typeof categorySchema>;
 
+// ── Default search params ───────────────────────────────────────────────────
+
+const DEFAULT_SEARCH_PARAMS: CategorySearchRequest = {
+  searchCondition: {
+    keyword: "",
+    is_active: "",
+    is_deleted: false,
+  },
+  pageInfo: {
+    pageNum: 1,
+    pageSize: 10,
+  },
+};
+
+// ── Component ───────────────────────────────────────────────────────────────
+
 const CategoriesPage = () => {
-  const [categories] = useState<Category[]>(CATEGORIES);
+  // Dialog state
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<Error | null>(null);
+
+  // ── TanStack Query hooks ──────────────────────────────────────────────────
+  const {
+    data: searchResponse,
+    isLoading,
+    error,
+    refetch,
+  } = useCategoriesQuery(DEFAULT_SEARCH_PARAMS);
+  const createMutation = useCreateCategoryMutation();
+  const updateMutation = useUpdateCategoryMutation();
+  const deleteMutation = useDeleteCategoryMutation();
+
+  const categories = searchResponse ?? [];
+  const isMutating =
+    createMutation.isPending ||
+    updateMutation.isPending ||
+    deleteMutation.isPending;
+
+  // ── Form ──────────────────────────────────────────────────────────────────
 
   const {
     register,
@@ -55,17 +93,37 @@ const CategoriesPage = () => {
   });
 
   const onSubmit = (data: CategoryFormData) => {
+    const payload = {
+      code: data.code,
+      name: data.name,
+      description: data.description || null,
+      is_active: data.isActive,
+    };
+
     if (editingCategory) {
-      console.log("Update category:", editingCategory.id, data);
-      toast.success("Category updated successfully!");
+      updateMutation.mutate(
+        { id: editingCategory.id, data: payload },
+        {
+          onSuccess: () => {
+            setIsDialogOpen(false);
+            setEditingCategory(null);
+            reset();
+          },
+        },
+      );
     } else {
-      console.log("Create category:", data);
-      toast.success("Category created successfully!");
+      createMutation.mutate(payload, {
+        onSuccess: () => {
+          setIsDialogOpen(false);
+          reset();
+        },
+      });
     }
-    setIsDialogOpen(false);
-    setEditingCategory(null);
-    reset();
   };
+
+  // ── Handlers ──────────────────────────────────────────────────────────────
+
+  // ── Handlers ──────────────────────────────────────────────────────────────
 
   const handleEdit = (category: Category) => {
     setEditingCategory(category);
@@ -87,8 +145,7 @@ const CategoriesPage = () => {
       `Are you sure you want to delete "${category.name}"? This action cannot be undone.`
     );
     if (confirmDelete) {
-      console.log("Delete category:", category.id);
-      toast.success("Category deleted successfully!");
+      deleteMutation.mutate(category.id);
     }
   };
 
@@ -97,17 +154,12 @@ const CategoriesPage = () => {
       `Are you sure you want to delete ${selectedCategories.length} categor${selectedCategories.length > 1 ? 'ies' : 'y'}? This action cannot be undone.`
     );
     if (confirmDelete) {
-      console.log("Bulk delete categories:", selectedCategories.map(c => c.id));
-      toast.success(`Successfully deleted ${selectedCategories.length} categor${selectedCategories.length > 1 ? 'ies' : 'y'}`);
+      selectedCategories.forEach((c) => deleteMutation.mutate(c.id));
     }
   };
 
   const handleRetry = () => {
-    setError(null);
-    setIsLoading(true);
-    setTimeout(() => {
-      setIsLoading(false);
-    }, 1000);
+    void refetch();
   };
 
   return (
@@ -204,15 +256,21 @@ const CategoriesPage = () => {
                         setEditingCategory(null);
                         reset();
                       }}
+                      disabled={isMutating}
                       className="border-[#E8DFD6] text-[#5D4037] hover:bg-[#FAF8F5]"
                     >
                       Cancel
                     </Button>
                     <Button
                       type="submit"
+                      disabled={isMutating}
                       className="bg-[#6D4C41] hover:bg-[#5D4037] text-white"
                     >
-                      {editingCategory ? "Update Category" : "Create Category"}
+                      {isMutating
+                        ? "Saving..."
+                        : editingCategory
+                        ? "Update Category"
+                        : "Create Category"}
                     </Button>
                   </DialogFooter>
                 </form>
