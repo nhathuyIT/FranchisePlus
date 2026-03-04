@@ -88,7 +88,9 @@ export function FormDialog<TFormData extends FieldValues>({
     [values, defaultValues, fieldDefaults]
   );
 
-  // Initialize form
+  // Initialize form with zodResolver
+  // Note: `any` cast required due to TypeScript limitation with generic Zod schemas
+  // See FormDialogProps documentation for rationale
   const form = useForm<TFormData>({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     resolver: zodResolver(schema as any) as any,

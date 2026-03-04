@@ -7,6 +7,13 @@ import type { z } from "zod";
 import type { FieldConfig } from "@/lib/form/field-config";
 
 /**
+ * Schema type that preserves type inference
+ * Following Zod v4 best practice: use `T extends z.ZodType` pattern
+ * @see https://zod.dev/library-authors
+ */
+export type ZodSchema<T = unknown> = z.ZodType<T>;
+
+/**
  * Dialog mode - affects UI labels and behavior
  */
 export type FormDialogMode = "create" | "edit" | "view" | "custom";
@@ -29,6 +36,17 @@ export interface SubmitResult {
 
 /**
  * FormDialog component props
+ *
+ * Note on `any` cast in zodResolver:
+ * When passing a generic `z.ZodType<TFormData>` to zodResolver, TypeScript
+ * cannot fully infer the schema structure. This is a known limitation with
+ * generic Zod schemas in react-hook-form. The `any` cast at resolver level
+ * is acceptable because:
+ * 1. Runtime validation is still performed by Zod
+ * 2. Form values remain fully typed as `TFormData`
+ * 3. This follows common patterns in reusable form libraries
+ *
+ * @see https://zod.dev/library-authors for Zod v4 generic patterns
  */
 export interface FormDialogProps<TFormData extends FieldValues> {
   /** Dialog open state */
