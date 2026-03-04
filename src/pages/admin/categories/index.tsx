@@ -64,7 +64,6 @@ const CategoriesPage = () => {
     error,
     refetch,
   } = useCategoriesQuery(DEFAULT_SEARCH_PARAMS);
-
   const createMutation = useCreateCategoryMutation();
   const updateMutation = useUpdateCategoryMutation();
   const deleteMutation = useDeleteCategoryMutation();

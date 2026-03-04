@@ -22,6 +22,7 @@ categoryAxios.interceptors.response.use(
         payload: error.config?.data,
       });
     }
+    
     return Promise.reject(error);
   }
 );

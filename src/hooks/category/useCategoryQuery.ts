@@ -98,7 +98,6 @@ export const useUpdateCategoryMutation = () => {
 
 export const useDeleteCategoryMutation = () => {
   const queryClient = useQueryClient();
-
   return useMutation({
     mutationFn: (id: number | string) => categoryApi.deleteCategory(id),
     onSuccess: () => {
