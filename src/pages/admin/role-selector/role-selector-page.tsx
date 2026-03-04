@@ -35,6 +35,7 @@ export const RoleSelectorPage = () => {
     setIsLoading(true);
     try {
       // Step 1: Call switchContext to set the selected role/franchise on the backend
+      // Must send both roleId AND franchiseId for backend to properly set context
       await authApi.switchContext({
         franchiseId: context.franchiseId,
         role_id: context.roleId,

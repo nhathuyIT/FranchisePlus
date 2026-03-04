@@ -43,19 +43,22 @@ const UserCRUD = () => {
     dialog.close();
   };
 
-  // Single Delete Handler (from row action button)
-  const handleSingleDelete = (user: User) => {
+  // Single Delete Handler
+  const handleSingleDelete = async (user: User) => {
     const confirmDelete = window.confirm(
-      `Are you sure you want to delete "${user.name}"? This action cannot be undone.`,
+      `Are you sure you want to delete user "${user.name}"? This action cannot be undone.`
     );
+
     if (!confirmDelete) return;
-    deleteUser.mutateAsync(String(user.id)).then(() => refetch());
+
+    await deleteUser.mutateAsync(String(user.id));
+    refetch();
   };
 
-  // Bulk Delete Handler (from checkbox selection)
+  // Bulk Delete Handler
   const handleBulkDelete = async (selectedUsers: User[]) => {
     const confirmDelete = window.confirm(
-      `Are you sure you want to delete ${selectedUsers.length} user(s)? This action cannot be undone.`,
+      `Are you sure you want to delete ${selectedUsers.length} user(s)? This action cannot be undone.`
     );
 
     if (!confirmDelete) return;
