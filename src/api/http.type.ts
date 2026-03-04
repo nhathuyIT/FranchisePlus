@@ -15,6 +15,10 @@ export interface HttpClient {
 
   post<T, D = unknown>(config: HttpRequestConfig<D>): Promise<T | null>;
 
+  postPaginated<T, D = unknown>(
+    config: HttpRequestConfig<D>,
+  ): Promise<ApiPaginatedResponse<T>>;
+
   put<T, D = unknown>(config: HttpRequestConfig<D>): Promise<T | null>;
 
   patch<T, D = unknown>(config: HttpRequestConfig<D>): Promise<T | null>;
@@ -27,6 +31,17 @@ export interface HttpClient {
 export interface ApiSuccessResponse<T> {
   success: true;
   data: T | null;
+}
+
+export interface ApiPaginatedResponse<T> {
+  success: true;
+  data: T[];
+  pageInfo: {
+    pageNum: number;
+    pageSize: number;
+    totalItems: number;
+    totalPages: number;
+  };
 }
 
 export interface ApiErrorResponse {

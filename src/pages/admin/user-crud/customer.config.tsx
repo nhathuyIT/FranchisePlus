@@ -4,6 +4,7 @@ import {
   type CustomerFormData,
 } from "@/lib/schemas/customer.schema";
 import type { Customer } from "@/types/customer";
+import { create as createUser } from "@/api/user/user.api";
 
 /**
  * Customer CRUD configuration
@@ -15,33 +16,38 @@ export const customerConfig: CrudConfig<Customer, CustomerFormData> = {
 
   fields: [
     {
+      name: "email",
+      type: "text",
+      label: "Email Address",
+      placeholder: "user@example.com",
+      required: true,
+    },
+    {
+      name: "password",
+      type: "text",
+      label: "Password",
+      placeholder: "Enter password (min 6 characters)",
+      required: true,
+      description: "Default password for the new user",
+    },
+    {
       name: "name",
       type: "text",
-      label: "Customer Name",
-      placeholder: "Enter customer name",
-      required: true,
+      label: "Full Name",
+      placeholder: "Enter user name",
     },
     {
       name: "phone",
       type: "text",
       label: "Phone Number",
       placeholder: "e.g., 0901234567",
-      required: true,
-      description: "Unique phone number for the customer",
-    },
-    {
-      name: "email",
-      type: "text",
-      label: "Email Address",
-      placeholder: "customer@example.com",
-      description: "Customer email (optional)",
     },
     {
       name: "avatarUrl",
       type: "image-upload",
       label: "Avatar",
       placeholder: "Enter avatar URL or upload",
-      description: "Upload customer avatar (optional)",
+      description: "Upload user avatar (optional)",
     },
     {
       name: "isActive",
@@ -59,22 +65,26 @@ export const customerConfig: CrudConfig<Customer, CustomerFormData> = {
 
   api: {
     create: async (data) => {
-      // TODO: Replace with actual API call
-      await new Promise((resolve) => setTimeout(resolve, 800));
+      const response = await createUser({
+        email: data.email || "",
+        password: data.password || "12345678",
+        name: data.name || "",
+        phone: data.phone || "",
+        avatar_url: data.avatarUrl || "",
+      });
 
-      const newCustomer: Customer = {
-        id: Date.now(),
-        name: data.name,
-        phone: data.phone,
-        email: data.email || null,
-        avatarUrl: data.avatarUrl || null,
-        isActive: data.isActive,
-        isDeleted: false,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
-
-      return newCustomer;
+      // Map API response (snake_case) → Customer (camelCase)
+      return {
+        id: response.id as unknown as Customer["id"],
+        name: response.name,
+        phone: response.phone,
+        email: response.email || null,
+        avatarUrl: response.avatar_url || null,
+        isActive: response.is_active,
+        isDeleted: response.is_deleted,
+        createdAt: response.created_at,
+        updatedAt: response.updated_at,
+      } as Customer;
     },
 
     update: async (_id, data) => {
@@ -109,16 +119,17 @@ export const customerConfig: CrudConfig<Customer, CustomerFormData> = {
 
   transform: {
     toForm: (entity) => ({
+      email: entity.email || "",
+      password: "",
       name: entity.name,
       phone: entity.phone,
-      email: entity.email || "",
       avatarUrl: entity.avatarUrl || "",
       isActive: entity.isActive,
     }),
     fromForm: (formData) => ({
+      email: formData.email || null,
       name: formData.name,
       phone: formData.phone,
-      email: formData.email || null,
       avatarUrl: formData.avatarUrl || null,
       isActive: formData.isActive,
     }),
