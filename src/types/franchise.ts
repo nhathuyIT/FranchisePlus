@@ -11,3 +11,14 @@ export interface Franchise extends BaseTimestamp, SoftDeletable, Activatable {
   lat?: number; // Latitude for map
   lng?: number; // Longitude for map
 }
+
+export interface FranchiseList {
+  id: string;
+  code: string;
+  name: string;
+}
+
+export interface FranchiseListResponse {
+  success: boolean;
+  data: FranchiseList[];
+}
