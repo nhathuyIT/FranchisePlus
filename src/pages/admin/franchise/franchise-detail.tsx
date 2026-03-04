@@ -1,32 +1,79 @@
 import { useState } from "react";
-import { useParams, Link } from "react-router";
+import { useParams, Link } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { FRANCHISES_MOCK } from "@/const/franchises.const";
 import { getInventoryByFranchiseId } from "@/const/inventory.const";
 import { ROUTER_URL } from "@/router/route.const";
 import { FranchiseInfoCard } from "./components/FranchiseInfoCard";
 import { FranchiseStaffTab } from "./components/FranchiseStaffTab";
 import { FranchiseInventoryTab } from "./components/FranchiseInventoryTab";
+import { useFranchise } from "@/hooks/franchise";
+import { Permission } from "@/config/permission";
+import { useAuthStore } from "@/stores/auth-store";
 
 const FranchiseDetail = () => {
   const { id } = useParams<{ id: string }>();
-  const franchise = FRANCHISES_MOCK.find((f) => f.id === Number(id));
+  const { authUser, getCurrentPermissions } = useAuthStore();
+  const userPermissions = getCurrentPermissions();
+  const canViewFranchises = userPermissions.includes(Permission.VIEW_FRANCHISES);
+  const canManageFranchises = userPermissions.includes(Permission.MANAGE_FRANCHISES);
+  const canManageOwnFranchise = userPermissions.includes(Permission.MANAGE_OWN_FRANCHISE);
+  const currentFranchiseId = authUser?.currentFranchiseId
+    ? String(authUser.currentFranchiseId)
+    : null;
+
+  const canReadDetail =
+    canViewFranchises &&
+    (canManageFranchises || (canManageOwnFranchise && id === currentFranchiseId));
+  const franchiseScopeKey = authUser
+    ? `${authUser.user.id}-${authUser.currentRoleId ?? "none"}-${authUser.currentFranchiseId ?? "global"}`
+    : "anonymous";
+
+  const { data: franchise, isLoading, error } = useFranchise(id ?? "", {
+    enabled: canReadDetail,
+    scopeKey: franchiseScopeKey,
+  });
 
   const [staffList] = useState([
-    { id: "staff-001", name: "Tran Van A", email: "tran.vana@coffeehouse.vn", role: "STAFF" },
-    { id: "staff-002", name: "Nguyen Thi B", email: "nguyen.thib@coffeehouse.vn", role: "STAFF" },
+    { id: "staff-001", name: "Staff Member 1", email: "staff1@example.com", role: "STAFF" },
+    { id: "staff-002", name: "Staff Member 2", email: "staff2@example.com", role: "STAFF" },
   ]);
 
-  const franchiseInventory = id ? getInventoryByFranchiseId(Number(id)) : [];
+  const franchiseInventory = id ? getInventoryByFranchiseId(id) : [];
 
-  const handleAddStaff = () => {
-    console.log("Add staff clicked");
-  };
+  const handleAddStaff = () => {};
 
-  if (!franchise) {
+  if (isLoading) {
+    return (
+      <div className="h-full flex flex-col items-center justify-center">
+        <h1 className="text-2xl font-bold text-[#3E2723]">Loading franchise...</h1>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="h-full flex flex-col items-center justify-center">
+        <h1 className="text-2xl font-bold text-[#3E2723]">Failed to load franchise</h1>
+        <p className="text-[#5D4037] mt-2">Please try again later.</p>
+        <Link to={`${ROUTER_URL.ADMIN}/${ROUTER_URL.ADMIN_ROUTER.FRANCHISES}`}>
+          <Button className="mt-4 bg-[#6D4C41] hover:bg-[#5D4037] rounded-full shadow-md hover:shadow-lg transition-all duration-300 cursor-pointer">
+            Back to Franchises
+          </Button>
+        </Link>
+      </div>
+    );
+  }
+
+  const canAccessDetail =
+    canReadDetail &&
+    !!franchise &&
+    (canManageFranchises ||
+      (canManageOwnFranchise && String(franchise.id) === currentFranchiseId));
+
+  if (!canAccessDetail) {
     return (
       <div className="h-full flex flex-col items-center justify-center">
         <h1 className="text-2xl font-bold text-[#3E2723]">Franchise not found</h1>

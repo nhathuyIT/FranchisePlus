@@ -22,8 +22,7 @@ export const ProductCard = ({ product }: ProductCardProps) => {
 		e.stopPropagation();
 		
 		// Use minPrice as default price for adding to cart
-		addItem(product.id, product.name, product.minPrice, 1);
-		
+		addItem(product.id, product.name, product.minPrice, 1);		
 		toast.success(`${product.name} đã được thêm vào giỏ hàng!`, {
 		});
 	};

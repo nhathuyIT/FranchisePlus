@@ -8,6 +8,7 @@ import type {
   RegisterRequest,
   VerifyTokenRequest,
   LoginRequest,
+  ChangePasswordRequest,
 } from "@/types/auth.type";
 import type { ProfileRequest } from "@/types/customer";
 
@@ -134,6 +135,7 @@ export const useClientLogin = () => {
   });
 };
 
+<<<<<<< Thebao/feat/Profile-client
 /**
  * Hook to update customer profile
  */
@@ -170,6 +172,19 @@ export const useUpdateClientProfile = () => {
       toast.error("Update failed", {
         description: error.message || "Could not update profile",
       });
+=======
+export const useClientChangePassword = () => {
+  const navigate = useNavigate();
+
+  return useMutation({
+    mutationFn: (data: ChangePasswordRequest) =>
+      customerApi.changePasswordClient(data),
+    onSuccess: () => {
+      toast.success("Password changed successfully", {
+        description: "You can now login with your new password",
+      });
+      navigate(ROUTER_URL.CLIENT_ROUTER.LOGIN);
+>>>>>>> dev
     },
   });
 };

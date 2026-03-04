@@ -6,6 +6,10 @@ import { PermissionGuard } from "../guard/admin-guard.route";
 import { Permission } from "@/config/permission";
 import React from "react";
 
+const AdminChangePassword = React.lazy(
+  () => import("@/pages/admin/auth/change-password/admin-change-password"),
+);
+
 const RoleSelectorPage = React.lazy(
   () => import("@/pages/admin/role-selector/role-selector-page"),
 );
@@ -47,6 +51,10 @@ export const AdminRoutes = (
             }
           />
         ))}
+        <Route
+          path={ROUTER_URL.ADMIN_ROUTER.CHANGE_PASSWORD}
+          element={<AdminChangePassword />}
+        />
       </Route>
     </Route>
   </>

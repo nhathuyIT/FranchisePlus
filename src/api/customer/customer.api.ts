@@ -1,4 +1,5 @@
 import type {
+  ChangePasswordRequest,
   LoginRequest,
   RegisterRequest,
   RegisterResponse,
@@ -48,6 +49,7 @@ export const logoutClient = async (): Promise<void> => {
     url: "/api/customer-auth/logout",
   });
 };
+<<<<<<< Thebao/feat/Profile-client
 
 export const updateClientProfile = async (
   id: string,
@@ -58,4 +60,13 @@ export const updateClientProfile = async (
     data,
   });
   return response!;
+=======
+export const changePasswordClient = async (
+  data: ChangePasswordRequest,
+): Promise<void> => {
+  await httpClient.put<void, ChangePasswordRequest>({
+    url: "/api/customer-auth/change-password",
+    data,
+  });
+>>>>>>> dev
 };
