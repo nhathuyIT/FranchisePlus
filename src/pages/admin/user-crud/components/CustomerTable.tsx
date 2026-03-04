@@ -1,152 +1,164 @@
-import { Link } from "react-router-dom";
-import { Pencil, UserX, UserCheck } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { Eye, Pencil, Trash2 } from "lucide-react";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { ROUTER_URL } from "@/router/route.const";
+  DataTable,
+  type ColumnFilter,
+  type BulkAction,
+} from "@/components/common/DataTable";
+import { customerColumns } from "../columns/customer.columns";
+import { Button } from "@/components/ui/button";
 import type { Customer } from "@/types/customer";
+import { toast } from "sonner";
+import {
+  useExcelExport,
+  useExcelImport,
+  CustomerImportSchema,
+  CUSTOMER_HEADER_MAPPING,
+  CUSTOMER_REVERSE_HEADER_MAPPING,
+} from "@/lib/excel";
 
 interface CustomerTableProps {
   customers: Customer[];
+  isLoading?: boolean;
+  error?: Error | null;
+  onRetry?: () => void;
+  onBulkDelete?: (customers: Customer[]) => void;
+  onEdit?: (customer: Customer) => void;
+  onView?: (customer: Customer) => void;
+  onDelete?: (customer: Customer) => void;
 }
 
-export const CustomerTable = ({ customers }: CustomerTableProps) => {
-  const handleToggleActive = (customer: Customer) => {
-    // In real app, this would be an API call
-    console.log("Toggle active for customer:", customer);
+export const CustomerTable = ({
+  customers,
+  isLoading = false,
+  error = null,
+  onRetry,
+  onBulkDelete,
+  onEdit,
+  onView,
+  onDelete,
+}: CustomerTableProps) => {
+  // Excel Export
+  const { exportToExcel, isExporting } = useExcelExport({
+    headerMapping: CUSTOMER_REVERSE_HEADER_MAPPING,
+    fileName: "customers",
+    sheetName: "Customers",
+    excludeColumns: ["avatarUrl"],
+  });
+
+  // Excel Import
+  const { importFromExcel, isImporting } = useExcelImport({
+    schema: CustomerImportSchema,
+    headerMapping: CUSTOMER_HEADER_MAPPING,
+  });
+
+  const handleExport = () => {
+    exportToExcel(customers as unknown as Record<string, unknown>[])
+      .then(() => {
+        toast.success("Excel exported successfully!");
+      })
+      .catch(() => {
+        toast.error("Excel export failed!");
+      });
   };
 
-  const handleDelete = (customer: Customer) => {
-    if (confirm(`Are you sure you want to delete ${customer.name}?`)) {
-      // In real app, this would be an API call
-      console.log("Delete customer:", customer);
+  const handleImport = async (file: File) => {
+    const result = await importFromExcel(file);
+    if (result.success) {
+      toast.success(`Successfully imported ${result.validRows} rows`);
+      // TODO: call API to save result.data
+    } else {
+      toast.error(
+        `Import failed: ${result.validRows} valid, ${result.invalidRows} errors`,
+      );
+      result.errors.forEach((err) =>
+        console.warn(`Row ${err.row} - ${err.field}: ${err.message}`),
+      );
     }
   };
 
-  return (
-    <div className="rounded-2xl overflow-hidden border border-[#E8DFD6]">
-      <Table>
-        <TableHeader>
-          <TableRow className="bg-gradient-to-br from-[#FAF8F5] to-[#F5F1EB] hover:bg-gradient-to-br hover:from-[#FAF8F5] hover:to-[#F5F1EB]">
-            <TableHead className="font-semibold text-[#3E2723]">
-              Avatar
-            </TableHead>
-            <TableHead className="font-semibold text-[#3E2723]">Name</TableHead>
-            <TableHead className="font-semibold text-[#3E2723]">
-              Phone
-            </TableHead>
-            <TableHead className="font-semibold text-[#3E2723]">
-              Email
-            </TableHead>
-            <TableHead className="font-semibold text-[#3E2723]">
-              Created Date
-            </TableHead>
-            <TableHead className="font-semibold text-[#3E2723]">
-              Status
-            </TableHead>
-            <TableHead className="font-semibold text-[#3E2723] text-right">
-              Actions
-            </TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {customers.map((customer) => (
-            <TableRow
-              key={customer.id}
-              className="hover:bg-[#FAF8F5] transition-colors duration-200 border-b border-[#E8DFD6] cursor-pointer"
-            >
-              <TableCell>
-                <div className="flex items-center">
-                  <img
-                    src={
-                      customer.avatarUrl ||
-                      `https://api.dicebear.com/7.x/avataaars/svg?seed=${customer.name}`
-                    }
-                    alt={customer.name}
-                    className="w-10 h-10 rounded-full object-cover border-2 border-[#E8DFD6]"
-                  />
-                </div>
-              </TableCell>
-              <TableCell className="font-medium text-[#3E2723]">
-                {customer.name}
-              </TableCell>
-              <TableCell className="font-mono text-sm text-[#5D4037]">
-                {customer.phone}
-              </TableCell>
-              <TableCell className="text-[#5D4037]">
-                {customer.email || "N/A"}
-              </TableCell>
-              <TableCell className="text-[#5D4037]">
-                {new Date(customer.createdAt).toLocaleDateString()}
-              </TableCell>
-              <TableCell>
-                <Badge
-                  variant={customer.isActive ? "default" : "secondary"}
-                  className={
-                    customer.isActive
-                      ? "bg-green-600 hover:bg-green-700 rounded-full"
-                      : "bg-gray-500 hover:bg-gray-600 rounded-full"
-                  }
-                >
-                  {customer.isActive ? "Active" : "Inactive"}
-                </Badge>
-              </TableCell>
-              <TableCell className="text-right">
-                <div className="flex justify-end gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleToggleActive(customer)}
-                    className={`border-2 rounded-lg transition-all duration-200 cursor-pointer ${
-                      customer.isActive
-                        ? "border-orange-500 text-orange-500 hover:bg-orange-500 hover:text-white"
-                        : "border-green-500 text-green-500 hover:bg-green-500 hover:text-white"
-                    }`}
-                  >
-                    {customer.isActive ? (
-                      <UserX className="h-4 w-4" />
-                    ) : (
-                      <UserCheck className="h-4 w-4" />
-                    )}
-                  </Button>
-                  <Link
-                    to={`${ROUTER_URL.ADMIN}/${ROUTER_URL.ADMIN_ROUTER.USER_CONTROL_EDIT.replace(":id", customer.id.toString())}`}
-                  >
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="border-2 border-[#D97706] text-[#D97706] hover:bg-[#D97706] hover:text-white rounded-lg transition-all duration-200 cursor-pointer"
-                    >
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                  </Link>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleDelete(customer)}
-                    className="border-2 border-red-500 text-red-500 hover:bg-red-500 hover:text-white rounded-lg transition-all duration-200 cursor-pointer"
-                  >
-                    <UserX className="h-4 w-4" />
-                  </Button>
-                </div>
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+  // Column Filters Configuration
+  const columnFilters: ColumnFilter[] = [
+    {
+      id: "is_active",
+      type: "select",
+      label: "Status",
+      options: [
+        { label: "Active", value: "true" },
+        { label: "Inactive", value: "false" },
+      ],
+    },
+  ];
 
-      {customers.length === 0 && (
-        <div className="text-center py-8 text-[#5D4037]">
-          No customers found matching your search.
-        </div>
+  // Bulk Actions Configuration
+  const bulkActions: BulkAction<Customer>[] = [];
+
+  if (onBulkDelete) {
+    bulkActions.push({
+      label: "Delete Selected",
+      icon: Trash2,
+      onClick: onBulkDelete,
+      variant: "destructive",
+    });
+  }
+
+  return (
+    <DataTable
+      columns={customerColumns}
+      data={customers}
+      isLoading={isLoading}
+      error={error}
+      onRetry={onRetry}
+      searchable
+      searchPlaceholder="Search customers by name, phone, or email..."
+      emptyMessage="No customers found matching your search."
+      initialPageSize={5}
+      // NEW FEATURES
+      enableRowSelection={!!onBulkDelete}
+      enableColumnVisibility
+      defaultHiddenColumns={["email"]}
+      columnFilters={columnFilters}
+      bulkActions={bulkActions}
+      // Excel Import/Export
+      onExport={handleExport}
+      isExporting={isExporting}
+      onImport={handleImport}
+      isImporting={isImporting}
+      exportLabel="Export Excel"
+      importLabel="Import Excel"
+      renderActions={(customer) => (
+        <>
+          {onView && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onView(customer)}
+              className="border-2 border-[#6D4C41] text-[#6D4C41] hover:bg-[#6D4C41] hover:text-white rounded-lg transition-all duration-200 cursor-pointer"
+            >
+              <Eye className="h-4 w-4" />
+            </Button>
+          )}
+          {onEdit && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onEdit(customer)}
+              className="border-2 border-[#D97706] text-[#D97706] hover:bg-[#D97706] hover:text-white rounded-lg transition-all duration-200 cursor-pointer"
+            >
+              <Pencil className="h-4 w-4" />
+            </Button>
+          )}
+          {onDelete && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onDelete(customer)}
+              className="border-2 border-[#EF4444] text-[#EF4444] hover:bg-[#EF4444] hover:text-white rounded-lg transition-all duration-200 cursor-pointer"
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          )}
+        </>
       )}
-    </div>
+    />
   );
 };
