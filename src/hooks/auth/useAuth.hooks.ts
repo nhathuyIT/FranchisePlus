@@ -14,7 +14,6 @@ import type {
   RegisterRequest,
   ApiRoleItem,
   ActiveContext,
-  SwitchContextRequest,
 } from "@/types/auth.type";
 import type { Role, UserFranchiseRole } from "@/types/user.type";
 
@@ -100,7 +99,7 @@ export const useLogin = () => {
       const profile = await authApi.getProfile();
       return profile;
     },
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
       if (!data) {
         toast.error("Login failed", {
           description: "Invalid response from server",
@@ -128,7 +127,23 @@ export const useLogin = () => {
         return;
       }
 
-      // Single role — use activeContext directly if available
+      // Single role — still need to call switchContext to set backend context
+      const singleFR = franchiseRoles[0];
+      const singleRole = roles[0];
+
+      if (singleFR && singleRole) {
+        try {
+          // Call switchContext to ensure backend knows the active role/franchise
+          await authApi.switchContext({
+            franchiseId: singleFR.franchiseId ?? null,
+            role_id: singleFR.roleId,
+          });
+        } catch (err) {
+          console.warn("[useLogin] switchContext failed for single role:", err);
+          // Continue anyway - activeContext from profile might still work
+        }
+      }
+
       const { currentRoleId, currentFranchiseId } = resolveContext(
         data.activeContext,
         roles,

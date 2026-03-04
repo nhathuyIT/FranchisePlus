@@ -1,5 +1,4 @@
 import { httpClient } from "../httpClient.api";
-import { axiosClient } from "../axios.config";
 import type {
   FranchiseCreateRequest,
   FranchiseSearchRequest,
@@ -18,6 +17,8 @@ const encodeId = (id: string) => encodeURIComponent(id);
 
 /**
  * Get franchise list for dropdown/select
+ *
+ * Uses httpClient → interceptor auto-converts snake_case ↔ camelCase
  */
 export const getSelect = async (): Promise<FranchiseSelectResponse> => {
   const response = await httpClient.get<FranchiseSelectResponse, never>({
@@ -28,6 +29,8 @@ export const getSelect = async (): Promise<FranchiseSelectResponse> => {
 
 /**
  * Get all franchises (không có pagination)
+ *
+ * Uses httpClient → interceptor auto-converts snake_case ↔ camelCase
  */
 export const getAll = async (): Promise<FranchiseListResponse> => {
   const response = await httpClient.get<Franchise[], never>({
@@ -39,11 +42,11 @@ export const getAll = async (): Promise<FranchiseListResponse> => {
 /**
  * Search franchises with pagination
  *
- * NOTE: Sử dụng axiosClient trực tiếp vì response structure khác
- * (có pageInfo ngoài data wrapper).
- *
- * IMPORTANT: Backend expect camelCase keys (pageInfo, pageNum, etc.)
- * nên phải JSON.stringify để bypass snake_case interceptor.
+ * Uses postPaginatedRaw to bypass automatic snake_case conversion.
+ * Backend expects:
+ * - searchCondition fields: snake_case (is_deleted, is_active, opened_at, closed_at)
+ * - pageInfo: camelCase (pageNum, pageSize)
+ * Response is auto-converted by interceptor (snake_case → camelCase).
  */
 export const search = async (
   data: FranchiseSearchRequest
@@ -51,10 +54,10 @@ export const search = async (
   const payload = {
     searchCondition: {
       keyword: data.searchCondition.keyword,
-      openedAt: data.searchCondition.openedAt,
-      closedAt: data.searchCondition.closedAt,
-      isActive: data.searchCondition.isActive,
-      isDeleted: data.searchCondition.isDeleted,
+      opened_at: data.searchCondition.openedAt,
+      closed_at: data.searchCondition.closedAt,
+      is_active: data.searchCondition.isActive,
+      is_deleted: data.searchCondition.isDeleted,
     },
     pageInfo: {
       pageNum: data.pageInfo.pageNum,
@@ -62,12 +65,10 @@ export const search = async (
     },
   };
 
-  const res = await axiosClient.post(
-    `${BASE_URL}/search`,
-    JSON.stringify(payload),
-    { headers: { "Content-Type": "application/json" } }
-  );
-  const response = res.data;
+  const response = await httpClient.postPaginatedRaw<Franchise, typeof payload>({
+    url: `${BASE_URL}/search`,
+    data: payload,
+  });
 
   if (!response?.success) {
     throw new Error("Failed to search franchises");
@@ -88,6 +89,8 @@ export const search = async (
 
 /**
  * Get franchise by ID
+ *
+ * Uses httpClient → interceptor auto-converts snake_case ↔ camelCase
  */
 export const getById = async (id: string): Promise<Franchise | null> => {
   return httpClient.get<Franchise, never>({
@@ -97,6 +100,10 @@ export const getById = async (id: string): Promise<Franchise | null> => {
 
 /**
  * Create new franchise
+ *
+ * Uses httpClient → interceptor auto-converts:
+ * - Request: camelCase → snake_case
+ * - Response: snake_case → camelCase
  */
 export const create = async (
   data: FranchiseCreateRequest
@@ -109,6 +116,8 @@ export const create = async (
 
 /**
  * Update franchise
+ *
+ * Uses httpClient → interceptor auto-converts snake_case ↔ camelCase
  */
 export const update = async (
   id: string,
@@ -122,8 +131,15 @@ export const update = async (
 
 /**
  * Soft delete franchise
+ *
+ * Uses httpClient → interceptor handles response
  */
 export const remove = async (id: string): Promise<void> => {
+  if (!id || id === "undefined") {
+    console.error("[Franchise API] Invalid ID for delete:", id);
+    throw new Error("Invalid franchise ID");
+  }
+
   await httpClient.delete<null, never>({
     url: `${BASE_URL}/${encodeId(id)}`,
   });
@@ -131,6 +147,8 @@ export const remove = async (id: string): Promise<void> => {
 
 /**
  * Restore deleted franchise
+ *
+ * Uses httpClient → interceptor handles response
  */
 export const restore = async (id: string): Promise<void> => {
   await httpClient.patch<null, never>({
@@ -140,6 +158,9 @@ export const restore = async (id: string): Promise<void> => {
 
 /**
  * Update franchise status (active/inactive)
+ *
+ * Uses httpClient → interceptor auto-converts:
+ * - Request: { isActive } → { is_active }
  */
 export const updateStatus = async (
   id: string,

@@ -1,5 +1,4 @@
 import { httpClient } from "../httpClient.api";
-import { axiosClient } from "../axios.config";
 import type {
   ApiUser,
   ApiUserCreateRequest,
@@ -75,9 +74,8 @@ export const getAll = async (): Promise<UserListResponse> => {
 /**
  * Search users with pagination
  *
- * NOTE: Payload is JSON.stringify-d before sending to bypass the automatic
- * camelCase → snake_case interceptor (the user search API expects camelCase
- * keys such as `pageInfo` / `pageNum`, not `page_info` / `page_num`).
+ * Uses postPaginatedRaw to bypass automatic snake_case conversion.
+ * Backend search APIs expect camelCase keys (pageInfo, pageNum, etc.).
  */
 export const search = async (
   data: UserSearchRequest,
@@ -94,12 +92,10 @@ export const search = async (
     },
   };
 
-  const res = await axiosClient.post(
-    `${BASE_URL}/search`,
-    JSON.stringify(payload),
-    { headers: { "Content-Type": "application/json" } },
-  );
-  const response = res.data;
+  const response = await httpClient.postPaginatedRaw<ApiUser, typeof payload>({
+    url: `${BASE_URL}/search`,
+    data: payload,
+  });
 
   if (!response?.success) {
     throw new Error("Failed to search users");
