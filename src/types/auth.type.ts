@@ -19,26 +19,32 @@ export interface SwitchContextRequest {
   franchiseId: string | null;
 }
 
+// Active context returned by backend inside getProfile / switchContext response
+export interface ActiveContext {
+  role: string;
+  scope: string;
+  franchiseId: string | null;
+}
+
+// Raw role item returned by backend (before/after interceptor camelCase conversion)
+export interface ApiRoleItem {
+  role: string;
+  scope: string;
+  franchiseId: string | null;
+  franchiseName: string | null;
+}
+
 export interface SwitchContextResponse {
-  accessToken: string;
->>>>>>> c2f1c9b ([20260303][VuongND] feat(auth): update role context switching to include role_id)
+  user: User;
+  roles: ApiRoleItem[];
+  activeContext: ActiveContext;
 }
 
 // AUTH-03: Get Profile Response
 export interface GetProfileResponse {
   user: User;
-<<<<<<< HEAD
-<<<<<<< HEAD
-  roles: Role[];
-  franchiseRoles: UserFranchiseRole[] | null;
-=======
   roles: ApiRoleItem[];
   activeContext: ActiveContext | null;
->>>>>>> e1bb0d7 (Fix switch context)
-=======
-  roles: Role[];
-  franchiseRoles: UserFranchiseRole[] | null;
->>>>>>> c2f1c9b ([20260303][VuongND] feat(auth): update role context switching to include role_id)
 }
 
 // AUTH-04: Refresh Token Response

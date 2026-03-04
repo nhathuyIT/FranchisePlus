@@ -29,8 +29,6 @@ export const RoleSwitcher = () => {
 
   const handleSwitchRole = async (ctx: AvailableContext) => {
     try {
-      // Always call switchContext — useSwitchContext will also call getProfile
-      // and update the store with fresh context while preserving all roles/franchiseRoles
       await switchContextMutation.mutateAsync({
         franchiseId: ctx.franchiseId,
       });

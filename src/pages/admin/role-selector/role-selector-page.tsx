@@ -34,19 +34,32 @@ export const RoleSelectorPage = () => {
     if (!state) return;
 
     try {
-      // Call API to switch context
-      if (context.franchiseId) {
-        await switchContextMutation.mutateAsync({
-          franchise_id: context.franchiseId,
-        });
-      }
+      // Step 1: Call switchContext to set the selected role/franchise on the backend
+      await authApi.switchContext({ franchiseId: context.franchiseId });
+
+      // Step 2: Call getProfile to get the confirmed activeContext after the switch
+      const freshProfile = await authApi.getProfile();
+
+      // Resolve from activeContext returned by getProfile
+      const activeContext = freshProfile.activeContext ?? {
+        role: context.roleCode,
+        scope: context.isGlobal ? "GLOBAL" : "FRANCHISE",
+        franchiseId: context.franchiseId,
+      };
+
+      const matchedFR = (state.franchiseRoles || []).find(
+        (fr) =>
+          fr.franchiseId === activeContext.franchiseId ||
+          (!fr.franchiseId && !activeContext.franchiseId),
+      );
 
       const authUser = {
-        user: state.user,
+        user: freshProfile.user,
+        // PRESERVE original roles & franchiseRoles so user can switch again later
         roles: state.roles,
         franchiseRoles: state.franchiseRoles || [],
-        currentRoleId: context.roleId,
-        currentFranchiseId: context.franchiseId,
+        currentRoleId: matchedFR?.roleId ?? context.roleId,
+        currentFranchiseId: activeContext.franchiseId ?? context.franchiseId,
       };
 
       login(authUser);
