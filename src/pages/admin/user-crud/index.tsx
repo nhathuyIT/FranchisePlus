@@ -46,7 +46,7 @@ const UserCRUD = () => {
   // Single Delete Handler (from row action button)
   const handleSingleDelete = (user: User) => {
     const confirmDelete = window.confirm(
-      `Are you sure you want to delete "${user.name}"? This action cannot be undone.`,
+      `Are you sure you want to delete user "${user.name}"? This action cannot be undone.`,
     );
     if (!confirmDelete) return;
     deleteUser.mutateAsync(String(user.id)).then(() => refetch());
@@ -75,15 +75,15 @@ const UserCRUD = () => {
     <div className="h-full flex flex-col">
       <div className="flex-1 flex flex-col min-h-0 max-w-7xl mx-auto w-full">
         <PageHeader
-          title="Customer Management"
-          description="Manage all your customers"
+          title="User Management"
+          description="Manage all your user"
           action={
             <Button
               onClick={dialog.openCreate}
               className="bg-[#6D4C41] hover:bg-[#5D4037] text-white rounded-full shadow-md hover:shadow-lg transition-all duration-300 cursor-pointer"
             >
               <Plus className="mr-2 h-4 w-4" />
-              Add Customer
+              Add user
             </Button>
           }
         />
