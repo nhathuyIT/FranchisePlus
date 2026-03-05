@@ -1,4 +1,3 @@
-import * as React from "react";
 import { AlertCircle, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -43,8 +42,6 @@ export function DeleteDialog<TEntity>({
   deleteMessage,
   getDisplayName,
 }: DeleteDialogProps<TEntity>) {
-  const [isConfirming, setIsConfirming] = React.useState(false);
-
   const getMessage = (): string => {
     if (!entity) return "";
 
@@ -58,36 +55,23 @@ export function DeleteDialog<TEntity>({
     // Default message
     const displayName = getDisplayName
       ? getDisplayName(entity)
-      : (entity as Record<string, unknown>).name ?? entityName;
+      : ((entity as Record<string, unknown>).name ?? entityName);
 
     return `Are you sure you want to delete "${displayName}"? This action cannot be undone.`;
   };
 
-  const handleConfirm = async () => {
-    setIsConfirming(true);
-    try {
-      await onConfirm();
-    } finally {
-      setIsConfirming(false);
-    }
-  };
-
   const handleClose = () => {
-    if (!isConfirming && !isDeleting) {
+    if (!isDeleting) {
       onOpenChange(false);
     }
   };
-
-  const isPending = isDeleting || isConfirming;
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Delete {entityName}</DialogTitle>
-          <DialogDescription>
-            This action cannot be undone.
-          </DialogDescription>
+          <DialogDescription>This action cannot be undone.</DialogDescription>
         </DialogHeader>
 
         <div className="flex items-start gap-3 p-4 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800 rounded-lg">
@@ -107,17 +91,17 @@ export function DeleteDialog<TEntity>({
             type="button"
             variant="outline"
             onClick={handleClose}
-            disabled={isPending}
+            disabled={isDeleting}
           >
             Cancel
           </Button>
           <Button
             type="button"
             variant="destructive"
-            onClick={handleConfirm}
-            disabled={isPending}
+            onClick={onConfirm}
+            disabled={isDeleting}
           >
-            {isPending ? (
+            {isDeleting ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 Deleting...

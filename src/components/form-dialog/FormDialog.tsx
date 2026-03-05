@@ -1,7 +1,5 @@
 import * as React from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import type { FieldValues, DefaultValues } from "react-hook-form";
+import type { FieldValues } from "react-hook-form";
 import {
   Dialog,
   DialogContent,
@@ -9,26 +7,23 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
-import { Form } from "@/components/ui/form";
 import { cn } from "@/lib/utils";
-import { getDefaultValues, mergeWithDefaults, buildFieldLabelMap } from "@/lib/form/form-utils";
-import { renderField, getFieldColSpanClass } from "./fields";
-import { FormErrorBanner } from "./FormErrorBanner";
-import { FormFooter } from "./FormFooter";
-import { useFormSubmit } from "./hooks/useFormSubmit";
+import { FormContent } from "./FormContent";
 import type { FormDialogProps } from "./types";
-import { dialogSizeClasses, defaultSubmitText } from "./types";
+import { dialogSizeClasses } from "./types";
 
 /**
- * FormDialog - Reusable form dialog component
+ * FormDialog - Dialog shell that wraps FormContent
  *
- * Features:
- * - Generic type support for form data
- * - Zod schema validation via zodResolver
- * - Dynamic field rendering from config
- * - API error mapping to form fields
- * - Create/Edit/View mode support
- * - Loading states and error handling
+ * This component handles ONLY dialog-specific concerns:
+ * - Dialog open/close state
+ * - Dialog header (title, description)
+ * - Dialog sizing
+ * - Prevent close while submitting
+ * - Close on successful submit
+ *
+ * All form logic (initialization, validation, field rendering, submission,
+ * error handling, footer) is delegated to FormContent.
  *
  * @example
  * ```tsx
@@ -57,11 +52,15 @@ import { dialogSizeClasses, defaultSubmitText } from "./types";
  * ```
  */
 export function FormDialog<TFormData extends FieldValues>({
+  // Dialog-specific props
   open,
   onOpenChange,
   title,
   description,
   size = "lg",
+  preventCloseOnSubmit = true,
+  closeOnSuccess = true,
+  // Form props (passed through to FormContent)
   schema,
   fields,
   defaultValues,
@@ -72,47 +71,26 @@ export function FormDialog<TFormData extends FieldValues>({
   submitText,
   cancelText = "Cancel",
   hideCancel = false,
-  preventCloseOnSubmit = true,
-  closeOnSuccess = true,
   renderFooter,
   columns = 1,
 }: FormDialogProps<TFormData>) {
-  // Memoize field defaults to prevent infinite loops
-  const fieldDefaults = React.useMemo(
-    () => getDefaultValues(fields),
-    [fields]
-  );
+  // ── Dialog-specific state ───────────────────────────────────────────
 
-  const mergedDefaults = React.useMemo(
-    () => mergeWithDefaults(values ?? defaultValues, fieldDefaults) as DefaultValues<TFormData>,
-    [values, defaultValues, fieldDefaults]
-  );
+  // Track submitting state from FormContent for preventCloseOnSubmit
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
 
-  // Initialize form with zodResolver
-  // Note: `any` cast required due to TypeScript limitation with generic Zod schemas
-  // See FormDialogProps documentation for rationale
-  const form = useForm<TFormData>({
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    resolver: zodResolver(schema as any) as any,
-    defaultValues: mergedDefaults,
-  });
-
-  // Reset form when dialog opens with new values
+  // Reset key - increments when dialog opens to remount FormContent with fresh state
+  // This handles: user opens dialog → types → closes → opens again → form is clean
+  const [resetKey, setResetKey] = React.useState(0);
   React.useEffect(() => {
     if (open) {
-      form.reset(mergedDefaults);
+      setResetKey((k) => k + 1);
     }
-    // Only reset when dialog opens or values change, not on every render
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, values]);
+  }, [open]);
 
-  // Build field label map for error messages
-  const fieldLabelMap = React.useMemo(
-    () => buildFieldLabelMap(fields),
-    [fields]
-  );
+  // ── Dialog-specific handlers ────────────────────────────────────────
 
-  // Handle successful submission
+  // Wrap onSuccess with closeOnSuccess behavior
   const handleSuccess = React.useCallback(() => {
     onSuccess?.();
     if (closeOnSuccess) {
@@ -120,87 +98,51 @@ export function FormDialog<TFormData extends FieldValues>({
     }
   }, [onSuccess, closeOnSuccess, onOpenChange]);
 
-  // Use form submit hook
-  const { isSubmitting, generalError, handleSubmit, clearGeneralError } =
-    useFormSubmit({
-      form,
-      onSubmit,
-      onSuccess: handleSuccess,
-      fieldLabelMap,
-    });
-
-  // Handle dialog close
+  // Prevent closing while submitting if configured
   const handleOpenChange = React.useCallback(
     (newOpen: boolean) => {
-      // Prevent closing while submitting if configured
       if (!newOpen && isSubmitting && preventCloseOnSubmit) {
         return;
       }
       onOpenChange(newOpen);
     },
-    [onOpenChange, isSubmitting, preventCloseOnSubmit]
+    [onOpenChange, isSubmitting, preventCloseOnSubmit],
   );
 
+  // Cancel = close dialog (different from FormContent's default form.reset())
   const handleCancel = React.useCallback(() => {
     onOpenChange(false);
   }, [onOpenChange]);
 
-  const isViewMode = mode === "view";
-  const finalSubmitText = submitText ?? defaultSubmitText[mode];
+  // ── Render ──────────────────────────────────────────────────────────
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className={cn(dialogSizeClasses[size], "max-h-[90vh] overflow-y-auto")}>
+      <DialogContent
+        className={cn(dialogSizeClasses[size], "max-h-[90vh] overflow-y-auto")}
+      >
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
           {description && <DialogDescription>{description}</DialogDescription>}
         </DialogHeader>
 
-        <Form {...form}>
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {/* General error banner */}
-            <FormErrorBanner error={generalError} onDismiss={clearGeneralError} />
-
-            {/* Form fields */}
-            <div
-              className={cn(
-                "space-y-4",
-                columns === 2 && "grid grid-cols-2 gap-4 space-y-0"
-              )}
-            >
-              {fields.map((fieldConfig) => (
-                <div
-                  key={fieldConfig.name}
-                  className={getFieldColSpanClass(fieldConfig.colSpan, columns)}
-                >
-                  {renderField({
-                    config: fieldConfig,
-                    form,
-                    disabled: isViewMode,
-                  })}
-                </div>
-              ))}
-            </div>
-
-            {/* Form footer */}
-            {renderFooter ? (
-              renderFooter({
-                form,
-                isSubmitting,
-                onCancel: handleCancel,
-              })
-            ) : (
-              <FormFooter
-                isViewMode={isViewMode}
-                isSubmitting={isSubmitting}
-                submitText={finalSubmitText}
-                cancelText={cancelText}
-                hideCancel={hideCancel}
-                onCancel={handleCancel}
-              />
-            )}
-          </form>
-        </Form>
+        <FormContent<TFormData>
+          key={resetKey}
+          schema={schema}
+          fields={fields}
+          defaultValues={defaultValues}
+          values={values}
+          mode={mode}
+          onSubmit={onSubmit}
+          onSuccess={handleSuccess}
+          columns={columns}
+          submitText={submitText}
+          cancelText={cancelText}
+          hideCancel={hideCancel}
+          onCancel={handleCancel}
+          renderFooter={renderFooter}
+          onSubmittingChange={setIsSubmitting}
+        />
       </DialogContent>
     </Dialog>
   );

@@ -4,7 +4,11 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import type { FieldValues, DefaultValues } from "react-hook-form";
 import { Form } from "@/components/ui/form";
 import { cn } from "@/lib/utils";
-import { getDefaultValues, mergeWithDefaults, buildFieldLabelMap } from "@/lib/form/form-utils";
+import {
+  getDefaultValues,
+  mergeWithDefaults,
+  buildFieldLabelMap,
+} from "@/lib/form/form-utils";
 import { renderField, getFieldColSpanClass } from "./fields";
 import { FormErrorBanner } from "./FormErrorBanner";
 import { FormFooter } from "./FormFooter";
@@ -13,11 +17,14 @@ import type { FormContentProps } from "./types";
 import { defaultSubmitText } from "./types";
 
 /**
- * FormContent - Standalone form component
+ * FormContent - The form "engine" component
  *
- * Can be used without FormDialog wrapper for inline forms
+ * Contains all form logic: initialization, validation, field rendering,
+ * submission, error handling, and footer.
  *
- * @example
+ * Can be used standalone (inline forms) or wrapped by FormDialog.
+ *
+ * @example Standalone usage
  * ```tsx
  * <FormContent
  *   schema={userSchema}
@@ -25,6 +32,18 @@ import { defaultSubmitText } from "./types";
  *   defaultValues={{ role: "user" }}
  *   onSubmit={handleCreateUser}
  *   onSuccess={handleSuccess}
+ * />
+ * ```
+ *
+ * @example With custom footer
+ * ```tsx
+ * <FormContent
+ *   schema={userSchema}
+ *   fields={userFields}
+ *   onSubmit={handleSubmit}
+ *   submitText="Save & Continue"
+ *   cancelText="Discard"
+ *   onCancel={() => navigate(-1)}
  * />
  * ```
  */
@@ -39,15 +58,28 @@ export function FormContent<TFormData extends FieldValues>({
   columns = 1,
   formRef,
   children,
+  // Footer props
+  submitText,
+  cancelText = "Cancel",
+  hideCancel = false,
+  onCancel,
+  renderFooter,
+  // Parent communication
+  onSubmittingChange,
 }: FormContentProps<TFormData>) {
-  // Calculate default values from field configs and provided defaults
-  const fieldDefaults = getDefaultValues(fields);
-  const mergedDefaults = mergeWithDefaults(
-    values ?? defaultValues,
-    fieldDefaults
-  ) as DefaultValues<TFormData>;
+  // ── Form initialization ─────────────────────────────────────────────
 
-  // Initialize form with zodResolver
+  const fieldDefaults = React.useMemo(() => getDefaultValues(fields), [fields]);
+
+  const mergedDefaults = React.useMemo(
+    () =>
+      mergeWithDefaults(
+        values ?? defaultValues,
+        fieldDefaults,
+      ) as DefaultValues<TFormData>,
+    [values, defaultValues, fieldDefaults],
+  );
+
   // Note: `any` cast required due to TypeScript limitation with generic Zod schemas
   // See FormDialogProps documentation for rationale
   const form = useForm<TFormData>({
@@ -55,6 +87,8 @@ export function FormContent<TFormData extends FieldValues>({
     resolver: zodResolver(schema as any) as any,
     defaultValues: mergedDefaults,
   });
+
+  // ── Side effects ────────────────────────────────────────────────────
 
   // Expose form instance to parent if requested
   React.useEffect(() => {
@@ -73,19 +107,19 @@ export function FormContent<TFormData extends FieldValues>({
     if (values) {
       const resetValues = mergeWithDefaults(
         values,
-        fieldDefaults
+        fieldDefaults,
       ) as DefaultValues<TFormData>;
       form.reset(resetValues);
     }
   }, [values, form, fieldDefaults]);
 
-  // Build field label map for error messages
+  // ── Submission ──────────────────────────────────────────────────────
+
   const fieldLabelMap = React.useMemo(
     () => buildFieldLabelMap(fields),
-    [fields]
+    [fields],
   );
 
-  // Use form submit hook
   const { isSubmitting, generalError, handleSubmit, clearGeneralError } =
     useFormSubmit({
       form,
@@ -94,7 +128,25 @@ export function FormContent<TFormData extends FieldValues>({
       fieldLabelMap,
     });
 
+  // Notify parent of submitting state changes (used by FormDialog for preventCloseOnSubmit)
+  React.useEffect(() => {
+    onSubmittingChange?.(isSubmitting);
+  }, [isSubmitting, onSubmittingChange]);
+
+  // ── Derived state ───────────────────────────────────────────────────
+
   const isViewMode = mode === "view";
+  const finalSubmitText = submitText ?? defaultSubmitText[mode];
+
+  const handleCancel = React.useCallback(() => {
+    if (onCancel) {
+      onCancel();
+    } else {
+      form.reset();
+    }
+  }, [onCancel, form]);
+
+  // ── Render ──────────────────────────────────────────────────────────
 
   return (
     <Form {...form}>
@@ -106,7 +158,7 @@ export function FormContent<TFormData extends FieldValues>({
         <div
           className={cn(
             "space-y-4",
-            columns === 2 && "grid grid-cols-2 gap-4 space-y-0"
+            columns === 2 && "grid grid-cols-2 gap-4 space-y-0",
           )}
         >
           {fields.map((fieldConfig) => (
@@ -126,14 +178,23 @@ export function FormContent<TFormData extends FieldValues>({
         {/* Custom children */}
         {children}
 
-        {/* Form footer */}
-        <FormFooter
-          isViewMode={isViewMode}
-          isSubmitting={isSubmitting}
-          submitText={defaultSubmitText[mode]}
-          cancelText="Cancel"
-          onCancel={() => form.reset()}
-        />
+        {/* Footer - customizable */}
+        {renderFooter ? (
+          renderFooter({
+            form,
+            isSubmitting,
+            onCancel: handleCancel,
+          })
+        ) : (
+          <FormFooter
+            isViewMode={isViewMode}
+            isSubmitting={isSubmitting}
+            submitText={finalSubmitText}
+            cancelText={cancelText}
+            hideCancel={hideCancel}
+            onCancel={handleCancel}
+          />
+        )}
       </form>
     </Form>
   );

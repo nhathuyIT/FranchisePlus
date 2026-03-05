@@ -77,23 +77,23 @@ function UsersPage() {
 
 ## Field Types
 
-| Type | Description | Extra Props |
-|------|-------------|-------------|
-| `text` | Text input | - |
-| `textarea` | Multi-line text | `rows` |
-| `number` | Numeric input | `min`, `max`, `step` |
-| `select` | Dropdown select | `options` |
-| `async-select` | Async loading select | `asyncOptions` |
-| `multiselect` | Multiple selection | `options` |
-| `checkbox` | Single checkbox | - |
-| `switch` | Toggle switch | - |
-| `radio` | Radio group | `options` |
-| `date` | Date picker | - |
-| `time` | Time picker | - |
-| `datetime` | Date + time picker | - |
-| `image-upload` | Image upload | `accept` |
-| `file-upload` | File upload | `accept` |
-| `custom` | Custom render | `render` |
+| Type           | Description          | Extra Props          |
+| -------------- | -------------------- | -------------------- |
+| `text`         | Text input           | -                    |
+| `textarea`     | Multi-line text      | `rows`               |
+| `number`       | Numeric input        | `min`, `max`, `step` |
+| `select`       | Dropdown select      | `options`            |
+| `async-select` | Async loading select | `asyncOptions`       |
+| `multiselect`  | Multiple selection   | `options`            |
+| `checkbox`     | Single checkbox      | -                    |
+| `switch`       | Toggle switch        | -                    |
+| `radio`        | Radio group          | `options`            |
+| `date`         | Date picker          | -                    |
+| `time`         | Time picker          | -                    |
+| `datetime`     | Date + time picker   | -                    |
+| `image-upload` | Image upload         | `accept`             |
+| `file-upload`  | File upload          | `accept`             |
+| `custom`       | Custom render        | `render`             |
 
 ## API Error Mapping
 
@@ -171,38 +171,38 @@ const fields: FieldConfig<MyForm>[] = [
 
 ### FormDialog Props
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `open` | `boolean` | required | Dialog open state |
-| `onOpenChange` | `(open: boolean) => void` | required | Open state handler |
-| `title` | `string` | required | Dialog title |
-| `description` | `string` | - | Optional description |
-| `schema` | `z.ZodType<T>` | required | Zod validation schema |
-| `fields` | `FieldConfig<T>[]` | required | Field configurations |
-| `defaultValues` | `DefaultValues<T>` | - | Default form values |
-| `values` | `T` | - | Edit mode values |
-| `mode` | `"create" \| "edit" \| "view"` | `"create"` | Form mode |
-| `onSubmit` | `(data: T) => Promise<SubmitResult \| void>` | required | Submit handler |
-| `onSuccess` | `() => void` | - | Success callback |
-| `size` | `"sm" \| "md" \| "lg" \| "xl" \| "full"` | `"lg"` | Dialog size |
-| `columns` | `1 \| 2` | `1` | Field grid columns |
+| Prop            | Type                                         | Default    | Description           |
+| --------------- | -------------------------------------------- | ---------- | --------------------- |
+| `open`          | `boolean`                                    | required   | Dialog open state     |
+| `onOpenChange`  | `(open: boolean) => void`                    | required   | Open state handler    |
+| `title`         | `string`                                     | required   | Dialog title          |
+| `description`   | `string`                                     | -          | Optional description  |
+| `schema`        | `z.ZodType<T>`                               | required   | Zod validation schema |
+| `fields`        | `FieldConfig<T>[]`                           | required   | Field configurations  |
+| `defaultValues` | `DefaultValues<T>`                           | -          | Default form values   |
+| `values`        | `T`                                          | -          | Edit mode values      |
+| `mode`          | `"create" \| "edit" \| "view"`               | `"create"` | Form mode             |
+| `onSubmit`      | `(data: T) => Promise<SubmitResult \| void>` | required   | Submit handler        |
+| `onSuccess`     | `() => void`                                 | -          | Success callback      |
+| `size`          | `"sm" \| "md" \| "lg" \| "xl" \| "full"`     | `"lg"`     | Dialog size           |
+| `columns`       | `1 \| 2`                                     | `1`        | Field grid columns    |
 
 ### FieldConfig Props
 
-| Prop | Type | Description |
-|------|------|-------------|
-| `name` | `Path<T>` | Field name (type-safe) |
-| `type` | `FieldType` | Field type |
-| `label` | `string` | Display label |
-| `placeholder` | `string` | Input placeholder |
-| `description` | `string` | Help text |
-| `required` | `boolean` | Show required indicator |
-| `defaultValue` | `T[name]` | Default value |
-| `disabled` | `boolean \| (form) => boolean` | Disabled state |
-| `hidden` | `boolean \| (form) => boolean` | Hidden state |
-| `options` | `SelectOption[]` | Select/radio options |
-| `colSpan` | `1 \| 2` | Grid column span |
-| `render` | `(props) => ReactNode` | Custom render (type="custom") |
+| Prop           | Type                           | Description                   |
+| -------------- | ------------------------------ | ----------------------------- |
+| `name`         | `Path<T>`                      | Field name (type-safe)        |
+| `type`         | `FieldType`                    | Field type                    |
+| `label`        | `string`                       | Display label                 |
+| `placeholder`  | `string`                       | Input placeholder             |
+| `description`  | `string`                       | Help text                     |
+| `required`     | `boolean`                      | Show required indicator       |
+| `defaultValue` | `T[name]`                      | Default value                 |
+| `disabled`     | `boolean \| (form) => boolean` | Disabled state                |
+| `hidden`       | `boolean \| (form) => boolean` | Hidden state                  |
+| `options`      | `SelectOption[]`               | Select/radio options          |
+| `colSpan`      | `1 \| 2`                       | Grid column span              |
+| `render`       | `(props) => ReactNode`         | Custom render (type="custom") |
 
 ## Hooks
 
@@ -241,16 +241,18 @@ const [deleteTarget, setDeleteTarget] = useState<Entity | null>(null);
   }}
   isDeleting={isDeleting}
   deleteMessage={(entity) => `Delete "${entity.name}"? This cannot be undone.`}
-/>
+/>;
 ```
 
 ### FormContent
 
-Standalone form component (without dialog wrapper):
+The form "engine" component. Can be used standalone or is wrapped by FormDialog.
+Supports full footer customization:
 
 ```tsx
 import { FormContent } from "@/components/form-dialog";
 
+// Basic standalone usage
 <FormContent
   schema={userSchema}
   fields={userFields}
@@ -258,6 +260,32 @@ import { FormContent } from "@/components/form-dialog";
   onSubmit={handleSubmit}
   onSuccess={handleSuccess}
   columns={2}
+/>
+
+// With custom footer
+<FormContent
+  schema={settingsSchema}
+  fields={settingsFields}
+  values={currentSettings}
+  mode="edit"
+  onSubmit={handleSave}
+  submitText="Save Settings"
+  cancelText="Discard Changes"
+  onCancel={() => navigate(-1)}
+/>
+
+// With fully custom footer render
+<FormContent
+  schema={schema}
+  fields={fields}
+  onSubmit={handleSubmit}
+  renderFooter={({ form, isSubmitting, onCancel }) => (
+    <div className="flex gap-2">
+      <Button onClick={onCancel}>Cancel</Button>
+      <Button onClick={() => handleDraft(form.getValues())}>Save Draft</Button>
+      <Button type="submit" disabled={isSubmitting}>Publish</Button>
+    </div>
+  )}
 />
 ```
 
@@ -308,7 +336,26 @@ const dialog = useFormDialog<Entity>();
   mode={dialog.mode}
   onSubmit={handleSubmit}
   onSuccess={dialog.close}
-/>
+/>;
+```
+
+## Architecture
+
+```
+┌─────────────────────────────────────────┐
+│ FormDialog (Shell)                      │
+│  - Dialog open/close                    │
+│  - Title, description, sizing           │
+│  - preventCloseOnSubmit                 │
+│  - closeOnSuccess                       │
+│  ┌─────────────────────────────────────┐ │
+│  │ FormContent (Engine)               │ │
+│  │  - Form init (useForm + Zod)       │ │
+│  │  - Field rendering                 │ │
+│  │  - Submission + error mapping      │ │
+│  │  - Footer (customizable)           │ │
+│  └─────────────────────────────────────┘ │
+└─────────────────────────────────────────┘
 ```
 
 ## File Structure
@@ -317,8 +364,8 @@ const dialog = useFormDialog<Entity>();
 form-dialog/
 ├── index.ts                 # Main exports
 ├── types.ts                 # TypeScript types & interfaces
-├── FormDialog.tsx           # Main dialog component
-├── FormContent.tsx          # Standalone form body
+├── FormDialog.tsx           # Dialog shell (wraps FormContent)
+├── FormContent.tsx          # Form engine (all form logic)
 ├── DeleteDialog.tsx         # Delete confirmation dialog
 ├── FormErrorBanner.tsx      # Error display banner
 ├── FormFooter.tsx           # Submit/Cancel buttons
@@ -368,5 +415,9 @@ import type {
 } from "@/components/form-dialog";
 
 // Field config types (from lib)
-import type { FieldConfig, FieldType, SelectOption } from "@/lib/form/field-config";
+import type {
+  FieldConfig,
+  FieldType,
+  SelectOption,
+} from "@/lib/form/field-config";
 ```

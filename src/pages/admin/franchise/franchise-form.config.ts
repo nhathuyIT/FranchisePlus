@@ -1,4 +1,7 @@
-import { FranchiseSchema, type FranchiseFormData } from "@/lib/schemas/franchise.schema";
+import {
+  FranchiseSchema,
+  type FranchiseFormData,
+} from "@/lib/schemas/franchise.schema";
 import type { FieldConfig } from "@/lib/form/field-config";
 
 /**
@@ -58,14 +61,10 @@ export const franchiseFields: FieldConfig<FranchiseFormData>[] = [
   },
   {
     name: "isActive",
-    type: "select",
-    label: "Status",
-    required: true,
-    options: [
-      { label: "Active", value: true },
-      { label: "Inactive", value: false },
-    ],
+    type: "switch",
+    label: "Active Status",
     defaultValue: true,
+    description: "Toggle franchise active/inactive state",
   },
 ];
 

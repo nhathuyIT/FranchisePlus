@@ -104,6 +104,9 @@ export interface FormDialogProps<TFormData extends FieldValues> {
 
 /**
  * Standalone form content props (for use without dialog)
+ *
+ * This is the "engine" component - contains all form logic.
+ * FormDialog wraps this with a Dialog shell.
  */
 export interface FormContentProps<TFormData extends FieldValues> {
   /** Zod schema for validation */
@@ -126,6 +129,28 @@ export interface FormContentProps<TFormData extends FieldValues> {
   onSuccess?: () => void;
   /** Children to render after fields */
   children?: React.ReactNode;
+
+  // ── Footer customization ──────────────────────────────────────────────
+
+  /** Custom submit button text (overrides mode default) */
+  submitText?: string;
+  /** Custom cancel button text (default: "Cancel") */
+  cancelText?: string;
+  /** Hide cancel button */
+  hideCancel?: boolean;
+  /** Custom cancel handler (default: form.reset()) */
+  onCancel?: () => void;
+  /** Render custom footer (replaces default buttons) */
+  renderFooter?: (props: {
+    form: UseFormReturn<TFormData>;
+    isSubmitting: boolean;
+    onCancel: () => void;
+  }) => React.ReactNode;
+
+  // ── Parent communication ──────────────────────────────────────────────
+
+  /** Callback when submitting state changes (used by FormDialog for preventCloseOnSubmit) */
+  onSubmittingChange?: (isSubmitting: boolean) => void;
 }
 
 /**

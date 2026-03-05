@@ -1,6 +1,9 @@
 import { useState, useCallback } from "react";
 import type { UseFormDialogReturn, FormDialogMode } from "../types";
 
+/** Delay clearing data after close to allow for dialog exit animation */
+const DIALOG_EXIT_ANIMATION_MS = 200;
+
 /**
  * Hook for managing FormDialog state
  *
@@ -55,10 +58,9 @@ export function useFormDialog<TData = unknown>(): UseFormDialogReturn<TData> {
 
   const close = useCallback(() => {
     setIsOpen(false);
-    // Delay clearing data to allow for exit animation
     setTimeout(() => {
       setData(null);
-    }, 200);
+    }, DIALOG_EXIT_ANIMATION_MS);
   }, []);
 
   return {
