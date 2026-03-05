@@ -8,7 +8,6 @@ import {
   UtensilsCrossed,
   Cookie,
   Star,
-  Eye,
 } from "lucide-react";
 import {
   useGetAllFranchise,
@@ -18,27 +17,10 @@ import {
 } from "@/hooks/client/useProduct.hook";
 import type { MenuProduct } from "@/types/menu.type";
 import type { ProductListItem } from "@/types/product.type";
-
-// ─── Helpers ────────────────────────────────────────────────────────────────────
-const formatPrice = (price: number) => price.toLocaleString("vi-VN") + "₫";
-
-const getMinPrice = (
-  sizes: { price: number; isAvailable: boolean }[],
-): number | null => {
-  const available = sizes.filter((s) => s.isAvailable);
-  if (available.length === 0) return null;
-  return Math.min(...available.map((s) => s.price));
-};
-
-const getSizeLabel = (size: string) => {
-  const map: Record<string, string> = {
-    DEFAULT: "Mặc định",
-    SMALL: "Nhỏ",
-    MEDIUM: "Vừa",
-    LARGE: "Lớn",
-  };
-  return map[size] || size;
-};
+import { MenuProductCard } from "./components/MenuProductCard";
+import { ToppingCard } from "./components/ToppingCard.";
+import { SectionDivider } from "./components/SectionDivider";
+import { EmptyState } from "./components/EmptyState";
 
 // ─── Skeleton loaders ───────────────────────────────────────────────────────────
 const CardSkeleton = () => (
@@ -64,240 +46,6 @@ const CategorySkeleton = () => (
         className="animate-pulse h-10 w-24 bg-stone-200 rounded-full shrink-0"
       />
     ))}
-  </div>
-);
-
-// ─── Menu Product Card ──────────────────────────────────────────────────────────
-const MenuProductCard = ({
-  product,
-  onViewDetail,
-}: {
-  product: MenuProduct;
-  onViewDetail: (productId: string | number) => void;
-}) => {
-  const minPrice = getMinPrice(product.sizes);
-
-  return (
-    <div
-      className="group relative flex flex-col overflow-hidden rounded-2xl bg-white 
-                 border border-stone-200/60 shadow-sm
-                 transition-all duration-500 ease-out
-                 hover:shadow-[0_8px_30px_rgba(120,80,40,0.12)]
-                 hover:-translate-y-1 hover:border-amber-200/80"
-    >
-      {/* Image */}
-      <div className="relative overflow-hidden bg-stone-100 h-52">
-        <img
-          src={product.imageUrl || "/placeholder-coffee.jpg"}
-          alt={product.name}
-          className="h-full w-full object-cover transition-transform duration-700 ease-out
-                     group-hover:scale-110"
-          loading="lazy"
-        />
-        {/* Overlay gradient */}
-        <div
-          className="absolute inset-0 bg-linear-to-t from-black/30 via-transparent to-transparent
-                      opacity-0 group-hover:opacity-100 transition-opacity duration-500"
-        />
-
-        {/* Has topping badge */}
-        {product.isHaveTopping && (
-          <span
-            className="absolute top-3 left-3 flex items-center gap-1 px-2.5 py-1 
-                        bg-amber-600/90 text-white text-xs font-medium rounded-full
-                        shadow-lg backdrop-blur-sm"
-          >
-            <Cookie className="h-3 w-3" />
-            Có topping
-          </span>
-        )}
-
-        {/* View detail button */}
-        <button
-          type="button"
-          onClick={() => onViewDetail(product.productId)}
-          className="absolute bottom-3 right-3 flex items-center gap-1.5 px-3 py-1.5 
-                     bg-white/90 text-stone-800 text-xs font-semibold rounded-full
-                     shadow-lg backdrop-blur-sm
-                     opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0
-                     transition-all duration-300 ease-out
-                     hover:bg-white hover:shadow-xl"
-        >
-          <Eye className="h-3.5 w-3.5" />
-          Chi tiết
-        </button>
-      </div>
-
-      {/* Content */}
-      <div className="flex flex-1 flex-col p-5">
-        <h3
-          className="font-serif text-lg font-bold text-stone-800 leading-snug 
-                      group-hover:text-amber-800 transition-colors duration-300
-                      line-clamp-2"
-        >
-          {product.name}
-        </h3>
-
-        {product.description && (
-          <p className="mt-1.5 text-sm text-stone-500 line-clamp-2 leading-relaxed">
-            {product.description}
-          </p>
-        )}
-
-        {/* Sizes */}
-        <div className="mt-auto pt-4 flex flex-wrap gap-1.5">
-          {product.sizes.map((s) => (
-            <span
-              key={s.size}
-              className={`inline-flex items-center px-2.5 py-1 text-xs rounded-full font-medium
-                          transition-colors duration-200 
-                          ${
-                            s.isAvailable
-                              ? "bg-amber-50 text-amber-800 border border-amber-200/60"
-                              : "bg-stone-100 text-stone-400 line-through border border-stone-200/40"
-                          }`}
-            >
-              {getSizeLabel(s.size)}: {formatPrice(s.price)}
-            </span>
-          ))}
-        </div>
-
-        {/* Price */}
-        {minPrice !== null && (
-          <div className="mt-3 flex items-center justify-between">
-            <span className="text-xs text-stone-400 italic">Từ</span>
-            <span
-              className="font-serif text-xl font-bold text-amber-700 
-                          group-hover:text-amber-600 transition-colors"
-            >
-              {formatPrice(minPrice)}
-            </span>
-          </div>
-        )}
-      </div>
-
-      {/* Decorative bottom border on hover */}
-      <div
-        className="absolute bottom-0 left-0 right-0 h-0.5 bg-linear-to-r from-amber-400 via-amber-600 to-amber-400
-                    scale-x-0 group-hover:scale-x-100 transition-transform duration-500 ease-out"
-      />
-    </div>
-  );
-};
-
-// ─── Topping Card ────────────────────────────────────────────────────────────────
-const ToppingCard = ({
-  product,
-  onViewDetail,
-}: {
-  product: ProductListItem;
-  onViewDetail: (productId: string | number) => void;
-}) => {
-  const minPrice = getMinPrice(product.sizes);
-
-  return (
-    <div
-      className="group relative flex items-center gap-4 rounded-2xl bg-white p-4
-                 border border-stone-200/60 shadow-sm
-                 transition-all duration-500 ease-out
-                 hover:shadow-[0_6px_24px_rgba(120,80,40,0.10)]
-                 hover:-translate-y-0.5 hover:border-amber-200/80"
-    >
-      {/* Image */}
-      <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-xl bg-stone-100">
-        <img
-          src={product.imageUrl || "/placeholder-coffee.jpg"}
-          alt={product.name}
-          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
-          loading="lazy"
-        />
-      </div>
-
-      {/* Info */}
-      <div className="flex-1 min-w-0">
-        <h4
-          className="font-serif text-base font-semibold text-stone-800 truncate
-                      group-hover:text-amber-800 transition-colors duration-300"
-        >
-          {product.name}
-        </h4>
-        {product.description && (
-          <p className="text-xs text-stone-500 truncate mt-0.5">
-            {product.description}
-          </p>
-        )}
-        <div className="mt-1.5 flex flex-wrap gap-1">
-          {product.sizes
-            .filter((s) => s.isAvailable)
-            .map((s) => (
-              <span
-                key={s.size}
-                className="text-[11px] px-2 py-0.5 bg-orange-50 text-orange-700 
-                           rounded-full border border-orange-200/60 font-medium"
-              >
-                {getSizeLabel(s.size)}: {formatPrice(s.price)}
-              </span>
-            ))}
-        </div>
-      </div>
-
-      {/* Price + action */}
-      <div className="flex flex-col items-end gap-2 shrink-0">
-        {minPrice !== null && (
-          <span className="font-serif text-lg font-bold text-amber-700">
-            {formatPrice(minPrice)}
-          </span>
-        )}
-        <button
-          type="button"
-          onClick={() => onViewDetail(product.productId)}
-          className="flex items-center gap-1 px-2.5 py-1 text-xs font-medium
-                     text-amber-700 hover:text-white bg-amber-50 hover:bg-amber-600
-                     rounded-full border border-amber-200 hover:border-amber-600
-                     transition-all duration-300 shadow-sm hover:shadow-md"
-        >
-          <Eye className="h-3 w-3" />
-          Xem
-        </button>
-      </div>
-
-      {/* Decorative left border */}
-      <div
-        className="absolute left-0 top-3 bottom-3 w-0.5 bg-amber-400 
-                    scale-y-0 group-hover:scale-y-100 rounded-full
-                    transition-transform duration-500 origin-top"
-      />
-    </div>
-  );
-};
-
-// ─── Section Divider ─────────────────────────────────────────────────────────────
-const SectionDivider = ({
-  icon: Icon,
-  title,
-  count,
-}: {
-  icon: React.ElementType;
-  title: string;
-  count: number;
-}) => (
-  <div className="flex items-center gap-3 mb-6">
-    <div className="flex items-center justify-center h-10 w-10 rounded-full bg-amber-100 text-amber-700 shadow-inner">
-      <Icon className="h-5 w-5" />
-    </div>
-    <div>
-      <h2 className="font-serif text-2xl font-bold text-stone-800">{title}</h2>
-      <p className="text-sm text-stone-400">{count} sản phẩm</p>
-    </div>
-    <div className="flex-1 h-px bg-linear-to-r from-stone-200 to-transparent ml-4" />
-  </div>
-);
-
-// ─── Empty State ────────────────────────────────────────────────────────────────
-const EmptyState = ({ message }: { message: string }) => (
-  <div className="flex flex-col items-center justify-center py-20 text-stone-400">
-    <Coffee className="h-16 w-16 mb-4 opacity-30" />
-    <p className="font-serif text-lg italic">{message}</p>
   </div>
 );
 
@@ -376,7 +124,7 @@ const MenuPage = () => {
   };
 
   const handleViewDetail = (productId: string | number) => {
-    navigate(`/client/products/product-${productId}`);
+    navigate(`/api/product/${productId}`);
   };
 
   // ── Close dropdown on outside click ────────────────────────────────────
@@ -518,7 +266,7 @@ const MenuPage = () => {
       {/* ── Main Content ───────────────────────────────────────────────── */}
       <div className="container mx-auto px-4 pb-20 -mt-2">
         {/* ── Category tabs ──────────────────────────────────────────── */}
-        <div className="mb-10">
+        <div className="mb-10 mt-3">
           {isLoadingCategories ? (
             <CategorySkeleton />
           ) : categories && categories.length > 0 ? (
