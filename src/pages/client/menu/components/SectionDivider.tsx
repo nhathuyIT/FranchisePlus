@@ -13,7 +13,7 @@ export const SectionDivider = ({
     </div>
     <div>
       <h2 className="font-serif text-2xl font-bold text-stone-800">{title}</h2>
-      <p className="text-sm text-stone-400">{count} sản phẩm</p>
+      <p className="text-sm text-stone-400">{count} products</p>
     </div>
     <div className="flex-1 h-px bg-linear-to-r from-stone-200 to-transparent ml-4" />
   </div>

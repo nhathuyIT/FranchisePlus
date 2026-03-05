@@ -89,6 +89,8 @@ const MenuPage = () => {
   const { data: menuData, isLoading: isLoadingMenu } =
     useGetMenuByFranchiseAndCategory(activeFranchiseId, activeCategoryId);
 
+  console.log(menuData);
+
   const { data: toppingData, isLoading: isLoadingToppings } =
     useGetProductsByFranchiseAndCategory(activeFranchiseId, activeCategoryId);
 
@@ -166,10 +168,10 @@ const MenuPage = () => {
             className="font-serif text-4xl md:text-5xl lg:text-6xl font-bold text-white 
                         tracking-wide drop-shadow-lg"
           >
-            Thực Đơn
+            Menu
           </h1>
           <p className="mt-3 text-amber-200/80 text-base md:text-lg font-light tracking-wider">
-            Khám phá hương vị cà phê đặc biệt tại mỗi chi nhánh
+            Discover exceptional coffee flavors at every branch
           </p>
 
           {/* Franchise selector */}
@@ -192,8 +194,8 @@ const MenuPage = () => {
                   <MapPin className="h-4 w-4 text-amber-400" />
                   <span className="font-medium text-sm">
                     {isLoadingFranchises
-                      ? "Đang tải..."
-                      : selectedFranchise?.name || "Chọn chi nhánh"}
+                      ? "Loading..."
+                      : selectedFranchise?.name || "Select Branch"}
                   </span>
                 </div>
                 <ChevronDown
@@ -299,7 +301,7 @@ const MenuPage = () => {
           ) : (
             !isLoadingFranchises && (
               <p className="text-center text-stone-400 italic font-serif pt-3">
-                Không có danh mục nào cho chi nhánh này
+                No categories available for this branch
               </p>
             )
           )}
@@ -381,7 +383,7 @@ const MenuPage = () => {
                     title="Menu"
                     count={0}
                   />
-                  <EmptyState message="Chưa có sản phẩm trong menu" />
+                  <EmptyState message="No products in menu yet" />
                 </section>
               )
             )}
@@ -408,14 +410,14 @@ const MenuPage = () => {
               activeCategoryId && (
                 <section>
                   <SectionDivider icon={Cookie} title="Topping" count={0} />
-                  <EmptyState message="Chưa có topping" />
+                  <EmptyState message="No toppings yet" />
                 </section>
               )
             )}
 
             {/* No category selected */}
             {!activeCategoryId && !isLoadingCategories && (
-              <EmptyState message="Vui lòng chọn danh mục để xem thực đơn" />
+              <EmptyState message="Please select a category to view menu" />
             )}
           </>
         )}
@@ -426,7 +428,7 @@ const MenuPage = () => {
         <div className="fixed inset-0 bg-white/60 backdrop-blur-sm z-50 flex items-center justify-center">
           <div className="flex flex-col items-center gap-4 bg-white p-8 rounded-2xl shadow-2xl">
             <Loader2 className="h-10 w-10 text-amber-600 animate-spin" />
-            <p className="font-serif text-stone-600">Đang tải thực đơn...</p>
+            <p className="font-serif text-stone-600">Loading menu...</p>
           </div>
         </div>
       )}

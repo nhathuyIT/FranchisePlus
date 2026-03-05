@@ -11,10 +11,10 @@ export const formatPrice = (price: number) =>
 
 export const getSizeLabel = (size: string) => {
   const map: Record<string, string> = {
-    DEFAULT: "Mặc định",
-    SMALL: "Nhỏ",
-    MEDIUM: "Vừa",
-    LARGE: "Lớn",
+    DEFAULT: "Default",
+    SMALL: "Small",
+    MEDIUM: "Medium",
+    LARGE: "Large",
   };
   return map[size] || size;
 };

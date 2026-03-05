@@ -42,7 +42,7 @@ export const MenuProductCard = ({
                         shadow-lg backdrop-blur-sm"
           >
             <Cookie className="h-3 w-3" />
-            Có topping
+            Has Topping
           </span>
         )}
 
@@ -58,7 +58,7 @@ export const MenuProductCard = ({
                      hover:bg-white hover:shadow-xl"
         >
           <Eye className="h-3.5 w-3.5" />
-          Chi tiết
+          Details
         </button>
       </div>
 
@@ -118,7 +118,7 @@ export const MenuProductCard = ({
         {/* Price */}
         {minPrice !== null && (
           <div className="mt-3 flex items-center justify-between">
-            <span className="text-xs text-stone-400 italic">Từ</span>
+            <span className="text-xs text-stone-400 italic">From</span>
             <span
               className="font-serif text-xl font-bold text-amber-700 
                           group-hover:text-amber-600 transition-colors"

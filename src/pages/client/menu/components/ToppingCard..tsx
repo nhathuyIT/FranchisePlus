@@ -11,8 +11,6 @@ export const ToppingCard = ({
 }) => {
   const minPrice = getMinPrice(product.sizes);
 
-  console.log("Product: ", product);
-
   return (
     <div
       className="group relative flex items-center gap-4 rounded-2xl bg-white p-4
@@ -75,7 +73,7 @@ export const ToppingCard = ({
                      transition-all duration-300 shadow-sm hover:shadow-md"
         >
           <Eye className="h-3 w-3" />
-          Xem
+          View
         </button>
       </div>
 
