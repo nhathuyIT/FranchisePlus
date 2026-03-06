@@ -8,9 +8,7 @@ export const UserFranchiseRoleSchema = z.object({
 
   franchiseId: z.string().nullable().optional(),
 
-  roleId: z
-    .string({ required_error: "Please select a role" })
-    .min(1, "Please select a role"),
+  roleId: z.string("Please select a role").min(1, "Please select a role"),
 });
 
 export type UserFranchiseRoleFormData = z.infer<typeof UserFranchiseRoleSchema>;
