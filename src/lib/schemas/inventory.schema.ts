@@ -1,26 +1,27 @@
 import { z } from "zod";
 
 /**
- * Update Stock schema
- * For updating inventory quantity
+ * Adjust Inventory schema (INVENTORY-06)
+ * POST /api/inventories/adjust
+ * For adjusting quantity via change delta (positive to add, negative to subtract)
  */
-export const UpdateStockSchema = z.object({
-  productName: z.string().optional(), // Read-only display
-  currentQuantity: z.number().optional(), // Read-only display
-  alertThreshold: z.number().optional(), // Read-only display
-  quantity: z
+export const AdjustInventorySchema = z.object({
+  change: z
     .number()
-    .min(0, "Stock quantity cannot be negative - enter 0 or more")
-    .max(999999, "Quantity too high - maximum is 999,999 kg"),
+    .refine((val) => val !== 0, "Change amount cannot be zero"),
+  reason: z.string().optional(),
 });
 
 /**
- * Add Inventory Item schema
+ * Add Inventory Item schema (INVENTORY-01)
+ * POST /api/inventories
  * For adding new products to inventory
  */
 export const AddInventoryItemSchema = z
   .object({
-    productFranchiseId: z.number().min(1, "Select a product from the list"),
+    productFranchiseId: z
+      .string()
+      .min(1, "Select a product from the list"),
     quantity: z
       .number()
       .min(0, "Stock quantity cannot be negative - enter 0 or more"),
@@ -32,20 +33,5 @@ export const AddInventoryItemSchema = z
     path: ["quantity"],
   });
 
-/**
- * Adjust Alert Threshold schema
- * For changing low stock alert threshold
- */
-export const AdjustThresholdSchema = z.object({
-  productName: z.string().optional(), // Read-only display
-  currentThreshold: z.number().optional(), // Read-only display
-  currentQuantity: z.number().optional(), // Read-only display
-  alertThreshold: z
-    .number()
-    .min(1, "Alert threshold must be at least 1 kg")
-    .max(10000, "Threshold too high - maximum is 10,000 kg"),
-});
-
-export type UpdateStockFormData = z.infer<typeof UpdateStockSchema>;
+export type AdjustInventoryFormData = z.infer<typeof AdjustInventorySchema>;
 export type AddInventoryItemFormData = z.infer<typeof AddInventoryItemSchema>;
-export type AdjustThresholdFormData = z.infer<typeof AdjustThresholdSchema>;
