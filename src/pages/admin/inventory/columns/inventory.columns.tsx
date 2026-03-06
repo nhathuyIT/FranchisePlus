@@ -1,23 +1,14 @@
 import type { ColumnDef } from "@tanstack/react-table";
 import { StockStatusBadge } from "@/components/common/StockStatusBadge";
-import type { InventoryItemView } from "@/types/inventory";
+import type { InventorySearchItem } from "@/api/inventory/inventory.type";
 
-export const inventoryColumns: ColumnDef<InventoryItemView>[] = [
+export const inventoryColumns: ColumnDef<InventorySearchItem>[] = [
   {
-    accessorKey: "product.name",
+    accessorKey: "productName",
     header: "Product",
     cell: ({ row }) => (
       <span className="font-medium text-[#3E2723]">
-        {row.original.product.name}
-      </span>
-    ),
-  },
-  {
-    accessorKey: "product.sku",
-    header: "SKU",
-    cell: ({ row }) => (
-      <span className="text-[#5D4037] font-mono text-sm">
-        {row.original.product.sku}
+        {row.original.productName}
       </span>
     ),
   },
@@ -29,20 +20,20 @@ export const inventoryColumns: ColumnDef<InventoryItemView>[] = [
     ),
   },
   {
-    accessorKey: "inventory.quantity",
+    accessorKey: "quantity",
     header: "Quantity",
     cell: ({ row }) => (
       <span className="text-[#3E2723] font-semibold">
-        {row.original.inventory.quantity} kg
+        {row.original.quantity}
       </span>
     ),
   },
   {
-    accessorKey: "inventory.alertThreshold",
+    accessorKey: "alertThreshold",
     header: "Threshold",
     cell: ({ row }) => (
       <span className="text-[#5D4037]">
-        {row.original.inventory.alertThreshold} kg
+        {row.original.alertThreshold}
       </span>
     ),
   },
@@ -51,36 +42,34 @@ export const inventoryColumns: ColumnDef<InventoryItemView>[] = [
     header: "Status",
     enableSorting: false,
     filterFn: (row, _columnId, filterValue) => {
-      const quantity = row.original.inventory.quantity;
-      const threshold = row.original.inventory.alertThreshold;
+      const quantity = row.original.quantity;
+      const threshold = row.original.alertThreshold;
       const percentage = (quantity / threshold) * 100;
 
       if (filterValue === "out_of_stock") {
         return quantity === 0;
       }
       if (filterValue === "low_stock") {
-        // Low Stock: percentage <= 100 (including critical)
         return quantity > 0 && percentage <= 100;
       }
       if (filterValue === "in_stock") {
-        // In Stock (Good Stock): percentage > 100
         return percentage > 100;
       }
       return true;
     },
     cell: ({ row }) => (
       <StockStatusBadge
-        quantity={row.original.inventory.quantity}
-        lowStockThreshold={row.original.inventory.alertThreshold}
+        quantity={row.original.quantity}
+        lowStockThreshold={row.original.alertThreshold}
       />
     ),
   },
   {
-    accessorKey: "inventory.updatedAt",
+    accessorKey: "updatedAt",
     header: "Last Updated",
     cell: ({ row }) => (
       <span className="text-[#5D4037]">
-        {new Date(row.original.inventory.updatedAt).toLocaleDateString()}
+        {new Date(row.original.updatedAt).toLocaleDateString()}
       </span>
     ),
   },

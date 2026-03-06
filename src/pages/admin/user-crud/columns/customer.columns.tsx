@@ -30,6 +30,10 @@ export const customerColumns: ColumnDef<User>[] = [
     ),
   },
   {
+    accessorKey: "",
+    header: "Role",
+  },
+  {
     accessorKey: "phone",
     header: "Phone",
     cell: ({ row }) => (
@@ -46,14 +50,10 @@ export const customerColumns: ColumnDef<User>[] = [
     ),
   },
   {
-    accessorKey: "createdAt",
-    header: "Created Date",
-    cell: ({ row }) => (
-      <span className="text-[#5D4037]">
-        {new Date(row.original.createdAt).toLocaleDateString()}
-      </span>
-    ),
+    accessorKey: "",
+    header: "Franchise",
   },
+
   {
     accessorKey: "isActive",
     header: "Status",

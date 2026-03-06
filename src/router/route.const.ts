@@ -47,5 +47,7 @@ export const ROUTER_URL = {
     PRODUCTS_CREATE: "products/create",
     PRODUCTS_EDIT: "products/:id/edit",
     PRODUCTS_DETAIL: "products/:id",
+    USER_FRANCHISE_ROLES: "user-franchise-roles",
+    CUSTOMERS: "customers",
   },
 };

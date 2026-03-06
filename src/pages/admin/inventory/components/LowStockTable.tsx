@@ -1,16 +1,20 @@
 import { Edit, Download } from "lucide-react";
-import { DataTable, type ColumnFilter, type BulkAction } from "@/components/common/DataTable";
+import {
+  DataTable,
+  type ColumnFilter,
+  type BulkAction,
+} from "@/components/common/DataTable";
 import { lowStockColumns } from "../columns/low-stock.columns";
 import { Button } from "@/components/ui/button";
-import type { InventoryItemView } from "@/types/inventory";
+import type { InventorySearchItem } from "@/api/inventory/inventory.type";
 
 interface LowStockTableProps {
-  items: InventoryItemView[];
+  items: InventorySearchItem[];
   isLoading?: boolean;
   error?: Error | null;
   onRetry?: () => void;
-  onUpdateStock?: (item: InventoryItemView) => void;
-  onBulkExport?: (items: InventoryItemView[]) => void;
+  onUpdateStock?: (item: InventorySearchItem) => void;
+  onBulkExport?: (items: InventorySearchItem[]) => void;
 }
 
 export const LowStockTable = ({
@@ -31,7 +35,7 @@ export const LowStockTable = ({
   ];
 
   // Bulk Actions Configuration
-  const bulkActions: BulkAction<InventoryItemView>[] = [];
+  const bulkActions: BulkAction<InventorySearchItem>[] = [];
 
   if (onBulkExport) {
     bulkActions.push({
@@ -52,7 +56,6 @@ export const LowStockTable = ({
       searchPlaceholder="Search low stock items by product, SKU, or franchise..."
       emptyMessage="No low stock items found. All inventory levels are healthy!"
       initialPageSize={5}
-      // NEW FEATURES
       enableRowSelection={!!onBulkExport}
       enableColumnVisibility
       columnFilters={columnFilters}

@@ -8,6 +8,8 @@ import {
   AlertTriangle,
   Grid3x3,
   ShoppingBag,
+  ShieldCheck,
+  UserCheck,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -25,6 +27,8 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   "alert-triangle": AlertTriangle,
   category: Grid3x3,
   product: ShoppingBag,
+  shield: ShieldCheck,
+  customers: UserCheck,
 };
 
 const sidebarMenuItems = ADMIN_MENU.filter((item) => {
