@@ -15,10 +15,31 @@ export interface HttpClient {
 
   post<T, D = unknown>(config: HttpRequestConfig<D>): Promise<T | null>;
 
+<<<<<<< HEAD
+=======
+  /**
+   * POST request that bypasses the automatic camelCase → snake_case interceptor.
+   * Use this when the backend expects a specific format that differs from snake_case.
+   * The payload is sent exactly as provided (JSON stringified).
+   */
+  postRaw<T, D = unknown>(config: HttpRequestConfig<D>): Promise<T | null>;
+
+>>>>>>> dev
   postPaginated<T, D = unknown>(
     config: HttpRequestConfig<D>,
   ): Promise<ApiPaginatedResponse<T>>;
 
+<<<<<<< HEAD
+=======
+  /**
+   * POST paginated request that bypasses the automatic camelCase → snake_case interceptor.
+   * Use this for search APIs where backend expects camelCase keys.
+   */
+  postPaginatedRaw<T, D = unknown>(
+    config: HttpRequestConfig<D>,
+  ): Promise<ApiPaginatedResponse<T>>;
+
+>>>>>>> dev
   put<T, D = unknown>(config: HttpRequestConfig<D>): Promise<T | null>;
 
   patch<T, D = unknown>(config: HttpRequestConfig<D>): Promise<T | null>;

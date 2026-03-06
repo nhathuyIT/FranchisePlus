@@ -43,6 +43,25 @@ export const httpClient: HttpClient = {
     return res.data.data;
   },
 
+<<<<<<< HEAD
+=======
+  async postRaw<T, D>(config: HttpRequestConfig<D>): Promise<T | null> {
+    // Bypass interceptor by JSON.stringify-ing the payload
+    // This sends the data exactly as provided without snake_case conversion
+    const res = await axiosClient.post<ApiSuccessResponse<T>>(
+      config.url,
+      JSON.stringify(config.data),
+      {
+        headers: {
+          "Content-Type": "application/json",
+          ...config.headers,
+        },
+      },
+    );
+    return res.data.data;
+  },
+
+>>>>>>> dev
   async postPaginated<T, D>(
     config: HttpRequestConfig<D>,
   ): Promise<ApiPaginatedResponse<T>> {
@@ -54,6 +73,27 @@ export const httpClient: HttpClient = {
     return res.data;
   },
 
+<<<<<<< HEAD
+=======
+  async postPaginatedRaw<T, D>(
+    config: HttpRequestConfig<D>,
+  ): Promise<ApiPaginatedResponse<T>> {
+    // Bypass interceptor by JSON.stringify-ing the payload
+    // Response is still auto-converted by toCamel interceptor
+    const res = await axiosClient.post<ApiPaginatedResponse<T>>(
+      config.url,
+      JSON.stringify(config.data),
+      {
+        headers: {
+          "Content-Type": "application/json",
+          ...config.headers,
+        },
+      },
+    );
+    return res.data;
+  },
+
+>>>>>>> dev
   async put<T, D>(config: HttpRequestConfig<D>): Promise<T | null> {
     const res = await axiosClient.put<ApiSuccessResponse<T>>(
       config.url,

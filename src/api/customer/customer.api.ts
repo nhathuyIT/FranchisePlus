@@ -6,7 +6,7 @@ import type {
   VerifyTokenRequest,
   VerifyTokenResponse,
 } from "@/types/auth.type";
-import type { CustomerLoginResponse } from "@/types/customer";
+import type { CustomerLoginResponse, ProfileRequest } from "@/types/customer";
 import { httpClient } from "../httpClient.api";
 
 export const register = async (
@@ -49,6 +49,18 @@ export const logoutClient = async (): Promise<void> => {
     url: "/api/customer-auth/logout",
   });
 };
+
+export const updateClientProfile = async (
+  id: string,
+  data: ProfileRequest,
+): Promise<CustomerLoginResponse> => {
+  const response = await httpClient.put<CustomerLoginResponse>({
+    url: `/api/customers/${id}`,
+    data,
+  });
+  return response!;
+};
+
 export const changePasswordClient = async (
   data: ChangePasswordRequest,
 ): Promise<void> => {
