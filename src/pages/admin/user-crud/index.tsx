@@ -145,6 +145,7 @@ const UserCRUD = () => {
           `Failed to delete ${failedCount} user(s). Please try again.`,
         );
       }
+      console.log("");
 
       setBulkDeleteTargets([]);
       refreshData();
