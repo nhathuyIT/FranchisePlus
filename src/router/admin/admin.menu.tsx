@@ -31,22 +31,6 @@ export const ADMIN_MENU: AdminMenuItem[] = [
     permissions: [PermissionEnum.VIEW_USERS],
   },
   {
-    label: "User Create",
-    path: ROUTER_URL.ADMIN_ROUTER.USER_CONTROL_CREATE,
-    icon: "user",
-    component: React.lazy(() => import("@/pages/admin/user-crud/create")),
-    isEnd: true,
-    permissions: [PermissionEnum.MANAGE_USERS],
-  },
-  {
-    label: "User Edit",
-    path: ROUTER_URL.ADMIN_ROUTER.USER_CONTROL_EDIT,
-    icon: "user",
-    component: React.lazy(() => import("@/pages/admin/user-crud/edit")),
-    isEnd: true,
-    permissions: [PermissionEnum.MANAGE_USERS],
-  },
-  {
     label: "Franchises",
     path: ROUTER_URL.ADMIN_ROUTER.FRANCHISES,
     icon: "store",

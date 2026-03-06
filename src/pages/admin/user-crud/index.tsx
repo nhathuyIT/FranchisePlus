@@ -1,14 +1,21 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 import { PageHeader } from "@/components/common/PageHeader";
 import { CustomerTable } from "./components/CustomerTable";
-import { CrudDialog } from "@/components/crud/CrudDialog";
-import { useCrudDialog } from "@/hooks/crud";
-import { customerConfig } from "./customer.config";
+import {
+  FormDialog,
+  useFormDialog,
+  DeleteDialog,
+} from "@/components/form-dialog";
+import { userFields, userSchema } from "./user-form.config";
+import type { UserFormData } from "./user-form.config";
+import type { User } from "@/types/user.type";
+import type { SubmitResult } from "@/components/form-dialog/types";
 import { useUserSearch, useDeleteUser } from "@/hooks/user";
 import type { UserSearchRequest } from "@/api/user/user.type";
-import type { User } from "@/types/user.type";
+import * as userApi from "@/api/user/user.api";
 
 const UserCRUD = () => {
   const [searchParams] = useState<UserSearchRequest>({
@@ -29,61 +36,162 @@ const UserCRUD = () => {
     error,
     refetch,
   } = useUserSearch(searchParams);
-  const deleteUser = useDeleteUser();
+
+  const deleteMutation = useDeleteUser({ suppressToast: true });
 
   const users = searchResult?.pageData ?? [];
 
-  // CRUD Dialog state
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const dialog = useCrudDialog<any>();
+  // Form dialog state
+  const dialog = useFormDialog<User>();
 
-  // Refresh data after CRUD operations
+  // Delete confirmation state
+  const [deleteTarget, setDeleteTarget] = useState<User | null>(null);
+  const [bulkDeleteTargets, setBulkDeleteTargets] = useState<User[]>([]);
+
   const refreshData = () => {
-    refetch();
-    dialog.close();
+    void refetch();
   };
 
-  // Single Delete Handler (from row action button)
-  const handleSingleDelete = (user: User) => {
-    const confirmDelete = window.confirm(
-      `Are you sure you want to delete user "${user.name}"? This action cannot be undone.`,
-    );
-    if (!confirmDelete) return;
-    deleteUser.mutateAsync(String(user.id)).then(() => refetch());
-  };
+  // ── Form Submit Handler ──────────────────────────────────────────────────
 
-  // Bulk Delete Handler (from checkbox selection)
-  const handleBulkDelete = async (selectedUsers: User[]) => {
-    const confirmDelete = window.confirm(
-      `Are you sure you want to delete ${selectedUsers.length} user(s)? This action cannot be undone.`,
-    );
+  const handleSubmit = async (
+    data: UserFormData,
+  ): Promise<SubmitResult | void> => {
+    if (dialog.mode === "edit" && dialog.data) {
+      // Update existing user
+      const response = await userApi.update(String(dialog.data.id), {
+        name: data.name,
+        email: data.email,
+        phone: data.phone || undefined,
+        avatarUrl: data.avatarUrl || undefined,
+        ...(data.password ? { password: data.password } : {}),
+      });
 
-    if (!confirmDelete) return;
+      if (!response) {
+        throw new Error("Failed to update user");
+      }
 
-    for (const user of selectedUsers) {
-      await deleteUser.mutateAsync(String(user.id));
+      // Update status if changed
+      if (response.isActive !== data.isActive) {
+        await userApi.updateStatus(String(dialog.data.id), {
+          isActive: data.isActive,
+        });
+      }
+
+      toast.success("User updated successfully");
+    } else {
+      // Create new user
+      const response = await userApi.create({
+        email: data.email,
+        password: data.password || "",
+        name: data.name,
+        phone: data.phone || "",
+        avatarUrl: data.avatarUrl || undefined,
+      });
+
+      if (!response) {
+        throw new Error("Failed to create user");
+      }
+
+      // Update status if needed
+      if (response.isActive !== data.isActive) {
+        await userApi.updateStatus(String(response.id), {
+          isActive: data.isActive,
+        });
+      }
+
+      toast.success("User created successfully");
     }
-    refetch();
   };
 
-  // Retry Handler
-  const handleRetry = () => {
-    refetch();
+  // ── Delete Handler ───────────────────────────────────────────────────────
+
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+
+    try {
+      await deleteMutation.mutateAsync(String(deleteTarget.id));
+      toast.success(`User "${deleteTarget.name}" deleted successfully`);
+      setDeleteTarget(null);
+      refreshData();
+    } catch {
+      toast.error("Failed to delete user");
+    }
   };
+
+  const handleBulkDelete = (selectedUsers: User[]) => {
+    setBulkDeleteTargets(selectedUsers);
+  };
+
+  const executeBulkDelete = async () => {
+    if (bulkDeleteTargets.length === 0) return;
+
+    try {
+      const results = await Promise.allSettled(
+        bulkDeleteTargets.map((u) => deleteMutation.mutateAsync(String(u.id))),
+      );
+
+      const successCount = results.filter(
+        (result) => result.status === "fulfilled",
+      ).length;
+      const failedCount = results.length - successCount;
+
+      if (successCount > 0) {
+        toast.success(`Successfully deleted ${successCount} user(s)`);
+      }
+
+      if (failedCount > 0) {
+        toast.error(
+          `Failed to delete ${failedCount} user(s). Please try again.`,
+        );
+      }
+
+      setBulkDeleteTargets([]);
+      refreshData();
+    } catch {
+      toast.error("Failed to delete users. Please try again.");
+    }
+  };
+
+  // Transform User to form values (memoized to prevent unnecessary form resets)
+  const formValues = useMemo((): UserFormData | undefined => {
+    if (!dialog.data) return undefined;
+    return {
+      name: dialog.data.name,
+      email: dialog.data.email,
+      password: "",
+      phone: dialog.data.phone || "",
+      avatarUrl: dialog.data.avatarUrl || "",
+      isActive: dialog.data.isActive,
+    };
+  }, [dialog.data]);
+
+  const dialogTitle = useMemo(() => {
+    switch (dialog.mode) {
+      case "create":
+        return "Create User";
+      case "edit":
+        return "Edit User";
+      case "view":
+        return "View User";
+      default:
+        return "User";
+    }
+  }, [dialog.mode]);
 
   return (
     <div className="h-full flex flex-col">
       <div className="flex-1 flex flex-col min-h-0 max-w-7xl mx-auto w-full">
         <PageHeader
           title="User Management"
-          description="Manage all your user"
+          description="Manage all your users"
           action={
             <Button
               onClick={dialog.openCreate}
               className="bg-[#6D4C41] hover:bg-[#5D4037] text-white rounded-full shadow-md hover:shadow-lg transition-all duration-300 cursor-pointer"
             >
               <Plus className="mr-2 h-4 w-4" />
-              Add user
+              Add User
             </Button>
           }
         />
@@ -91,7 +199,7 @@ const UserCRUD = () => {
         <div className="flex-1 min-h-0 flex flex-col bg-white rounded-2xl shadow-lg border border-[#E8DFD6] p-6">
           <CustomerTable
             customers={users}
-            isLoading={isLoading}
+            isLoading={isLoading || deleteMutation.isPending}
             error={
               error
                 ? error instanceof Error
@@ -99,19 +207,60 @@ const UserCRUD = () => {
                   : new Error("Failed to load users")
                 : null
             }
-            onRetry={handleRetry}
+            onRetry={() => void refetch()}
             onBulkDelete={handleBulkDelete}
-            onEdit={dialog.openUpdate}
+            onEdit={dialog.openEdit}
             onView={dialog.openView}
-            onDelete={handleSingleDelete}
+            onDelete={(user) => setDeleteTarget(user)}
           />
         </div>
 
-        {/* CRUD Dialog */}
-        <CrudDialog
-          config={customerConfig}
-          dialog={dialog}
-          onSuccess={refreshData}
+        {/* Form Dialog */}
+        <FormDialog<UserFormData>
+          open={dialog.isOpen}
+          onOpenChange={(open) => !open && dialog.close()}
+          title={dialogTitle}
+          description={
+            dialog.mode === "create"
+              ? "Add a new user. Fill in all required fields."
+              : dialog.mode === "edit"
+                ? "Update the user information below."
+                : "Viewing user details."
+          }
+          size="lg"
+          schema={userSchema}
+          fields={userFields}
+          values={formValues}
+          mode={dialog.mode}
+          onSubmit={handleSubmit}
+          onSuccess={() => {
+            dialog.close();
+            refreshData();
+          }}
+        />
+
+        {/* Delete Confirmation Dialog */}
+        <DeleteDialog<User>
+          open={!!deleteTarget}
+          onOpenChange={(open) => !open && setDeleteTarget(null)}
+          onConfirm={handleDelete}
+          entityName="User"
+          entity={deleteTarget}
+          isDeleting={deleteMutation.isPending}
+          deleteMessage={(user: User) =>
+            `Are you sure you want to delete "${user.name}"? This action cannot be undone.`
+          }
+        />
+
+        {/* Bulk Delete Confirmation Dialog */}
+        <DeleteDialog<User[]>
+          open={bulkDeleteTargets.length > 0}
+          onOpenChange={(open) => !open && setBulkDeleteTargets([])}
+          onConfirm={executeBulkDelete}
+          entityName="Users"
+          entity={bulkDeleteTargets}
+          isDeleting={deleteMutation.isPending}
+          deleteMessage={`Are you sure you want to delete ${bulkDeleteTargets.length} user(s)? This action cannot be undone.`}
         />
       </div>
     </div>
