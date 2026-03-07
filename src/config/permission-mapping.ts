@@ -20,6 +20,8 @@ const ROLE_PERMISSIONS: Record<string, Permission[]> = {
     Permission.VIEW_CUSTOMERS,
     Permission.VIEW_REPORTS,
     Permission.EXPORT_REPORTS,
+    Permission.MANAGE_USER_FRANCHISE_ROLES,
+    Permission.VIEW_USER_FRANCHISE_ROLES,
   ],
 
   MANAGER: [

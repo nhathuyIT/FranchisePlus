@@ -1,30 +1,62 @@
-import type { User } from "@/types/user.type";
+import { Link } from "react-router-dom";
 
-interface ProfileHeaderProps {
-  user: User;
-  primaryRole: string;
-}
+const RECENT_BREWS = [
+  {
+    name: "Ethiopian Yirgacheffe",
+    time: "Ordered 2 days ago",
+    icon: "https://cdn-icons-png.flaticon.com/512/924/924514.png",
+    color: "bg-orange-50 border-orange-200",
+  },
+  {
+    name: "French Press Kit",
+    time: "Ordered 1 week ago",
+    icon: "https://cdn-icons-png.flaticon.com/512/2935/2935308.png",
+    color: "bg-emerald-50 border-emerald-200",
+  },
+  {
+    name: "Almond Croissants (6)",
+    time: "Ordered 2 weeks ago",
+    icon: "https://cdn-icons-png.flaticon.com/512/3081/3081967.png",
+    color: "bg-amber-50 border-amber-200",
+  },
+];
 
-export const ProfileHeader = ({ user, primaryRole }: ProfileHeaderProps) => {
+export const ProfileHeader = () => {
   return (
-    <section className="relative bg-linear-to-br from-[#4E342E] via-[#5D4037] to-[#6D4C41] py-16 overflow-hidden">
-      {/* Decorative elements */}
-      <div className="absolute inset-0 opacity-10">
-        <div className="absolute top-10 left-10 w-32 h-32 rounded-full bg-white/20" />
-        <div className="absolute bottom-5 right-20 w-48 h-48 rounded-full bg-white/10" />
-        <div className="absolute top-1/2 left-1/3 w-24 h-24 rounded-full bg-white/15" />
+    <section className="container mx-auto px-4 max-w-5xl mb-16">
+      {/* Section Title */}
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="font-coffee text-2xl text-[#3E2723]">Recent Brews</h2>
+        <Link
+          to="/client/menu"
+          className="text-sm font-medium text-[#C97B3D] hover:text-[#B5692F] transition-colors hover:underline underline-offset-4"
+        >
+          View All History
+        </Link>
       </div>
 
-      <div className="container mx-auto px-4 text-center relative z-10">
-        <p className="text-[#D7CCC8] text-sm uppercase tracking-[0.3em] mb-3 font-medium">
-          Account
-        </p>
-        <h1 className="text-4xl md:text-5xl font-bold text-white mb-3 tracking-tight">
-          {user.name || "My Profile"}
-        </h1>
-        <p className="text-[#BCAAA4] text-lg">
-          {primaryRole} &bull; {user.email}
-        </p>
+      {/* Recent Brew Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+        {RECENT_BREWS.map((brew) => (
+          <div
+            key={brew.name}
+            className={`flex items-center gap-4 p-5 bg-white rounded-xl border ${brew.color} shadow-sm hover:shadow-md transition-all duration-300 cursor-pointer group`}
+          >
+            <div className="shrink-0 w-12 h-12 rounded-xl bg-[#FAF8F5] border border-[#E8E0D8] flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+              <img
+                src={brew.icon}
+                alt={brew.name}
+                className="w-7 h-7 object-contain"
+              />
+            </div>
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-[#3E2723] truncate">
+                {brew.name}
+              </p>
+              <p className="text-xs text-[#C97B3D] mt-0.5">{brew.time}</p>
+            </div>
+          </div>
+        ))}
       </div>
     </section>
   );
