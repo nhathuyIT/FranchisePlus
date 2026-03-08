@@ -1,23 +1,9 @@
 import { useState, useCallback } from "react";
 import { Plus } from "lucide-react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { ImageUpload } from "@/components/ui/image-upload";
-import { uploadFileToCloudinary } from "@/config/cloudinary";
+import { FormDialog, useFormDialog } from "@/components/form-dialog";
+import type { FieldConfig } from "@/lib/form/field-config";
 import { PageHeader } from "@/components/common/PageHeader";
 import { ProductTable } from "./components/ProductTable";
 import { ViewProductModal } from "./components/ViewProductModal";
@@ -63,6 +49,144 @@ const productSchema = z
 
 type ProductFormData = z.infer<typeof productSchema>;
 
+// ── Field configurations ────────────────────────────────────────────────────
+
+// Helper to get field configs based on role and mode
+const getProductFields = (
+  isManagerView: boolean,
+  mode: "create" | "edit"
+): FieldConfig<ProductFormData>[] => {
+  // Manager editing - only size, price, and status
+  if (isManagerView && mode === "edit") {
+    return [
+      {
+        name: "name",
+        type: "text",
+        label: "Product Name",
+        disabled: true,
+      },
+      {
+        name: "size",
+        type: "text",
+        label: "Size",
+        placeholder: "e.g., XL, M, L",
+        required: true,
+      },
+      {
+        name: "minPrice",
+        type: "number",
+        label: "Price",
+        placeholder: "0.00",
+        step: 0.01,
+        min: 0,
+        required: true,
+      },
+      {
+        name: "isActive",
+        type: "switch",
+        label: "Active",
+      },
+    ];
+  }
+
+  // Manager creating - only SKU, size, and price
+  if (isManagerView && mode === "create") {
+    return [
+      {
+        name: "sku",
+        type: "text",
+        label: "SKU",
+        placeholder: "e.g., NH041-001",
+        required: true,
+      },
+      {
+        name: "size",
+        type: "text",
+        label: "Size",
+        placeholder: "e.g., XL, M, L or DEFAULT",
+        required: true,
+      },
+      {
+        name: "minPrice",
+        type: "number",
+        label: "Price",
+        placeholder: "0.00",
+        step: 0.01,
+        min: 0,
+        required: true,
+      },
+    ];
+  }
+
+  // Admin - full form fields
+  return [
+    {
+      name: "name",
+      type: "text",
+      label: "Name",
+      placeholder: "e.g., Caramel Macchiato",
+      required: true,
+      colSpan: 2,
+    },
+    {
+      name: "sku",
+      type: "text",
+      label: "SKU",
+      placeholder: "e.g., ESP-001",
+      required: true,
+      colSpan: 2,
+    },
+    {
+      name: "imageUrl",
+      type: "image-upload",
+      label: "Product Image",
+      colSpan: 2,
+    },
+    {
+      name: "minPrice",
+      type: "number",
+      label: "Min Price",
+      placeholder: "0.00",
+      step: 0.01,
+      min: 0,
+      required: true,
+      colSpan: 1,
+    },
+    {
+      name: "maxPrice",
+      type: "number",
+      label: "Max Price",
+      placeholder: "0.00",
+      step: 0.01,
+      min: 0,
+      required: true,
+      colSpan: 1,
+    },
+    {
+      name: "description",
+      type: "textarea",
+      label: "Description",
+      placeholder: "Enter product description...",
+      rows: 3,
+      colSpan: 2,
+    },
+    {
+      name: "content",
+      type: "textarea",
+      label: "Content/Ingredients",
+      placeholder: "Product ingredients or details...",
+      rows: 2,
+      colSpan: 2,
+    },
+    {
+      name: "isActive",
+      type: "switch",
+      label: "Active",
+      colSpan: 2,
+    },
+  ];
+};
+
 // ── Default search params ───────────────────────────────────────────────────
 
 const DEFAULT_SEARCH_PARAMS: ProductSearchRequest = {
@@ -84,7 +208,7 @@ const DEFAULT_SEARCH_PARAMS: ProductSearchRequest = {
 const ProductsPage = () => {
   // Auth context - check if user is MANAGER with a franchise
   const { authUser, isAdmin } = useAuthStore();
-  const isManagerView = !isAdmin() && authUser?.currentFranchiseId;
+  const isManagerView = !isAdmin() && !!authUser?.currentFranchiseId;
   const franchiseId = authUser?.currentFranchiseId || "";
 
   // Search & pagination state
@@ -92,9 +216,10 @@ const ProductsPage = () => {
     useState<ProductSearchRequest>(DEFAULT_SEARCH_PARAMS);
 
   // Dialog state
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const dialog = useFormDialog<Product & { franchiseProductId?: string; size?: string }>();
+  
+  // View modal state (separate from form dialog)
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
-  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [viewingProduct, setViewingProduct] = useState<Product | null>(null);
 
   // ── TanStack Query hooks ──────────────────────────────────────────────────
@@ -140,8 +265,8 @@ const ProductsPage = () => {
         size: pf.size || "", // Store size for updates
         sku: pf.productSku || "",
         name: pf.productName || "",
-        description: (pf as any).productDescription || null,
-        content: (pf as any).productContent || null,
+        description: null, // Not returned by backend for franchise products
+        content: null, // Not returned by backend for franchise products
         imageUrl: pf.productImageUrl || null,
         minPrice: pf.priceBase,
         maxPrice: pf.priceBase,
@@ -160,11 +285,6 @@ const ProductsPage = () => {
   const updateMutation = useUpdateProductMutation();
   const deleteMutation = useDeleteProductMutation();
 
-  const isMutating =
-    createMutation.isPending ||
-    updateMutation.isPending ||
-    deleteMutation.isPending;
-
   // ── Search handler ────────────────────────────────────────────────────────
 
   const handleSearch = useCallback((keyword: string) => {
@@ -175,44 +295,24 @@ const ProductsPage = () => {
     }));  
   }, []);
 
-  // ── Form ──────────────────────────────────────────────────────────────────
+  // ── Form submission handler ──────────────────────────────────────────────
 
-  const {
-    register,
-    handleSubmit,
-    reset,
-    setValue,
-    watch,
-    formState: { errors: formErrors },
-  } = useForm<ProductFormData>({
-    resolver: zodResolver(productSchema),
-    defaultValues: {
-      sku: "",
-      name: "",
-      size: "",
-      description: "",
-      content: "",
-      imageUrl: "",
-      minPrice: 0,
-      maxPrice: 0,
-      isActive: true,
-    },
-  });
-
-  const onSubmit = (data: ProductFormData) => {
+  const handleSubmit = async (data: ProductFormData) => {
     console.log("[Products Page] Form submitted with data:", data);
     console.log("[Products Page] Is manager view:", isManagerView);
-    console.log("[Products Page] Editing product:", editingProduct);
+    console.log("[Products Page] Dialog mode:", dialog.mode);
     
     // For managers, set maxPrice equal to minPrice since they only edit one price
     if (isManagerView) {
       data.maxPrice = data.minPrice;
     }
     
-    if (editingProduct) {
+    if (dialog.mode === "edit" && dialog.data) {
+      const editingProduct = dialog.data;
+      
       // Manager editing franchise product
-      if (isManagerView && (editingProduct as any).franchiseProductId) {
-        const franchiseProductId = (editingProduct as any).franchiseProductId;
+      if (isManagerView && editingProduct.franchiseProductId) {
+        const franchiseProductId = editingProduct.franchiseProductId;
         
         console.log("[Products Page] Manager editing franchise product:", franchiseProductId);
         
@@ -228,30 +328,16 @@ const ProductsPage = () => {
         const statusChanged = editingProduct.isActive !== data.isActive;
         
         // Always update size/price, then optionally change status
-        updateProductFranchiseMutation.mutate(
-          { id: franchiseProductId, data: updatePayload },
-          {
-            onSuccess: () => {
-              // If status also changed, call the change status endpoint
-              if (statusChanged) {
-                changeStatusProductFranchiseMutation.mutate(
-                  { id: franchiseProductId, data: { is_active: data.isActive } },
-                  {
-                    onSuccess: () => {
-                      setIsDialogOpen(false);
-                      setEditingProduct(null);
-                      reset();
-                    },
-                  },
-                );
-              } else {
-                setIsDialogOpen(false);
-                setEditingProduct(null);
-                reset();
-              }
-            },
-          },
+        await updateProductFranchiseMutation.mutateAsync(
+          { id: franchiseProductId, data: updatePayload }
         );
+        
+        // If status also changed, call the change status endpoint
+        if (statusChanged) {
+          await changeStatusProductFranchiseMutation.mutateAsync(
+            { id: franchiseProductId, data: { is_active: data.isActive } }
+          );
+        }
       } else {
         // Admin editing global product
         const payload = {
@@ -264,15 +350,8 @@ const ProductsPage = () => {
           max_price: data.maxPrice,
           is_active: data.isActive,
         };
-        updateMutation.mutate(
-          { id: editingProduct.id, data: payload },
-          {
-            onSuccess: () => {
-              setIsDialogOpen(false);
-              setEditingProduct(null);
-              reset();
-            },
-          },
+        await updateMutation.mutateAsync(
+          { id: editingProduct.id, data: payload }
         );
       }
     } else {
@@ -280,36 +359,22 @@ const ProductsPage = () => {
       if (isManagerView) {
         // Manager creating a product franchise entry
         // Search global products by SKU
-        const searchForProduct = async () => {
-          try {
-            const searchResult = await refetchGlobal();
-            const allGlobalProducts = searchResult.data ?? [];
-            const existingProduct = allGlobalProducts.find((p) => p.sku === data.sku);
-            
-            if (!existingProduct) {
-              alert("Product not found. Please select a valid product SKU.");
-              return;
-            }
-            
-            const franchisePayload = {
-              franchise_id: franchiseId,
-              product_id: String(existingProduct.id),
-              size: data.size || "",
-              price_base: data.minPrice,
-            };
-            
-            createProductFranchiseMutation.mutate(franchisePayload, {
-              onSuccess: () => {
-                setIsDialogOpen(false);
-                reset();
-              },
-            });
-          } catch (error) {
-            alert("Failed to search for product. Please try again.");
-          }
+        const searchResult = await refetchGlobal();
+        const allGlobalProducts = searchResult.data ?? [];
+        const existingProduct = allGlobalProducts.find((p) => p.sku === data.sku);
+        
+        if (!existingProduct) {
+          throw new Error("Product not found. Please select a valid product SKU.");
+        }
+        
+        const franchisePayload = {
+          franchise_id: franchiseId,
+          product_id: String(existingProduct.id),
+          size: data.size || "",
+          price_base: data.minPrice,
         };
         
-        void searchForProduct();
+        await createProductFranchiseMutation.mutateAsync(franchisePayload);
       } else {
         // Admin creating a global product
         const payload = {
@@ -322,12 +387,7 @@ const ProductsPage = () => {
           max_price: data.maxPrice,
           is_active: data.isActive,
         };
-        createMutation.mutate(payload, {
-          onSuccess: () => {
-            setIsDialogOpen(false);
-            reset();
-          },
-        });
+        await createMutation.mutateAsync(payload);
       }
     }
   };
@@ -335,34 +395,17 @@ const ProductsPage = () => {
   // ── Handlers ──────────────────────────────────────────────────────────────
 
   const handleEdit = (product: Product) => {
-    setEditingProduct(product);
-    setValue("sku", product.sku);
-    setValue("name", product.name);
-    setValue("size", (product as any).size || "");
-    setValue("description", product.description || "");
-    setValue("content", product.content || "");
-    setValue("imageUrl", product.imageUrl || "");
-    setValue("minPrice", product.minPrice);
-    // For managers, set maxPrice high to avoid validation issues
-    setValue("maxPrice", isManagerView ? 999999 : (product.maxPrice || product.minPrice));
-    setValue("isActive", product.isActive);
-    setIsDialogOpen(true);
+    const editData = {
+      ...product,
+      franchiseProductId: (product as any).franchiseProductId,
+      size: (product as any).size || "",
+    };
+    dialog.openEdit(editData);
   };
 
   const handleView = (product: Product) => {
     setViewingProduct(product);
     setIsViewModalOpen(true);
-  };
-
-  const handleCreate = () => {
-    setEditingProduct(null);
-    reset();
-    // For manager create, set default values for fields not in form
-    if (isManagerView) {
-      setValue("name", "temp"); // Will be replaced by API lookup
-      setValue("maxPrice", 999999); // Set high to pass validation, will be set to minPrice in onSubmit
-    }
-    setIsDialogOpen(true);
   };
 
   const handleDelete = (product: Product) => {
@@ -399,6 +442,25 @@ const ProductsPage = () => {
     void refetch();
   };
 
+  // Get dynamic field configuration
+  const formMode = (dialog.mode === "create" || dialog.mode === "edit") ? dialog.mode : "create";
+  const productFields = getProductFields(isManagerView, formMode);
+
+  // Prepare form values - need to set hidden fields for manager create mode validation
+  const formValues = dialog.data 
+    ? {
+        ...dialog.data,
+        // For manager edit, set maxPrice to pass validation
+        maxPrice: isManagerView ? 999999 : dialog.data.maxPrice,
+      }
+    : isManagerView 
+      ? {
+          // Manager create defaults
+          name: "temp", // Will be replaced by API lookup
+          maxPrice: 999999, // Set high to pass validation
+        }
+      : undefined;
+
   return (
     <div className="h-full flex flex-col">
       <div className="flex-1 flex flex-col min-h-0 max-w-7xl mx-auto w-full">
@@ -410,363 +472,13 @@ const ProductsPage = () => {
               : "Manage all products and pricing"
           }
           action={
-            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-              <DialogTrigger asChild>
-                <Button
-                  onClick={handleCreate}
-                  className="bg-[#6D4C41] hover:bg-[#5D4037] text-white rounded-full shadow-md hover:shadow-lg transition-all duration-300 cursor-pointer"
-                >
-                  <Plus className="mr-2 h-4 w-4" />
-                  Add Product
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-[600px] bg-white max-h-[90vh] overflow-y-auto">
-                <DialogHeader>
-                  <DialogTitle className="text-2xl font-bold text-[#3E2723]">
-                    {editingProduct ? "Edit Product" : "Create New Product"}
-                  </DialogTitle>
-                  <DialogDescription className="text-[#5D4037]">
-                    {editingProduct
-                      ? "Update the product information below."
-                      : "Add a new product to your catalog. Fill in all required fields."}
-                  </DialogDescription>
-                </DialogHeader>
-                <form onSubmit={handleSubmit(onSubmit, (errors) => {
-                  console.log("[Products Page] Form validation errors:", errors);
-                })}>
-                  <div className="grid gap-4 py-4">
-                    {/* Manager View - Only editable fields */}
-                    {isManagerView && editingProduct ? (
-                      <>
-                        <div className="grid gap-2">
-                          <Label className="text-[#3E2723] font-medium">
-                            Product Name
-                          </Label>
-                          <Input
-                            value={editingProduct.name}
-                            disabled
-                            className="bg-gray-50"
-                          />
-                        </div>
-
-                        <div className="grid gap-2">
-                          <Label
-                            htmlFor="size"
-                            className="text-[#3E2723] font-medium"
-                          >
-                            Size <span className="text-red-500">*</span>
-                          </Label>
-                          <Input
-                            id="size"
-                            placeholder="e.g., XL, M, L"
-                            {...register("size")}
-                            className={formErrors.size ? "border-red-500" : ""}
-                          />
-                          {formErrors.size && (
-                            <p className="text-sm text-red-500">
-                              {formErrors.size.message}
-                            </p>
-                          )}
-                        </div>
-
-                        <div className="grid gap-2">
-                          <Label
-                            htmlFor="minPrice"
-                            className="text-[#3E2723] font-medium"
-                          >
-                            Price <span className="text-red-500">*</span>
-                          </Label>
-                          <Input
-                            id="minPrice"
-                            type="number"
-                            step="0.01"
-                            placeholder="0.00"
-                            {...register("minPrice", { valueAsNumber: true })}
-                            className={
-                              formErrors.minPrice ? "border-red-500" : ""
-                            }
-                          />
-                          {formErrors.minPrice && (
-                            <p className="text-sm text-red-500">
-                              {formErrors.minPrice.message}
-                            </p>
-                          )}
-                        </div>
-
-                        <div className="flex items-center gap-2">
-                          <input
-                            type="checkbox"
-                            id="isActive"
-                            {...register("isActive")}
-                            className="w-4 h-4 text-[#6D4C41] border-gray-300 rounded focus:ring-[#6D4C41]"
-                          />
-                          <Label
-                            htmlFor="isActive"
-                            className="text-[#3E2723] font-medium cursor-pointer"
-                          >
-                            Active
-                          </Label>
-                        </div>
-                      </>
-                    ) : (
-                      /* Admin View or Manager Create - All fields */
-                      <>
-                        {isManagerView ? (
-                          /* Manager Create Form - Simplified */
-                          <>
-                            <div className="grid gap-2">
-                              <Label
-                                htmlFor="sku"
-                                className="text-[#3E2723] font-medium"
-                              >
-                                SKU <span className="text-red-500">*</span>
-                              </Label>
-                              <Input
-                                id="sku"
-                                placeholder="e.g., NH041-001"
-                                {...register("sku")}
-                                className={formErrors.sku ? "border-red-500" : ""}
-                              />
-                              {formErrors.sku && (
-                                <p className="text-sm text-red-500">
-                                  {formErrors.sku.message}
-                                </p>
-                              )}
-                            </div>
-
-                            <div className="grid gap-2">
-                              <Label
-                                htmlFor="size"
-                                className="text-[#3E2723] font-medium"
-                              >
-                                Size <span className="text-red-500">*</span>
-                              </Label>
-                              <Input
-                                id="size"
-                                placeholder="e.g., XL, M, L or DEFAULT"
-                                {...register("size")}
-                                className={formErrors.size ? "border-red-500" : ""}
-                              />
-                              {formErrors.size && (
-                                <p className="text-sm text-red-500">
-                                  {formErrors.size.message}
-                                </p>
-                              )}
-                            </div>
-
-                            <div className="grid gap-2">
-                              <Label
-                                htmlFor="minPrice"
-                                className="text-[#3E2723] font-medium"
-                              >
-                                Price <span className="text-red-500">*</span>
-                              </Label>
-                              <Input
-                                id="minPrice"
-                                type="number"
-                                step="0.01"
-                                placeholder="0.00"
-                                {...register("minPrice", { valueAsNumber: true })}
-                                className={
-                                  formErrors.minPrice ? "border-red-500" : ""
-                                }
-                              />
-                              {formErrors.minPrice && (
-                                <p className="text-sm text-red-500">
-                                  {formErrors.minPrice.message}
-                                </p>
-                              )}
-                            </div>
-                          </>
-                        ) : (
-                          /* Admin Create/Edit Form - Full Fields */
-                          <>
-                            <div className="grid gap-2">
-                              <Label
-                                htmlFor="name"
-                                className="text-[#3E2723] font-medium"
-                              >
-                                Name <span className="text-red-500">*</span>
-                              </Label>
-                              <Input
-                                id="name"
-                                placeholder="e.g., Caramel Macchiato"
-                                {...register("name")}
-                                className={formErrors.name ? "border-red-500" : ""}
-                              />
-                              {formErrors.name && (
-                                <p className="text-sm text-red-500">
-                                  {formErrors.name.message}
-                                </p>
-                              )}
-                            </div>
-
-                            <div className="grid gap-2">
-                              <Label
-                                htmlFor="sku"
-                                className="text-[#3E2723] font-medium"
-                              >
-                                SKU <span className="text-red-500">*</span>
-                              </Label>
-                              <Input
-                                id="sku"
-                                placeholder="e.g., ESP-001"
-                                {...register("sku")}
-                                className={formErrors.sku ? "border-red-500" : ""}
-                              />
-                              {formErrors.sku && (
-                                <p className="text-sm text-red-500">
-                                  {formErrors.sku.message}
-                                </p>
-                              )}
-                            </div>
-
-                            <div className="grid gap-2">
-                              <Label
-                                htmlFor="imageUrl"
-                                className="text-[#3E2723] font-medium"
-                              >
-                                Product Image
-                              </Label>
-                              <ImageUpload
-                                value={watch("imageUrl") || ""}
-                                onChange={(url) => setValue("imageUrl", url)}
-                                onUpload={uploadFileToCloudinary}
-                                disabled={isMutating}
-                              />
-                              {formErrors.imageUrl && (
-                                <p className="text-sm text-red-500">
-                                  {formErrors.imageUrl.message}
-                                </p>
-                              )}
-                            </div>
-
-                            <div className="grid grid-cols-2 gap-4">
-                              <div className="grid gap-2">
-                                <Label
-                                  htmlFor="minPrice"
-                                  className="text-[#3E2723] font-medium"
-                                >
-                                  Min Price <span className="text-red-500">*</span>
-                                </Label>
-                                <Input
-                                  id="minPrice"
-                                  type="number"
-                                  step="0.01"
-                                  placeholder="0.00"
-                                  {...register("minPrice", { valueAsNumber: true })}
-                                  className={
-                                    formErrors.minPrice ? "border-red-500" : ""
-                                  }
-                                />
-                                {formErrors.minPrice && (
-                                  <p className="text-sm text-red-500">
-                                    {formErrors.minPrice.message}
-                                  </p>
-                                )}
-                              </div>
-                              <div className="grid gap-2">
-                                <Label
-                                  htmlFor="maxPrice"
-                                  className="text-[#3E2723] font-medium"
-                                >
-                                  Max Price <span className="text-red-500">*</span>
-                                </Label>
-                                <Input
-                                  id="maxPrice"
-                                  type="number"
-                                  step="0.01"
-                                  placeholder="0.00"
-                                  {...register("maxPrice", { valueAsNumber: true })}
-                                  className={
-                                    formErrors.maxPrice ? "border-red-500" : ""
-                                  }
-                                />
-                                {formErrors.maxPrice && (
-                                  <p className="text-sm text-red-500">
-                                    {formErrors.maxPrice.message}
-                                  </p>
-                                )}
-                              </div>
-                            </div>
-
-                            <div className="grid gap-2">
-                              <Label
-                                htmlFor="description"
-                                className="text-[#3E2723] font-medium"
-                              >
-                                Description
-                              </Label>
-                              <Textarea
-                                id="description"
-                                placeholder="Enter product description..."
-                                rows={3}
-                                {...register("description")}
-                              />
-                            </div>
-
-                            <div className="grid gap-2">
-                              <Label
-                                htmlFor="content"
-                                className="text-[#3E2723] font-medium"
-                              >
-                                Content/Ingredients
-                              </Label>
-                              <Textarea
-                                id="content"
-                                placeholder="Product ingredients or details..."
-                                rows={2}
-                                {...register("content")}
-                              />
-                            </div>
-
-                            <div className="flex items-center gap-2">
-                              <input
-                                type="checkbox"
-                                id="isActive"
-                                {...register("isActive")}
-                                className="w-4 h-4 text-[#6D4C41] border-gray-300 rounded focus:ring-[#6D4C41]"
-                              />
-                              <Label
-                                htmlFor="isActive"
-                                className="text-[#3E2723] font-medium cursor-pointer"
-                              >
-                                Active
-                              </Label>
-                            </div>
-                          </>
-                        )}
-                      </>
-                    )}
-                  </div>
-                  <DialogFooter>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => {
-                        setIsDialogOpen(false);
-                        setEditingProduct(null);
-                        reset();
-                      }}
-                      className="border-[#E8DFD6] text-[#5D4037] hover:bg-[#FAF8F5]"
-                    >
-                      Cancel
-                    </Button>
-                    <Button
-                      type="submit"
-                      disabled={isMutating}
-                      className="bg-[#6D4C41] hover:bg-[#5D4037] text-white"
-                    >
-                      {isMutating
-                        ? "Saving..."
-                        : editingProduct
-                          ? "Update Product"
-                          : "Create Product"}
-                    </Button>
-                  </DialogFooter>
-                </form>
-              </DialogContent>
-            </Dialog>
+            <Button
+              onClick={dialog.openCreate}
+              className="bg-[#6D4C41] hover:bg-[#5D4037] text-white rounded-full shadow-md hover:shadow-lg transition-all duration-300 cursor-pointer"
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              Add Product
+            </Button>
           }
         />
 
@@ -793,6 +505,25 @@ const ProductsPage = () => {
           }}
         />
       </div>
+
+      <FormDialog<ProductFormData>
+        open={dialog.isOpen}
+        onOpenChange={(open) => !open && dialog.close()}
+        title={dialog.mode === "create" ? "Create New Product" : "Edit Product"}
+        description={
+          dialog.mode === "create"
+            ? "Add a new product to your catalog. Fill in all required fields."
+            : "Update the product information below."
+        }
+        schema={productSchema}
+        fields={productFields}
+        values={formValues as any}
+        mode={dialog.mode}
+        onSubmit={handleSubmit}
+        onSuccess={dialog.close}
+        size="lg"
+        columns={2}
+      />
     </div>
   );
 };

@@ -59,19 +59,23 @@ export const ViewProductModal = ({ product, isOpen, onClose }: ViewProductModalP
             <p className="text-lg font-semibold text-[#3E2723]">{product.name}</p>
           </div>
 
-          <div>
-            <h3 className="text-sm font-medium text-[#5D4037] mb-1">Description</h3>
-            <p className="text-base text-[#3E2723]">
-              {product.description || <span className="text-gray-400">No description provided</span>}
-            </p>
-          </div>
+          {product.description !== null && (
+            <div>
+              <h3 className="text-sm font-medium text-[#5D4037] mb-1">Description</h3>
+              <p className="text-base text-[#3E2723]">
+                {product.description || <span className="text-gray-400">No description provided</span>}
+              </p>
+            </div>
+          )}
 
-          <div>
-            <h3 className="text-sm font-medium text-[#5D4037] mb-1">Content/Ingredients</h3>
-            <p className="text-base text-[#3E2723]">
-              {product.content || <span className="text-gray-400">No content provided</span>}
-            </p>
-          </div>
+          {product.content !== null && (
+            <div>
+              <h3 className="text-sm font-medium text-[#5D4037] mb-1">Content/Ingredients</h3>
+              <p className="text-base text-[#3E2723]">
+                {product.content || <span className="text-gray-400">No content provided</span>}
+              </p>
+            </div>
+          )}
 
           <div className="grid grid-cols-2 gap-4">
             <div>
