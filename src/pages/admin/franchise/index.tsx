@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -21,6 +22,7 @@ import type {
   FranchiseCreateRequest,
   FranchiseUpdateRequest,
 } from "@/api/franchise/franchise.type";
+import { ROUTER_URL } from "@/router/route.const";
 
 /**
  * Franchise List Page
@@ -32,6 +34,7 @@ import type {
  * - STAFF: No access to franchise list
  */
 const FranchiseList = () => {
+  const navigate = useNavigate();
   const { authUser, getCurrentPermissions } = useAuthStore();
   const userPermissions = getCurrentPermissions();
 
@@ -218,7 +221,9 @@ const FranchiseList = () => {
       return;
     }
 
-    dialog.openView(franchise);
+    navigate(
+      `${ROUTER_URL.ADMIN}/${ROUTER_URL.ADMIN_ROUTER.FRANCHISES}/${franchise.id}`,
+    );
   };
 
   const handleOpenDelete = (franchise: Franchise) => {
