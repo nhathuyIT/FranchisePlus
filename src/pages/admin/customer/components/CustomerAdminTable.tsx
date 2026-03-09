@@ -1,10 +1,11 @@
+import { useMemo } from "react";
 import { Eye, Pencil, Trash2 } from "lucide-react";
 import {
   DataTable,
   type ColumnFilter,
   type BulkAction,
 } from "@/components/common/DataTable";
-import { customerAdminColumns } from "../columns/customer-admin.columns";
+import { createCustomerAdminColumns } from "../columns/customer-admin.columns";
 import { Button } from "@/components/ui/button";
 import type { CustomerProfile } from "@/types/customer";
 
@@ -17,6 +18,9 @@ interface CustomerAdminTableProps {
   onEdit?: (customer: CustomerProfile) => void;
   onView?: (customer: CustomerProfile) => void;
   onDelete?: (customer: CustomerProfile) => void;
+  onStatusToggle?: (row: CustomerProfile, isActive: boolean) => void;
+  statusPendingId?: string | null;
+  canEdit?: boolean;
 }
 
 export const CustomerAdminTable = ({
@@ -28,6 +32,9 @@ export const CustomerAdminTable = ({
   onEdit,
   onView,
   onDelete,
+  onStatusToggle,
+  statusPendingId,
+  canEdit,
 }: CustomerAdminTableProps) => {
   const columnFilters: ColumnFilter[] = [
     {
@@ -50,6 +57,11 @@ export const CustomerAdminTable = ({
     },
   ];
 
+  const columns = useMemo(
+    () => createCustomerAdminColumns({ onStatusToggle, statusPendingId, canEdit }),
+    [onStatusToggle, statusPendingId, canEdit]
+  );
+
   const bulkActions: BulkAction<CustomerProfile>[] = [];
 
   if (onBulkDelete) {
@@ -63,7 +75,7 @@ export const CustomerAdminTable = ({
 
   return (
     <DataTable
-      columns={customerAdminColumns}
+      columns={columns}
       data={customers}
       isLoading={isLoading}
       error={error}

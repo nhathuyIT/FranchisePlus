@@ -98,6 +98,24 @@ export const useDeleteProductMutation = () => {
   });
 };
 
+export const useUpdateProductStatusMutation = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, isActive }: { id: number; isActive: boolean }) =>
+      productApi.updateProduct(id, { is_active: isActive } as UpdateProductRequest),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: PRODUCT_KEYS.all });
+      toast.success("Product status updated successfully!");
+    },
+    onError: (error: Error) => {
+      toast.error("Failed to update product status", {
+        description: error.message,
+      });
+    },
+  });
+};
+
 export const useRestoreProductMutation = () => {
   const queryClient = useQueryClient();
 

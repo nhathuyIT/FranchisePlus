@@ -2,9 +2,16 @@ import type { ColumnDef } from "@tanstack/react-table";
 import { User as UserIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { StatusToggleCell } from "@/components/common/StatusToggleCell";
 import type { User } from "@/types/user.type";
 
-export const customerColumns: ColumnDef<User>[] = [
+interface ColumnOptions {
+  onStatusToggle?: (row: User, isActive: boolean) => void;
+  statusPendingId?: string | null;
+  canEdit?: boolean;
+}
+
+export const createCustomerColumns = (options?: ColumnOptions): ColumnDef<User>[] => [
   {
     accessorKey: "avatarUrl",
     header: "Avatar",
@@ -61,17 +68,28 @@ export const customerColumns: ColumnDef<User>[] = [
       // filterValue will be boolean after conversion in DataTable
       return row.original.isActive === filterValue;
     },
-    cell: ({ row }) => (
-      <Badge
-        variant={row.original.isActive ? "default" : "secondary"}
-        className={
-          row.original.isActive
-            ? "bg-green-600 hover:bg-green-700 rounded-full"
-            : "bg-gray-500 hover:bg-gray-600 rounded-full"
-        }
-      >
-        {row.original.isActive ? "Active" : "Inactive"}
-      </Badge>
-    ),
+    cell: ({ row }) => {
+      if (options?.onStatusToggle && options.canEdit) {
+        return (
+          <StatusToggleCell
+            isActive={row.original.isActive}
+            onToggle={(val) => options.onStatusToggle!(row.original, val)}
+            isPending={options.statusPendingId === String(row.original.id)}
+          />
+        );
+      }
+      return (
+        <Badge
+          variant={row.original.isActive ? "default" : "secondary"}
+          className={
+            row.original.isActive
+              ? "bg-green-600 hover:bg-green-700 rounded-full"
+              : "bg-gray-500 hover:bg-gray-600 rounded-full"
+          }
+        >
+          {row.original.isActive ? "Active" : "Inactive"}
+        </Badge>
+      );
+    },
   },
 ];
