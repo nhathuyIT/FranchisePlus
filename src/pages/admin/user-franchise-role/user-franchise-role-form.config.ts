@@ -4,17 +4,20 @@ import {
 } from "@/lib/schemas/user-franchise-role.schema";
 import type { FieldConfig } from "@/lib/form/field-config";
 import type { SelectOption } from "@/lib/form/field-config";
+import type { RoleSelectItem } from "@/api/role/role.type";
 import * as userApi from "@/api/user/user.api";
 
 /**
  * Build form fields for user–franchise–role assignment.
  *
- * @param roleOptions   - Pre-loaded roles for the select dropdown
+ * @param roleOptions      - Pre-loaded roles for the select dropdown
  * @param franchiseOptions - Pre-loaded franchises for the select dropdown
+ * @param roles            - Full role list (used to check scope for disabling franchise)
  */
 export const buildUserFranchiseRoleFields = (
   roleOptions: SelectOption<string>[],
   franchiseOptions: SelectOption<string>[],
+  roles: RoleSelectItem[] = [],
 ): FieldConfig<UserFranchiseRoleFormData>[] => [
   {
     name: "userId",
@@ -43,24 +46,28 @@ export const buildUserFranchiseRoleFields = (
     },
   },
   {
-    name: "franchiseId",
-    type: "select",
-    label: "Franchise",
-    placeholder: "Select franchise (leave empty for global role)",
-    description:
-      "Select the franchise this role is scoped to. Leave blank for a global role.",
-    options: [
-      { label: "— Global (no franchise) —", value: "__global__" },
-      ...franchiseOptions,
-    ],
-  },
-  {
     name: "roleId",
     type: "select",
     label: "Role",
     placeholder: "Select role",
     required: true,
     options: roleOptions,
+  },
+  {
+    name: "franchiseId",
+    type: "select",
+    label: "Franchise",
+    placeholder: "Select franchise (leave empty for global role)",
+    description:
+      "Select the franchise this role is scoped to. Disabled for global (Admin) roles.",
+    disabled: (form) => {
+      const roleId = form.watch("roleId");
+      return roles.some((r) => r.value === roleId && r.scope === "GLOBAL");
+    },
+    options: [
+      { label: "— Global (no franchise) —", value: "__global__" },
+      ...franchiseOptions,
+    ],
   },
 ];
 
