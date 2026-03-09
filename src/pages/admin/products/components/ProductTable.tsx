@@ -38,8 +38,6 @@ export const ProductTable = ({
   onBulkDelete,
   onSearch,
 }: ProductTableProps) => {
-<<<<<<< HEAD
-=======
   // Server-side search state
   const [searchInput, setSearchInput] = useState("");
 
@@ -57,7 +55,6 @@ export const ProductTable = ({
     }
   };
 
->>>>>>> dev
   // Excel Export
   const { exportToExcel, isExporting } = useExcelExport({
     headerMapping: PRODUCT_REVERSE_HEADER_MAPPING,
@@ -116,62 +113,6 @@ export const ProductTable = ({
   }
 
   return (
-<<<<<<< HEAD
-    <DataTable
-      columns={productColumns}
-      data={products}
-      isLoading={isLoading}
-      error={error}
-      onRetry={onRetry}
-      searchable
-      searchPlaceholder="Search by name, SKU, or category..."
-      emptyMessage="No products found matching your search."
-      initialPageSize={10}
-      enableRowSelection={!!onBulkDelete}
-      enableColumnVisibility
-      columnFilters={columnFilters}
-      bulkActions={bulkActions}
-      // Excel Import/Export
-      onExport={handleExport}
-      isExporting={isExporting}
-      onImport={handleImport}
-      isImporting={isImporting}
-      exportLabel="Export Excel"
-      importLabel="Import Excel"
-      renderActions={(product) => (
-        <>
-          {onView && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => onView(product)}
-              className="border-2 border-[#6D4C41] text-[#6D4C41] hover:bg-[#6D4C41] hover:text-white rounded-lg transition-all duration-200 cursor-pointer"
-            >
-              <Eye className="h-4 w-4" />
-            </Button>
-          )}
-          {onEdit && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => onEdit(product)}
-              className="border-2 border-[#D97706] text-[#D97706] hover:bg-[#D97706] hover:text-white rounded-lg transition-all duration-200 cursor-pointer"
-            >
-              <Pencil className="h-4 w-4" />
-            </Button>
-          )}
-          {onDelete && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => onDelete(product)}
-              className="border-2 border-red-500 text-red-500 hover:bg-red-500 hover:text-white rounded-lg transition-all duration-200 cursor-pointer"
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
-          )}
-        </>
-=======
     <div className="flex flex-col h-full gap-4">
       {/* Server-side search input */}
       {onSearch && (
@@ -193,7 +134,6 @@ export const ProductTable = ({
             Search
           </Button>
         </div>
->>>>>>> dev
       )}
 
       <DataTable

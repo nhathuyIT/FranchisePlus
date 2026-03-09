@@ -8,6 +8,13 @@ interface AdminProfileResponse extends GetProfileResponse {
   activeContext: ActiveContext | null;
 }
 
+/** Payload accepted by updateAdminProfile */
+export interface UpdateAdminProfileRequest {
+  name?: string;
+  phone?: string;
+  avatar_url?: string;
+}
+
 /**
  * GET /api/auth
  * Fetches the current authenticated admin's profile.
@@ -22,4 +29,18 @@ export const getAdminProfile = async (): Promise<AdminProfileResponse> => {
   }
 
   return response;
+};
+
+/**
+ * PUT /api/users/:id
+ * Updates the current admin's profile (name, phone, avatar).
+ */
+export const updateAdminProfile = async (
+  userId: string,
+  data: UpdateAdminProfileRequest,
+): Promise<void> => {
+  await httpClient.put<unknown, UpdateAdminProfileRequest>({
+    url: `/api/users/${encodeURIComponent(userId)}`,
+    data,
+  });
 };

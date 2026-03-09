@@ -33,10 +33,6 @@ export const FranchiseTable = ({
   onView,
   onDelete,
 }: FranchiseTableProps) => {
-<<<<<<< HEAD
-  // Excel Export
-=======
->>>>>>> dev
   const { exportToExcel, isExporting } = useExcelExport({
     headerMapping: FRANCHISE_REVERSE_HEADER_MAPPING,
     fileName: "franchises",
@@ -44,23 +40,12 @@ export const FranchiseTable = ({
     excludeColumns: ["logoUrl"],
   });
 
-<<<<<<< HEAD
-  // Excel Import
-=======
->>>>>>> dev
   const { importFromExcel, isImporting } = useExcelImport({
     schema: FranchiseImportSchema,
     headerMapping: FRANCHISE_HEADER_MAPPING,
   });
 
   const handleExport = () => {
-<<<<<<< HEAD
-    exportToExcel(franchises as unknown as Record<string, unknown>[]).then(() => {
-      toast.success("Excel exported successfully!");
-    }).catch(() => {
-      toast.error("Excel export failed!");
-    });
-=======
     exportToExcel(franchises as unknown as Record<string, unknown>[])
       .then(() => {
         toast.success("Excel exported successfully!");
@@ -68,29 +53,17 @@ export const FranchiseTable = ({
       .catch(() => {
         toast.error("Excel export failed!");
       });
->>>>>>> dev
   };
 
   const handleImport = async (file: File) => {
     const result = await importFromExcel(file);
     if (result.success) {
       toast.success(`Successfully imported ${result.validRows} rows`);
-<<<<<<< HEAD
-      // TODO: call API to save result.data
-    } else {
-      toast.error(`Import failed: ${result.validRows} valid, ${result.invalidRows} errors`);
-      result.errors.forEach((err) => console.warn(`Row ${err.row} - ${err.field}: ${err.message}`));
-    }
-  };
-
-  // Column Filters Configuration
-=======
     } else {
       toast.error(`Import failed: ${result.validRows} valid, ${result.invalidRows} errors`);
     }
   };
 
->>>>>>> dev
   const columnFilters: ColumnFilter[] = [
     {
       id: "isActive",
@@ -130,10 +103,6 @@ export const FranchiseTable = ({
       defaultHiddenColumns={["address", "closedAt"]}
       columnFilters={columnFilters}
       bulkActions={bulkActions}
-<<<<<<< HEAD
-      // Excel Import/Export
-=======
->>>>>>> dev
       onExport={handleExport}
       isExporting={isExporting}
       onImport={handleImport}
