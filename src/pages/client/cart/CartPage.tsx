@@ -1,7 +1,6 @@
 import React from "react";
 import { useCart } from "./useCart";
 import { Link, useNavigate } from "react-router-dom";
-import { PRODUCTS_CLIENT } from "@/const/product-client.const";
 import emptyCartIcon from "@/assets/icons/empty-cart.svg";
 import coffeeCupIcon from "@/assets/icons/coffee-cup.svg";
 
@@ -10,12 +9,6 @@ const CartPage: React.FC = () => {
     useCart();
 
   const navigate = useNavigate();
-
-  // Helper function to get product image
-  const getProductImage = (productId: number): string => {
-    const product = PRODUCTS_CLIENT.find((p) => p.id === productId);
-    return product?.imageUrl || "/placeholder-coffee.jpg";
-  };
 
   const handleIncrease = (productId: number) => {
     const item = cart.items.find(
@@ -59,7 +52,7 @@ const CartPage: React.FC = () => {
               chúng tôi và chọn những ly cà phê yêu thích!
             </p>
             <Link
-              to="/client/menu"
+              to="/menu"
               className="inline-block bg-[#5B4037] text-white px-8 py-3 rounded-lg font-semibold hover:bg-amber-800 transition-colors"
             >
               Xem Menu
@@ -107,7 +100,7 @@ const CartPage: React.FC = () => {
                   <td className="px-6 py-4">
                     <div className="w-20 h-20 bg-amber-50 rounded-lg border border-gray-200 overflow-hidden">
                       <img
-                        src={getProductImage(item.productFranchiseId)}
+                        src={item.imageUrl || coffeeCupIcon}
                         alt={item.productNameSnapshot}
                         className="w-full h-full object-cover"
                         onError={(e) => {
@@ -202,7 +195,7 @@ const CartPage: React.FC = () => {
         {/* Action Buttons */}
         <div className="flex justify-between gap-4">
           <Link
-            to="/client/menu"
+            to="/menu"
             className="bg-[#B8860B] text-white px-8 py-3 rounded font-semibold hover:bg-amber-700 transition-colors"
           >
             Continue Shopping
