@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Eye, Pencil, Trash2, Search } from "lucide-react";
 import { DataTable, type ColumnFilter, type BulkAction } from "@/components/common/DataTable";
-import { productColumns } from "../columns/product.columns";
+import { createProductColumns } from "../columns/product.columns";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import type { Product } from "@/types/product.type";
@@ -25,6 +25,9 @@ interface ProductTableProps {
   onBulkDelete?: (products: Product[]) => void;
   // Server-side search
   onSearch?: (keyword: string) => void;
+  onStatusToggle?: (row: Product, isActive: boolean) => void;
+  statusPendingId?: string | null;
+  canEdit?: boolean;
 }
 
 export const ProductTable = ({
@@ -37,6 +40,9 @@ export const ProductTable = ({
   onDelete,
   onBulkDelete,
   onSearch,
+  onStatusToggle,
+  statusPendingId,
+  canEdit,
 }: ProductTableProps) => {
   // Server-side search state
   const [searchInput, setSearchInput] = useState("");
@@ -62,6 +68,11 @@ export const ProductTable = ({
     sheetName: "Products",
     excludeColumns: ["imageUrl", "content"],
   });
+
+  const columns = useMemo(
+    () => createProductColumns({ onStatusToggle, statusPendingId, canEdit }),
+    [onStatusToggle, statusPendingId, canEdit]
+  );
 
   // Excel Import
   const { importFromExcel, isImporting } = useExcelImport({
@@ -137,7 +148,7 @@ export const ProductTable = ({
       )}
 
       <DataTable
-        columns={productColumns}
+        columns={columns}
         data={products}
         isLoading={isLoading}
         error={error}

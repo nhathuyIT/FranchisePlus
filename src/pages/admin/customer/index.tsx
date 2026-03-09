@@ -17,6 +17,7 @@ import type { SubmitResult } from "@/components/form-dialog/types";
 import {
   useCustomerAdminSearch,
   useDeleteCustomerAdmin,
+  useUpdateCustomerAdminStatus,
 } from "@/hooks/customer";
 import { Permission } from "@/config/permission";
 import { useAuthStore } from "@/stores/auth-store";
@@ -52,6 +53,7 @@ const CustomerAdminList = () => {
   const customers: CustomerProfile[] = searchResult?.pageData ?? [];
 
   const deleteMutation = useDeleteCustomerAdmin({ suppressToast: true });
+  const customerStatusMutation = useUpdateCustomerAdminStatus();
   const listError = error instanceof Error ? error : null;
 
   const dialog = useFormDialog<CustomerProfile>();
@@ -169,6 +171,10 @@ const CustomerAdminList = () => {
     dialog.openView(customer);
   };
 
+  const handleStatusToggle = (customer: CustomerProfile, isActive: boolean) => {
+    customerStatusMutation.mutate({ id: customer.id, isActive });
+  };
+
   const handleOpenDelete = (customer: CustomerProfile) => {
     setDeleteTarget(customer);
   };
@@ -216,6 +222,9 @@ const CustomerAdminList = () => {
             onEdit={canManageCustomers ? handleEdit : undefined}
             onView={canViewCustomers ? handleView : undefined}
             onDelete={canManageCustomers ? handleOpenDelete : undefined}
+            onStatusToggle={canManageCustomers ? handleStatusToggle : undefined}
+            statusPendingId={customerStatusMutation.isPending ? String(customerStatusMutation.variables?.id) : null}
+            canEdit={canManageCustomers}
           />
         </div>
 

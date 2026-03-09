@@ -1,8 +1,15 @@
 import type { ColumnDef } from "@tanstack/react-table";
 import { Badge } from "@/components/ui/badge";
+import { StatusToggleCell } from "@/components/common/StatusToggleCell";
 import type { Product } from "@/types/product.type";
 
-export const productColumns: ColumnDef<Product>[] = [
+interface ColumnOptions {
+  onStatusToggle?: (row: Product, isActive: boolean) => void;
+  statusPendingId?: string | null;
+  canEdit?: boolean;
+}
+
+export const createProductColumns = (options?: ColumnOptions): ColumnDef<Product>[] => [
   {
     accessorKey: "sku",
     header: "SKU",
@@ -57,17 +64,28 @@ export const productColumns: ColumnDef<Product>[] = [
     filterFn: (row, _columnId, filterValue) => {
       return row.original.isActive === filterValue;
     },
-    cell: ({ row }) => (
-      <Badge
-        variant={row.original.isActive ? "default" : "secondary"}
-        className={
-          row.original.isActive
-            ? "bg-green-600 hover:bg-green-700 rounded-full"
-            : "bg-gray-500 hover:bg-gray-600 rounded-full"
-        }
-      >
-        {row.original.isActive ? "Active" : "Inactive"}
-      </Badge>
-    ),
+    cell: ({ row }) => {
+      if (options?.onStatusToggle && options.canEdit) {
+        return (
+          <StatusToggleCell
+            isActive={row.original.isActive}
+            onToggle={(val) => options.onStatusToggle!(row.original, val)}
+            isPending={options.statusPendingId === String(row.original.id)}
+          />
+        );
+      }
+      return (
+        <Badge
+          variant={row.original.isActive ? "default" : "secondary"}
+          className={
+            row.original.isActive
+              ? "bg-green-600 hover:bg-green-700 rounded-full"
+              : "bg-gray-500 hover:bg-gray-600 rounded-full"
+          }
+        >
+          {row.original.isActive ? "Active" : "Inactive"}
+        </Badge>
+      );
+    },
   },
 ];

@@ -112,6 +112,24 @@ export const useDeleteCategoryMutation = () => {
   });
 };
 
+export const useUpdateCategoryStatusMutation = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, isActive }: { id: number | string; isActive: boolean }) =>
+      categoryApi.updateCategory(id, { is_active: isActive } as UpdateCategoryRequest),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: CATEGORY_KEYS.all });
+      toast.success("Category status updated successfully!");
+    },
+    onError: (error: Error) => {
+      toast.error("Failed to update category status", {
+        description: error.message,
+      });
+    },
+  });
+};
+
 export const useRestoreCategoryMutation = () => {
   const queryClient = useQueryClient();
 

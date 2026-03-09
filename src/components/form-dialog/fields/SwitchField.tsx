@@ -8,7 +8,7 @@ import {
   FormDescription,
   FormMessage,
 } from "@/components/ui/form";
-import { Checkbox } from "@/components/ui/checkbox";
+import { Switch } from "@/components/ui/switch";
 import type { FieldConfig } from "@/lib/form/field-config";
 
 export interface SwitchFieldProps<TFormData extends FieldValues> {
@@ -22,8 +22,6 @@ function SwitchFieldComponent<TFormData extends FieldValues>({
   form,
   disabled = false,
 }: SwitchFieldProps<TFormData>) {
-  // Using Checkbox as a toggle since Switch component may not exist
-  // Can be replaced with actual Switch component if available
   return (
     <FormField
       control={form.control}
@@ -44,7 +42,7 @@ function SwitchFieldComponent<TFormData extends FieldValues>({
             )}
           </div>
           <FormControl>
-            <Checkbox
+            <Switch
               checked={field.value ?? false}
               onCheckedChange={field.onChange}
               disabled={disabled}

@@ -12,6 +12,7 @@ import {
   useCreateCategoryMutation,
   useUpdateCategoryMutation,
   useDeleteCategoryMutation,
+  useUpdateCategoryStatusMutation,
 } from "@/hooks/category/useCategoryQuery";
 
 const categorySchema = z.object({
@@ -83,6 +84,7 @@ const CategoriesPage = () => {
   const createMutation = useCreateCategoryMutation();
   const updateMutation = useUpdateCategoryMutation();
   const deleteMutation = useDeleteCategoryMutation();
+  const categoryStatusMutation = useUpdateCategoryStatusMutation();
 
   const categories = searchResponse ?? [];
 
@@ -131,6 +133,10 @@ const CategoriesPage = () => {
     void refetch();
   };
 
+  const handleStatusToggle = (category: Category, isActive: boolean) => {
+    categoryStatusMutation.mutate({ id: category.id, isActive });
+  };
+
   return (
     <div className="h-full flex flex-col">
       <div className="flex-1 flex flex-col min-h-0 max-w-7xl mx-auto w-full">
@@ -157,6 +163,9 @@ const CategoriesPage = () => {
             onEdit={handleEdit}
             onDelete={handleDelete}
             onBulkDelete={handleBulkDelete}
+            onStatusToggle={handleStatusToggle}
+            statusPendingId={categoryStatusMutation.isPending ? String(categoryStatusMutation.variables?.id) : null}
+            canEdit={true}
           />
         </div>
       </div>
