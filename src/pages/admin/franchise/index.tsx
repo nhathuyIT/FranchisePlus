@@ -227,6 +227,16 @@ const FranchiseList = () => {
     );
   };
 
+  const handleAssignProducts = (franchise: Franchise) => {
+    if (!canViewFranchises) {
+      toast.error("You do not have permission to manage franchises.");
+      return;
+    }
+    navigate(
+      `${ROUTER_URL.ADMIN}/${ROUTER_URL.ADMIN_ROUTER.FRANCHISES}/${franchise.id}/product-assign`,
+    );
+  };
+
   const handleOpenDelete = (franchise: Franchise) => {
     setDeleteTarget(franchise);
   };

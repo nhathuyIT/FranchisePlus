@@ -6,6 +6,7 @@ import { useAuthStore } from "@/stores/auth-store";
 import { ROUTER_URL } from "@/router/route.const";
 import type {
   RegisterRequest,
+  ResendTokenRequest,
   VerifyTokenRequest,
   LoginRequest,
   ChangePasswordRequest,
@@ -55,6 +56,26 @@ export const useRegisterCustomer = () => {
     onError: (error) => {
       toast.error("Registration failed", {
         description: error.message || "Please try again.",
+      });
+    },
+  });
+};
+
+/**
+ * Hook to resend customer verification email
+ */
+export const useResendClientToken = () => {
+  return useMutation({
+    mutationFn: (data: ResendTokenRequest) =>
+      customerApi.resendClientToken(data),
+    onSuccess: () => {
+      toast.success("Email xác thực đã được gửi lại!", {
+        description: "Vui lòng kiểm tra hộp thư của bạn.",
+      });
+    },
+    onError: (error) => {
+      toast.error("Gửi lại thất bại", {
+        description: error.message || "Vui lòng thử lại sau.",
       });
     },
   });

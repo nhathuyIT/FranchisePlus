@@ -68,6 +68,16 @@ export const ADMIN_MENU: AdminMenuItem[] = [
     permissions: [PermissionEnum.VIEW_FRANCHISES],
   },
   {
+    label: "Franchise Product Assign",
+    path: ROUTER_URL.ADMIN_ROUTER.FRANCHISES_PRODUCT_ASSIGN,
+    icon: "store",
+    component: React.lazy(
+      () => import("@/pages/admin/franchise/FranchiseProductAssign"),
+    ),
+    isEnd: true,
+    permissions: [PermissionEnum.VIEW_FRANCHISES],
+  },
+  {
     label: "Inventory",
     path: ROUTER_URL.ADMIN_ROUTER.INVENTORY,
     icon: "package",
