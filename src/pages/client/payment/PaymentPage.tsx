@@ -495,7 +495,7 @@ const PaymentPage = () => {
                     <div className="w-16 h-16 bg-amber-50 rounded-lg border border-gray-200 overflow-hidden shrink-0">
                       <img
                         src={getProductImage(item.productFranchiseId)}
-                        alt={item.productNameSnapshot}
+                        alt="coffee"
                         className="w-full h-full object-cover"
                         onError={(e) => {
                           const target = e.target as HTMLImageElement;
