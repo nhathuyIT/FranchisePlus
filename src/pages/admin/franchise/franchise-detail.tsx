@@ -4,7 +4,6 @@ import { ArrowLeft, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { getInventoryByFranchiseId } from "@/const/inventory.const";
 import { ROUTER_URL } from "@/router/route.const";
 import { FranchiseInfoCard } from "./components/FranchiseInfoCard";
 import { FranchiseStaffTab } from "./components/FranchiseStaffTab";
@@ -65,8 +64,6 @@ const FranchiseDetail = () => {
       role: "STAFF",
     },
   ]);
-
-  const franchiseInventory = id ? getInventoryByFranchiseId(id) : [];
 
   const handleAddStaff = () => {};
 
@@ -220,7 +217,7 @@ const FranchiseDetail = () => {
             value="inventory"
             className="mt-6 flex-1 min-h-0 flex flex-col"
           >
-            <FranchiseInventoryTab inventoryItems={franchiseInventory} />
+            <FranchiseInventoryTab franchiseId={id!} />
           </TabsContent>
 
           <TabsContent
