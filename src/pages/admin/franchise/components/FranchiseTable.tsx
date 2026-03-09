@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { Eye, Pencil, Trash2 } from "lucide-react";
+import { Eye, Pencil, Trash2, LayoutGrid } from "lucide-react";
 import { DataTable, type ColumnFilter, type BulkAction } from "@/components/common/DataTable";
 import { createFranchiseColumns } from "../columns/franchise.columns";
 import { Button } from "@/components/ui/button";
@@ -25,6 +25,7 @@ interface FranchiseTableProps {
   onStatusToggle?: (row: Franchise, isActive: boolean) => void;
   statusPendingId?: string | null;
   canEdit?: boolean;
+  onAssignProducts?: (franchise: Franchise) => void;
 }
 
 export const FranchiseTable = ({
@@ -39,6 +40,7 @@ export const FranchiseTable = ({
   onStatusToggle,
   statusPendingId,
   canEdit,
+  onAssignProducts,
 }: FranchiseTableProps) => {
   const { exportToExcel, isExporting } = useExcelExport({
     headerMapping: FRANCHISE_REVERSE_HEADER_MAPPING,
@@ -123,6 +125,17 @@ export const FranchiseTable = ({
       importLabel="Import Excel"
       renderActions={(franchise) => (
         <>
+          {onAssignProducts && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onAssignProducts(franchise)}
+              title="Assign products to categories"
+              className="border-2 border-[#5C6BC0] text-[#5C6BC0] hover:bg-[#5C6BC0] hover:text-white rounded-lg transition-all duration-200 cursor-pointer"
+            >
+              <LayoutGrid className="h-4 w-4" />
+            </Button>
+          )}
           {onView && (
             <Button
               variant="outline"
