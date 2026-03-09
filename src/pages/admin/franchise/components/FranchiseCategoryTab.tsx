@@ -17,7 +17,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-
 import {
   Select,
   SelectContent,
@@ -36,10 +35,6 @@ import { UpdateModal } from "./UpdateModal";
 import { DeleteModal } from "./DeleteModal";
 import { CreateModal } from "./CreateModal";
 import { CategoryRow } from "./CategoryRow";
-
-// ── Individual Row Component ───────────────────────────────────────────────
-
-// ── Main Component ─────────────────────────────────────────────────────────
 
 interface FranchiseCategoryTabProps {
   franchiseId: string;

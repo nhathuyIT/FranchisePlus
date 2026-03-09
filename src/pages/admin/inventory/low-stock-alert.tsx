@@ -1,54 +1,93 @@
-import { useState } from "react";
+import { useMemo } from "react";
 import { AlertTriangle, Package } from "lucide-react";
 import { toast } from "sonner";
-import { getLowStockItems } from "@/const/inventory.const";
 import { PageHeader } from "@/components/common/PageHeader";
 import { InventoryStatsCards } from "./components/InventoryStatsCards";
 import { LowStockTable } from "./components/LowStockTable";
-import { CrudDialog } from "@/components/crud/CrudDialog";
-import { useCrudDialog } from "@/hooks/crud/useCrudDialog";
-import { updateStockConfig } from "./inventory.config";
-import type { InventoryItemView } from "@/types/inventory";
+import { FormDialog, useFormDialog } from "@/components/form-dialog";
+import {
+  adjustInventoryFields,
+  adjustInventorySchema,
+} from "./inventory-form.config";
+import type { AdjustInventoryFormData } from "@/lib/schemas/inventory.schema";
+import type { SubmitResult } from "@/components/form-dialog/types";
+import type { InventorySearchItem } from "@/api/inventory/inventory.type";
+import { useInventories } from "@/hooks/inventory";
+import { Permission } from "@/config/permission";
+import { useAuthStore } from "@/stores/auth-store";
+import * as inventoryApi from "@/api/inventory/inventory.api";
 
 const LowStockAlert = () => {
-  const [inventory, setInventory] = useState<InventoryItemView[]>(
-    getLowStockItems()
-  );
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<Error | null>(null);
+  const { authUser, getCurrentPermissions } = useAuthStore();
+  const userPermissions = getCurrentPermissions();
 
-  // Dialog state management
-  const updateStockDialog = useCrudDialog<InventoryItemView>();
-
-  const criticalItems = inventory.filter(
-    (item) =>
-      (item.inventory.quantity / item.inventory.alertThreshold) * 100 <= 50
+  const canViewInventory = userPermissions.includes(Permission.VIEW_INVENTORY);
+  const canManageInventory = userPermissions.includes(
+    Permission.MANAGE_INVENTORY,
   );
 
-  const handleUpdateStock = (item: InventoryItemView) => {
-    updateStockDialog.openUpdate(item);
-  };
+  const inventoryScopeKey = authUser
+    ? `${authUser.user.id}-${authUser.currentRoleId ?? "none"}-${authUser.currentFranchiseId ?? "global"}`
+    : "anonymous";
+
+  const {
+    data: allItems = [],
+    isLoading,
+    error,
+    refetch,
+  } = useInventories(canViewInventory, inventoryScopeKey);
+
+  const listError = error instanceof Error ? error : null;
+
+  // Client-side filter for low stock items (quantity <= alertThreshold)
+  const lowStockItems = useMemo(
+    () => allItems.filter((item) => item.quantity <= item.alertThreshold),
+    [allItems],
+  );
+
+  const criticalItems = useMemo(
+    () =>
+      lowStockItems.filter(
+        (item) => (item.quantity / item.alertThreshold) * 100 <= 50,
+      ),
+    [lowStockItems],
+  );
+
+  // Form dialog state
+  const adjustDialog = useFormDialog<InventorySearchItem>();
 
   const refreshData = () => {
-    // TODO: Replace with actual API call
-    setInventory(getLowStockItems());
+    void refetch();
   };
 
-  const handleUpdateSuccess = () => {
-    refreshData();
-    updateStockDialog.close();
-    toast.success("Stock updated successfully");
+  const handleUpdateStock = (item: InventorySearchItem) => {
+    if (!canManageInventory) {
+      toast.error("You do not have permission to update inventory.");
+      return;
+    }
+    adjustDialog.openEdit(item);
+  };
+
+  // INVENTORY-06: Adjust quantity via POST /api/inventories/adjust
+  const handleAdjustSubmit = async (
+    data: AdjustInventoryFormData,
+  ): Promise<SubmitResult | void> => {
+    if (!adjustDialog.data) return;
+
+    await inventoryApi.adjust({
+      productFranchiseId: String(adjustDialog.data.productFranchiseId),
+      change: data.change,
+      reason: data.reason,
+    });
+
+    toast.success("Stock adjusted successfully");
   };
 
   // Bulk Export Handler
-  const handleBulkExport = async (selectedItems: InventoryItemView[]) => {
-    setIsLoading(true);
+  const handleBulkExport = async (selectedItems: InventorySearchItem[]) => {
     try {
-      // TODO: Replace with actual export logic
-      // Generate CSV content
       const headers = [
         "Product",
-        "SKU",
         "Franchise",
         "Current",
         "Threshold",
@@ -56,18 +95,17 @@ const LowStockAlert = () => {
         "Status",
       ];
       const rows = selectedItems.map((item) => {
-        const shortage = item.inventory.alertThreshold - item.inventory.quantity;
+        const shortage = item.alertThreshold - item.quantity;
         const status =
-          (item.inventory.quantity / item.inventory.alertThreshold) * 100 <= 50
+          (item.quantity / item.alertThreshold) * 100 <= 50
             ? "Critical"
             : "Warning";
         return [
-          item.product.name,
-          item.product.sku,
+          item.productName,
           item.franchiseName,
-          `${item.inventory.quantity} kg`,
-          `${item.inventory.alertThreshold} kg`,
-          `-${shortage} kg`,
+          String(item.quantity),
+          String(item.alertThreshold),
+          `-${shortage}`,
           status,
         ];
       });
@@ -77,7 +115,6 @@ const LowStockAlert = () => {
         ...rows.map((row) => row.join(",")),
       ].join("\n");
 
-      // Download CSV
       const blob = new Blob([csvContent], { type: "text/csv" });
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement("a");
@@ -87,26 +124,20 @@ const LowStockAlert = () => {
       window.URL.revokeObjectURL(url);
 
       toast.success(`Successfully exported ${selectedItems.length} item(s)`);
-    } catch (err) {
+    } catch {
       toast.error("Failed to export low stock items. Please try again.");
-      setError(
-        err instanceof Error ? err : new Error("Failed to export items")
-      );
-    } finally {
-      setIsLoading(false);
     }
   };
 
-  // Retry Handler
-  const handleRetry = () => {
-    setError(null);
-    setIsLoading(true);
+  const adjustDialogTitle = useMemo(() => {
+    if (!adjustDialog.data) return "Adjust Stock";
+    return `Adjust Stock: ${adjustDialog.data.productName}`;
+  }, [adjustDialog.data]);
 
-    // TODO: Replace with actual data fetching
-    setTimeout(() => {
-      setIsLoading(false);
-    }, 1000);
-  };
+  const adjustDialogDescription = useMemo(() => {
+    if (!adjustDialog.data) return "";
+    return `Current quantity: ${adjustDialog.data.quantity} | Threshold: ${adjustDialog.data.alertThreshold}`;
+  }, [adjustDialog.data]);
 
   return (
     <div className="h-full flex flex-col">
@@ -120,27 +151,22 @@ const LowStockAlert = () => {
 
         <div className="mb-6 shrink-0">
           <InventoryStatsCards
-            totalLowStock={inventory.length}
+            totalLowStock={lowStockItems.length}
             criticalItems={criticalItems.length}
-            warningItems={inventory.length - criticalItems.length}
+            warningItems={lowStockItems.length - criticalItems.length}
           />
         </div>
 
         <div className="flex-1 min-h-0 flex flex-col bg-white rounded-2xl shadow-lg border border-[#E8DFD6] p-6">
-          {inventory.length > 0 ? (
-            <>
-              <LowStockTable
-                items={inventory}
-                isLoading={isLoading}
-                error={error}
-                onRetry={handleRetry}
-                onUpdateStock={handleUpdateStock}
-                onBulkExport={handleBulkExport}
-              />
-              {/* <div className="mt-4 text-sm text-[#5D4037] shrink-0">
-                Showing {inventory.length} low stock items
-              </div> */}
-            </>
+          {lowStockItems.length > 0 ? (
+            <LowStockTable
+              items={lowStockItems}
+              isLoading={isLoading}
+              error={listError}
+              onRetry={refetch}
+              onUpdateStock={canManageInventory ? handleUpdateStock : undefined}
+              onBulkExport={handleBulkExport}
+            />
           ) : (
             <div className="text-center py-8">
               <Package className="h-16 w-16 text-[#E8DFD6] mx-auto mb-4" />
@@ -153,14 +179,24 @@ const LowStockAlert = () => {
             </div>
           )}
         </div>
-      </div>
 
-      {/* Update Stock Dialog */}
-      <CrudDialog
-        config={updateStockConfig}
-        dialog={updateStockDialog}
-        onSuccess={handleUpdateSuccess}
-      />
+        {/* Adjust Stock Dialog (INVENTORY-06) */}
+        <FormDialog<AdjustInventoryFormData>
+          open={adjustDialog.isOpen}
+          onOpenChange={(open) => !open && adjustDialog.close()}
+          title={adjustDialogTitle}
+          description={adjustDialogDescription}
+          size="md"
+          schema={adjustInventorySchema}
+          fields={adjustInventoryFields}
+          mode={adjustDialog.mode === "view" ? "view" : "edit"}
+          onSubmit={handleAdjustSubmit}
+          onSuccess={() => {
+            adjustDialog.close();
+            refreshData();
+          }}
+        />
+      </div>
     </div>
   );
 };

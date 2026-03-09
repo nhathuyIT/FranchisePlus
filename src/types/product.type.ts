@@ -23,6 +23,7 @@ export interface ProductFranchise
   id: ID;
   franchiseId: ID;
   productId: ID;
+  size?: string;
   priceBase: number; // product.minPrice ≤ priceBase ≤ product.maxPrice
 }
 

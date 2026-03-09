@@ -1,23 +1,10 @@
-import { useState } from "react";
 import { Plus } from "lucide-react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
 import { PageHeader } from "@/components/common/PageHeader";
 import { CategoryTable } from "./components/CategoryTable";
+import { FormDialog, useFormDialog } from "@/components/form-dialog";
+import type { FieldConfig } from "@/lib/form/field-config";
 import type { Category } from "@/types/category";
 import type { CategorySearchRequest } from "@/api/category/category.api";
 import {
@@ -35,6 +22,36 @@ const categorySchema = z.object({
 });
 
 type CategoryFormData = z.infer<typeof categorySchema>;
+
+const categoryFields: FieldConfig<CategoryFormData>[] = [
+  {
+    name: "code",
+    type: "text",
+    label: "Code",
+    placeholder: "e.g., espresso",
+    required: true,
+  },
+  {
+    name: "name",
+    type: "text",
+    label: "Name",
+    placeholder: "e.g., Espresso",
+    required: true,
+  },
+  {
+    name: "description",
+    type: "textarea",
+    label: "Description",
+    placeholder: "Enter category description...",
+    rows: 3,
+  },
+  {
+    name: "isActive",
+    type: "switch",
+    label: "Active",
+    defaultValue: true,
+  },
+];
 
 // ── Default search params ───────────────────────────────────────────────────
 
@@ -54,8 +71,7 @@ const DEFAULT_SEARCH_PARAMS: CategorySearchRequest = {
 
 const CategoriesPage = () => {
   // Dialog state
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [editingCategory, setEditingCategory] = useState<Category | null>(null);
+  const dialog = useFormDialog<Category>();
 
   // ── TanStack Query hooks ──────────────────────────────────────────────────
   const {
@@ -69,30 +85,10 @@ const CategoriesPage = () => {
   const deleteMutation = useDeleteCategoryMutation();
 
   const categories = searchResponse ?? [];
-  const isMutating =
-    createMutation.isPending ||
-    updateMutation.isPending ||
-    deleteMutation.isPending;
 
-  // ── Form ──────────────────────────────────────────────────────────────────
+  // ── Form submission handler ──────────────────────────────────────────────────────────────────
 
-  const {
-    register,
-    handleSubmit,
-    reset,
-    setValue,
-    formState: { errors },
-  } = useForm<CategoryFormData>({
-    resolver: zodResolver(categorySchema),
-    defaultValues: {
-      code: "",
-      name: "",
-      description: "",
-      isActive: true,
-    },
-  });
-
-  const onSubmit = (data: CategoryFormData) => {
+  const handleSubmit = async (data: CategoryFormData) => {
     const payload = {
       code: data.code,
       name: data.name,
@@ -100,44 +96,17 @@ const CategoriesPage = () => {
       is_active: data.isActive,
     };
 
-    if (editingCategory) {
-      updateMutation.mutate(
-        { id: editingCategory.id, data: payload },
-        {
-          onSuccess: () => {
-            setIsDialogOpen(false);
-            setEditingCategory(null);
-            reset();
-          },
-        },
-      );
+    if (dialog.mode === "edit" && dialog.data) {
+      await updateMutation.mutateAsync({ id: dialog.data.id, data: payload });
     } else {
-      createMutation.mutate(payload, {
-        onSuccess: () => {
-          setIsDialogOpen(false);
-          reset();
-        },
-      });
+      await createMutation.mutateAsync(payload);
     }
   };
 
   // ── Handlers ──────────────────────────────────────────────────────────────
 
-  // ── Handlers ──────────────────────────────────────────────────────────────
-
   const handleEdit = (category: Category) => {
-    setEditingCategory(category);
-    setValue("code", category.code);
-    setValue("name", category.name);
-    setValue("description", category.description || "");
-    setValue("isActive", category.isActive);
-    setIsDialogOpen(true);
-  };
-
-  const handleCreate = () => {
-    setEditingCategory(null);
-    reset();
-    setIsDialogOpen(true);
+    dialog.openEdit(category);
   };
 
   const handleDelete = (category: Category) => {
@@ -169,113 +138,13 @@ const CategoriesPage = () => {
           title="Category Management"
           description="Manage all product categories"
           action={
-            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-              <DialogTrigger asChild>
-                <Button
-                  onClick={handleCreate}
-                  className="bg-[#6D4C41] hover:bg-[#5D4037] text-white rounded-full shadow-md hover:shadow-lg transition-all duration-300 cursor-pointer"
-                >
-                  <Plus className="mr-2 h-4 w-4" />
-                  Add Category
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-[500px] bg-white">
-                <DialogHeader>
-                  <DialogTitle className="text-2xl font-bold text-[#3E2723]">
-                    {editingCategory ? "Edit Category" : "Create New Category"}
-                  </DialogTitle>
-                  <DialogDescription className="text-[#5D4037]">
-                    {editingCategory
-                      ? "Update the category information below."
-                      : "Add a new category to your product catalog. Fill in all required fields."}
-                  </DialogDescription>
-                </DialogHeader>
-                <form onSubmit={handleSubmit(onSubmit)}>
-                  <div className="grid gap-4 py-4">
-                    <div className="grid gap-2">
-                      <Label htmlFor="code" className="text-[#3E2723] font-medium">
-                        Code <span className="text-red-500">*</span>
-                      </Label>
-                      <Input
-                        id="code"
-                        placeholder="e.g., espresso"
-                        {...register("code")}
-                        className={errors.code ? "border-red-500" : ""}
-                      />
-                      {errors.code && (
-                        <p className="text-sm text-red-500">{errors.code.message}</p>
-                      )}
-                    </div>
-                    <div className="grid gap-2">
-                      <Label htmlFor="name" className="text-[#3E2723] font-medium">
-                        Name <span className="text-red-500">*</span>
-                      </Label>
-                      <Input
-                        id="name"
-                        placeholder="e.g., Espresso"
-                        {...register("name")}
-                        className={errors.name ? "border-red-500" : ""}
-                      />
-                      {errors.name && (
-                        <p className="text-sm text-red-500">{errors.name.message}</p>
-                      )}
-                    </div>
-                    <div className="grid gap-2">
-                      <Label htmlFor="description" className="text-[#3E2723] font-medium">
-                        Description
-                      </Label>
-                      <Textarea
-                        id="description"
-                        placeholder="Enter category description..."
-                        rows={3}
-                        {...register("description")}
-                        className={errors.description ? "border-red-500" : ""}
-                      />
-                      {errors.description && (
-                        <p className="text-sm text-red-500">{errors.description.message}</p>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="checkbox"
-                        id="isActive"
-                        {...register("isActive")}
-                        className="w-4 h-4 text-[#6D4C41] border-gray-300 rounded focus:ring-[#6D4C41]"
-                      />
-                      <Label htmlFor="isActive" className="text-[#3E2723] font-medium cursor-pointer">
-                        Active
-                      </Label>
-                    </div>
-                  </div>
-                  <DialogFooter>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => {
-                        setIsDialogOpen(false);
-                        setEditingCategory(null);
-                        reset();
-                      }}
-                      disabled={isMutating}
-                      className="border-[#E8DFD6] text-[#5D4037] hover:bg-[#FAF8F5]"
-                    >
-                      Cancel
-                    </Button>
-                    <Button
-                      type="submit"
-                      disabled={isMutating}
-                      className="bg-[#6D4C41] hover:bg-[#5D4037] text-white"
-                    >
-                      {isMutating
-                        ? "Saving..."
-                        : editingCategory
-                        ? "Update Category"
-                        : "Create Category"}
-                    </Button>
-                  </DialogFooter>
-                </form>
-              </DialogContent>
-            </Dialog>
+            <Button
+              onClick={dialog.openCreate}
+              className="bg-[#6D4C41] hover:bg-[#5D4037] text-white rounded-full shadow-md hover:shadow-lg transition-all duration-300 cursor-pointer"
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              Add Category
+            </Button>
           }
         />
 
@@ -291,6 +160,29 @@ const CategoriesPage = () => {
           />
         </div>
       </div>
+
+      <FormDialog<CategoryFormData>
+        open={dialog.isOpen}
+        onOpenChange={(open) => !open && dialog.close()}
+        title={dialog.mode === "create" ? "Create New Category" : "Edit Category"}
+        description={
+          dialog.mode === "create"
+            ? "Add a new category to your product catalog. Fill in all required fields."
+            : "Update the category information below."
+        }
+        schema={categorySchema}
+        fields={categoryFields}
+        values={dialog.data ? {
+          code: dialog.data.code,
+          name: dialog.data.name,
+          description: dialog.data.description || undefined,
+          isActive: dialog.data.isActive,
+        } : undefined}
+        mode={dialog.mode}
+        onSubmit={handleSubmit}
+        onSuccess={dialog.close}
+        size="md"
+      />
     </div>
   );
 };

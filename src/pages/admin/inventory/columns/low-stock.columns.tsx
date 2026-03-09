@@ -1,23 +1,14 @@
 import type { ColumnDef } from "@tanstack/react-table";
 import { StockStatusBadge } from "@/components/common/StockStatusBadge";
-import type { InventoryItemView } from "@/types/inventory";
+import type { InventorySearchItem } from "@/api/inventory/inventory.type";
 
-export const lowStockColumns: ColumnDef<InventoryItemView>[] = [
+export const lowStockColumns: ColumnDef<InventorySearchItem>[] = [
   {
-    accessorKey: "product.name",
+    accessorKey: "productName",
     header: "Product",
     cell: ({ row }) => (
       <span className="font-medium text-[#3E2723]">
-        {row.original.product.name}
-      </span>
-    ),
-  },
-  {
-    accessorKey: "product.sku",
-    header: "SKU",
-    cell: ({ row }) => (
-      <span className="text-[#5D4037] font-mono text-sm">
-        {row.original.product.sku}
+        {row.original.productName}
       </span>
     ),
   },
@@ -29,20 +20,20 @@ export const lowStockColumns: ColumnDef<InventoryItemView>[] = [
     ),
   },
   {
-    accessorKey: "inventory.quantity",
+    accessorKey: "quantity",
     header: "Current",
     cell: ({ row }) => (
       <span className="text-[#3E2723] font-semibold">
-        {row.original.inventory.quantity} kg
+        {row.original.quantity}
       </span>
     ),
   },
   {
-    accessorKey: "inventory.alertThreshold",
+    accessorKey: "alertThreshold",
     header: "Threshold",
     cell: ({ row }) => (
       <span className="text-[#5D4037]">
-        {row.original.inventory.alertThreshold} kg
+        {row.original.alertThreshold}
       </span>
     ),
   },
@@ -52,9 +43,9 @@ export const lowStockColumns: ColumnDef<InventoryItemView>[] = [
     enableSorting: false,
     cell: ({ row }) => {
       const shortage =
-        row.original.inventory.alertThreshold - row.original.inventory.quantity;
+        row.original.alertThreshold - row.original.quantity;
       return (
-        <span className="text-[#EF4444] font-semibold">-{shortage} kg</span>
+        <span className="text-[#EF4444] font-semibold">-{shortage}</span>
       );
     },
   },
@@ -64,8 +55,8 @@ export const lowStockColumns: ColumnDef<InventoryItemView>[] = [
     enableSorting: false,
     cell: ({ row }) => (
       <StockStatusBadge
-        quantity={row.original.inventory.quantity}
-        lowStockThreshold={row.original.inventory.alertThreshold}
+        quantity={row.original.quantity}
+        lowStockThreshold={row.original.alertThreshold}
       />
     ),
   },
