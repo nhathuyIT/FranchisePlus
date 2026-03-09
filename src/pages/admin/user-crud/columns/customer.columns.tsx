@@ -29,10 +29,7 @@ export const customerColumns: ColumnDef<User>[] = [
       <span className="font-medium text-[#3E2723]">{row.original.name}</span>
     ),
   },
-  {
-    accessorKey: "",
-    header: "Role",
-  },
+
   {
     accessorKey: "phone",
     header: "Phone",
@@ -48,10 +45,6 @@ export const customerColumns: ColumnDef<User>[] = [
     cell: ({ row }) => (
       <span className="text-[#5D4037]">{row.original.email || "N/A"}</span>
     ),
-  },
-  {
-    accessorKey: "",
-    header: "Franchise",
   },
 
   {

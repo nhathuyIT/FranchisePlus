@@ -32,7 +32,7 @@ const CustomerAdminList = () => {
   );
 
   const pageNum = 1;
-  const pageSize = 10;
+  const pageSize = 1000;
 
   const searchParams = useMemo(
     () => ({

@@ -23,6 +23,14 @@ export const ADMIN_MENU: AdminMenuItem[] = [
     permissions: [PermissionEnum.VIEW_DASHBOARD],
   },
   {
+    label: "Customers",
+    path: ROUTER_URL.ADMIN_ROUTER.CUSTOMERS,
+    icon: "customers",
+    component: React.lazy(() => import("@/pages/admin/customer/index")),
+    isEnd: true,
+    permissions: [PermissionEnum.VIEW_CUSTOMERS],
+  },
+  {
     label: "User Control",
     path: ROUTER_URL.ADMIN_ROUTER.USER_CONTROL,
     icon: "user",
@@ -30,6 +38,17 @@ export const ADMIN_MENU: AdminMenuItem[] = [
     isEnd: true,
     permissions: [PermissionEnum.VIEW_USERS],
   },
+  {
+    label: "User Franchise Roles",
+    path: ROUTER_URL.ADMIN_ROUTER.USER_FRANCHISE_ROLES,
+    icon: "shield",
+    component: React.lazy(
+      () => import("@/pages/admin/user-franchise-role/index"),
+    ),
+    isEnd: true,
+    permissions: [PermissionEnum.VIEW_USER_FRANCHISE_ROLES],
+  },
+
   {
     label: "Franchises",
     path: ROUTER_URL.ADMIN_ROUTER.FRANCHISES,
@@ -80,23 +99,5 @@ export const ADMIN_MENU: AdminMenuItem[] = [
     component: React.lazy(() => import("@/pages/admin/products/index")),
     isEnd: true,
     permissions: [PermissionEnum.VIEW_PRODUCTS],
-  },
-  {
-    label: "User Franchise Roles",
-    path: ROUTER_URL.ADMIN_ROUTER.USER_FRANCHISE_ROLES,
-    icon: "shield",
-    component: React.lazy(
-      () => import("@/pages/admin/user-franchise-role/index"),
-    ),
-    isEnd: true,
-    permissions: [PermissionEnum.VIEW_USER_FRANCHISE_ROLES],
-  },
-  {
-    label: "Customers",
-    path: ROUTER_URL.ADMIN_ROUTER.CUSTOMERS,
-    icon: "customers",
-    component: React.lazy(() => import("@/pages/admin/customer/index")),
-    isEnd: true,
-    permissions: [PermissionEnum.VIEW_CUSTOMERS],
   },
 ];

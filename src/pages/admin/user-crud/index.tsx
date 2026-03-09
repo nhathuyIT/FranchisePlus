@@ -26,7 +26,7 @@ const UserCRUD = () => {
     },
     pageInfo: {
       pageNum: 1,
-      pageSize: 10,
+      pageSize: 1000,
     },
   });
 
