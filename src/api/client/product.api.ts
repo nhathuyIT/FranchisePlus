@@ -1,4 +1,4 @@
-import type { FranchiseList } from "@/types/franchise";
+import type { Franchise, FranchiseList } from "@/types/franchise";
 import { httpClient } from "../httpClient.api";
 import type { CategoryList } from "@/types/category";
 import type { MenuCategory } from "@/types/menu.type";
@@ -51,3 +51,13 @@ export const getProductByFranchiseFilterByCategory = async (
 
 //   return response!;
 // };
+
+export const getFranchiseDetail = async (
+  franchiseId: string,
+): Promise<Franchise> => {
+  const response = await httpClient.get<Franchise>({
+    url: `/api/clients/franchises/${franchiseId}`,
+  });
+
+  return response!;
+};
