@@ -51,3 +51,10 @@ export const useGetProductsByFranchiseAndCategory = (
     enabled: !!franchiseId && !!categoryId,
   });
 };
+export const useGetFranchiseDetail = (franchiseId: string) => {
+  return useQuery({
+    queryKey: ["franchise", franchiseId],
+    queryFn: () => productApi.getFranchiseDetail(franchiseId),
+    enabled: !!franchiseId,
+  });
+};

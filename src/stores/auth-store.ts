@@ -23,8 +23,10 @@ interface AuthState {
   authUser: AuthUser | null;
   isLoggedIn: boolean;
   isInitialized: boolean;
+  isSwitchingRole: boolean;
 
   login: (authUser: AuthUser) => void;
+  setSwitchingRole: (value: boolean) => void;
   logout: (callApi?: boolean) => Promise<void>;
   hydrate: () => void;
   updateProfile: (
@@ -42,6 +44,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   authUser: null,
   isLoggedIn: false,
   isInitialized: false,
+  isSwitchingRole: false,
+
+  setSwitchingRole: (value) => set({ isSwitchingRole: value }),
 
   login: (authUser) => {
     setItemInLocalStorage(LOCAL_STORAGE.ACCOUNT_ADMIN, authUser);

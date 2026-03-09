@@ -26,7 +26,6 @@ const ROLE_PERMISSIONS: Record<string, Permission[]> = {
     Permission.ACCESS_ADMIN_PORTAL,
     Permission.VIEW_DASHBOARD,
     Permission.VIEW_ANALYTICS,
-    Permission.MANAGE_OWN_FRANCHISE,
     Permission.MANAGE_PRODUCTS,
     Permission.VIEW_PRODUCTS,
     Permission.MANAGE_ORDERS,

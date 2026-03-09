@@ -89,8 +89,6 @@ const MenuPage = () => {
   const { data: menuData, isLoading: isLoadingMenu } =
     useGetMenuByFranchiseAndCategory(activeFranchiseId, activeCategoryId);
 
-  console.log(menuData);
-
   const { data: toppingData, isLoading: isLoadingToppings } =
     useGetProductsByFranchiseAndCategory(activeFranchiseId, activeCategoryId);
 

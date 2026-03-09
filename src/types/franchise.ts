@@ -11,6 +11,7 @@ export interface Franchise extends BaseTimestamp, SoftDeletable, Activatable {
   closedAt: string | null;
   lat?: number; // Latitude for map
   lng?: number; // Longitude for map
+  googleMapScript?: string;
 }
 
 export interface FranchiseList {

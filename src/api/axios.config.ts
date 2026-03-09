@@ -9,12 +9,6 @@ import {
   camelCase,
 } from "lodash";
 
-// ── Helpers chuyển đổi cấu trúc dữ liệu ───────────────────────────────────────
-
-/**
- * Kiểm tra xem object có nên được transform hay không
- * Loại trừ các browser native objects và special types
- */
 declare module "axios" {
   interface InternalAxiosRequestConfig {
     _retry?: boolean;
@@ -26,7 +20,6 @@ const shouldTransform = (obj: unknown): boolean => {
   if (obj === null || typeof obj !== "object") return false;
   if (!isPlainObject(obj)) return false;
 
-  // Không transform các browser native objects và special types
   return !(
     obj instanceof Date ||
     obj instanceof File ||
@@ -93,9 +86,7 @@ const flushQueue = (error: unknown = null) => {
 export const axiosClient = axios.create({
   baseURL: ENV.API_URL,
   withCredentials: true,
-  timeout: 30000, // 30s (đã giảm từ 300s)
-  // Không set Content-Type mặc định, để axios tự detect
-  // Điều này quan trọng cho FormData, multipart/form-data
+  timeout: 30000,
 });
 
 export const setupApi = () => {
@@ -106,7 +97,6 @@ export const setupApi = () => {
 export const requestInterceptor = () => {
   axiosClient.interceptors.request.use(
     (config) => {
-      // TỰ ĐỘNG CONVERT: FE (camelCase) -> BE (snake_case)
       // shouldTransform() sẽ tự động skip FormData, File, Blob, etc.
       if (config.data && !config._retry) {
         config._rawData = config.data;
@@ -129,30 +119,20 @@ export const requestInterceptor = () => {
   );
 };
 
-/**
- * Tạo config mới từ originalRequest để retry sau khi refresh.
- * QUAN TRỌNG: KHÔNG reuse originalRequest trực tiếp — Axios đã serialize
- * headers cũ (bao gồm stale cookies) vào object đó. Tạo config mới giúp
- * Axios build lại headers từ đầu và browser sẽ attach cookie mới
- * (access_token vừa được refresh) vào retry request.
- */
 const buildRetryConfig = (
   originalRequest: InternalAxiosRequestConfig & { _retry?: boolean },
 ) => ({
   method: originalRequest.method,
   url: originalRequest.url,
-  // ✅ Dùng raw data gốc (camelCase) → request interceptor sẽ toSnake() đúng 1 lần
   data: originalRequest._rawData ?? originalRequest.data,
   params: originalRequest._rawParams ?? originalRequest.params,
   withCredentials: true,
   _retry: true,
-  // Không copy _rawData/_rawParams → retry request không lưu lại nữa
 });
 
 export const responseInterceptor = () => {
   axiosClient.interceptors.response.use(
     (response) => {
-      // TỰ ĐỘNG CONVERT: BE (snake_case) -> FE (camelCase)
       if (response.data) {
         response.data = toCamel(response.data);
       }
@@ -211,10 +191,6 @@ export const responseInterceptor = () => {
         | (ApiErrorResponse & { data?: unknown })
         | undefined;
 
-      // errorCode value comes from the backend as SCREAMING_SNAKE_CASE.
-      // toCamel only transforms object *keys*, not string *values*, so the value is unchanged.
-      // - Admin:    { success: false, message: "ACCESS_TOKEN_EXPIRED", error: [] }  → data.message
-      // - Customer: { success: true,  data: "CUSTOMER_ACCESS_TOKEN_EXPIRED" }       → data.data
       const rawCode =
         data?.errorCode ??
         (typeof data?.data === "string" ? data.data : null) ??
@@ -222,9 +198,6 @@ export const responseInterceptor = () => {
         null;
       const errorCode = rawCode ?? null;
 
-      // ═══════════════════════════════════════════════════════════════
-      // 5. XỬ LÝ REFRESH TOKEN (401 - Access Token Expired)
-      // ═══════════════════════════════════════════════════════════════
       const INVALID_TOKEN_MESSAGES = ["Invalid token"];
       const isTokenExpired =
         typeof errorCode === "string" &&
@@ -239,16 +212,13 @@ export const responseInterceptor = () => {
       ) {
         originalRequest._retry = true;
 
-        // Xác định endpoint refresh phù hợp dựa theo context
         const isAdminContext = window.location.pathname.startsWith("/admin");
         const refreshPath = isAdminContext
           ? "/api/auth/refresh-token"
           : "/api/customer-auth/refresh-token";
 
-        // Build full URL, xử lý trailing slash từ ENV.API_URL
         const baseUrl = ENV.API_URL.replace(/\/+$/, "");
 
-        // Nếu đang refresh, đưa request vào queue chờ
         if (isRefreshing) {
           return new Promise<void>((resolve, reject) => {
             refreshQueue.push({ resolve, reject });
