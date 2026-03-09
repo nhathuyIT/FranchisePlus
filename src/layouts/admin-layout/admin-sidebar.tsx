@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Coffee, LogOut, KeyRound } from "lucide-react";
+import { Coffee, LogOut, KeyRound, Loader2 } from "lucide-react";
 import {
   LayoutDashboard,
   Users,
@@ -54,6 +54,7 @@ const AdminSideBar = ({ collapsed = false }: AdminSidebarProps) => {
     getAvailableContexts,
     getCurrentPermissions,
     getCurrentRole,
+    isSwitchingRole: isSwitching,
   } = useAuthStore();
   const user = authUser?.user;
   const currentRole = getCurrentRole();
@@ -84,10 +85,21 @@ const AdminSideBar = ({ collapsed = false }: AdminSidebarProps) => {
   return (
     <aside
       className={cn(
-        "h-screen bg-amber-700  text-amber-50 transition-all duration-300 flex flex-col shadow-2xl",
+        "relative h-screen bg-amber-700  text-amber-50 transition-all duration-300 flex flex-col shadow-2xl",
         collapsed ? "w-16" : "w-64",
       )}
     >
+      {/* Full-sidebar loading overlay while switching role */}
+      {isSwitching && (
+        <div className="absolute inset-0 z-50 flex flex-col items-center justify-center gap-3 bg-amber-900/70 backdrop-blur-sm rounded-none">
+          <Loader2 className="w-8 h-8 text-amber-200 animate-spin" />
+          {!collapsed && (
+            <p className="text-sm text-amber-100 font-medium">
+              Switching role...
+            </p>
+          )}
+        </div>
+      )}
       <div className="h-14 flex items-center justify-center border-b border-amber-800/50 px-4">
         {collapsed ? (
           <Coffee size={24} className="text-amber-300" />
