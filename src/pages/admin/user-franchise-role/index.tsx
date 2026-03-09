@@ -85,8 +85,8 @@ const UserFranchiseRolePage = () => {
   );
 
   const formFields = useMemo(
-    () => buildUserFranchiseRoleFields(roleOptions, franchiseOptions),
-    [roleOptions, franchiseOptions],
+    () => buildUserFranchiseRoleFields(roleOptions, franchiseOptions, roles),
+    [roleOptions, franchiseOptions, roles],
   );
 
   // ── Dialog State ─────────────────────────────────────────────────────────
@@ -105,10 +105,13 @@ const UserFranchiseRolePage = () => {
   const handleSubmit = async (
     data: UserFranchiseRoleFormData,
   ): Promise<SubmitResult | void> => {
+    const selectedRole = roles.find((r) => r.value === data.roleId);
+    const isGlobalRole = selectedRole?.scope === "GLOBAL";
+
     const response = await ufrApi.create({
       userId: data.userId,
       franchiseId:
-        data.franchiseId === "__global__" || !data.franchiseId
+        isGlobalRole || data.franchiseId === "__global__" || !data.franchiseId
           ? null
           : data.franchiseId,
       roleId: data.roleId,
