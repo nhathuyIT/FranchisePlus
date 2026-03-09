@@ -14,7 +14,11 @@ import { franchiseFields, franchiseSchema } from "./franchise-form.config";
 import type { FranchiseFormData } from "@/lib/schemas/franchise.schema";
 import type { Franchise } from "@/types/franchise";
 import type { SubmitResult } from "@/components/form-dialog/types";
-import { useFranchises, useDeleteFranchise, useUpdateFranchiseStatus } from "@/hooks/franchise";
+import {
+  useFranchises,
+  useDeleteFranchise,
+  useUpdateFranchiseStatus,
+} from "@/hooks/franchise";
 import { Permission } from "@/config/permission";
 import { useAuthStore } from "@/stores/auth-store";
 import * as franchiseApi from "@/api/franchise/franchise.api";
@@ -227,16 +231,6 @@ const FranchiseList = () => {
     );
   };
 
-  const handleAssignProducts = (franchise: Franchise) => {
-    if (!canViewFranchises) {
-      toast.error("You do not have permission to manage franchises.");
-      return;
-    }
-    navigate(
-      `${ROUTER_URL.ADMIN}/${ROUTER_URL.ADMIN_ROUTER.FRANCHISES}/${franchise.id}/product-assign`,
-    );
-  };
-
   const handleOpenDelete = (franchise: Franchise) => {
     setDeleteTarget(franchise);
   };
@@ -306,8 +300,14 @@ const FranchiseList = () => {
             }
             onView={canViewFranchises ? handleView : undefined}
             onDelete={canManageFranchises ? handleOpenDelete : undefined}
-            onStatusToggle={canManageFranchises ? handleStatusToggle : undefined}
-            statusPendingId={statusMutation.isPending ? String(statusMutation.variables?.id) : null}
+            onStatusToggle={
+              canManageFranchises ? handleStatusToggle : undefined
+            }
+            statusPendingId={
+              statusMutation.isPending
+                ? String(statusMutation.variables?.id)
+                : null
+            }
             canEdit={canManageFranchises}
           />
         </div>

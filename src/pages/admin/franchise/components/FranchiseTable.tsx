@@ -123,17 +123,6 @@ export const FranchiseTable = ({
       importLabel="Import Excel"
       renderActions={(franchise) => (
         <>
-          {onAssignProducts && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => onAssignProducts(franchise)}
-              title="Assign products to categories"
-              className="border-2 border-[#5C6BC0] text-[#5C6BC0] hover:bg-[#5C6BC0] hover:text-white rounded-lg transition-all duration-200 cursor-pointer"
-            >
-              <LayoutGrid className="h-4 w-4" />
-            </Button>
-          )}
           {onView && (
             <Button
               variant="outline"
