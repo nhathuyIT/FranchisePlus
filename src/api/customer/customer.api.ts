@@ -3,6 +3,7 @@ import type {
   LoginRequest,
   RegisterRequest,
   RegisterResponse,
+  ResendTokenRequest,
   VerifyTokenRequest,
   VerifyTokenResponse,
 } from "@/types/auth.type";
@@ -29,6 +30,15 @@ export const verifyClientToken = async (
     data,
   });
   return response!;
+};
+
+export const resendClientToken = async (
+  data: ResendTokenRequest,
+): Promise<void> => {
+  await httpClient.post<void, ResendTokenRequest>({
+    url: "/api/customer-auth/resend-token",
+    data,
+  });
 };
 
 export const loginClient = async (data: LoginRequest): Promise<void> => {

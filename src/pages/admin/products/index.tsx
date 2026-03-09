@@ -14,6 +14,7 @@ import {
   useCreateProductMutation,
   useUpdateProductMutation,
   useDeleteProductMutation,
+  useUpdateProductStatusMutation,
 } from "@/hooks/product/useProductQuery";
 import {
   useUpdateProductFranchiseMutation,
@@ -284,6 +285,7 @@ const ProductsPage = () => {
   const createMutation = useCreateProductMutation();
   const updateMutation = useUpdateProductMutation();
   const deleteMutation = useDeleteProductMutation();
+  const productStatusMutation = useUpdateProductStatusMutation();
 
   // ── Search handler ────────────────────────────────────────────────────────
 
@@ -446,6 +448,29 @@ const ProductsPage = () => {
   const formMode = (dialog.mode === "create" || dialog.mode === "edit") ? dialog.mode : "create";
   const productFields = getProductFields(isManagerView, formMode);
 
+  // ── Status toggle handler ───────────────────────────────────────────────
+  const handleStatusToggle = (product: Product, isActive: boolean) => {
+    if (isManagerView && (product as any).franchiseProductId) {
+      changeStatusProductFranchiseMutation.mutate({
+        id: (product as any).franchiseProductId,
+        data: { is_active: isActive },
+      });
+    } else {
+      productStatusMutation.mutate({ id: product.id, isActive });
+    }
+  };
+
+  const statusPendingId = (() => {
+    if (productStatusMutation.isPending) return String(productStatusMutation.variables?.id);
+    if (changeStatusProductFranchiseMutation.isPending) {
+      // Find the product id from the franchise product id
+      const fpId = String(changeStatusProductFranchiseMutation.variables?.id);
+      const found = products.find((p) => (p as any).franchiseProductId === fpId);
+      return found ? String(found.id) : null;
+    }
+    return null;
+  })();
+
   // Prepare form values - need to set hidden fields for manager create mode validation
   const formValues = dialog.data 
     ? {
@@ -493,6 +518,9 @@ const ProductsPage = () => {
             onDelete={handleDelete}
             onBulkDelete={handleBulkDelete}
             onSearch={!isManagerView ? handleSearch : undefined}
+            onStatusToggle={handleStatusToggle}
+            statusPendingId={statusPendingId}
+            canEdit={true}
           />
         </div>
 

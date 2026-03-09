@@ -1,10 +1,11 @@
-import { Eye, Pencil, Trash2 } from "lucide-react";
+import { useMemo } from "react";
+import { Eye, Trash2 } from "lucide-react";
 import {
   DataTable,
   type ColumnFilter,
   type BulkAction,
 } from "@/components/common/DataTable";
-import { customerAdminColumns } from "../columns/customer-admin.columns";
+import { createCustomerAdminColumns } from "../columns/customer-admin.columns";
 import { Button } from "@/components/ui/button";
 import type { CustomerProfile } from "@/types/customer";
 
@@ -14,9 +15,11 @@ interface CustomerAdminTableProps {
   error?: Error | null;
   onRetry?: () => void;
   onBulkDelete?: (customers: CustomerProfile[]) => void;
-  onEdit?: (customer: CustomerProfile) => void;
   onView?: (customer: CustomerProfile) => void;
   onDelete?: (customer: CustomerProfile) => void;
+  onStatusToggle?: (row: CustomerProfile, isActive: boolean) => void;
+  statusPendingId?: string | null;
+  canEdit?: boolean;
 }
 
 export const CustomerAdminTable = ({
@@ -25,9 +28,11 @@ export const CustomerAdminTable = ({
   error = null,
   onRetry,
   onBulkDelete,
-  onEdit,
   onView,
   onDelete,
+  onStatusToggle,
+  statusPendingId,
+  canEdit,
 }: CustomerAdminTableProps) => {
   const columnFilters: ColumnFilter[] = [
     {
@@ -50,6 +55,12 @@ export const CustomerAdminTable = ({
     },
   ];
 
+  const columns = useMemo(
+    () =>
+      createCustomerAdminColumns({ onStatusToggle, statusPendingId, canEdit }),
+    [onStatusToggle, statusPendingId, canEdit],
+  );
+
   const bulkActions: BulkAction<CustomerProfile>[] = [];
 
   if (onBulkDelete) {
@@ -63,7 +74,7 @@ export const CustomerAdminTable = ({
 
   return (
     <DataTable
-      columns={customerAdminColumns}
+      columns={columns}
       data={customers}
       isLoading={isLoading}
       error={error}
@@ -87,16 +98,6 @@ export const CustomerAdminTable = ({
               className="border-2 border-[#6D4C41] text-[#6D4C41] hover:bg-[#6D4C41] hover:text-white rounded-lg transition-all duration-200 cursor-pointer"
             >
               <Eye className="h-4 w-4" />
-            </Button>
-          )}
-          {onEdit && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => onEdit(customer)}
-              className="border-2 border-[#D97706] text-[#D97706] hover:bg-[#D97706] hover:text-white rounded-lg transition-all duration-200 cursor-pointer"
-            >
-              <Pencil className="h-4 w-4" />
             </Button>
           )}
           {onDelete && (

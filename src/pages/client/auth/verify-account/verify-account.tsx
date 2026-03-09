@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
   Loader2,
@@ -6,14 +6,20 @@ import {
   XCircle,
   ArrowLeft,
   MailCheck,
+  RefreshCw,
 } from "lucide-react";
 import { ROUTER_URL } from "@/router/route.const";
-import { useVerifyClientToken } from "@/hooks/client/useClient.hooks";
+import {
+  useVerifyClientToken,
+  useResendClientToken,
+} from "@/hooks/client/useClient.hooks";
 
 const VerifyAccount = () => {
   const { id: token } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const verifyMutation = useVerifyClientToken();
+  const resendMutation = useResendClientToken();
+  const [email, setEmail] = useState("");
 
   // Trigger on mount
   useEffect(() => {
@@ -37,10 +43,20 @@ const VerifyAccount = () => {
       ? verifyMutation.error.message
       : "Token xác thực không hợp lệ hoặc đã hết hạn.";
 
+  const handleResend = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (email.trim()) resendMutation.mutate({ email: email.trim() });
+  };
+
   return (
     <div
       className="min-h-screen flex items-center justify-center px-4"
-      style={{ background: "var(--cf-primary)" }}
+      style={{
+        background: "var(--cf-primary)",
+        "--cf-primary": "#1C0F0A",
+        "--cf-secondary": "#B08968",
+        "--cf-accent-light": "#DDB892",
+      } as React.CSSProperties}
     >
       {/* Ambient glow */}
       <div
@@ -121,47 +137,140 @@ const VerifyAccount = () => {
               </div>
             )}
 
-            {/* ── Error ── */}
+            {/* ── Error / Resend ── */}
             {(verifyMutation.isError || !token) &&
               !verifyMutation.isPending && (
-                <div className="flex flex-col items-center gap-5 animate-[fadeIn_0.4s_ease-out_both]">
-                  <XCircle
-                    className="w-16 h-16 animate-[scaleIn_0.4s_ease-out_both]"
-                    style={{ color: "#E06C6C" }}
-                    strokeWidth={1.5}
-                  />
-                  <div className="text-center space-y-2">
-                    <h2 className="text-xl font-semibold text-white/90">
-                      Xác thực thất bại
-                    </h2>
-                    <p className="text-sm text-white/50 leading-relaxed">
-                      {verifyMutation.isError
-                        ? errorMessage
-                        : "Token xác thực không hợp lệ."}
-                    </p>
-                  </div>
-                  <button
-                    onClick={() => navigate(ROUTER_URL.CLIENT_ROUTER.LOGIN)}
-                    className="cursor-pointer mt-1 px-8 py-2.5 rounded-xl text-sm font-medium text-white transition-all duration-300 flex items-center gap-2"
-                    style={{
-                      background: "var(--cf-secondary)",
-                      boxShadow: "0 0 0 0 rgba(176,137,104,0)",
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.background =
-                        "var(--cf-accent-light)";
-                      e.currentTarget.style.boxShadow =
-                        "0 0 20px rgba(176,137,104,0.3)";
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.background = "var(--cf-secondary)";
-                      e.currentTarget.style.boxShadow =
-                        "0 0 0 0 rgba(176,137,104,0)";
-                    }}
-                  >
-                    <ArrowLeft className="w-4 h-4" />
-                    Quay lại đăng nhập
-                  </button>
+                <div className="flex flex-col items-center gap-5 w-full animate-[fadeIn_0.4s_ease-out_both]">
+                  {resendMutation.isSuccess ? (
+                    /* ── Resend success ── */
+                    <>
+                      <CheckCircle2
+                        className="w-14 h-14 animate-[scaleIn_0.4s_ease-out_both]"
+                        style={{ color: "#6BBF7B" }}
+                        strokeWidth={1.5}
+                      />
+                      <div className="text-center space-y-1.5">
+                        <h2 className="text-xl font-semibold text-white/90">
+                          Email đã được gửi!
+                        </h2>
+                        <p className="text-sm text-white/50 leading-relaxed">
+                          Kiểm tra hộp thư của bạn và nhấn vào link xác thực.
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => navigate(ROUTER_URL.CLIENT_ROUTER.LOGIN)}
+                        className="cursor-pointer mt-1 px-8 py-2.5 rounded-xl text-sm font-medium text-white transition-all duration-300 flex items-center gap-2"
+                        style={{ background: "var(--cf-secondary)" }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.background =
+                            "var(--cf-accent-light)";
+                          e.currentTarget.style.boxShadow =
+                            "0 0 20px rgba(176,137,104,0.3)";
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.background =
+                            "var(--cf-secondary)";
+                          e.currentTarget.style.boxShadow = "none";
+                        }}
+                      >
+                        <ArrowLeft className="w-4 h-4" />
+                        Quay lại đăng nhập
+                      </button>
+                    </>
+                  ) : (
+                    /* ── Resend form ── */
+                    <>
+                      <XCircle
+                        className="w-14 h-14 animate-[scaleIn_0.4s_ease-out_both]"
+                        style={{ color: "#E06C6C" }}
+                        strokeWidth={1.5}
+                      />
+                      <div className="text-center space-y-1.5">
+                        <h2 className="text-xl font-semibold text-white/90">
+                          Xác thực thất bại
+                        </h2>
+                        <p className="text-sm text-white/50 leading-relaxed">
+                          {verifyMutation.isError
+                            ? errorMessage
+                            : "Token xác thực không hợp lệ."}
+                        </p>
+                      </div>
+
+                      {/* Resend form */}
+                      <form
+                        onSubmit={handleResend}
+                        className="w-full space-y-3 mt-1"
+                      >
+                        <div className="relative">
+                          <MailCheck
+                            className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none"
+                            style={{ color: "rgba(255,255,255,0.35)" }}
+                          />
+                          <input
+                            type="email"
+                            required
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                            placeholder="Nhập địa chỉ email của bạn"
+                            className="w-full pl-10 pr-4 py-2.5 rounded-xl text-sm text-white/90 placeholder-white/30 outline-none transition-all duration-200"
+                            style={{
+                              background: "rgba(255,255,255,0.07)",
+                              border: "1px solid rgba(255,255,255,0.1)",
+                            }}
+                            onFocus={(e) => {
+                              e.currentTarget.style.border =
+                                "1px solid rgba(221,184,146,0.45)";
+                              e.currentTarget.style.background =
+                                "rgba(255,255,255,0.10)";
+                            }}
+                            onBlur={(e) => {
+                              e.currentTarget.style.border =
+                                "1px solid rgba(255,255,255,0.1)";
+                              e.currentTarget.style.background =
+                                "rgba(255,255,255,0.07)";
+                            }}
+                          />
+                        </div>
+
+                        <button
+                          type="submit"
+                          disabled={resendMutation.isPending || !email.trim()}
+                          className="cursor-pointer w-full py-2.5 rounded-xl text-sm font-medium text-white transition-all duration-300 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                          style={{ background: "var(--cf-secondary)" }}
+                          onMouseEnter={(e) => {
+                            if (!resendMutation.isPending && email.trim()) {
+                              e.currentTarget.style.background =
+                                "var(--cf-accent-light)";
+                              e.currentTarget.style.boxShadow =
+                                "0 0 20px rgba(176,137,104,0.3)";
+                            }
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.background =
+                              "var(--cf-secondary)";
+                            e.currentTarget.style.boxShadow = "none";
+                          }}
+                        >
+                          {resendMutation.isPending ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <>
+                              <RefreshCw className="w-4 h-4" />
+                              Gửi lại email xác thực
+                            </>
+                          )}
+                        </button>
+                      </form>
+
+                      <button
+                        onClick={() => navigate(ROUTER_URL.CLIENT_ROUTER.LOGIN)}
+                        className="cursor-pointer text-xs text-white/35 hover:text-white/60 transition-colors duration-200 flex items-center gap-1.5"
+                      >
+                        <ArrowLeft className="w-3.5 h-3.5" />
+                        Quay lại đăng nhập
+                      </button>
+                    </>
+                  )}
                 </div>
               )}
           </div>

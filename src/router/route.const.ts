@@ -3,6 +3,7 @@ export const ROUTER_URL = {
   ABOUT: "/about",
   CONTACT: "/contact",
   LOCATIONS: "/locations",
+  MENU: "menu",
 
   PRODUCTS: "/products",
   CLIENT: "/client",
@@ -13,7 +14,6 @@ export const ROUTER_URL = {
     REGISTER: "/client/register",
     CHANGE_PASSWORD: "/client/change-password",
     CART: "cart",
-    MENU: "menu",
     PRODUCTS: "products",
     PRODUCT_DETAIL: "products/:slug",
     PAYMENT: "payment",
@@ -38,6 +38,7 @@ export const ROUTER_URL = {
     FRANCHISES_CREATE: "franchises/create",
     FRANCHISES_EDIT: "franchises/:id/edit",
     FRANCHISES_DETAIL: "franchises/:id",
+    FRANCHISES_PRODUCT_ASSIGN: "franchises/:id/product-assign",
     INVENTORY: "inventory",
     INVENTORY_LOW_STOCK: "inventory/low-stock",
     CATEGORIES: "categories",
