@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { Order, OrderItem } from '@/types/order';
 
-export type CartItem = OrderItem;
+export type CartItem = OrderItem & { imageUrl?: string };
 
 export interface Cart extends Omit<Order, 'id' | 'code' | 'confirmedAt' | 'completedAt' | 'cancelledAt' | 'createdBy'> {
   id: string;
@@ -28,7 +28,7 @@ function getDefaultCart(): Cart {
 
 interface CartStore {
   cart: Cart;
-  addItem: (productId: number, productName: string, price: number, quantity?: number) => void;
+  addItem: (productId: number, productName: string, price: number, quantity?: number, imageUrl?: string) => void;
   updateQuantity: (productId: number, newQuantity: number) => void;
   removeItem: (productId: number) => void;
   clearCart: () => void;
@@ -39,7 +39,7 @@ const useCartStore = create<CartStore>()(
     (set, get) => ({
       cart: getDefaultCart(),
 
-      addItem: (productId, productName, price, quantity = 1) => {
+      addItem: (productId, productName, price, quantity = 1, imageUrl?: string) => {
         const { cart } = get();
         const existing = cart.items.find(item => item.productFranchiseId === productId);
 
@@ -53,6 +53,7 @@ const useCartStore = create<CartStore>()(
                       ...item,
                       quantity: item.quantity + quantity,
                       lineTotal: (item.quantity + quantity) * item.priceSnapshot,
+                      ...(imageUrl ? { imageUrl } : {}),
                     }
                   : item
               ),
@@ -68,6 +69,7 @@ const useCartStore = create<CartStore>()(
             priceSnapshot: price,
             quantity,
             lineTotal: price * quantity,
+            imageUrl,
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
             isDeleted: false,

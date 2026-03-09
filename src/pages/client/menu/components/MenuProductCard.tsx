@@ -1,6 +1,8 @@
 import type { MenuProduct } from "@/types/menu.type";
 import { formatPrice, getMinPrice, getSizeLabel } from "../lib/helpers";
 import { Cookie, Eye } from "lucide-react";
+import { useCart } from "@/pages/client/cart";
+import { toast } from "sonner";
 
 export const MenuProductCard = ({
   product,
@@ -10,6 +12,12 @@ export const MenuProductCard = ({
   onViewDetail: (productId: string | number) => void;
 }) => {
   const minPrice = getMinPrice(product.sizes);
+  const { addItem } = useCart();
+
+  const handleAddToCart = (productFranchiseId: number, price: number) => {
+    addItem(productFranchiseId, product.name, price, 1, product.imageUrl);
+    toast.success(`Added "${product.name}" to cart`);
+  };
 
   return (
     <div
@@ -83,12 +91,13 @@ export const MenuProductCard = ({
           {product.sizes.map((s) => (
             <div
               key={s.size}
+              onClick={() => s.isAvailable && handleAddToCart(Number(s.productFranchiseId), s.price)}
               className={`group/row flex items-center justify-between px-4 py-2.5 rounded-xl 
-                          border transition-all duration-300 cursor-default
+                          border transition-all duration-300
                           ${
                             s.isAvailable
-                              ? "bg-amber-50/80 border-amber-200/70 hover:bg-red-500 hover:border-red-500 hover:shadow-lg hover:shadow-red-500/25 hover:scale-[1.03]"
-                              : "bg-stone-50 border-stone-200/40 opacity-50"
+                              ? "bg-amber-50/80 border-amber-200/70 hover:bg-red-500 hover:border-red-500 hover:shadow-lg hover:shadow-red-500/25 hover:scale-[1.03] cursor-pointer"
+                              : "bg-stone-50 border-stone-200/40 opacity-50 cursor-not-allowed"
                           }`}
             >
               <span
