@@ -2,6 +2,7 @@ import type { ColumnDef } from "@tanstack/react-table";
 import { Store, Phone } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { StatusToggleCell } from "@/components/common/StatusToggleCell";
 import type { Franchise } from "@/types/franchise";
 
 const TIME_DISPLAY_REGEX = /^(?:[01]\d|2[0-3]):[0-5]\d(?:[:][0-5]\d)?$/;
@@ -20,7 +21,13 @@ const formatFranchiseHours = (openedAt: string | null, closedAt: string | null) 
   return new Date(openedAt).toLocaleDateString();
 };
 
-export const franchiseColumns: ColumnDef<Franchise>[] = [
+interface ColumnOptions {
+  onStatusToggle?: (row: Franchise, isActive: boolean) => void;
+  statusPendingId?: string | null;
+  canEdit?: boolean;
+}
+
+export const createFranchiseColumns = (options?: ColumnOptions): ColumnDef<Franchise>[] => [
   {
     accessorKey: "logoUrl",
     header: "Logo",
@@ -107,17 +114,28 @@ export const franchiseColumns: ColumnDef<Franchise>[] = [
     filterFn: (row, _columnId, filterValue) => {
       return row.original.isActive === filterValue;
     },
-    cell: ({ row }) => (
-      <Badge
-        variant={row.original.isActive ? "default" : "secondary"}
-        className={
-          row.original.isActive
-            ? "bg-green-600 hover:bg-green-700 rounded-full text-xs"
-            : "bg-gray-500 hover:bg-gray-600 rounded-full text-xs"
-        }
-      >
-        {row.original.isActive ? "Active" : "Inactive"}
-      </Badge>
-    ),
+    cell: ({ row }) => {
+      if (options?.onStatusToggle && options.canEdit) {
+        return (
+          <StatusToggleCell
+            isActive={row.original.isActive}
+            onToggle={(val) => options.onStatusToggle!(row.original, val)}
+            isPending={options.statusPendingId === String(row.original.id)}
+          />
+        );
+      }
+      return (
+        <Badge
+          variant={row.original.isActive ? "default" : "secondary"}
+          className={
+            row.original.isActive
+              ? "bg-green-600 hover:bg-green-700 rounded-full text-xs"
+              : "bg-gray-500 hover:bg-gray-600 rounded-full text-xs"
+          }
+        >
+          {row.original.isActive ? "Active" : "Inactive"}
+        </Badge>
+      );
+    },
   },
 ];

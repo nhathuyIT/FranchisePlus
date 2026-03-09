@@ -13,7 +13,7 @@ import { userFields, userSchema } from "./user-form.config";
 import type { UserFormData } from "./user-form.config";
 import type { User } from "@/types/user.type";
 import type { SubmitResult } from "@/components/form-dialog/types";
-import { useUserSearch, useDeleteUser } from "@/hooks/user";
+import { useUserSearch, useDeleteUser, useUpdateUserStatus } from "@/hooks/user";
 import type { UserSearchRequest } from "@/api/user/user.type";
 import * as userApi from "@/api/user/user.api";
 
@@ -26,7 +26,7 @@ const UserCRUD = () => {
     },
     pageInfo: {
       pageNum: 1,
-      pageSize: 10,
+      pageSize: 1000,
     },
   });
 
@@ -38,6 +38,7 @@ const UserCRUD = () => {
   } = useUserSearch(searchParams);
 
   const deleteMutation = useDeleteUser({ suppressToast: true });
+  const userStatusMutation = useUpdateUserStatus();
 
   const users = searchResult?.pageData ?? [];
 
@@ -180,6 +181,10 @@ const UserCRUD = () => {
     }
   }, [dialog.mode]);
 
+  const handleStatusToggle = (user: User, isActive: boolean) => {
+    userStatusMutation.mutate({ id: String(user.id), isActive });
+  };
+
   return (
     <div className="h-full flex flex-col">
       <div className="flex-1 flex flex-col min-h-0 max-w-7xl mx-auto w-full">
@@ -213,6 +218,9 @@ const UserCRUD = () => {
             onEdit={dialog.openEdit}
             onView={dialog.openView}
             onDelete={(user) => setDeleteTarget(user)}
+            onStatusToggle={handleStatusToggle}
+            statusPendingId={userStatusMutation.isPending ? String(userStatusMutation.variables?.id) : null}
+            canEdit={true}
           />
         </div>
 

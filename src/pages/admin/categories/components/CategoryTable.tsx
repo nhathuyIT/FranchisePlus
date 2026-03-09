@@ -1,6 +1,7 @@
+import { useMemo } from "react";
 import { Pencil, Trash2 } from "lucide-react";
 import { DataTable, type ColumnFilter, type BulkAction } from "@/components/common/DataTable";
-import { categoryColumns } from "../columns/category.columns";
+import { createCategoryColumns } from "../columns/category.columns";
 import { Button } from "@/components/ui/button";
 import type { Category } from "@/types/category";
 import { toast } from "sonner";
@@ -20,6 +21,9 @@ interface CategoryTableProps {
   onEdit?: (category: Category) => void;
   onDelete?: (category: Category) => void;
   onBulkDelete?: (categories: Category[]) => void;
+  onStatusToggle?: (row: Category, isActive: boolean) => void;
+  statusPendingId?: string | null;
+  canEdit?: boolean;
 }
 
 export const CategoryTable = ({
@@ -30,6 +34,9 @@ export const CategoryTable = ({
   onEdit,
   onDelete,
   onBulkDelete,
+  onStatusToggle,
+  statusPendingId,
+  canEdit,
 }: CategoryTableProps) => {
   // Excel Export
   const { exportToExcel, isExporting } = useExcelExport({
@@ -37,6 +44,11 @@ export const CategoryTable = ({
     fileName: "categories",
     sheetName: "Categories",
   });
+
+  const columns = useMemo(
+    () => createCategoryColumns({ onStatusToggle, statusPendingId, canEdit }),
+    [onStatusToggle, statusPendingId, canEdit]
+  );
 
   // Excel Import
   const { importFromExcel, isImporting } = useExcelImport({
@@ -89,7 +101,7 @@ export const CategoryTable = ({
 
   return (
     <DataTable
-      columns={categoryColumns}
+      columns={columns}
       data={categories}
       isLoading={isLoading}
       error={error}
