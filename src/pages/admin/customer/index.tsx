@@ -155,13 +155,7 @@ const CustomerAdminList = () => {
 
   // ── Action Handlers ──────────────────────────────────────────────────────
 
-  const handleEdit = (customer: CustomerProfile) => {
-    if (!canManageCustomers) {
-      toast.error("You do not have permission to edit customers.");
-      return;
-    }
-    dialog.openEdit(customer);
-  };
+
 
   const handleView = (customer: CustomerProfile) => {
     if (!canViewCustomers) {
@@ -219,11 +213,14 @@ const CustomerAdminList = () => {
             error={listError}
             onRetry={refetch}
             onBulkDelete={canManageCustomers ? handleBulkDelete : undefined}
-            onEdit={canManageCustomers ? handleEdit : undefined}
             onView={canViewCustomers ? handleView : undefined}
             onDelete={canManageCustomers ? handleOpenDelete : undefined}
             onStatusToggle={canManageCustomers ? handleStatusToggle : undefined}
-            statusPendingId={customerStatusMutation.isPending ? String(customerStatusMutation.variables?.id) : null}
+            statusPendingId={
+              customerStatusMutation.isPending
+                ? String(customerStatusMutation.variables?.id)
+                : null
+            }
             canEdit={canManageCustomers}
           />
         </div>
