@@ -225,10 +225,15 @@ export const responseInterceptor = () => {
       // ═══════════════════════════════════════════════════════════════
       // 5. XỬ LÝ REFRESH TOKEN (401 - Access Token Expired)
       // ═══════════════════════════════════════════════════════════════
+      const INVALID_TOKEN_MESSAGES = ["Invalid token"];
+      const isTokenExpired =
+        typeof errorCode === "string" &&
+        (errorCode.endsWith(ACCESS_TOKEN_EXPIRED) ||
+          INVALID_TOKEN_MESSAGES.some((msg) => errorCode === msg));
+
       if (
         status === 401 &&
-        typeof errorCode === "string" &&
-        errorCode.endsWith(ACCESS_TOKEN_EXPIRED) &&
+        isTokenExpired &&
         !originalRequest._retry &&
         !originalRequest.url?.includes("refresh-token")
       ) {

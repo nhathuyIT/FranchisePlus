@@ -4,6 +4,7 @@ import { HomePage, AboutPage, ContactPage, LocationPage } from "@/pages/client";
 import { ROUTER_URL } from "../route.const";
 import ProductsPage from "@/pages/client/products";
 import ProductDetailPage from "@/pages/client/products/components/ProductDetail";
+import { MenuPage } from "@/pages/client/menu";
 
 export const ClientPublicRoute = (
   <Route element={<ClientLayout />}>
@@ -13,5 +14,6 @@ export const ClientPublicRoute = (
     <Route path={ROUTER_URL.LOCATIONS} element={<LocationPage />} />
     <Route path={ROUTER_URL.PRODUCTS} element={<ProductsPage />} />
     <Route path={ROUTER_URL.PRODUCT_DETAIL} element={<ProductDetailPage />} />
+    <Route path={ROUTER_URL.MENU} element={<MenuPage />} />
   </Route>
 );
