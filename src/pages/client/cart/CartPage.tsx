@@ -6,7 +6,7 @@ import coffeeCupIcon from "@/assets/icons/coffee-cup.svg";
 import { ShoppingCart, Star, Trash2, ChevronLeft, CreditCard, Coffee } from "lucide-react";
 
 const CartPage: React.FC = () => {
-  const { cart, updateQuantity, removeItem, subtotal, totalAmount, itemCount } =
+  const { cart, updateQuantity, removeItem, totalAmount, itemCount } =
     useCart();
 
   const navigate = useNavigate();
