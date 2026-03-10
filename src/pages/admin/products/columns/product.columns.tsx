@@ -7,40 +7,48 @@ interface ColumnOptions {
   onStatusToggle?: (row: Product, isActive: boolean) => void;
   statusPendingId?: string | null;
   canEdit?: boolean;
+  isManagerView?: boolean;
 }
 
-export const createProductColumns = (options?: ColumnOptions): ColumnDef<Product>[] => [
-  {
-    accessorKey: "sku",
-    header: "SKU",
-    cell: ({ row }) => (
-      <span className="font-mono text-sm text-[#5D4037]">
-        {row.original.sku}
-      </span>
-    ),
-  },
-  {
-    accessorKey: "imageUrl",
-    header: "Image",
-    enableSorting: false,
-    cell: ({ row }) => (
-      row.original.imageUrl ? (
-        <img
-          src={row.original.imageUrl}
-          alt={row.original.name}
-          className="w-12 h-12 object-cover rounded-lg border border-[#E8DFD6]"
-          onError={(e) => {
-            e.currentTarget.src = 'https://via.placeholder.com/48?text=No+Image';
-          }}
-        />
-      ) : (
-        <div className="w-12 h-12 bg-gray-200 rounded-lg flex items-center justify-center text-gray-400 text-xs">
-          No image
-        </div>
-      )
-    ),
-  },
-  {
+export const createProductColumns = (options?: ColumnOptions): ColumnDef<Product>[] => {
+  const columns: ColumnDef<Product>[] = [];
+
+  if (!options?.isManagerView) {
+    columns.push(
+      {
+        accessorKey: "sku",
+        header: "SKU",
+        cell: ({ row }) => (
+          <span className="font-mono text-sm text-[#5D4037]">
+            {row.original.sku}
+          </span>
+        ),
+      },
+      {
+        accessorKey: "imageUrl",
+        header: "Image",
+        enableSorting: false,
+        cell: ({ row }) => (
+          row.original.imageUrl ? (
+            <img
+              src={row.original.imageUrl}
+              alt={row.original.name}
+              className="w-12 h-12 object-cover rounded-lg border border-[#E8DFD6]"
+              onError={(e) => {
+                e.currentTarget.src = 'https://via.placeholder.com/48?text=No+Image';
+              }}
+            />
+          ) : (
+            <div className="w-12 h-12 bg-gray-200 rounded-lg flex items-center justify-center text-gray-400 text-xs">
+              No image
+            </div>
+          )
+        ),
+      }
+    );
+  }
+
+  columns.push({
     accessorKey: "name",
     header: "Name",
     cell: ({ row }) => (
@@ -50,11 +58,14 @@ export const createProductColumns = (options?: ColumnOptions): ColumnDef<Product
   {
     id: "price_range",
     accessorFn: (row) => `${row.minPrice}-${row.maxPrice}`,
-    header: "Price Range",
+    header: options?.isManagerView ? "Price" : "Price Range",
     enableSorting: false,
     cell: ({ row }) => (
       <span className="text-[#5D4037]">
-        {row.original.minPrice.toLocaleString()}₫ – {row.original.maxPrice.toLocaleString()}₫
+        {options?.isManagerView 
+          ? `${row.original.minPrice.toLocaleString()}₫`
+          : `${row.original.minPrice.toLocaleString()}₫ – ${row.original.maxPrice.toLocaleString()}₫`
+        }
       </span>
     ),
   },
@@ -87,5 +98,7 @@ export const createProductColumns = (options?: ColumnOptions): ColumnDef<Product
         </Badge>
       );
     },
-  },
-];
+  });
+
+  return columns;
+};

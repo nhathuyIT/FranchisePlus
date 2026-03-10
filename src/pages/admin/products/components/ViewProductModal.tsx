@@ -12,9 +12,10 @@ interface ViewProductModalProps {
   product: Product | null;
   isOpen: boolean;
   onClose: () => void;
+  isManagerView?: boolean;
 }
 
-export const ViewProductModal = ({ product, isOpen, onClose }: ViewProductModalProps) => {
+export const ViewProductModal = ({ product, isOpen, onClose, isManagerView = false }: ViewProductModalProps) => {
   if (!product) return null;
 
   return (
@@ -77,20 +78,29 @@ export const ViewProductModal = ({ product, isOpen, onClose }: ViewProductModalP
             </div>
           )}
 
-          <div className="grid grid-cols-2 gap-4">
+          {isManagerView ? (
             <div>
-              <h3 className="text-sm font-medium text-[#5D4037] mb-1">Min Price</h3>
+              <h3 className="text-sm font-medium text-[#5D4037] mb-1">Price</h3>
               <p className="text-xl font-bold text-[#3E2723]">
-                ${product.minPrice.toFixed(2)}
+                {product.minPrice.toLocaleString()}₫
               </p>
             </div>
-            <div>
-              <h3 className="text-sm font-medium text-[#5D4037] mb-1">Max Price</h3>
-              <p className="text-xl font-bold text-[#3E2723]">
-                ${product.maxPrice.toFixed(2)}
-              </p>
+          ) : (
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <h3 className="text-sm font-medium text-[#5D4037] mb-1">Min Price</h3>
+                <p className="text-xl font-bold text-[#3E2723]">
+                  {product.minPrice.toLocaleString()}₫
+                </p>
+              </div>
+              <div>
+                <h3 className="text-sm font-medium text-[#5D4037] mb-1">Max Price</h3>
+                <p className="text-xl font-bold text-[#3E2723]">
+                  {product.maxPrice.toLocaleString()}₫
+                </p>
+              </div>
             </div>
-          </div>
+          )}
 
           <div className="grid grid-cols-2 gap-4">
             <div>

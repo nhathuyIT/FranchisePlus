@@ -28,6 +28,7 @@ interface ProductTableProps {
   onStatusToggle?: (row: Product, isActive: boolean) => void;
   statusPendingId?: string | null;
   canEdit?: boolean;
+  isManagerView?: boolean;
 }
 
 export const ProductTable = ({
@@ -43,6 +44,7 @@ export const ProductTable = ({
   onStatusToggle,
   statusPendingId,
   canEdit,
+  isManagerView = false,
 }: ProductTableProps) => {
   // Server-side search state
   const [searchInput, setSearchInput] = useState("");
@@ -70,8 +72,8 @@ export const ProductTable = ({
   });
 
   const columns = useMemo(
-    () => createProductColumns({ onStatusToggle, statusPendingId, canEdit }),
-    [onStatusToggle, statusPendingId, canEdit]
+    () => createProductColumns({ onStatusToggle, statusPendingId, canEdit, isManagerView }),
+    [onStatusToggle, statusPendingId, canEdit, isManagerView]
   );
 
   // Excel Import
