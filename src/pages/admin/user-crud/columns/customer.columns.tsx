@@ -1,10 +1,17 @@
 import type { ColumnDef } from "@tanstack/react-table";
-import { User } from "lucide-react";
+import { User as UserIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import type { Customer } from "@/types/customer";
+import { StatusToggleCell } from "@/components/common/StatusToggleCell";
+import type { User } from "@/types/user.type";
 
-export const customerColumns: ColumnDef<Customer>[] = [
+interface ColumnOptions {
+  onStatusToggle?: (row: User, isActive: boolean) => void;
+  statusPendingId?: string | null;
+  canEdit?: boolean;
+}
+
+export const createCustomerColumns = (options?: ColumnOptions): ColumnDef<User>[] => [
   {
     accessorKey: "avatarUrl",
     header: "Avatar",
@@ -17,7 +24,7 @@ export const customerColumns: ColumnDef<Customer>[] = [
           className="object-cover"
         />
         <AvatarFallback className="rounded-lg bg-[#6D4C41] text-white">
-          <User className="h-6 w-6" />
+          <UserIcon className="h-6 w-6" />
         </AvatarFallback>
       </Avatar>
     ),
@@ -29,6 +36,7 @@ export const customerColumns: ColumnDef<Customer>[] = [
       <span className="font-medium text-[#3E2723]">{row.original.name}</span>
     ),
   },
+
   {
     accessorKey: "phone",
     header: "Phone",
@@ -45,15 +53,7 @@ export const customerColumns: ColumnDef<Customer>[] = [
       <span className="text-[#5D4037]">{row.original.email || "N/A"}</span>
     ),
   },
-  {
-    accessorKey: "createdAt",
-    header: "Created Date",
-    cell: ({ row }) => (
-      <span className="text-[#5D4037]">
-        {new Date(row.original.createdAt).toLocaleDateString()}
-      </span>
-    ),
-  },
+
   {
     accessorKey: "isActive",
     header: "Status",
@@ -61,17 +61,28 @@ export const customerColumns: ColumnDef<Customer>[] = [
       // filterValue will be boolean after conversion in DataTable
       return row.original.isActive === filterValue;
     },
-    cell: ({ row }) => (
-      <Badge
-        variant={row.original.isActive ? "default" : "secondary"}
-        className={
-          row.original.isActive
-            ? "bg-green-600 hover:bg-green-700 rounded-full"
-            : "bg-gray-500 hover:bg-gray-600 rounded-full"
-        }
-      >
-        {row.original.isActive ? "Active" : "Inactive"}
-      </Badge>
-    ),
+    cell: ({ row }) => {
+      if (options?.onStatusToggle && options.canEdit) {
+        return (
+          <StatusToggleCell
+            isActive={row.original.isActive}
+            onToggle={(val) => options.onStatusToggle!(row.original, val)}
+            isPending={options.statusPendingId === String(row.original.id)}
+          />
+        );
+      }
+      return (
+        <Badge
+          variant={row.original.isActive ? "default" : "secondary"}
+          className={
+            row.original.isActive
+              ? "bg-green-600 hover:bg-green-700 rounded-full"
+              : "bg-gray-500 hover:bg-gray-600 rounded-full"
+          }
+        >
+          {row.original.isActive ? "Active" : "Inactive"}
+        </Badge>
+      );
+    },
   },
 ];

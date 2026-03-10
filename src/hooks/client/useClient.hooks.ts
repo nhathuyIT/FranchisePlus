@@ -6,10 +6,12 @@ import { useAuthStore } from "@/stores/auth-store";
 import { ROUTER_URL } from "@/router/route.const";
 import type {
   RegisterRequest,
+  ResendTokenRequest,
   VerifyTokenRequest,
   LoginRequest,
   ChangePasswordRequest,
 } from "@/types/auth.type";
+import type { ProfileRequest } from "@/types/customer";
 
 /**
  * Hook to logout customer
@@ -54,6 +56,26 @@ export const useRegisterCustomer = () => {
     onError: (error) => {
       toast.error("Registration failed", {
         description: error.message || "Please try again.",
+      });
+    },
+  });
+};
+
+/**
+ * Hook to resend customer verification email
+ */
+export const useResendClientToken = () => {
+  return useMutation({
+    mutationFn: (data: ResendTokenRequest) =>
+      customerApi.resendClientToken(data),
+    onSuccess: () => {
+      toast.success("Email xác thực đã được gửi lại!", {
+        description: "Vui lòng kiểm tra hộp thư của bạn.",
+      });
+    },
+    onError: (error) => {
+      toast.error("Gửi lại thất bại", {
+        description: error.message || "Vui lòng thử lại sau.",
       });
     },
   });
@@ -107,11 +129,12 @@ export const useClientLogin = () => {
           passwordHash: "",
           name: customerData.name,
           phone: customerData.phone || null,
-          avatarUrl: customerData.avatar_url || null,
-          isActive: customerData.is_active,
-          isDeleted: customerData.is_deleted,
-          createdAt: customerData.created_at,
-          updatedAt: customerData.updated_at,
+          avatarUrl: customerData.avatarUrl || null,
+          address: customerData.address || null,
+          isActive: customerData.isActive,
+          isDeleted: customerData.isDeleted,
+          createdAt: customerData.createdAt,
+          updatedAt: customerData.updatedAt,
         },
         roles: [],
         franchiseRoles: [],
@@ -133,6 +156,49 @@ export const useClientLogin = () => {
   });
 };
 
+/**
+ * Hook to update customer profile
+ */
+export const useUpdateClientProfile = () => {
+  const { authUser, updateProfile } = useAuthStore();
+
+  return useMutation({
+    mutationFn: (data: ProfileRequest) => {
+      if (!authUser?.user?.id) {
+        throw new Error("User ID not found");
+      }
+      return customerApi.updateClientProfile(authUser.user.id, data);
+    },
+    onSuccess: (response) => {
+      // Response is already camelCase from axios interceptor
+      const updatedUser = {
+        id: response.id,
+        email: response.email,
+        passwordHash: "",
+        name: response.name,
+        phone: response.phone || null,
+        avatarUrl: response.avatarUrl || null,
+        address: response.address || null,
+        isActive: response.isActive,
+        isDeleted: response.isDeleted,
+        createdAt: response.createdAt,
+        updatedAt: response.updatedAt,
+      };
+
+      updateProfile(updatedUser);
+      toast.success("Profile updated successfully");
+    },
+    onError: (error) => {
+      toast.error("Update failed", {
+        description: error.message || "Could not update profile",
+      });
+    },
+  });
+};
+
+/**
+ * Hook to change customer password
+ */
 export const useClientChangePassword = () => {
   const navigate = useNavigate();
 

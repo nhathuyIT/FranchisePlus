@@ -1,5 +1,12 @@
 import { z } from "zod";
 
+const TIME_24H_REGEX = /^(?:[01]\d|2[0-3]):[0-5]\d$/;
+
+const toMinutes = (time: string) => {
+  const [hours, minutes] = time.split(":").map(Number);
+  return hours * 60 + minutes;
+};
+
 /**
  * Franchise form validation schema
  * Includes cross-field validation for closedAt > openedAt
@@ -20,6 +27,12 @@ export const FranchiseSchema = z
       .min(1, "Franchise name is required")
       .max(100, "Name too long - keep it under 100 characters"),
 
+    hotline: z
+      .string()
+      .regex(/^[0-9]{10,11}$/, "Enter a valid phone number (10-11 digits)")
+      .optional()
+      .or(z.literal("")),
+
     logoUrl: z
       .string()
       .url("Enter a valid URL starting with http:// or https://")
@@ -33,17 +46,13 @@ export const FranchiseSchema = z
 
     openedAt: z
       .string()
-      .refine((date) => !date || !isNaN(Date.parse(date)), {
-        message: "Select a valid opening date or leave empty",
-      })
+      .regex(TIME_24H_REGEX, "Enter time in HH:mm format (e.g., 08:00)")
       .optional()
       .or(z.literal("")),
 
     closedAt: z
       .string()
-      .refine((date) => !date || !isNaN(Date.parse(date)), {
-        message: "Select a valid closing date or leave empty",
-      })
+      .regex(TIME_24H_REGEX, "Enter time in HH:mm format (e.g., 22:00)")
       .optional()
       .or(z.literal("")),
 
@@ -51,14 +60,13 @@ export const FranchiseSchema = z
   })
   .refine(
     (data) => {
-      // Advanced validation: closedAt must be after openedAt
       if (data.closedAt && data.openedAt) {
-        return new Date(data.closedAt) > new Date(data.openedAt);
+        return toMinutes(data.closedAt) > toMinutes(data.openedAt);
       }
       return true;
     },
     {
-      message: "Closing date must be later than the opening date. Check both dates.",
+      message: "Closing time must be later than opening time.",
       path: ["closedAt"],
     }
   );

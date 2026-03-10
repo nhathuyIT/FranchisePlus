@@ -14,3 +14,18 @@ export interface CategoryFranchise
   franchiseId: ID;
   displayOrder: number;
 }
+
+export interface CategoryList {
+  categoryId: ID;
+  categoryName: string;
+  categoryCode: string;
+  franchiseId: ID;
+  franchiseName: string;
+  franchiseCode: string;
+  displayOrder: number;
+}
+
+export interface CategoryListResponse {
+  success: boolean;
+  data: CategoryList[];
+}

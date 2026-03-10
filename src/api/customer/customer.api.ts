@@ -3,10 +3,11 @@ import type {
   LoginRequest,
   RegisterRequest,
   RegisterResponse,
+  ResendTokenRequest,
   VerifyTokenRequest,
   VerifyTokenResponse,
 } from "@/types/auth.type";
-import type { CustomerLoginResponse } from "@/types/customer";
+import type { CustomerLoginResponse, ProfileRequest } from "@/types/customer";
 import { httpClient } from "../httpClient.api";
 
 export const register = async (
@@ -31,6 +32,15 @@ export const verifyClientToken = async (
   return response!;
 };
 
+export const resendClientToken = async (
+  data: ResendTokenRequest,
+): Promise<void> => {
+  await httpClient.post<void, ResendTokenRequest>({
+    url: "/api/customer-auth/resend-token",
+    data,
+  });
+};
+
 export const loginClient = async (data: LoginRequest): Promise<void> => {
   await httpClient.post<void, LoginRequest>({
     url: "/api/customer-auth",
@@ -49,6 +59,18 @@ export const logoutClient = async (): Promise<void> => {
     url: "/api/customer-auth/logout",
   });
 };
+
+export const updateClientProfile = async (
+  id: string,
+  data: ProfileRequest,
+): Promise<CustomerLoginResponse> => {
+  const response = await httpClient.put<CustomerLoginResponse>({
+    url: `/api/customers/${id}`,
+    data,
+  });
+  return response!;
+};
+
 export const changePasswordClient = async (
   data: ChangePasswordRequest,
 ): Promise<void> => {

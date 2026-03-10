@@ -1,8 +1,12 @@
-import { Edit, Download } from "lucide-react";
-import { DataTable, type ColumnFilter, type BulkAction } from "@/components/common/DataTable";
+import { Edit, Trash2, Download } from "lucide-react";
+import {
+  DataTable,
+  type ColumnFilter,
+  type BulkAction,
+} from "@/components/common/DataTable";
 import { inventoryColumns } from "../columns/inventory.columns";
 import { Button } from "@/components/ui/button";
-import type { InventoryItemView } from "@/types/inventory";
+import type { InventorySearchItem } from "@/api/inventory/inventory.type";
 import { toast } from "sonner";
 import {
   useExcelExport,
@@ -11,12 +15,13 @@ import {
 } from "@/lib/excel";
 
 interface InventoryTableProps {
-  items: InventoryItemView[];
+  items: InventorySearchItem[];
   isLoading?: boolean;
   error?: Error | null;
   onRetry?: () => void;
-  onEdit?: (item: InventoryItemView) => void;
-  onBulkExport?: (items: InventoryItemView[]) => void;
+  onEdit?: (item: InventorySearchItem) => void;
+  onDelete?: (item: InventorySearchItem) => void;
+  onBulkExport?: (items: InventorySearchItem[]) => void;
 }
 
 export const InventoryTable = ({
@@ -25,9 +30,10 @@ export const InventoryTable = ({
   error = null,
   onRetry,
   onEdit,
+  onDelete,
   onBulkExport,
 }: InventoryTableProps) => {
-  // Excel Export (flatten nested InventoryItemView for export)
+  // Excel Export (flatten nested data for export)
   const { exportToExcel, isExporting } = useExcelExport({
     headerMapping: INVENTORY_REVERSE_HEADER_MAPPING,
     fileName: "inventory",
@@ -36,13 +42,15 @@ export const InventoryTable = ({
 
   const handleExport = () => {
     const flatData = items.map((item) =>
-      flattenInventoryItem(item as unknown as Record<string, unknown>)
+      flattenInventoryItem(item as unknown as Record<string, unknown>),
     );
-    exportToExcel(flatData).then(() => {
-      toast.success("Inventory exported successfully!");
-    }).catch(() => {
-      toast.error("Inventory export failed!");
-    });
+    exportToExcel(flatData)
+      .then(() => {
+        toast.success("Inventory exported successfully!");
+      })
+      .catch(() => {
+        toast.error("Inventory export failed!");
+      });
   };
 
   // Column Filters Configuration
@@ -57,15 +65,10 @@ export const InventoryTable = ({
         { label: "Out of Stock", value: "out_of_stock" },
       ],
     },
-    // {
-    //   id: "franchiseName",
-    //   type: "search",
-    //   label: "Franchise",
-    // },
   ];
 
   // Bulk Actions Configuration
-  const bulkActions: BulkAction<InventoryItemView>[] = [];
+  const bulkActions: BulkAction<InventorySearchItem>[] = [];
 
   if (onBulkExport) {
     bulkActions.push({
@@ -86,26 +89,38 @@ export const InventoryTable = ({
       searchPlaceholder="Search by product name, SKU, or franchise..."
       emptyMessage="No inventory items found matching your criteria."
       initialPageSize={5}
-      // NEW FEATURES
       enableRowSelection={!!onBulkExport}
       enableColumnVisibility
       columnFilters={columnFilters}
       bulkActions={bulkActions}
-      // Excel Export only (no import for nested view model)
       onExport={handleExport}
       isExporting={isExporting}
       exportLabel="Export Excel"
       renderActions={
-        onEdit
+        onEdit || onDelete
           ? (item) => (
-              <Button
-                variant="outline"
-                size="sm"
-                className="border-2 border-[#6D4C41] text-[#6D4C41] hover:bg-[#6D4C41] hover:text-white rounded-lg transition-all duration-200"
-                onClick={() => onEdit(item)}
-              >
-                <Edit className="h-4 w-4" />
-              </Button>
+              <div className="flex gap-2">
+                {onEdit && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="border-2 border-[#6D4C41] text-[#6D4C41] hover:bg-[#6D4C41] hover:text-white rounded-lg transition-all duration-200"
+                    onClick={() => onEdit(item)}
+                  >
+                    <Edit className="h-4 w-4" />
+                  </Button>
+                )}
+                {onDelete && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="border-2 border-red-500 text-red-500 hover:bg-red-500 hover:text-white rounded-lg transition-all duration-200"
+                    onClick={() => onDelete(item)}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                )}
+              </div>
             )
           : undefined
       }

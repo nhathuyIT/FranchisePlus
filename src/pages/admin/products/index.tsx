@@ -1,23 +1,9 @@
 import { useState, useCallback } from "react";
 import { Plus } from "lucide-react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { ImageUpload } from "@/components/ui/image-upload";
-import { uploadFileToCloudinary } from "@/config/cloudinary";
+import { FormDialog, useFormDialog } from "@/components/form-dialog";
+import type { FieldConfig } from "@/lib/form/field-config";
 import { PageHeader } from "@/components/common/PageHeader";
 import { ProductTable } from "./components/ProductTable";
 import { ViewProductModal } from "./components/ViewProductModal";
@@ -28,14 +14,24 @@ import {
   useCreateProductMutation,
   useUpdateProductMutation,
   useDeleteProductMutation,
+  useUpdateProductStatusMutation,
 } from "@/hooks/product/useProductQuery";
+import {
+  useUpdateProductFranchiseMutation,
+  useDeleteProductFranchiseMutation,
+  useProductFranchisesQuery,
+  useChangeStatusProductFranchiseMutation,
+  useCreateProductFranchiseMutation,
+} from "@/hooks/product-franchise/useProductFranchiseQuery";
+import { useAuthStore } from "@/stores/auth-store";
 
 // ── Form schema ─────────────────────────────────────────────────────────────
 
 const productSchema = z
   .object({
-    sku: z.string().min(2, "SKU must be at least 2 characters"),
+    sku: z.string().min(2, "SKU must be at least 2 characters").optional().or(z.literal("")),
     name: z.string().min(2, "Name must be at least 2 characters"),
+    size: z.string().optional(),
     description: z.string().optional(),
     content: z.string().optional(),
     imageUrl: z
@@ -53,6 +49,144 @@ const productSchema = z
   });
 
 type ProductFormData = z.infer<typeof productSchema>;
+
+// ── Field configurations ────────────────────────────────────────────────────
+
+// Helper to get field configs based on role and mode
+const getProductFields = (
+  isManagerView: boolean,
+  mode: "create" | "edit"
+): FieldConfig<ProductFormData>[] => {
+  // Manager editing - only size, price, and status
+  if (isManagerView && mode === "edit") {
+    return [
+      {
+        name: "name",
+        type: "text",
+        label: "Product Name",
+        disabled: true,
+      },
+      {
+        name: "size",
+        type: "text",
+        label: "Size",
+        placeholder: "e.g., XL, M, L",
+        required: true,
+      },
+      {
+        name: "minPrice",
+        type: "number",
+        label: "Price",
+        placeholder: "0.00",
+        step: 0.01,
+        min: 0,
+        required: true,
+      },
+      {
+        name: "isActive",
+        type: "switch",
+        label: "Active",
+      },
+    ];
+  }
+
+  // Manager creating - only SKU, size, and price
+  if (isManagerView && mode === "create") {
+    return [
+      {
+        name: "sku",
+        type: "text",
+        label: "SKU",
+        placeholder: "e.g., NH041-001",
+        required: true,
+      },
+      {
+        name: "size",
+        type: "text",
+        label: "Size",
+        placeholder: "e.g., XL, M, L or DEFAULT",
+        required: true,
+      },
+      {
+        name: "minPrice",
+        type: "number",
+        label: "Price",
+        placeholder: "0.00",
+        step: 0.01,
+        min: 0,
+        required: true,
+      },
+    ];
+  }
+
+  // Admin - full form fields
+  return [
+    {
+      name: "name",
+      type: "text",
+      label: "Name",
+      placeholder: "e.g., Caramel Macchiato",
+      required: true,
+      colSpan: 2,
+    },
+    {
+      name: "sku",
+      type: "text",
+      label: "SKU",
+      placeholder: "e.g., ESP-001",
+      required: true,
+      colSpan: 2,
+    },
+    {
+      name: "imageUrl",
+      type: "image-upload",
+      label: "Product Image",
+      colSpan: 2,
+    },
+    {
+      name: "minPrice",
+      type: "number",
+      label: "Min Price",
+      placeholder: "0.00",
+      step: 0.01,
+      min: 0,
+      required: true,
+      colSpan: 1,
+    },
+    {
+      name: "maxPrice",
+      type: "number",
+      label: "Max Price",
+      placeholder: "0.00",
+      step: 0.01,
+      min: 0,
+      required: true,
+      colSpan: 1,
+    },
+    {
+      name: "description",
+      type: "textarea",
+      label: "Description",
+      placeholder: "Enter product description...",
+      rows: 3,
+      colSpan: 2,
+    },
+    {
+      name: "content",
+      type: "textarea",
+      label: "Content/Ingredients",
+      placeholder: "Product ingredients or details...",
+      rows: 2,
+      colSpan: 2,
+    },
+    {
+      name: "isActive",
+      type: "switch",
+      label: "Active",
+      colSpan: 2,
+    },
+  ];
+};
 
 // ── Default search params ───────────────────────────────────────────────────
 
@@ -73,33 +207,85 @@ const DEFAULT_SEARCH_PARAMS: ProductSearchRequest = {
 // ── Component ───────────────────────────────────────────────────────────────
 
 const ProductsPage = () => {
+  // Auth context - check if user is MANAGER with a franchise
+  const { authUser, isAdmin } = useAuthStore();
+  const isManagerView = !isAdmin() && !!authUser?.currentFranchiseId;
+  const franchiseId = authUser?.currentFranchiseId || "";
+
   // Search & pagination state
   const [searchParams, setSearchParams] =
     useState<ProductSearchRequest>(DEFAULT_SEARCH_PARAMS);
 
   // Dialog state
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const dialog = useFormDialog<Product & { franchiseProductId?: string; size?: string }>();
+  
+  // View modal state (separate from form dialog)
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
-  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [viewingProduct, setViewingProduct] = useState<Product | null>(null);
 
   // ── TanStack Query hooks ──────────────────────────────────────────────────
+  // Use different queries based on user role
   const {
-    data: searchResponse,
-    isLoading,
-    error,
-    refetch,
+    data: globalProducts,
+    isLoading: isLoadingGlobal,
+    error: globalError,
+    refetch: refetchGlobal,
   } = useProductsQuery(searchParams);
+
+  const {  data: franchiseProducts,
+    isLoading: isLoadingFranchise,
+    error: franchiseError,
+    refetch: refetchFranchise,
+  } = useProductFranchisesQuery({
+    searchCondition: {
+      keyword: "",
+      product_id: "",
+      franchise_id: franchiseId,
+      min_price: "",
+      max_price: "",
+      is_active: "",
+      is_deleted: false,
+    },
+    pageInfo: {
+      pageNum: 1,
+      pageSize: 50,
+    },
+  });
+
+  // Product Franchise mutations (for managers)
+  const createProductFranchiseMutation = useCreateProductFranchiseMutation();
+  const updateProductFranchiseMutation = useUpdateProductFranchiseMutation();
+  const deleteProductFranchiseMutation = useDeleteProductFranchiseMutation();
+  const changeStatusProductFranchiseMutation = useChangeStatusProductFranchiseMutation();
+
+  // Select appropriate data based on context
+  const products = isManagerView
+    ? (franchiseProducts?.map((pf) => ({
+        id: pf.productId,
+        franchiseProductId: String(pf.id), // Store ProductFranchise ID for updates/deletes
+        size: pf.size || "", // Store size for updates
+        sku: pf.productSku || "",
+        name: pf.productName || "",
+        description: null, // Not returned by backend for franchise products
+        content: null, // Not returned by backend for franchise products
+        imageUrl: pf.productImageUrl || null,
+        minPrice: pf.priceBase,
+        maxPrice: pf.priceBase,
+        isActive: pf.isActive,
+        isDeleted: pf.isDeleted,
+        createdAt: pf.createdAt,
+        updatedAt: pf.updatedAt,
+      })) as (Product & { franchiseProductId?: string; size?: string })[] ?? [])
+    : (globalProducts ?? []);
+
+  const isLoading = isManagerView ? isLoadingFranchise : isLoadingGlobal;
+  const error = isManagerView ? franchiseError : globalError;
+  const refetch = isManagerView ? refetchFranchise : refetchGlobal;
 
   const createMutation = useCreateProductMutation();
   const updateMutation = useUpdateProductMutation();
   const deleteMutation = useDeleteProductMutation();
-
-  const products = searchResponse ?? [];
-  const isMutating =
-    createMutation.isPending ||
-    updateMutation.isPending ||
-    deleteMutation.isPending;
+  const productStatusMutation = useUpdateProductStatusMutation();
 
   // ── Search handler ────────────────────────────────────────────────────────
 
@@ -111,75 +297,112 @@ const ProductsPage = () => {
     }));  
   }, []);
 
-  // ── Form ──────────────────────────────────────────────────────────────────
+  // ── Form submission handler ──────────────────────────────────────────────
 
-  const {
-    register,
-    handleSubmit,
-    reset,
-    setValue,
-    watch,
-    formState: { errors: formErrors },
-  } = useForm<ProductFormData>({
-    resolver: zodResolver(productSchema),
-    defaultValues: {
-      sku: "",
-      name: "",
-      description: "",
-      content: "",
-      imageUrl: "",
-      minPrice: 0,
-      maxPrice: 0,
-      isActive: true,
-    },
-  });
-
-  const onSubmit = (data: ProductFormData) => {
-    const payload = {
-      SKU: data.sku,
-      name: data.name,
-      description: data.description || null,
-      content: data.content || null,
-      image_url: data.imageUrl || null,
-      min_price: data.minPrice,
-      max_price: data.maxPrice,
-      is_active: data.isActive,
-    };
-
-    if (editingProduct) {
-      updateMutation.mutate(
-        { id: editingProduct.id, data: payload },
-        {
-          onSuccess: () => {
-            setIsDialogOpen(false);
-            setEditingProduct(null);
-            reset();
-          },
-        },
-      );
+  const handleSubmit = async (data: ProductFormData) => {
+    console.log("[Products Page] Form submitted with data:", data);
+    console.log("[Products Page] Is manager view:", isManagerView);
+    console.log("[Products Page] Dialog mode:", dialog.mode);
+    
+    // For managers, set maxPrice equal to minPrice since they only edit one price
+    if (isManagerView) {
+      data.maxPrice = data.minPrice;
+    }
+    
+    if (dialog.mode === "edit" && dialog.data) {
+      const editingProduct = dialog.data;
+      
+      // Manager editing franchise product
+      if (isManagerView && editingProduct.franchiseProductId) {
+        const franchiseProductId = editingProduct.franchiseProductId;
+        
+        console.log("[Products Page] Manager editing franchise product:", franchiseProductId);
+        
+        // Update size and price_base (required fields)
+        const updatePayload = {
+          size: data.size || "",
+          price_base: data.minPrice,
+        };
+        
+        console.log("[Products Page] Update payload:", updatePayload);
+        
+        // Check if status changed
+        const statusChanged = editingProduct.isActive !== data.isActive;
+        
+        // Always update size/price, then optionally change status
+        await updateProductFranchiseMutation.mutateAsync(
+          { id: franchiseProductId, data: updatePayload }
+        );
+        
+        // If status also changed, call the change status endpoint
+        if (statusChanged) {
+          await changeStatusProductFranchiseMutation.mutateAsync(
+            { id: franchiseProductId, data: { is_active: data.isActive } }
+          );
+        }
+      } else {
+        // Admin editing global product
+        const payload = {
+          SKU: data.sku,
+          name: data.name,
+          description: data.description || null,
+          content: data.content || null,
+          image_url: data.imageUrl || null,
+          min_price: data.minPrice,
+          max_price: data.maxPrice,
+          is_active: data.isActive,
+        };
+        await updateMutation.mutateAsync(
+          { id: editingProduct.id, data: payload }
+        );
+      }
     } else {
-      createMutation.mutate(payload, {
-        onSuccess: () => {
-          setIsDialogOpen(false);
-          reset();
-        },
-      });
+      // Creating new product
+      if (isManagerView) {
+        // Manager creating a product franchise entry
+        // Search global products by SKU
+        const searchResult = await refetchGlobal();
+        const allGlobalProducts = searchResult.data ?? [];
+        const existingProduct = allGlobalProducts.find((p) => p.sku === data.sku);
+        
+        if (!existingProduct) {
+          throw new Error("Product not found. Please select a valid product SKU.");
+        }
+        
+        const franchisePayload = {
+          franchise_id: franchiseId,
+          product_id: String(existingProduct.id),
+          size: data.size || "",
+          price_base: data.minPrice,
+        };
+        
+        await createProductFranchiseMutation.mutateAsync(franchisePayload);
+      } else {
+        // Admin creating a global product
+        const payload = {
+          SKU: data.sku || "",
+          name: data.name,
+          description: data.description || null,
+          content: data.content || null,
+          image_url: data.imageUrl || null,
+          min_price: data.minPrice,
+          max_price: data.maxPrice,
+          is_active: data.isActive,
+        };
+        await createMutation.mutateAsync(payload);
+      }
     }
   };
 
   // ── Handlers ──────────────────────────────────────────────────────────────
 
   const handleEdit = (product: Product) => {
-    setEditingProduct(product);
-    setValue("sku", product.sku);
-    setValue("name", product.name);
-    setValue("description", product.description || "");
-    setValue("content", product.content || "");
-    setValue("imageUrl", product.imageUrl || "");
-    setValue("minPrice", product.minPrice);
-    setValue("maxPrice", product.maxPrice);
-    setValue("isActive", product.isActive);
-    setIsDialogOpen(true);
+    const editData = {
+      ...product,
+      franchiseProductId: (product as any).franchiseProductId,
+      size: (product as any).size || "",
+    };
+    dialog.openEdit(editData);
   };
 
   const handleView = (product: Product) => {
@@ -187,18 +410,16 @@ const ProductsPage = () => {
     setIsViewModalOpen(true);
   };
 
-  const handleCreate = () => {
-    setEditingProduct(null);
-    reset();
-    setIsDialogOpen(true);
-  };
-
   const handleDelete = (product: Product) => {
     const confirmDelete = window.confirm(
       `Are you sure you want to delete "${product.name}"? This action cannot be undone.`,
     );
     if (confirmDelete) {
-      deleteMutation.mutate(product.id);
+      if (isManagerView && (product as any).franchiseProductId) {
+        deleteProductFranchiseMutation.mutate((product as any).franchiseProductId);
+      } else {
+        deleteMutation.mutate(product.id);
+      }
     }
   };
 
@@ -207,7 +428,15 @@ const ProductsPage = () => {
       `Are you sure you want to delete ${selectedProducts.length} product${selectedProducts.length > 1 ? "s" : ""}? This action cannot be undone.`,
     );
     if (confirmDelete) {
-      selectedProducts.forEach((p) => deleteMutation.mutate(p.id));
+      if (isManagerView) {
+        selectedProducts.forEach((p) => {
+          if ((p as any).franchiseProductId) {
+            deleteProductFranchiseMutation.mutate((p as any).franchiseProductId);
+          }
+        });
+      } else {
+        selectedProducts.forEach((p) => deleteMutation.mutate(p.id));
+      }
     }
   };
 
@@ -215,218 +444,66 @@ const ProductsPage = () => {
     void refetch();
   };
 
+  // Get dynamic field configuration
+  const formMode = (dialog.mode === "create" || dialog.mode === "edit") ? dialog.mode : "create";
+  const productFields = getProductFields(isManagerView, formMode);
+
+  // ── Status toggle handler ───────────────────────────────────────────────
+  const handleStatusToggle = (product: Product, isActive: boolean) => {
+    if (isManagerView && (product as any).franchiseProductId) {
+      changeStatusProductFranchiseMutation.mutate({
+        id: (product as any).franchiseProductId,
+        data: { is_active: isActive },
+      });
+    } else {
+      productStatusMutation.mutate({ id: product.id, isActive });
+    }
+  };
+
+  const statusPendingId = (() => {
+    if (productStatusMutation.isPending) return String(productStatusMutation.variables?.id);
+    if (changeStatusProductFranchiseMutation.isPending) {
+      // Find the product id from the franchise product id
+      const fpId = String(changeStatusProductFranchiseMutation.variables?.id);
+      const found = products.find((p) => (p as any).franchiseProductId === fpId);
+      return found ? String(found.id) : null;
+    }
+    return null;
+  })();
+
+  // Prepare form values - need to set hidden fields for manager create mode validation
+  const formValues = dialog.data 
+    ? {
+        ...dialog.data,
+        // For manager edit, set maxPrice to pass validation
+        maxPrice: isManagerView ? 999999 : dialog.data.maxPrice,
+      }
+    : isManagerView 
+      ? {
+          // Manager create defaults
+          name: "temp", // Will be replaced by API lookup
+          maxPrice: 999999, // Set high to pass validation
+        }
+      : undefined;
+
   return (
     <div className="h-full flex flex-col">
       <div className="flex-1 flex flex-col min-h-0 max-w-7xl mx-auto w-full">
         <PageHeader
-          title="Product Management"
-          description="Manage all products and pricing"
+          title={isManagerView ? "My Products" : "Product Management"}
+          description={
+            isManagerView
+              ? "Manage products available in your franchise"
+              : "Manage all products and pricing"
+          }
           action={
-            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-              <DialogTrigger asChild>
-                <Button
-                  onClick={handleCreate}
-                  className="bg-[#6D4C41] hover:bg-[#5D4037] text-white rounded-full shadow-md hover:shadow-lg transition-all duration-300 cursor-pointer"
-                >
-                  <Plus className="mr-2 h-4 w-4" />
-                  Add Product
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-[600px] bg-white max-h-[90vh] overflow-y-auto">
-                <DialogHeader>
-                  <DialogTitle className="text-2xl font-bold text-[#3E2723]">
-                    {editingProduct ? "Edit Product" : "Create New Product"}
-                  </DialogTitle>
-                  <DialogDescription className="text-[#5D4037]">
-                    {editingProduct
-                      ? "Update the product information below."
-                      : "Add a new product to your catalog. Fill in all required fields."}
-                  </DialogDescription>
-                </DialogHeader>
-                <form onSubmit={handleSubmit(onSubmit)}>
-                  <div className="grid gap-4 py-4">
-                    <div className="grid gap-2">
-                      <Label
-                        htmlFor="name"
-                        className="text-[#3E2723] font-medium"
-                      >
-                        Name <span className="text-red-500">*</span>
-                      </Label>
-                      <Input
-                        id="name"
-                        placeholder="e.g., Caramel Macchiato"
-                        {...register("name")}
-                        className={formErrors.name ? "border-red-500" : ""}
-                      />
-                      {formErrors.name && (
-                        <p className="text-sm text-red-500">
-                          {formErrors.name.message}
-                        </p>
-                      )}
-                    </div>
-
-                    <div className="grid gap-2">
-                      <Label
-                        htmlFor="sku"
-                        className="text-[#3E2723] font-medium"
-                      >
-                        SKU <span className="text-red-500">*</span>
-                      </Label>
-                      <Input
-                        id="sku"
-                        placeholder="e.g., ESP-001"
-                        {...register("sku")}
-                        className={formErrors.sku ? "border-red-500" : ""}
-                      />
-                      {formErrors.sku && (
-                        <p className="text-sm text-red-500">
-                          {formErrors.sku.message}
-                        </p>
-                      )}
-                    </div>
-
-                    <div className="grid gap-2">
-                      <Label
-                        htmlFor="imageUrl"
-                        className="text-[#3E2723] font-medium"
-                      >
-                        Product Image
-                      </Label>
-                      <ImageUpload
-                        value={watch("imageUrl") || ""}
-                        onChange={(url) => setValue("imageUrl", url)}
-                        onUpload={uploadFileToCloudinary}
-                        disabled={isMutating}
-                      />
-                      {formErrors.imageUrl && (
-                        <p className="text-sm text-red-500">
-                          {formErrors.imageUrl.message}
-                        </p>
-                      )}
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="grid gap-2">
-                        <Label
-                          htmlFor="minPrice"
-                          className="text-[#3E2723] font-medium"
-                        >
-                          Min Price <span className="text-red-500">*</span>
-                        </Label>
-                        <Input
-                          id="minPrice"
-                          type="number"
-                          step="0.01"
-                          placeholder="0.00"
-                          {...register("minPrice", { valueAsNumber: true })}
-                          className={
-                            formErrors.minPrice ? "border-red-500" : ""
-                          }
-                        />
-                        {formErrors.minPrice && (
-                          <p className="text-sm text-red-500">
-                            {formErrors.minPrice.message}
-                          </p>
-                        )}
-                      </div>
-                      <div className="grid gap-2">
-                        <Label
-                          htmlFor="maxPrice"
-                          className="text-[#3E2723] font-medium"
-                        >
-                          Max Price <span className="text-red-500">*</span>
-                        </Label>
-                        <Input
-                          id="maxPrice"
-                          type="number"
-                          step="0.01"
-                          placeholder="0.00"
-                          {...register("maxPrice", { valueAsNumber: true })}
-                          className={
-                            formErrors.maxPrice ? "border-red-500" : ""
-                          }
-                        />
-                        {formErrors.maxPrice && (
-                          <p className="text-sm text-red-500">
-                            {formErrors.maxPrice.message}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="grid gap-2">
-                      <Label
-                        htmlFor="description"
-                        className="text-[#3E2723] font-medium"
-                      >
-                        Description
-                      </Label>
-                      <Textarea
-                        id="description"
-                        placeholder="Enter product description..."
-                        rows={3}
-                        {...register("description")}
-                      />
-                    </div>
-
-                    <div className="grid gap-2">
-                      <Label
-                        htmlFor="content"
-                        className="text-[#3E2723] font-medium"
-                      >
-                        Content/Ingredients
-                      </Label>
-                      <Textarea
-                        id="content"
-                        placeholder="Product ingredients or details..."
-                        rows={2}
-                        {...register("content")}
-                      />
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="checkbox"
-                        id="isActive"
-                        {...register("isActive")}
-                        className="w-4 h-4 text-[#6D4C41] border-gray-300 rounded focus:ring-[#6D4C41]"
-                      />
-                      <Label
-                        htmlFor="isActive"
-                        className="text-[#3E2723] font-medium cursor-pointer"
-                      >
-                        Active
-                      </Label>
-                    </div>
-                  </div>
-                  <DialogFooter>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => {
-                        setIsDialogOpen(false);
-                        setEditingProduct(null);
-                        reset();
-                      }}
-                      className="border-[#E8DFD6] text-[#5D4037] hover:bg-[#FAF8F5]"
-                    >
-                      Cancel
-                    </Button>
-                    <Button
-                      type="submit"
-                      disabled={isMutating}
-                      className="bg-[#6D4C41] hover:bg-[#5D4037] text-white"
-                    >
-                      {isMutating
-                        ? "Saving..."
-                        : editingProduct
-                          ? "Update Product"
-                          : "Create Product"}
-                    </Button>
-                  </DialogFooter>
-                </form>
-              </DialogContent>
-            </Dialog>
+            <Button
+              onClick={dialog.openCreate}
+              className="bg-[#6D4C41] hover:bg-[#5D4037] text-white rounded-full shadow-md hover:shadow-lg transition-all duration-300 cursor-pointer"
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              Add Product
+            </Button>
           }
         />
 
@@ -440,7 +517,10 @@ const ProductsPage = () => {
             onEdit={handleEdit}
             onDelete={handleDelete}
             onBulkDelete={handleBulkDelete}
-            onSearch={handleSearch}
+            onSearch={!isManagerView ? handleSearch : undefined}
+            onStatusToggle={handleStatusToggle}
+            statusPendingId={statusPendingId}
+            canEdit={true}
           />
         </div>
 
@@ -453,6 +533,25 @@ const ProductsPage = () => {
           }}
         />
       </div>
+
+      <FormDialog<ProductFormData>
+        open={dialog.isOpen}
+        onOpenChange={(open) => !open && dialog.close()}
+        title={dialog.mode === "create" ? "Create New Product" : "Edit Product"}
+        description={
+          dialog.mode === "create"
+            ? "Add a new product to your catalog. Fill in all required fields."
+            : "Update the product information below."
+        }
+        schema={productSchema}
+        fields={productFields}
+        values={formValues as any}
+        mode={dialog.mode}
+        onSubmit={handleSubmit}
+        onSuccess={dialog.close}
+        size="lg"
+        columns={2}
+      />
     </div>
   );
 };

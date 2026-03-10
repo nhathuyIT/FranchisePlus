@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 
 export const CTASection = () => {
   return (
-    <section className="py-20 bg-gradient-to-r from-[#6D4C41] to-[#5D4037] text-white">
+    <section className="py-20 bg-linear-to-r from-[#6D4C41] to-[#5D4037] text-white">
       <div className="container mx-auto px-4 text-center">
         <h2 className="text-4xl sm:text-5xl lg:text-6xl font-bold mb-6">
           Start Your Coffee Journey Today

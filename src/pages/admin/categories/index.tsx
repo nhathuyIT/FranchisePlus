@@ -1,26 +1,19 @@
-import { useState } from "react";
 import { Plus } from "lucide-react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { CATEGORIES } from "@/const/category.const";
 import { PageHeader } from "@/components/common/PageHeader";
 import { CategoryTable } from "./components/CategoryTable";
+import { FormDialog, useFormDialog } from "@/components/form-dialog";
+import type { FieldConfig } from "@/lib/form/field-config";
 import type { Category } from "@/types/category";
+import type { CategorySearchRequest } from "@/api/category/category.api";
+import {
+  useCategoriesQuery,
+  useCreateCategoryMutation,
+  useUpdateCategoryMutation,
+  useDeleteCategoryMutation,
+  useUpdateCategoryStatusMutation,
+} from "@/hooks/category/useCategoryQuery";
 
 const categorySchema = z.object({
   code: z.string().min(2, "Code must be at least 2 characters").max(50, "Code must be less than 50 characters"),
@@ -31,55 +24,91 @@ const categorySchema = z.object({
 
 type CategoryFormData = z.infer<typeof categorySchema>;
 
+const categoryFields: FieldConfig<CategoryFormData>[] = [
+  {
+    name: "code",
+    type: "text",
+    label: "Code",
+    placeholder: "e.g., espresso",
+    required: true,
+  },
+  {
+    name: "name",
+    type: "text",
+    label: "Name",
+    placeholder: "e.g., Espresso",
+    required: true,
+  },
+  {
+    name: "description",
+    type: "textarea",
+    label: "Description",
+    placeholder: "Enter category description...",
+    rows: 3,
+  },
+  {
+    name: "isActive",
+    type: "switch",
+    label: "Active",
+    defaultValue: true,
+  },
+];
+
+// ── Default search params ───────────────────────────────────────────────────
+
+const DEFAULT_SEARCH_PARAMS: CategorySearchRequest = {
+  searchCondition: {
+    keyword: "",
+    is_active: "",
+    is_deleted: false,
+  },
+  pageInfo: {
+    pageNum: 1,
+    pageSize: 10,
+  },
+};
+
+// ── Component ───────────────────────────────────────────────────────────────
+
 const CategoriesPage = () => {
-  const [categories] = useState<Category[]>(CATEGORIES);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [editingCategory, setEditingCategory] = useState<Category | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<Error | null>(null);
+  // Dialog state
+  const dialog = useFormDialog<Category>();
 
+  // ── TanStack Query hooks ──────────────────────────────────────────────────
   const {
-    register,
-    handleSubmit,
-    reset,
-    setValue,
-    formState: { errors },
-  } = useForm<CategoryFormData>({
-    resolver: zodResolver(categorySchema),
-    defaultValues: {
-      code: "",
-      name: "",
-      description: "",
-      isActive: true,
-    },
-  });
+    data: searchResponse,
+    isLoading,
+    error,
+    refetch,
+  } = useCategoriesQuery(DEFAULT_SEARCH_PARAMS);
+  const createMutation = useCreateCategoryMutation();
+  const updateMutation = useUpdateCategoryMutation();
+  const deleteMutation = useDeleteCategoryMutation();
+  const categoryStatusMutation = useUpdateCategoryStatusMutation();
 
-  const onSubmit = (data: CategoryFormData) => {
-    if (editingCategory) {
-      console.log("Update category:", editingCategory.id, data);
-      toast.success("Category updated successfully!");
+  const categories = searchResponse ?? [];
+
+  // ── Form submission handler ──────────────────────────────────────────────────────────────────
+
+  const handleSubmit = async (data: CategoryFormData) => {
+    const payload = {
+      code: data.code,
+      name: data.name,
+      description: data.description || null,
+      is_active: data.isActive,
+    };
+
+    if (dialog.mode === "edit" && dialog.data) {
+      await updateMutation.mutateAsync({ id: dialog.data.id, data: payload });
     } else {
-      console.log("Create category:", data);
-      toast.success("Category created successfully!");
+      await createMutation.mutateAsync(payload);
     }
-    setIsDialogOpen(false);
-    setEditingCategory(null);
-    reset();
   };
+
+  // ── Handlers ──────────────────────────────────────────────────────────────
 
   const handleEdit = (category: Category) => {
-    setEditingCategory(category);
-    setValue("code", category.code);
-    setValue("name", category.name);
-    setValue("description", category.description || "");
-    setValue("isActive", category.isActive);
-    setIsDialogOpen(true);
-  };
-
-  const handleCreate = () => {
-    setEditingCategory(null);
-    reset();
-    setIsDialogOpen(true);
+    dialog.openEdit(category);
   };
 
   const handleDelete = (category: Category) => {
@@ -87,8 +116,7 @@ const CategoriesPage = () => {
       `Are you sure you want to delete "${category.name}"? This action cannot be undone.`
     );
     if (confirmDelete) {
-      console.log("Delete category:", category.id);
-      toast.success("Category deleted successfully!");
+      deleteMutation.mutate(category.id);
     }
   };
 
@@ -97,17 +125,16 @@ const CategoriesPage = () => {
       `Are you sure you want to delete ${selectedCategories.length} categor${selectedCategories.length > 1 ? 'ies' : 'y'}? This action cannot be undone.`
     );
     if (confirmDelete) {
-      console.log("Bulk delete categories:", selectedCategories.map(c => c.id));
-      toast.success(`Successfully deleted ${selectedCategories.length} categor${selectedCategories.length > 1 ? 'ies' : 'y'}`);
+      selectedCategories.forEach((c) => deleteMutation.mutate(c.id));
     }
   };
 
   const handleRetry = () => {
-    setError(null);
-    setIsLoading(true);
-    setTimeout(() => {
-      setIsLoading(false);
-    }, 1000);
+    void refetch();
+  };
+
+  const handleStatusToggle = (category: Category, isActive: boolean) => {
+    categoryStatusMutation.mutate({ id: category.id, isActive });
   };
 
   return (
@@ -117,107 +144,13 @@ const CategoriesPage = () => {
           title="Category Management"
           description="Manage all product categories"
           action={
-            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-              <DialogTrigger asChild>
-                <Button
-                  onClick={handleCreate}
-                  className="bg-[#6D4C41] hover:bg-[#5D4037] text-white rounded-full shadow-md hover:shadow-lg transition-all duration-300 cursor-pointer"
-                >
-                  <Plus className="mr-2 h-4 w-4" />
-                  Add Category
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-[500px] bg-white">
-                <DialogHeader>
-                  <DialogTitle className="text-2xl font-bold text-[#3E2723]">
-                    {editingCategory ? "Edit Category" : "Create New Category"}
-                  </DialogTitle>
-                  <DialogDescription className="text-[#5D4037]">
-                    {editingCategory
-                      ? "Update the category information below."
-                      : "Add a new category to your product catalog. Fill in all required fields."}
-                  </DialogDescription>
-                </DialogHeader>
-                <form onSubmit={handleSubmit(onSubmit)}>
-                  <div className="grid gap-4 py-4">
-                    <div className="grid gap-2">
-                      <Label htmlFor="code" className="text-[#3E2723] font-medium">
-                        Code <span className="text-red-500">*</span>
-                      </Label>
-                      <Input
-                        id="code"
-                        placeholder="e.g., espresso"
-                        {...register("code")}
-                        className={errors.code ? "border-red-500" : ""}
-                      />
-                      {errors.code && (
-                        <p className="text-sm text-red-500">{errors.code.message}</p>
-                      )}
-                    </div>
-                    <div className="grid gap-2">
-                      <Label htmlFor="name" className="text-[#3E2723] font-medium">
-                        Name <span className="text-red-500">*</span>
-                      </Label>
-                      <Input
-                        id="name"
-                        placeholder="e.g., Espresso"
-                        {...register("name")}
-                        className={errors.name ? "border-red-500" : ""}
-                      />
-                      {errors.name && (
-                        <p className="text-sm text-red-500">{errors.name.message}</p>
-                      )}
-                    </div>
-                    <div className="grid gap-2">
-                      <Label htmlFor="description" className="text-[#3E2723] font-medium">
-                        Description
-                      </Label>
-                      <Textarea
-                        id="description"
-                        placeholder="Enter category description..."
-                        rows={3}
-                        {...register("description")}
-                        className={errors.description ? "border-red-500" : ""}
-                      />
-                      {errors.description && (
-                        <p className="text-sm text-red-500">{errors.description.message}</p>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="checkbox"
-                        id="isActive"
-                        {...register("isActive")}
-                        className="w-4 h-4 text-[#6D4C41] border-gray-300 rounded focus:ring-[#6D4C41]"
-                      />
-                      <Label htmlFor="isActive" className="text-[#3E2723] font-medium cursor-pointer">
-                        Active
-                      </Label>
-                    </div>
-                  </div>
-                  <DialogFooter>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => {
-                        setIsDialogOpen(false);
-                        setEditingCategory(null);
-                        reset();
-                      }}
-                      className="border-[#E8DFD6] text-[#5D4037] hover:bg-[#FAF8F5]"
-                    >
-                      Cancel
-                    </Button>
-                    <Button
-                      type="submit"
-                      className="bg-[#6D4C41] hover:bg-[#5D4037] text-white"
-                    >
-                      {editingCategory ? "Update Category" : "Create Category"}
-                    </Button>
-                  </DialogFooter>
-                </form>
-              </DialogContent>
-            </Dialog>
+            <Button
+              onClick={dialog.openCreate}
+              className="bg-[#6D4C41] hover:bg-[#5D4037] text-white rounded-full shadow-md hover:shadow-lg transition-all duration-300 cursor-pointer"
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              Add Category
+            </Button>
           }
         />
 
@@ -230,9 +163,35 @@ const CategoriesPage = () => {
             onEdit={handleEdit}
             onDelete={handleDelete}
             onBulkDelete={handleBulkDelete}
+            onStatusToggle={handleStatusToggle}
+            statusPendingId={categoryStatusMutation.isPending ? String(categoryStatusMutation.variables?.id) : null}
+            canEdit={true}
           />
         </div>
       </div>
+
+      <FormDialog<CategoryFormData>
+        open={dialog.isOpen}
+        onOpenChange={(open) => !open && dialog.close()}
+        title={dialog.mode === "create" ? "Create New Category" : "Edit Category"}
+        description={
+          dialog.mode === "create"
+            ? "Add a new category to your product catalog. Fill in all required fields."
+            : "Update the category information below."
+        }
+        schema={categorySchema}
+        fields={categoryFields}
+        values={dialog.data ? {
+          code: dialog.data.code,
+          name: dialog.data.name,
+          description: dialog.data.description || undefined,
+          isActive: dialog.data.isActive,
+        } : undefined}
+        mode={dialog.mode}
+        onSubmit={handleSubmit}
+        onSuccess={dialog.close}
+        size="md"
+      />
     </div>
   );
 };

@@ -1,6 +1,7 @@
-import { Eye, Pencil, Trash2 } from "lucide-react";
+import { useMemo } from "react";
+import { Eye, Pencil, Trash2, LayoutGrid } from "lucide-react";
 import { DataTable, type ColumnFilter, type BulkAction } from "@/components/common/DataTable";
-import { franchiseColumns } from "../columns/franchise.columns";
+import { createFranchiseColumns } from "../columns/franchise.columns";
 import { Button } from "@/components/ui/button";
 import type { Franchise } from "@/types/franchise";
 import { toast } from "sonner";
@@ -21,6 +22,10 @@ interface FranchiseTableProps {
   onEdit?: (franchise: Franchise) => void;
   onView?: (franchise: Franchise) => void;
   onDelete?: (franchise: Franchise) => void;
+  onStatusToggle?: (row: Franchise, isActive: boolean) => void;
+  statusPendingId?: string | null;
+  canEdit?: boolean;
+  onAssignProducts?: (franchise: Franchise) => void;
 }
 
 export const FranchiseTable = ({
@@ -32,8 +37,11 @@ export const FranchiseTable = ({
   onEdit,
   onView,
   onDelete,
+  onStatusToggle,
+  statusPendingId,
+  canEdit,
+  onAssignProducts,
 }: FranchiseTableProps) => {
-  // Excel Export
   const { exportToExcel, isExporting } = useExcelExport({
     headerMapping: FRANCHISE_REVERSE_HEADER_MAPPING,
     fileName: "franchises",
@@ -41,35 +49,38 @@ export const FranchiseTable = ({
     excludeColumns: ["logoUrl"],
   });
 
-  // Excel Import
+  const columns = useMemo(
+    () => createFranchiseColumns({ onStatusToggle, statusPendingId, canEdit }),
+    [onStatusToggle, statusPendingId, canEdit]
+  );
+
   const { importFromExcel, isImporting } = useExcelImport({
     schema: FranchiseImportSchema,
     headerMapping: FRANCHISE_HEADER_MAPPING,
   });
 
   const handleExport = () => {
-    exportToExcel(franchises as unknown as Record<string, unknown>[]).then(() => {
-      toast.success("Excel exported successfully!");
-    }).catch(() => {
-      toast.error("Excel export failed!");
-    });
+    exportToExcel(franchises as unknown as Record<string, unknown>[])
+      .then(() => {
+        toast.success("Excel exported successfully!");
+      })
+      .catch(() => {
+        toast.error("Excel export failed!");
+      });
   };
 
   const handleImport = async (file: File) => {
     const result = await importFromExcel(file);
     if (result.success) {
       toast.success(`Successfully imported ${result.validRows} rows`);
-      // TODO: call API to save result.data
     } else {
       toast.error(`Import failed: ${result.validRows} valid, ${result.invalidRows} errors`);
-      result.errors.forEach((err) => console.warn(`Row ${err.row} - ${err.field}: ${err.message}`));
     }
   };
 
-  // Column Filters Configuration
   const columnFilters: ColumnFilter[] = [
     {
-      id: "is_active",
+      id: "isActive",
       type: "select",
       label: "Status",
       options: [
@@ -79,7 +90,6 @@ export const FranchiseTable = ({
     },
   ];
 
-  // Bulk Actions Configuration
   const bulkActions: BulkAction<Franchise>[] = [];
 
   if (onBulkDelete) {
@@ -93,7 +103,7 @@ export const FranchiseTable = ({
 
   return (
     <DataTable
-      columns={franchiseColumns}
+      columns={columns}
       data={franchises}
       isLoading={isLoading}
       error={error}
@@ -102,13 +112,11 @@ export const FranchiseTable = ({
       searchPlaceholder="Search franchises by name, code, or address..."
       emptyMessage="No franchises found matching your search."
       initialPageSize={5}
-      // NEW FEATURES
       enableRowSelection={!!onBulkDelete}
       enableColumnVisibility
-      defaultHiddenColumns={["address"]}
+      defaultHiddenColumns={["address", "closedAt"]}
       columnFilters={columnFilters}
       bulkActions={bulkActions}
-      // Excel Import/Export
       onExport={handleExport}
       isExporting={isExporting}
       onImport={handleImport}
@@ -117,6 +125,17 @@ export const FranchiseTable = ({
       importLabel="Import Excel"
       renderActions={(franchise) => (
         <>
+          {onAssignProducts && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onAssignProducts(franchise)}
+              title="Assign products to categories"
+              className="border-2 border-[#5C6BC0] text-[#5C6BC0] hover:bg-[#5C6BC0] hover:text-white rounded-lg transition-all duration-200 cursor-pointer"
+            >
+              <LayoutGrid className="h-4 w-4" />
+            </Button>
+          )}
           {onView && (
             <Button
               variant="outline"

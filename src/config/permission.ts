@@ -44,6 +44,9 @@ export const Permission = {
 
   VIEW_REPORTS: "VIEW_REPORTS",
   EXPORT_REPORTS: "EXPORT_REPORTS",
+
+  MANAGE_USER_FRANCHISE_ROLES: "MANAGE_USER_FRANCHISE_ROLES",
+  VIEW_USER_FRANCHISE_ROLES: "VIEW_USER_FRANCHISE_ROLES",
 } as const;
 
 export type Permission = (typeof Permission)[keyof typeof Permission];

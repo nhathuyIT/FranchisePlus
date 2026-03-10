@@ -20,6 +20,8 @@ const ROLE_PERMISSIONS: Record<string, Permission[]> = {
     Permission.VIEW_CUSTOMERS,
     Permission.VIEW_REPORTS,
     Permission.EXPORT_REPORTS,
+    Permission.MANAGE_USER_FRANCHISE_ROLES,
+    Permission.VIEW_USER_FRANCHISE_ROLES,
   ],
 
   MANAGER: [
@@ -27,8 +29,7 @@ const ROLE_PERMISSIONS: Record<string, Permission[]> = {
     Permission.VIEW_DASHBOARD,
     Permission.VIEW_ANALYTICS,
     Permission.MANAGE_OWN_FRANCHISE,
-    Permission.VIEW_FRANCHISES,
-    Permission.MANAGE_PRODUCTS,
+    // Permission.MANAGE_PRODUCTS, - backend returns 403 for /api/franchises/search
     Permission.VIEW_PRODUCTS,
     Permission.MANAGE_ORDERS,
     Permission.VIEW_ORDERS,

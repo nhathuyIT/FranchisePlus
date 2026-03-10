@@ -30,6 +30,7 @@ export const RoleSwitcher = () => {
     try {
       await switchContextMutation.mutateAsync({
         franchiseId: ctx.franchiseId,
+        role_id: ctx.roleId,
       });
     } catch (error) {
       console.error("Failed to switch role:", error);

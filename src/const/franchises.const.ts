@@ -2,7 +2,8 @@ import type { Franchise } from "@/types/franchise";
 
 export const FRANCHISES_MOCK: Franchise[] = [
   {
-    id: 1,
+    id: "1",
+    hotline: "",
     code: "CF-D1-001",
     name: "Coffee House District 1",
     logoUrl: "https://plus.unsplash.com/premium_photo-1664191866103-4f6181609c90?w=700&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MXx8Y29mZmUlMjBzaG9wJTIwaG91c2V8ZW58MHx8MHx8fDA%3D",
@@ -17,7 +18,8 @@ export const FRANCHISES_MOCK: Franchise[] = [
     lng: 106.7009,
   },
   {
-    id: 2,
+    id: "2",
+    hotline: "",
     code: "CF-D3-002",
     name: "Coffee House District 3",
     logoUrl: null,
@@ -32,7 +34,8 @@ export const FRANCHISES_MOCK: Franchise[] = [
     lng: 106.6909,
   },
   {
-    id: 3,
+    id: "3",
+    hotline: "",
     code: "CF-PN-003",
     name: "Coffee House Phu Nhuan",
     logoUrl: null,
@@ -47,7 +50,8 @@ export const FRANCHISES_MOCK: Franchise[] = [
     lng: 106.6837,
   },
   {
-    id: 4,
+    id: "4",
+    hotline: "",
     code: "CF-BT-004",
     name: "Coffee House Binh Thanh",
     logoUrl: null,
@@ -62,7 +66,8 @@ export const FRANCHISES_MOCK: Franchise[] = [
     lng: 106.7251,
   },
   {
-    id: 5,
+    id: "5",
+    hotline: "",
     code: "CF-TB-005",
     name: "Coffee House Tan Binh",
     logoUrl: null,
@@ -77,7 +82,8 @@ export const FRANCHISES_MOCK: Franchise[] = [
     lng: 106.6444,
   },
   {
-    id: 6,
+    id: "6",
+    hotline: "",
     code: "CF-D7-006",
     name: "Coffee House District 7",
     logoUrl: null,
@@ -92,7 +98,8 @@ export const FRANCHISES_MOCK: Franchise[] = [
     lng: 106.7154,
   },
   {
-    id: 7,
+    id: "7",
+    hotline: "",
     code: "CF-TD-007",
     name: "Coffee House Thu Duc",
     logoUrl: null,
@@ -107,7 +114,8 @@ export const FRANCHISES_MOCK: Franchise[] = [
     lng: 106.7668,
   },
   {
-    id: 8,
+    id: "8",
+    hotline: "",
     code: "CF-GV-008",
     name: "Coffee House Go Vap",
     logoUrl: null,
@@ -120,10 +128,11 @@ export const FRANCHISES_MOCK: Franchise[] = [
     isDeleted: false,
   },
   {
-    id: 9,
+    id: "9",
+    hotline: "",
     code: "CF-BD-009",
-    name: "Coffee House Binh Duong",  
-    logoUrl: null, 
+    name: "Coffee House Binh Duong",
+    logoUrl: null,
     address: "369 Le Lai Street, Binh Duong City",
     openedAt: "2024-05-22T09:00:00Z",
     closedAt: null,
@@ -134,7 +143,8 @@ export const FRANCHISES_MOCK: Franchise[] = [
 
   },
   {
-    id: 10,
+    id: "10",
+    hotline: "",
     code: "CF-NV-010",
     name: "Coffee House Nha Be",
     logoUrl: null,
@@ -148,7 +158,8 @@ export const FRANCHISES_MOCK: Franchise[] = [
   },
 
   {
-    id: 11,
+    id: "11",
+    hotline: "",
     code: "CF-D5-011",
     name: "Coffee House District 5",
     logoUrl: null,
@@ -163,7 +174,8 @@ export const FRANCHISES_MOCK: Franchise[] = [
     lng: 106.6452,
   },
   {
-    id: 12,
+    id: "12",
+    hotline: "",
     code: "CF-D2-012",
     name: "Coffee House District 2",
     logoUrl: null,
