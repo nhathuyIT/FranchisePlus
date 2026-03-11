@@ -25,7 +25,6 @@ export const ROUTER_URL = {
   },
 
   ADMIN: "/admin",
-  VERIFIED_ACCOUNT: "verify-email/:id",
   ADMIN_ROUTER: {
     LOGIN: "/admin/login",
     Forgot_PASSWORD: "/admin/forgot-password",

@@ -19,24 +19,20 @@ export const CategoryImportSchema = z.object({
     .or(z.literal(""))
     .transform((v) => v || null),
 
-  isActive: z
-    .union([z.boolean(), z.string(), z.number()])
-    .transform((v) => {
-      if (typeof v === "boolean") return v;
-      if (typeof v === "number") return v === 1;
-      const s = String(v).toLowerCase().trim();
-      return s === "true" || s === "1" || s === "yes" || s === "active" || s === "có";
-    }),
+  isActive: z.union([z.boolean(), z.string(), z.number()]).transform((v) => {
+    if (typeof v === "boolean") return v;
+    if (typeof v === "number") return v === 1;
+    const s = String(v).toLowerCase().trim();
+    return (
+      s === "true" || s === "1" || s === "yes" || s === "active" || s === "có"
+    );
+  }),
 });
 
 export type CategoryImportData = z.infer<typeof CategoryImportSchema>;
 
 // ─── Header Mappings ───────────────────────────────────────────────────────
 export const CATEGORY_HEADER_MAPPING: HeaderMapping = {
-  "Mã danh mục": "code",
-  "Tên danh mục": "name",
-  "Mô tả": "description",
-  "Trạng thái": "isActive",
   Code: "code",
   Name: "name",
   Description: "description",
@@ -44,8 +40,8 @@ export const CATEGORY_HEADER_MAPPING: HeaderMapping = {
 };
 
 export const CATEGORY_REVERSE_HEADER_MAPPING: ReverseHeaderMapping = {
-  code: "Mã danh mục",
-  name: "Tên danh mục",
-  description: "Mô tả",
-  isActive: "Trạng thái",
+  code: "Code",
+  name: "Name",
+  description: "Description",
+  isActive: "Status",
 };

@@ -1,10 +1,6 @@
 import { useMemo } from "react";
 import { Eye, Pencil, Trash2, LayoutGrid } from "lucide-react";
-import {
-  DataTable,
-  type ColumnFilter,
-  type BulkAction,
-} from "@/components/common/DataTable";
+import { DataTable, type ColumnFilter, type BulkAction } from "@/components/common/DataTable";
 import { createFranchiseColumns } from "../columns/franchise.columns";
 import { Button } from "@/components/ui/button";
 import type { Franchise } from "@/types/franchise";
@@ -55,10 +51,10 @@ export const FranchiseTable = ({
 
   const columns = useMemo(
     () => createFranchiseColumns({ onStatusToggle, statusPendingId, canEdit }),
-    [onStatusToggle, statusPendingId, canEdit],
+    [onStatusToggle, statusPendingId, canEdit]
   );
 
-  const { importFromExcel, isImporting } = useExcelImport({
+  const { parseFile, validateRows, isParsing } = useExcelImport({
     schema: FranchiseImportSchema,
     headerMapping: FRANCHISE_HEADER_MAPPING,
   });
@@ -74,13 +70,12 @@ export const FranchiseTable = ({
   };
 
   const handleImport = async (file: File) => {
-    const result = await importFromExcel(file);
+    const preview = await parseFile(file);
+    const result = validateRows(preview.rows);
     if (result.success) {
       toast.success(`Successfully imported ${result.validRows} rows`);
     } else {
-      toast.error(
-        `Import failed: ${result.validRows} valid, ${result.invalidRows} errors`,
-      );
+      toast.error(`Import failed: ${result.validRows} valid, ${result.invalidRows} errors`);
     }
   };
 
@@ -114,8 +109,10 @@ export const FranchiseTable = ({
       isLoading={isLoading}
       error={error}
       onRetry={onRetry}
+      searchable
+      searchPlaceholder="Search franchises by name, code, or address..."
       emptyMessage="No franchises found matching your search."
-      initialPageSize={10}
+      initialPageSize={5}
       enableRowSelection={!!onBulkDelete}
       enableColumnVisibility
       defaultHiddenColumns={["address", "closedAt"]}
@@ -124,7 +121,7 @@ export const FranchiseTable = ({
       onExport={handleExport}
       isExporting={isExporting}
       onImport={handleImport}
-      isImporting={isImporting}
+      isImporting={isParsing}
       exportLabel="Export Excel"
       importLabel="Import Excel"
       renderActions={(franchise) => (

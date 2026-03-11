@@ -42,8 +42,10 @@ export {
   type CustomerImportData,
 } from "./customer-excel.config";
 
-// Inventory (export-only)
+// Inventory
 export {
+  InventoryImportSchema,
+  INVENTORY_HEADER_MAPPING,
   INVENTORY_REVERSE_HEADER_MAPPING,
-  flattenInventoryItem,
+  type InventoryImportData,
 } from "./inventory-excel.config";

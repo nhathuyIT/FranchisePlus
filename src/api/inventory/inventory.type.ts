@@ -82,14 +82,11 @@ export interface InventoryCreateRequest {
 /**
  * INVENTORY-06: Edit Quantity (Adjust)
  * POST /api/inventories/adjust
- * { product_franchise_id: string, change: number, alert_threshold: number, reason?: string }
- *
- * Backend auto-converts camelCase → snake_case via axios interceptor.
+ * { product_franchise_id: string, change: number, reason?: string }
  */
 export interface InventoryAdjustRequest {
   productFranchiseId: string;
   change: number;
-  alertThreshold: number;
   reason?: string;
 }
 

@@ -49,24 +49,18 @@ export type CustomerImportData = z.infer<typeof CustomerImportSchema>;
 // ─── Header Mappings ───────────────────────────────────────────────────────
 // Vietnamese label → data key
 export const CUSTOMER_HEADER_MAPPING: HeaderMapping = {
-  "Tên khách hàng": "name",
-  "Số điện thoại": "phone",
-  Email: "email",
-  "Avatar URL": "avatarUrl",
-  "Trạng thái": "isActive",
-  // Also accept English headers as-is
   Name: "name",
   Phone: "phone",
-  "Email Address": "email",
-  Avatar: "avatarUrl",
+  Email: "email",
+  "Avatar URL": "avatarUrl",
   Status: "isActive",
 };
 
-// data key → Vietnamese label (for export)
+// data key → English label (for export)
 export const CUSTOMER_REVERSE_HEADER_MAPPING: ReverseHeaderMapping = {
-  name: "Tên khách hàng",
-  phone: "Số điện thoại",
+  name: "Name",
+  phone: "Phone",
   email: "Email",
   avatarUrl: "Avatar URL",
-  isActive: "Trạng thái",
+  isActive: "Status",
 };

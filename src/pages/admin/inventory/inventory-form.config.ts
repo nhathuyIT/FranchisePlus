@@ -5,7 +5,6 @@ import {
   type AddInventoryItemFormData,
 } from "@/lib/schemas/inventory.schema";
 import type { FieldConfig } from "@/lib/form/field-config";
-import * as productFranchiseApi from "@/api/product-franchise/product-franchise.api";
 
 /**
  * Fields for adjusting inventory quantity (INVENTORY-06: Edit Quantity)
@@ -20,15 +19,6 @@ export const adjustInventoryFields: FieldConfig<AdjustInventoryFormData>[] = [
     placeholder: "e.g. 50 to add, -20 to subtract",
     description:
       "Enter positive number to add stock, negative to subtract stock",
-  },
-  {
-    name: "alertThreshold",
-    type: "number",
-    label: "Alert Threshold",
-    required: true,
-    placeholder: "Enter new alert threshold",
-    description: "Minimum quantity before low stock alert (must be ≥ 0)",
-    min: 0,
   },
   {
     name: "reason",
@@ -48,33 +38,23 @@ export const adjustInventoryFields: FieldConfig<AdjustInventoryFormData>[] = [
 export const addInventoryFields: FieldConfig<AddInventoryItemFormData>[] = [
   {
     name: "productFranchiseId",
-    type: "async-select",
+    type: "select",
     label: "Product Franchise",
     required: true,
-    placeholder: "Search product by name...",
+    placeholder: "Select a product franchise",
     description: "Choose the product-franchise combination to add to inventory",
-    asyncOptions: {
-      loader: async (searchTerm) => {
-        const result = await productFranchiseApi.searchProductFranchises({
-          searchCondition: {
-            keyword: searchTerm,
-            franchise_id: "",
-            product_id: "",
-            min_price: "",
-            max_price: "",
-            is_active: true,
-            is_deleted: false,
-          },
-          pageInfo: { pageNum: 1, pageSize: 50 },
-        });
-        return result.map((pf) => ({
-          label: `${pf.productName ?? "Unknown Product"} - ${pf.franchiseName ?? "Unknown Franchise"}${pf.size ? ` (${pf.size})` : ""}`,
-          value: String(pf.id),
-        }));
+    // TODO: Replace with dynamic product-franchise list from API
+    options: [
+      { label: "Espresso - High Land 001", value: "698eab1b26ca2b18eb3534e3" },
+      {
+        label: "Americano - High Land 001",
+        value: "698eab1626ca2b18eb353493",
       },
-      debounceMs: 300,
-      minChars: 0,
-    },
+      {
+        label: "Cà phê đen đá - High Land 001",
+        value: "698eab1726ca2b18eb35349d",
+      },
+    ],
   },
   {
     name: "quantity",
