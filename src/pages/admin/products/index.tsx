@@ -1,14 +1,17 @@
 import { useState, useCallback } from "react";
+import * as React from "react";
 import { Plus } from "lucide-react";
 import * as z from "zod";
 import { Button } from "@/components/ui/button";
 import { FormDialog, useFormDialog } from "@/components/form-dialog";
+import { DeleteDialog } from "@/components/form-dialog/DeleteDialog";
 import type { FieldConfig } from "@/lib/form/field-config";
 import { PageHeader } from "@/components/common/PageHeader";
 import { ProductTable } from "./components/ProductTable";
 import { ViewProductModal } from "./components/ViewProductModal";
 import type { Product } from "@/types/product.type";
 import type { ProductSearchRequest } from "@/api/product/product.api";
+import { searchProducts } from "@/api/product/product.api";
 import {
   useProductsQuery,
   useCreateProductMutation,
@@ -29,6 +32,7 @@ import { useAuthStore } from "@/stores/auth-store";
 
 const productSchema = z
   .object({
+    productId: z.string().optional(), // For manager create mode
     sku: z.string().min(2, "SKU must be at least 2 characters").optional().or(z.literal("")),
     name: z.string().min(2, "Name must be at least 2 characters"),
     size: z.string().optional(),
@@ -55,7 +59,8 @@ type ProductFormData = z.infer<typeof productSchema>;
 // Helper to get field configs based on role and mode
 const getProductFields = (
   isManagerView: boolean,
-  mode: "create" | "edit"
+  mode: "create" | "edit",
+  cachedProducts?: { label: string; value: string }[]
 ): FieldConfig<ProductFormData>[] => {
   // Manager editing - only size, price, and status
   if (isManagerView && mode === "edit") {
@@ -90,28 +95,71 @@ const getProductFields = (
     ];
   }
 
-  // Manager creating - only SKU, size, and price
+
   if (isManagerView && mode === "create") {
     return [
       {
-        name: "sku",
-        type: "text",
-        label: "SKU",
-        placeholder: "e.g., NH041-001",
+        name: "productId",
+        type: "async-select",
+        label: "Product",
+        placeholder: "Search for a product...",
         required: true,
+        asyncOptions: {
+          loader: async (searchTerm: string) => {
+            try {
+              // If there is cached products and no search term, return cache immediately
+              if (cachedProducts && cachedProducts.length > 0 && !searchTerm) {
+                return cachedProducts;
+              }
+
+              // If searching, filter the cache first for instant results
+              if (cachedProducts && cachedProducts.length > 0 && searchTerm) {
+                const filtered = cachedProducts.filter(p => 
+                  p.label.toLowerCase().includes(searchTerm.toLowerCase())
+                );
+                return filtered;
+              }
+
+              const products = await searchProducts({
+                searchCondition: {
+                  keyword: searchTerm,
+                  min_price: "",
+                  max_price: "",
+                  is_active: true,
+                  is_deleted: false,
+                },
+                pageInfo: {
+                  pageNum: 1,
+                  pageSize: 50,
+                },
+              });
+              
+              return products.map((p) => ({
+                label: `${p.name} - ${p.sku} (${p.minPrice.toLocaleString()}₫ - ${p.maxPrice.toLocaleString()}₫)`,
+                value: String(p.id),
+              }));
+            } catch (error) {
+              console.error('[Product Dropdown] Error loading products:', error);
+              return [];
+            }
+          },
+          debounceMs: 100,
+          minChars: 0,
+        },
+        colSpan: 2,
       },
       {
         name: "size",
         type: "text",
         label: "Size",
-        placeholder: "e.g., XL, M, L or DEFAULT",
-        required: true,
+        placeholder: "e.g., S, M, L, XL",
+        required: false,
       },
       {
         name: "minPrice",
         type: "number",
         label: "Price",
-        placeholder: "0.00",
+        placeholder: "0",
         step: 0.01,
         min: 0,
         required: true,
@@ -222,6 +270,46 @@ const ProductsPage = () => {
   // View modal state (separate from form dialog)
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [viewingProduct, setViewingProduct] = useState<Product | null>(null);
+
+  // Delete dialog state
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deletingProduct, setDeletingProduct] = useState<Product | null>(null);
+
+  // Product dropdown cache for managers
+  const [productDropdownCache, setProductDropdownCache] = useState<{ label: string; value: string }[]>([]);
+  const [isLoadingDropdownCache, setIsLoadingDropdownCache] = useState(false);
+
+  React.useEffect(() => {
+    if (isManagerView && dialog.isOpen && dialog.mode === "create" && productDropdownCache.length === 0 && !isLoadingDropdownCache) {
+      setIsLoadingDropdownCache(true);
+      searchProducts({
+        searchCondition: {
+          keyword: "",
+          min_price: "",
+          max_price: "",
+          is_active: true,
+          is_deleted: false,
+        },
+        pageInfo: {
+          pageNum: 1,
+          pageSize: 100,
+        },
+      })
+        .then((products) => {
+          const options = products.map((p) => ({
+            label: `${p.name} - ${p.sku} (${p.minPrice.toLocaleString()}₫ - ${p.maxPrice.toLocaleString()}₫)`,
+            value: String(p.id),
+          }));
+          setProductDropdownCache(options);
+        })
+        .catch((error) => {
+          console.error('[Product Dropdown] Error pre-loading products:', error);
+        })
+        .finally(() => {
+          setIsLoadingDropdownCache(false);
+        });
+    }
+  }, [isManagerView, dialog.isOpen, dialog.mode, productDropdownCache.length, isLoadingDropdownCache]);
 
   // ── TanStack Query hooks ──────────────────────────────────────────────────
   // Use different queries based on user role
@@ -360,18 +448,13 @@ const ProductsPage = () => {
       // Creating new product
       if (isManagerView) {
         // Manager creating a product franchise entry
-        // Search global products by SKU
-        const searchResult = await refetchGlobal();
-        const allGlobalProducts = searchResult.data ?? [];
-        const existingProduct = allGlobalProducts.find((p) => p.sku === data.sku);
-        
-        if (!existingProduct) {
-          throw new Error("Product not found. Please select a valid product SKU.");
+        if (!data.productId) {
+          throw new Error("Please select a product.");
         }
         
         const franchisePayload = {
           franchise_id: franchiseId,
-          product_id: String(existingProduct.id),
+          product_id: data.productId,
           size: data.size || "",
           price_base: data.minPrice,
         };
@@ -411,31 +494,38 @@ const ProductsPage = () => {
   };
 
   const handleDelete = (product: Product) => {
-    const confirmDelete = window.confirm(
-      `Are you sure you want to delete "${product.name}"? This action cannot be undone.`,
-    );
-    if (confirmDelete) {
-      if (isManagerView && (product as any).franchiseProductId) {
-        deleteProductFranchiseMutation.mutate((product as any).franchiseProductId);
-      } else {
-        deleteMutation.mutate(product.id);
-      }
-    }
+    setDeletingProduct(product);
+    setDeleteDialogOpen(true);
   };
 
-  const handleBulkDelete = (selectedProducts: Product[]) => {
+  const confirmDelete = async () => {
+    if (!deletingProduct) return;
+    
+    if (isManagerView && (deletingProduct as any).franchiseProductId) {
+      await deleteProductFranchiseMutation.mutateAsync((deletingProduct as any).franchiseProductId);
+    } else {
+      await deleteMutation.mutateAsync(deletingProduct.id);
+    }
+    
+    setDeleteDialogOpen(false);
+    setDeletingProduct(null);
+  };
+
+  const handleBulkDelete = async (selectedProducts: Product[]) => {
     const confirmDelete = window.confirm(
       `Are you sure you want to delete ${selectedProducts.length} product${selectedProducts.length > 1 ? "s" : ""}? This action cannot be undone.`,
     );
     if (confirmDelete) {
       if (isManagerView) {
-        selectedProducts.forEach((p) => {
+        for (const p of selectedProducts) {
           if ((p as any).franchiseProductId) {
-            deleteProductFranchiseMutation.mutate((p as any).franchiseProductId);
+            await deleteProductFranchiseMutation.mutateAsync((p as any).franchiseProductId);
           }
-        });
+        }
       } else {
-        selectedProducts.forEach((p) => deleteMutation.mutate(p.id));
+        for (const p of selectedProducts) {
+          await deleteMutation.mutateAsync(p.id);
+        }
       }
     }
   };
@@ -446,7 +536,7 @@ const ProductsPage = () => {
 
   // Get dynamic field configuration
   const formMode = (dialog.mode === "create" || dialog.mode === "edit") ? dialog.mode : "create";
-  const productFields = getProductFields(isManagerView, formMode);
+  const productFields = getProductFields(isManagerView, formMode, productDropdownCache);
 
   // ── Status toggle handler ───────────────────────────────────────────────
   const handleStatusToggle = (product: Product, isActive: boolean) => {
@@ -481,8 +571,12 @@ const ProductsPage = () => {
     : isManagerView 
       ? {
           // Manager create defaults
-          name: "temp", // Will be replaced by API lookup
-          maxPrice: 999999, // Set high to pass validation
+          name: "temp",
+          productId: "",
+          size: "",
+          minPrice: undefined,
+          maxPrice: 999999,
+          isActive: true,
         }
       : undefined;
 
@@ -521,6 +615,7 @@ const ProductsPage = () => {
             onStatusToggle={handleStatusToggle}
             statusPendingId={statusPendingId}
             canEdit={true}
+            isManagerView={isManagerView}
           />
         </div>
 
@@ -531,6 +626,7 @@ const ProductsPage = () => {
             setIsViewModalOpen(false);
             setViewingProduct(null);
           }}
+          isManagerView={isManagerView}
         />
       </div>
 
@@ -550,7 +646,20 @@ const ProductsPage = () => {
         onSubmit={handleSubmit}
         onSuccess={dialog.close}
         size="lg"
-        columns={2}
+        columns={1}
+      />
+
+      <DeleteDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        entity={deletingProduct}
+        entityName="Product"
+        onConfirm={confirmDelete}
+        isDeleting={deleteMutation.isPending || deleteProductFranchiseMutation.isPending}
+        getDisplayName={(product) => product.name}
+        deleteMessage={(product) => 
+          `Remove the "${product.name}" ${isManagerView ? 'from this franchise' : 'product'}? This action cannot be undone.`
+        }
       />
     </div>
   );

@@ -49,6 +49,7 @@ const FranchiseDetail = () => {
 
   const [activeTab, setActiveTab] = useState("general");
   const [createCategoryOpen, setCreateCategoryOpen] = useState(false);
+  const [createProductOpen, setCreateProductOpen] = useState(false);
 
   const [staffList] = useState([
     {
@@ -185,6 +186,16 @@ const FranchiseDetail = () => {
               </TabsTrigger>
             </TabsList>
 
+            {activeTab === "inventory" && (
+              <Button
+                onClick={() => setCreateProductOpen(true)}
+                className="bg-[#6D4C41] hover:bg-[#5D4037] text-white rounded-full shadow-md hover:shadow-lg transition-all duration-300"
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                Create Item
+              </Button>
+            )}
+            
             {activeTab === "categories" && (
               <Button
                 onClick={() => setCreateCategoryOpen(true)}
@@ -217,7 +228,11 @@ const FranchiseDetail = () => {
             value="inventory"
             className="mt-6 flex-1 min-h-0 flex flex-col"
           >
-            <FranchiseInventoryTab franchiseId={id!} />
+            <FranchiseInventoryTab 
+              franchiseId={id!}
+              createOpen={createProductOpen}
+              onCreateOpenChange={setCreateProductOpen}
+            />
           </TabsContent>
 
           <TabsContent

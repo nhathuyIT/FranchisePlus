@@ -14,9 +14,10 @@ export const MenuProductCard = ({
   const minPrice = getMinPrice(product.sizes);
   const { addItem } = useCart();
 
-  const handleAddToCart = (productFranchiseId: number, price: number) => {
+  const handleAddToCart = (productFranchiseId: string | number, price: number) => {
+    if (productFranchiseId == null || productFranchiseId === '') return;
     addItem(productFranchiseId, product.name, price, 1, product.imageUrl);
-    toast.success(`Added "${product.name}" to cart`);
+    toast.success(`Đã thêm "${product.name}" vào giỏ hàng`);
   };
 
   return (
@@ -91,7 +92,7 @@ export const MenuProductCard = ({
           {product.sizes.map((s) => (
             <div
               key={s.size}
-              onClick={() => s.isAvailable && handleAddToCart(Number(s.productFranchiseId), s.price)}
+              onClick={() => s.isAvailable && handleAddToCart(s.productFranchiseId, s.price)}
               className={`group/row flex items-center justify-between px-4 py-2.5 rounded-xl 
                           border transition-all duration-300
                           ${
