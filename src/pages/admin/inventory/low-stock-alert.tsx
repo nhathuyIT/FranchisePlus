@@ -77,6 +77,7 @@ const LowStockAlert = () => {
     await inventoryApi.adjust({
       productFranchiseId: String(adjustDialog.data.productFranchiseId),
       change: data.change,
+      alertThreshold: data.alertThreshold,
       reason: data.reason,
     });
 
@@ -189,6 +190,9 @@ const LowStockAlert = () => {
           size="md"
           schema={adjustInventorySchema}
           fields={adjustInventoryFields}
+          defaultValues={{
+            alertThreshold: adjustDialog.data?.alertThreshold ?? 0,
+          }}
           mode={adjustDialog.mode === "view" ? "view" : "edit"}
           onSubmit={handleAdjustSubmit}
           onSuccess={() => {

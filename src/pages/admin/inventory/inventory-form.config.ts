@@ -21,6 +21,15 @@ export const adjustInventoryFields: FieldConfig<AdjustInventoryFormData>[] = [
       "Enter positive number to add stock, negative to subtract stock",
   },
   {
+    name: "alertThreshold",
+    type: "number",
+    label: "Alert Threshold",
+    required: true,
+    placeholder: "Enter new alert threshold",
+    description: "Minimum quantity before low stock alert (must be ≥ 0)",
+    min: 0,
+  },
+  {
     name: "reason",
     type: "textarea",
     label: "Reason",
