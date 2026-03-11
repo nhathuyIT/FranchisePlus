@@ -20,6 +20,8 @@ interface CustomerAdminTableProps {
   onStatusToggle?: (row: CustomerProfile, isActive: boolean) => void;
   statusPendingId?: string | null;
   canEdit?: boolean;
+  searchValue?: string;
+  onSearchChange?: (value: string) => void;
 }
 
 export const CustomerAdminTable = ({
@@ -33,6 +35,8 @@ export const CustomerAdminTable = ({
   onStatusToggle,
   statusPendingId,
   canEdit,
+  searchValue,
+  onSearchChange,
 }: CustomerAdminTableProps) => {
   const columnFilters: ColumnFilter[] = [
     {
@@ -83,6 +87,8 @@ export const CustomerAdminTable = ({
       searchPlaceholder="Search customers by name, email, or phone..."
       emptyMessage="No customers found matching your search."
       initialPageSize={10}
+      searchValue={searchValue}
+      onSearchChange={onSearchChange}
       enableRowSelection={!!onBulkDelete}
       enableColumnVisibility
       defaultHiddenColumns={["address"]}

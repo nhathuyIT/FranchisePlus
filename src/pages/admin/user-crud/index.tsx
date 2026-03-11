@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useDebounce } from "@/hooks/common/useDebounce";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/common/PageHeader";
 import { CustomerTable } from "./components/CustomerTable";
@@ -13,14 +14,26 @@ import { userFields, userSchema } from "./user-form.config";
 import type { UserFormData } from "./user-form.config";
 import type { User } from "@/types/user.type";
 import type { SubmitResult } from "@/components/form-dialog/types";
-import { useUserSearch, useDeleteUser, useUpdateUserStatus } from "@/hooks/user";
-import type { UserSearchRequest } from "@/api/user/user.type";
+import {
+  useUserSearch,
+  useDeleteUser,
+  useUpdateUserStatus,
+} from "@/hooks/user";
 import * as userApi from "@/api/user/user.api";
 
 const UserCRUD = () => {
-  const [searchParams] = useState<UserSearchRequest>({
+  const [keyword, setKeyword] = useState("");
+  const debouncedKeyword = useDebounce(keyword, 350, keyword);
+
+  const {
+    data: searchResult,
+    isLoading,
+    isFetching,
+    error,
+    refetch,
+  } = useUserSearch({
     searchCondition: {
-      keyword: "",
+      keyword: debouncedKeyword || undefined,
       isActive: undefined,
       isDeleted: false,
     },
@@ -29,13 +42,6 @@ const UserCRUD = () => {
       pageSize: 1000,
     },
   });
-
-  const {
-    data: searchResult,
-    isLoading,
-    error,
-    refetch,
-  } = useUserSearch(searchParams);
 
   const deleteMutation = useDeleteUser({ suppressToast: true });
   const userStatusMutation = useUpdateUserStatus();
@@ -205,7 +211,7 @@ const UserCRUD = () => {
         <div className="flex-1 min-h-0 flex flex-col bg-white rounded-2xl shadow-lg border border-[#E8DFD6] p-6">
           <CustomerTable
             customers={users}
-            isLoading={isLoading || deleteMutation.isPending}
+            isLoading={isLoading || isFetching || deleteMutation.isPending}
             error={
               error
                 ? error instanceof Error
@@ -219,8 +225,14 @@ const UserCRUD = () => {
             onView={dialog.openView}
             onDelete={(user) => setDeleteTarget(user)}
             onStatusToggle={handleStatusToggle}
-            statusPendingId={userStatusMutation.isPending ? String(userStatusMutation.variables?.id) : null}
+            statusPendingId={
+              userStatusMutation.isPending
+                ? String(userStatusMutation.variables?.id)
+                : null
+            }
             canEdit={true}
+            searchValue={keyword}
+            onSearchChange={setKeyword}
           />
         </div>
 
