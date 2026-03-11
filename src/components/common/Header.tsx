@@ -150,7 +150,7 @@ const Header = () => {
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
                     <Link
-                      to="/account/my-posts"
+                      to="/account/my-order"
                       className="flex items-center cursor-pointer"
                     >
                       <FileText className="mr-2 h-4 w-4" />
