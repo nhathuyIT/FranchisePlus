@@ -5,6 +5,7 @@ import {
   type AddInventoryItemFormData,
 } from "@/lib/schemas/inventory.schema";
 import type { FieldConfig } from "@/lib/form/field-config";
+import * as productFranchiseApi from "@/api/product-franchise/product-franchise.api";
 
 /**
  * Fields for adjusting inventory quantity (INVENTORY-06: Edit Quantity)
@@ -47,23 +48,33 @@ export const adjustInventoryFields: FieldConfig<AdjustInventoryFormData>[] = [
 export const addInventoryFields: FieldConfig<AddInventoryItemFormData>[] = [
   {
     name: "productFranchiseId",
-    type: "select",
+    type: "async-select",
     label: "Product Franchise",
     required: true,
-    placeholder: "Select a product franchise",
+    placeholder: "Search product by name...",
     description: "Choose the product-franchise combination to add to inventory",
-    // TODO: Replace with dynamic product-franchise list from API
-    options: [
-      { label: "Espresso - High Land 001", value: "698eab1b26ca2b18eb3534e3" },
-      {
-        label: "Americano - High Land 001",
-        value: "698eab1626ca2b18eb353493",
+    asyncOptions: {
+      loader: async (searchTerm) => {
+        const result = await productFranchiseApi.searchProductFranchises({
+          searchCondition: {
+            keyword: searchTerm,
+            franchise_id: "",
+            product_id: "",
+            min_price: "",
+            max_price: "",
+            is_active: true,
+            is_deleted: false,
+          },
+          pageInfo: { pageNum: 1, pageSize: 50 },
+        });
+        return result.map((pf) => ({
+          label: `${pf.productName ?? "Unknown Product"} - ${pf.franchiseName ?? "Unknown Franchise"}${pf.size ? ` (${pf.size})` : ""}`,
+          value: String(pf.id),
+        }));
       },
-      {
-        label: "Cà phê đen đá - High Land 001",
-        value: "698eab1726ca2b18eb35349d",
-      },
-    ],
+      debounceMs: 300,
+      minChars: 0,
+    },
   },
   {
     name: "quantity",
