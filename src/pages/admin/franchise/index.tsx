@@ -1,7 +1,8 @@
 import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { Plus } from "lucide-react";
+import { Plus, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/common/PageHeader";
 import { FranchiseTable } from "./components/FranchiseTable";
@@ -15,7 +16,7 @@ import type { FranchiseFormData } from "@/lib/schemas/franchise.schema";
 import type { Franchise } from "@/types/franchise";
 import type { SubmitResult } from "@/components/form-dialog/types";
 import {
-  useFranchises,
+  useFranchiseSearch,
   useDeleteFranchise,
   useUpdateFranchiseStatus,
 } from "@/hooks/franchise";
@@ -27,6 +28,7 @@ import type {
   FranchiseUpdateRequest,
 } from "@/api/franchise/franchise.type";
 import { ROUTER_URL } from "@/router/route.const";
+import { useDebounce } from "@/hooks/common/useDebounce";
 
 /**
  * Franchise List Page
@@ -53,18 +55,35 @@ const FranchiseList = () => {
     Permission.MANAGE_OWN_FRANCHISE,
   );
 
+  // ── Search state (server-side via keyword field) ─────────────────────────
+
+  const [keyword, setKeyword] = useState("");
+  const debouncedKeyword = useDebounce(keyword, 350);
+
   // Cache scope key for query isolation
   const franchiseScopeKey = authUser
     ? `${authUser.user.id}-${authUser.currentRoleId ?? "none"}-${authUser.currentFranchiseId ?? "global"}`
     : "anonymous";
 
-  // Fetch all franchises if user has VIEW_FRANCHISES permission
+  // Fetch franchises — keyword triggers API refetch via debounced value
   const {
-    data: franchises = [],
-    isLoading,
+    data: franchiseResult,
+    isLoading, // true only on first load (no cache) → show page skeleton
+    isFetching, // true on every refetch including keyword changes
     error,
     refetch,
-  } = useFranchises(canViewFranchises, franchiseScopeKey);
+  } = useFranchiseSearch(
+    {
+      searchCondition: {
+        isDeleted: false,
+        ...(debouncedKeyword ? { keyword: debouncedKeyword } : {}),
+      },
+      pageInfo: { pageNum: 1, pageSize: 100 },
+    },
+    { enabled: canViewFranchises, scopeKey: franchiseScopeKey },
+  );
+
+  const franchises = franchiseResult?.pageData ?? [];
 
   const currentFranchiseId = authUser?.currentFranchiseId
     ? String(authUser.currentFranchiseId)
@@ -277,6 +296,8 @@ const FranchiseList = () => {
     statusMutation.mutate({ id: String(franchise.id), isActive });
   };
 
+  // Empty since we use the native DataTable loading below
+
   return (
     <div className="h-full flex flex-col">
       <div className="flex-1 flex flex-col min-h-0 max-w-7xl mx-auto w-full">
@@ -297,9 +318,29 @@ const FranchiseList = () => {
         />
 
         <div className="flex-1 min-h-0 flex flex-col bg-white rounded-2xl shadow-lg border border-[#E8DFD6] p-6">
+          {/* ── Search bar (keyword → server-side API search) ───────── */}
+          <div className="flex items-center gap-3 mb-4 shrink-0">
+            <div className="relative flex-1 max-w-xs">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#5D4037]" />
+              <Input
+                placeholder="Search franchises by name, code..."
+                value={keyword}
+                onChange={(e) => setKeyword(e.target.value)}
+                className="pl-10 border-[#E8DFD6] focus:border-[#6D4C41] focus:ring-[#6D4C41]"
+              />
+            </div>
+            {!isFetching && (
+              <span className="text-xs text-[#8D6E63] ml-auto">
+                {franchises.length} franchise
+                {franchises.length !== 1 ? "s" : ""}
+              </span>
+            )}
+          </div>
+
+          {/* DataTable — never passes TanStack isLoading to avoid double loader */}
           <FranchiseTable
             franchises={canViewFranchises ? franchises : []}
-            isLoading={isLoading || deleteMutation.isPending}
+            isLoading={isLoading || isFetching || deleteMutation.isPending}
             error={listError}
             onRetry={refetch}
             onBulkDelete={canManageFranchises ? handleBulkDelete : undefined}
@@ -319,7 +360,9 @@ const FranchiseList = () => {
                 : null
             }
             canEdit={canManageFranchises}
-            onAssignProducts={canViewFranchises ? handleAssignProducts : undefined}
+            onAssignProducts={
+              canViewFranchises ? handleAssignProducts : undefined
+            }
           />
         </div>
 
