@@ -13,7 +13,7 @@ export const FranchiseImportSchema = z
       .max(20, "Code must be at most 20 characters")
       .regex(
         /^[A-Z0-9-]+$/,
-        "Code must contain only uppercase letters, numbers, and hyphens (e.g., CF-D1-001)"
+        "Code must contain only uppercase letters, numbers, and hyphens (e.g., CF-D1-001)",
       ),
 
     name: z
@@ -51,32 +51,14 @@ export const FranchiseImportSchema = z
       .or(z.literal(""))
       .transform((v) => v || null),
 
-    isActive: z
-      .union([z.boolean(), z.string(), z.number()])
-      .transform((v) => {
-        if (typeof v === "boolean") return v;
-        if (typeof v === "number") return v === 1;
-        const s = String(v).toLowerCase().trim();
-        return s === "true" || s === "1" || s === "yes" || s === "active" || s === "có";
-      }),
-
-    lat: z
-      .union([z.number(), z.string()])
-      .optional()
-      .transform((v) => {
-        if (v === undefined || v === null || v === "") return undefined;
-        const n = Number(v);
-        return isNaN(n) ? undefined : n;
-      }),
-
-    lng: z
-      .union([z.number(), z.string()])
-      .optional()
-      .transform((v) => {
-        if (v === undefined || v === null || v === "") return undefined;
-        const n = Number(v);
-        return isNaN(n) ? undefined : n;
-      }),
+    isActive: z.union([z.boolean(), z.string(), z.number()]).transform((v) => {
+      if (typeof v === "boolean") return v;
+      if (typeof v === "number") return v === 1;
+      const s = String(v).toLowerCase().trim();
+      return (
+        s === "true" || s === "1" || s === "yes" || s === "active" || s === "có"
+      );
+    }),
   })
   .refine(
     (data) => {
@@ -88,7 +70,7 @@ export const FranchiseImportSchema = z
     {
       message: "Closing date must be later than the opening date",
       path: ["closedAt"],
-    }
+    },
   );
 
 export type FranchiseImportData = z.infer<typeof FranchiseImportSchema>;
@@ -96,36 +78,22 @@ export type FranchiseImportData = z.infer<typeof FranchiseImportSchema>;
 // ─── Header Mappings ───────────────────────────────────────────────────────
 // Vietnamese label → data key
 export const FRANCHISE_HEADER_MAPPING: HeaderMapping = {
-  "Mã cửa hàng": "code",
-  "Tên chi nhánh": "name",
-  "Logo URL": "logoUrl",
-  "Địa chỉ": "address",
-  "Ngày mở cửa": "openedAt",
-  "Ngày đóng cửa": "closedAt",
-  "Trạng thái": "isActive",
-  "Vĩ độ": "lat",
-  "Kinh độ": "lng",
-  // Also accept English headers as-is
   Code: "code",
   Name: "name",
-  "Logo": "logoUrl",
+  "Logo URL": "logoUrl",
   Address: "address",
   "Opened Date": "openedAt",
   "Closed Date": "closedAt",
   Status: "isActive",
-  Latitude: "lat",
-  Longitude: "lng",
 };
 
-// data key → Vietnamese label (for export)
+// data key → English label (for export)
 export const FRANCHISE_REVERSE_HEADER_MAPPING: ReverseHeaderMapping = {
-  code: "Mã cửa hàng",
-  name: "Tên chi nhánh",
+  code: "Code",
+  name: "Name",
   logoUrl: "Logo URL",
-  address: "Địa chỉ",
-  openedAt: "Ngày mở cửa",
-  closedAt: "Ngày đóng cửa",
-  isActive: "Trạng thái",
-  lat: "Vĩ độ",
-  lng: "Kinh độ",
+  address: "Address",
+  openedAt: "Opened Date",
+  closedAt: "Closed Date",
+  isActive: "Status",
 };

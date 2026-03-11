@@ -40,6 +40,23 @@ export interface ImportConfig<T> {
   preTransform?: (raw: Record<string, unknown>) => Record<string, unknown>;
 }
 
+/** A raw parsed row before Zod validation — represents one row in the virtual preview table */
+export interface PreviewRow {
+  /** 1-based row number in the Excel file (header = row 1, data starts at row 2) */
+  _rowNumber: number;
+  /** Mapped field values (keys are data keys after headerMapping translation) */
+  data: Record<string, unknown>;
+}
+
+/** Virtual table produced by parsing a file — no validation performed yet */
+export interface PreviewResult {
+  /** Data keys (column identifiers) after header mapping */
+  keys: string[];
+  /** All parsed rows ready for preview / selection */
+  rows: PreviewRow[];
+  totalRows: number;
+}
+
 /** Configuration for the export hook */
 export interface ExportConfig {
   /** Map from data key → display header label */

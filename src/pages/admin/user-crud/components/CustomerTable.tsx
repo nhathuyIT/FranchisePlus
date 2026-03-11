@@ -58,7 +58,7 @@ export const CustomerTable = ({
   );
 
   // Excel Import
-  const { importFromExcel, isImporting } = useExcelImport({
+  const { parseFile, validateRows, isParsing } = useExcelImport({
     schema: CustomerImportSchema,
     headerMapping: CUSTOMER_HEADER_MAPPING,
   });
@@ -74,7 +74,8 @@ export const CustomerTable = ({
   };
 
   const handleImport = async (file: File) => {
-    const result = await importFromExcel(file);
+    const preview = await parseFile(file);
+    const result = validateRows(preview.rows);
     if (result.success) {
       toast.success(`Successfully imported ${result.validRows} rows`);
       // TODO: call API to save result.data
@@ -134,7 +135,7 @@ export const CustomerTable = ({
       onExport={handleExport}
       isExporting={isExporting}
       onImport={handleImport}
-      isImporting={isImporting}
+      isImporting={isParsing}
       exportLabel="Export Excel"
       importLabel="Import Excel"
       renderActions={(customer) => (

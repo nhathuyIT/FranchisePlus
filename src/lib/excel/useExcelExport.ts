@@ -2,7 +2,9 @@ import { useState, useCallback } from "react";
 import type { ExportConfig } from "./types";
 
 interface UseExcelExportReturn {
-  exportToExcel: <T extends Record<string, unknown>>(data: T[]) => Promise<void>;
+  exportToExcel: <T extends Record<string, unknown>>(
+    data: T[],
+  ) => Promise<void>;
   isExporting: boolean;
   error: Error | null;
 }
@@ -83,7 +85,7 @@ export function useExcelExport(config: ExportConfig): UseExcelExportReturn {
         const colWidths = Object.keys(exportData[0] || {}).map((header) => {
           const maxContentLen = Math.max(
             header.length,
-            ...exportData.map((row) => String(row[header] ?? "").length)
+            ...exportData.map((row) => String(row[header] ?? "").length),
           );
           return { wch: Math.min(maxContentLen + 4, 50) };
         });
@@ -93,7 +95,7 @@ export function useExcelExport(config: ExportConfig): UseExcelExportReturn {
         XLSX.utils.book_append_sheet(
           workbook,
           worksheet,
-          config.sheetName || "Sheet1"
+          config.sheetName || "Sheet1",
         );
 
         // Write and download
@@ -108,7 +110,7 @@ export function useExcelExport(config: ExportConfig): UseExcelExportReturn {
         setIsExporting(false);
       }
     },
-    [config]
+    [config],
   );
 
   return { exportToExcel, isExporting, error };

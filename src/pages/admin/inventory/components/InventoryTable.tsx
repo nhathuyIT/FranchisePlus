@@ -8,11 +8,7 @@ import { inventoryColumns } from "../columns/inventory.columns";
 import { Button } from "@/components/ui/button";
 import type { InventorySearchItem } from "@/api/inventory/inventory.type";
 import { toast } from "sonner";
-import {
-  useExcelExport,
-  INVENTORY_REVERSE_HEADER_MAPPING,
-  flattenInventoryItem,
-} from "@/lib/excel";
+import { useExcelExport, INVENTORY_REVERSE_HEADER_MAPPING } from "@/lib/excel";
 
 interface InventoryTableProps {
   items: InventorySearchItem[];
@@ -22,6 +18,8 @@ interface InventoryTableProps {
   onEdit?: (item: InventorySearchItem) => void;
   onDelete?: (item: InventorySearchItem) => void;
   onBulkExport?: (items: InventorySearchItem[]) => void;
+  onImport?: (file: File) => void;
+  isParsing?: boolean;
 }
 
 export const InventoryTable = ({
@@ -32,6 +30,8 @@ export const InventoryTable = ({
   onEdit,
   onDelete,
   onBulkExport,
+  onImport,
+  isParsing = false,
 }: InventoryTableProps) => {
   // Excel Export (flatten nested data for export)
   const { exportToExcel, isExporting } = useExcelExport({
@@ -41,10 +41,7 @@ export const InventoryTable = ({
   });
 
   const handleExport = () => {
-    const flatData = items.map((item) =>
-      flattenInventoryItem(item as unknown as Record<string, unknown>),
-    );
-    exportToExcel(flatData)
+    exportToExcel(items as unknown as Record<string, unknown>[])
       .then(() => {
         toast.success("Inventory exported successfully!");
       })
@@ -95,6 +92,9 @@ export const InventoryTable = ({
       bulkActions={bulkActions}
       onExport={handleExport}
       isExporting={isExporting}
+      onImport={onImport}
+      isImporting={isParsing}
+      importLabel="Import Excel"
       exportLabel="Export Excel"
       renderActions={
         onEdit || onDelete

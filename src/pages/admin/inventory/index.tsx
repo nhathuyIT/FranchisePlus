@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { ROUTER_URL } from "@/router/route.const";
 import { PageHeader } from "@/components/common/PageHeader";
 import { InventoryTable } from "./components/InventoryTable";
+import { InventoryImportPreview } from "./components/InventoryImportPreview";
 import {
   FormDialog,
   useFormDialog,
@@ -25,6 +26,12 @@ import { useInventories, useDeleteInventory } from "@/hooks/inventory";
 import { Permission } from "@/config/permission";
 import { useAuthStore } from "@/stores/auth-store";
 import * as inventoryApi from "@/api/inventory/inventory.api";
+import {
+  useExcelImport,
+  INVENTORY_HEADER_MAPPING,
+  InventoryImportSchema,
+  type InventoryImportData,
+} from "@/lib/excel";
 
 const InventoryList = () => {
   const { authUser, getCurrentPermissions } = useAuthStore();
@@ -51,6 +58,83 @@ const InventoryList = () => {
 
   const deleteMutation = useDeleteInventory({ suppressToast: true });
   const listError = error instanceof Error ? error : null;
+
+  // ── Import Excel state ────────────────────────────────────────────────────
+
+  const {
+    parseFile,
+    validateRows,
+    isParsing,
+    preview,
+    reset: resetImport,
+  } = useExcelImport<InventoryImportData>({
+    schema: InventoryImportSchema,
+    headerMapping: INVENTORY_HEADER_MAPPING,
+  });
+
+  const [isSavingImport, setIsSavingImport] = useState(false);
+  const [importRowErrors, setImportRowErrors] = useState<
+    Record<number, string[]>
+  >({});
+
+  const handleFileUpload = async (file: File) => {
+    try {
+      const previewResult = await parseFile(file);
+
+      // Validate once after parse — don't put validateRows in useMemo (it has side effects)
+      const result = validateRows(previewResult.rows);
+      const errMap: Record<number, string[]> = {};
+      for (const e of result.errors) {
+        errMap[e.row] = [...(errMap[e.row] ?? []), e.message];
+      }
+      setImportRowErrors(errMap);
+    } catch {
+      toast.error("Không thể đọc file. Vui lòng kiểm tra định dạng.");
+    }
+  };
+
+  const handleImportConfirm = async (data: InventoryImportData[]) => {
+    setIsSavingImport(true);
+    try {
+      // Resolve productFranchiseId from existing items by productName + franchiseName
+      const results = await Promise.allSettled(
+        data.map((item) => {
+          const existing = inventoryItems.find(
+            (inv) =>
+              inv.productName === item.productName &&
+              inv.franchiseName === item.franchiseName,
+          );
+          if (!existing)
+            return Promise.reject(
+              new Error(
+                `Không tìm thấy: ${item.productName} - ${item.franchiseName}`,
+              ),
+            );
+          return inventoryApi.create({
+            productFranchiseId: String(existing.productFranchiseId),
+            quantity: item.quantity,
+            alertThreshold: item.alertThreshold,
+          });
+        }),
+      );
+
+      const failed = results.filter((r) => r.status === "rejected");
+      if (failed.length > 0) {
+        toast.error(
+          `${failed.length} dòng thất bại (sản phẩm không tìm thấy trên hệ thống)`,
+        );
+      } else {
+        toast.success(`Import thành công ${data.length} dòng!`);
+      }
+      resetImport();
+      setImportRowErrors({});
+      refreshData();
+    } catch {
+      toast.error("Import thất bại. Vui lòng thử lại.");
+    } finally {
+      setIsSavingImport(false);
+    }
+  };
 
   // Form dialog states
   const adjustDialog = useFormDialog<InventorySearchItem>();
@@ -172,14 +256,32 @@ const InventoryList = () => {
         />
 
         <div className="flex-1 min-h-0 flex flex-col bg-white rounded-2xl shadow-lg border border-[#E8DFD6] p-6">
-          <InventoryTable
-            items={canViewInventory ? inventoryItems : []}
-            isLoading={isLoading || deleteMutation.isPending}
-            error={listError}
-            onRetry={refetch}
-            onEdit={canManageInventory ? handleEdit : undefined}
-            onDelete={canManageInventory ? handleOpenDelete : undefined}
-          />
+          {preview ? (
+            /* ── Import Preview mode ─────────────────────────────────── */
+            <InventoryImportPreview
+              previewRows={preview.rows}
+              existingItems={inventoryItems}
+              onCancel={() => {
+                resetImport();
+                setImportRowErrors({});
+              }}
+              onConfirm={handleImportConfirm}
+              isSaving={isSavingImport}
+              rowErrors={importRowErrors}
+            />
+          ) : (
+            /* ── Normal table mode ───────────────────────────────────── */
+            <InventoryTable
+              items={canViewInventory ? inventoryItems : []}
+              isLoading={isLoading || deleteMutation.isPending}
+              error={listError}
+              onRetry={refetch}
+              onEdit={canManageInventory ? handleEdit : undefined}
+              onDelete={canManageInventory ? handleOpenDelete : undefined}
+              onImport={canManageInventory ? handleFileUpload : undefined}
+              isParsing={isParsing}
+            />
+          )}
         </div>
 
         {/* Adjust Stock Dialog (INVENTORY-06) */}
