@@ -1,5 +1,5 @@
 import { Edit, Trash2, Download, Save, RotateCcw, Loader2 } from "lucide-react";
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { FormProvider } from "react-hook-form";
 import {
   DataTable,
@@ -178,6 +178,24 @@ export const InventoryTable = ({
     methods.reset();
   };
 
+  // ── Row style for stock status highlighting ─────────────────────────────
+
+  const getRowStyle = useMemo(
+    () =>
+      (item: InventorySearchItem): React.CSSProperties | undefined => {
+        // Out of stock → strong red
+        if (item.quantity === 0) {
+          return { backgroundColor: "#fee2e2" };
+        }
+        // Low stock → visible amber
+        if (item.quantity <= item.alertThreshold) {
+          return { backgroundColor: "#fef3c7" };
+        }
+        return undefined;
+      },
+    [],
+  );
+
   // ── DataTable config ──────────────────────────────────────────────────────
 
   const columnFilters: ColumnFilter[] = [
@@ -241,6 +259,7 @@ export const InventoryTable = ({
           enableColumnVisibility
           columnFilters={columnFilters}
           bulkActions={bulkActions}
+          getRowStyle={getRowStyle}
           onExport={handleExport}
           isExporting={isExporting}
           exportLabel="Export Excel"

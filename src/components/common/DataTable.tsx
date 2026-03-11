@@ -103,6 +103,10 @@ export interface DataTableProps<TData> {
   enableColumnVisibility?: boolean;
   defaultHiddenColumns?: string[];
   renderActions?: (row: TData) => React.ReactNode;
+  /** Optional callback to compute extra CSS classes per data row */
+  getRowClassName?: (row: TData) => string;
+  /** Optional callback to compute inline style per data row (highest specificity) */
+  getRowStyle?: (row: TData) => React.CSSProperties | undefined;
   // Import / Export Excel
   onExport?: () => void;
   isExporting?: boolean;
@@ -164,6 +168,8 @@ export function DataTable<TData>({
   enableColumnVisibility = false,
   defaultHiddenColumns = [],
   renderActions,
+  getRowClassName,
+  getRowStyle,
   onExport,
   isExporting = false,
   onImport,
@@ -678,11 +684,18 @@ export function DataTable<TData>({
                   </TableRow>
                 ) : (
                   /* Data Rows */
-                  table.getRowModel().rows.map((row) => (
+                  table.getRowModel().rows.map((row) => {
+                    const rowClass = getRowClassName?.(row.original) ?? "";
+                    const rowStyle = getRowStyle?.(row.original);
+                    return (
                     <TableRow
                       key={row.id}
                       data-state={row.getIsSelected() && "selected"}
-                      className="hover:bg-[#FAF8F5] transition-colors border-b border-[#E8DFD6]"
+                      className={[
+                        "transition-colors border-b border-[#E8DFD6]",
+                        rowClass || "hover:bg-[#FAF8F5]",
+                      ].join(" ")}
+                      style={rowStyle}
                     >
                       {row.getVisibleCells().map((cell) => (
                         <TableCell key={cell.id} className="text-[#5D4037]">
@@ -693,7 +706,8 @@ export function DataTable<TData>({
                         </TableCell>
                       ))}
                     </TableRow>
-                  ))
+                    );
+                  })
                 )}
               </TableBody>
             </Table>
