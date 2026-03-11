@@ -115,7 +115,7 @@ export const FranchiseTable = ({
       error={error}
       onRetry={onRetry}
       emptyMessage="No franchises found matching your search."
-      initialPageSize={5}
+      initialPageSize={10}
       enableRowSelection={!!onBulkDelete}
       enableColumnVisibility
       defaultHiddenColumns={["address", "closedAt"]}
