@@ -1,39 +1,54 @@
 import type { ColumnDef } from "@tanstack/react-table";
 import { Badge } from "@/components/ui/badge";
+import { StatusToggleCell } from "@/components/common/StatusToggleCell";
 import type { Product } from "@/types/product.type";
 
-export const productColumns: ColumnDef<Product>[] = [
-  {
-    accessorKey: "sku",
-    header: "SKU",
-    cell: ({ row }) => (
-      <span className="font-mono text-sm text-[#5D4037]">
-        {row.original.sku}
-      </span>
-    ),
-  },
-  {
-    accessorKey: "imageUrl",
-    header: "Image",
-    enableSorting: false,
-    cell: ({ row }) => (
-      row.original.imageUrl ? (
-        <img
-          src={row.original.imageUrl}
-          alt={row.original.name}
-          className="w-12 h-12 object-cover rounded-lg border border-[#E8DFD6]"
-          onError={(e) => {
-            e.currentTarget.src = 'https://via.placeholder.com/48?text=No+Image';
-          }}
-        />
-      ) : (
-        <div className="w-12 h-12 bg-gray-200 rounded-lg flex items-center justify-center text-gray-400 text-xs">
-          No image
-        </div>
-      )
-    ),
-  },
-  {
+interface ColumnOptions {
+  onStatusToggle?: (row: Product, isActive: boolean) => void;
+  statusPendingId?: string | null;
+  canEdit?: boolean;
+  isManagerView?: boolean;
+}
+
+export const createProductColumns = (options?: ColumnOptions): ColumnDef<Product>[] => {
+  const columns: ColumnDef<Product>[] = [];
+
+  if (!options?.isManagerView) {
+    columns.push(
+      {
+        accessorKey: "sku",
+        header: "SKU",
+        cell: ({ row }) => (
+          <span className="font-mono text-sm text-[#5D4037]">
+            {row.original.sku}
+          </span>
+        ),
+      },
+      {
+        accessorKey: "imageUrl",
+        header: "Image",
+        enableSorting: false,
+        cell: ({ row }) => (
+          row.original.imageUrl ? (
+            <img
+              src={row.original.imageUrl}
+              alt={row.original.name}
+              className="w-12 h-12 object-cover rounded-lg border border-[#E8DFD6]"
+              onError={(e) => {
+                e.currentTarget.src = 'https://via.placeholder.com/48?text=No+Image';
+              }}
+            />
+          ) : (
+            <div className="w-12 h-12 bg-gray-200 rounded-lg flex items-center justify-center text-gray-400 text-xs">
+              No image
+            </div>
+          )
+        ),
+      }
+    );
+  }
+
+  columns.push({
     accessorKey: "name",
     header: "Name",
     cell: ({ row }) => (
@@ -43,11 +58,14 @@ export const productColumns: ColumnDef<Product>[] = [
   {
     id: "price_range",
     accessorFn: (row) => `${row.minPrice}-${row.maxPrice}`,
-    header: "Price Range",
+    header: options?.isManagerView ? "Price" : "Price Range",
     enableSorting: false,
     cell: ({ row }) => (
       <span className="text-[#5D4037]">
-        {row.original.minPrice.toLocaleString()}₫ – {row.original.maxPrice.toLocaleString()}₫
+        {options?.isManagerView 
+          ? `${row.original.minPrice.toLocaleString()}₫`
+          : `${row.original.minPrice.toLocaleString()}₫ – ${row.original.maxPrice.toLocaleString()}₫`
+        }
       </span>
     ),
   },
@@ -57,17 +75,30 @@ export const productColumns: ColumnDef<Product>[] = [
     filterFn: (row, _columnId, filterValue) => {
       return row.original.isActive === filterValue;
     },
-    cell: ({ row }) => (
-      <Badge
-        variant={row.original.isActive ? "default" : "secondary"}
-        className={
-          row.original.isActive
-            ? "bg-green-600 hover:bg-green-700 rounded-full"
-            : "bg-gray-500 hover:bg-gray-600 rounded-full"
-        }
-      >
-        {row.original.isActive ? "Active" : "Inactive"}
-      </Badge>
-    ),
-  },
-];
+    cell: ({ row }) => {
+      if (options?.onStatusToggle && options.canEdit) {
+        return (
+          <StatusToggleCell
+            isActive={row.original.isActive}
+            onToggle={(val) => options.onStatusToggle!(row.original, val)}
+            isPending={options.statusPendingId === String(row.original.id)}
+          />
+        );
+      }
+      return (
+        <Badge
+          variant={row.original.isActive ? "default" : "secondary"}
+          className={
+            row.original.isActive
+              ? "bg-green-600 hover:bg-green-700 rounded-full"
+              : "bg-gray-500 hover:bg-gray-600 rounded-full"
+          }
+        >
+          {row.original.isActive ? "Active" : "Inactive"}
+        </Badge>
+      );
+    },
+  });
+
+  return columns;
+};

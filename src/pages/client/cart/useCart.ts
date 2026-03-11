@@ -2,7 +2,10 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { Order, OrderItem } from '@/types/order';
 
-export type CartItem = OrderItem;
+export type CartItem = Omit<OrderItem, 'productFranchiseId'> & {
+  productFranchiseId: string | number;
+  imageUrl?: string;
+};
 
 export interface Cart extends Omit<Order, 'id' | 'code' | 'confirmedAt' | 'completedAt' | 'cancelledAt' | 'createdBy'> {
   id: string;
@@ -28,9 +31,9 @@ function getDefaultCart(): Cart {
 
 interface CartStore {
   cart: Cart;
-  addItem: (productId: number, productName: string, price: number, quantity?: number) => void;
-  updateQuantity: (productId: number, newQuantity: number) => void;
-  removeItem: (productId: number) => void;
+  addItem: (productId: string | number, productName: string, price: number, quantity?: number, imageUrl?: string) => void;
+  updateQuantity: (productId: string | number, newQuantity: number) => void;
+  removeItem: (productId: string | number) => void;
   clearCart: () => void;
 }
 
@@ -39,26 +42,32 @@ const useCartStore = create<CartStore>()(
     (set, get) => ({
       cart: getDefaultCart(),
 
-      addItem: (productId, productName, price, quantity = 1) => {
-        const { cart } = get();
-        const existing = cart.items.find(item => item.productFranchiseId === productId);
+      addItem: (productId, productName, price, quantity = 1, imageUrl?: string) => {
+        if (productId == null || productId === '' || Number.isNaN(productId)) return;
 
+        const { cart } = get();
+        const items = Array.isArray(cart?.items) ? cart.items : [];
+
+        // Dedup: exact ID match, or same name + same price (covers different components
+        // passing catalog-id vs franchise-id for the same logical product)
+        const existing = items.find(
+          item =>
+            item.productFranchiseId === productId ||
+            (item.productNameSnapshot === productName && item.priceSnapshot === price),
+        );
+
+        let newItems: CartItem[];
         if (existing) {
-          set({
-            cart: {
-              ...cart,
-              items: cart.items.map(item =>
-                item.productFranchiseId === productId
-                  ? {
-                      ...item,
-                      quantity: item.quantity + quantity,
-                      lineTotal: (item.quantity + quantity) * item.priceSnapshot,
-                    }
-                  : item
-              ),
-              updatedAt: new Date().toISOString(),
-            },
-          });
+          newItems = items.map(item =>
+            item === existing
+              ? {
+                  ...item,
+                  quantity: item.quantity + quantity,
+                  lineTotal: (item.quantity + quantity) * item.priceSnapshot,
+                  ...(imageUrl ? { imageUrl } : {}),
+                }
+              : item,
+          );
         } else {
           const newItem: CartItem = {
             id: Date.now(),
@@ -68,18 +77,22 @@ const useCartStore = create<CartStore>()(
             priceSnapshot: price,
             quantity,
             lineTotal: price * quantity,
+            imageUrl,
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
             isDeleted: false,
           };
-          set({
-            cart: {
-              ...cart,
-              items: [...cart.items, newItem],
-              updatedAt: new Date().toISOString(),
-            },
-          });
+          newItems = [...items, newItem];
         }
+
+        set({
+          cart: {
+            ...cart,
+            items: newItems,
+            totalAmount: newItems.reduce((sum, i) => sum + i.lineTotal, 0),
+            updatedAt: new Date().toISOString(),
+          },
+        });
       },
 
       updateQuantity: (productId, newQuantity) => {
@@ -120,15 +133,8 @@ const useCartStore = create<CartStore>()(
     }),
     {
       name: 'coffee_cart',
-      // Migrate old snake_case cart data
-      onRehydrateStorage: () => (state) => {
-        if (state?.cart?.items?.length) {
-          const first = state.cart.items[0] as any;
-          if (first.price_snapshot !== undefined || first.line_total !== undefined) {
-            state.cart = getDefaultCart();
-          }
-        }
-      },
+      version: 2,
+      migrate: () => ({ cart: getDefaultCart() }),
     }
   )
 );

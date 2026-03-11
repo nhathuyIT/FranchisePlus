@@ -14,7 +14,11 @@ import { franchiseFields, franchiseSchema } from "./franchise-form.config";
 import type { FranchiseFormData } from "@/lib/schemas/franchise.schema";
 import type { Franchise } from "@/types/franchise";
 import type { SubmitResult } from "@/components/form-dialog/types";
-import { useFranchises, useDeleteFranchise } from "@/hooks/franchise";
+import {
+  useFranchises,
+  useDeleteFranchise,
+  useUpdateFranchiseStatus,
+} from "@/hooks/franchise";
 import { Permission } from "@/config/permission";
 import { useAuthStore } from "@/stores/auth-store";
 import * as franchiseApi from "@/api/franchise/franchise.api";
@@ -67,6 +71,7 @@ const FranchiseList = () => {
     : null;
 
   const deleteMutation = useDeleteFranchise({ suppressToast: true });
+  const statusMutation = useUpdateFranchiseStatus();
   const listError = error instanceof Error ? error : null;
 
   // Form dialog state using new hook
@@ -268,6 +273,10 @@ const FranchiseList = () => {
     }
   }, [dialog.mode]);
 
+  const handleStatusToggle = (franchise: Franchise, isActive: boolean) => {
+    statusMutation.mutate({ id: String(franchise.id), isActive });
+  };
+
   return (
     <div className="h-full flex flex-col">
       <div className="flex-1 flex flex-col min-h-0 max-w-7xl mx-auto w-full">
@@ -301,6 +310,15 @@ const FranchiseList = () => {
             }
             onView={canViewFranchises ? handleView : undefined}
             onDelete={canManageFranchises ? handleOpenDelete : undefined}
+            onStatusToggle={
+              canManageFranchises ? handleStatusToggle : undefined
+            }
+            statusPendingId={
+              statusMutation.isPending
+                ? String(statusMutation.variables?.id)
+                : null
+            }
+            canEdit={canManageFranchises}
             onAssignProducts={canViewFranchises ? handleAssignProducts : undefined}
           />
         </div>

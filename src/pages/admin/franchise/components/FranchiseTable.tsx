@@ -1,6 +1,7 @@
+import { useMemo } from "react";
 import { Eye, Pencil, Trash2, LayoutGrid } from "lucide-react";
 import { DataTable, type ColumnFilter, type BulkAction } from "@/components/common/DataTable";
-import { franchiseColumns } from "../columns/franchise.columns";
+import { createFranchiseColumns } from "../columns/franchise.columns";
 import { Button } from "@/components/ui/button";
 import type { Franchise } from "@/types/franchise";
 import { toast } from "sonner";
@@ -21,6 +22,9 @@ interface FranchiseTableProps {
   onEdit?: (franchise: Franchise) => void;
   onView?: (franchise: Franchise) => void;
   onDelete?: (franchise: Franchise) => void;
+  onStatusToggle?: (row: Franchise, isActive: boolean) => void;
+  statusPendingId?: string | null;
+  canEdit?: boolean;
   onAssignProducts?: (franchise: Franchise) => void;
 }
 
@@ -33,6 +37,9 @@ export const FranchiseTable = ({
   onEdit,
   onView,
   onDelete,
+  onStatusToggle,
+  statusPendingId,
+  canEdit,
   onAssignProducts,
 }: FranchiseTableProps) => {
   const { exportToExcel, isExporting } = useExcelExport({
@@ -41,6 +48,11 @@ export const FranchiseTable = ({
     sheetName: "Franchises",
     excludeColumns: ["logoUrl"],
   });
+
+  const columns = useMemo(
+    () => createFranchiseColumns({ onStatusToggle, statusPendingId, canEdit }),
+    [onStatusToggle, statusPendingId, canEdit]
+  );
 
   const { importFromExcel, isImporting } = useExcelImport({
     schema: FranchiseImportSchema,
@@ -91,7 +103,7 @@ export const FranchiseTable = ({
 
   return (
     <DataTable
-      columns={franchiseColumns}
+      columns={columns}
       data={franchises}
       isLoading={isLoading}
       error={error}

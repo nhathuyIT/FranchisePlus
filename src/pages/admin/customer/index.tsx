@@ -17,6 +17,7 @@ import type { SubmitResult } from "@/components/form-dialog/types";
 import {
   useCustomerAdminSearch,
   useDeleteCustomerAdmin,
+  useUpdateCustomerAdminStatus,
 } from "@/hooks/customer";
 import { Permission } from "@/config/permission";
 import { useAuthStore } from "@/stores/auth-store";
@@ -32,7 +33,7 @@ const CustomerAdminList = () => {
   );
 
   const pageNum = 1;
-  const pageSize = 10;
+  const pageSize = 1000;
 
   const searchParams = useMemo(
     () => ({
@@ -52,6 +53,7 @@ const CustomerAdminList = () => {
   const customers: CustomerProfile[] = searchResult?.pageData ?? [];
 
   const deleteMutation = useDeleteCustomerAdmin({ suppressToast: true });
+  const customerStatusMutation = useUpdateCustomerAdminStatus();
   const listError = error instanceof Error ? error : null;
 
   const dialog = useFormDialog<CustomerProfile>();
@@ -153,13 +155,7 @@ const CustomerAdminList = () => {
 
   // ── Action Handlers ──────────────────────────────────────────────────────
 
-  const handleEdit = (customer: CustomerProfile) => {
-    if (!canManageCustomers) {
-      toast.error("You do not have permission to edit customers.");
-      return;
-    }
-    dialog.openEdit(customer);
-  };
+
 
   const handleView = (customer: CustomerProfile) => {
     if (!canViewCustomers) {
@@ -167,6 +163,10 @@ const CustomerAdminList = () => {
       return;
     }
     dialog.openView(customer);
+  };
+
+  const handleStatusToggle = (customer: CustomerProfile, isActive: boolean) => {
+    customerStatusMutation.mutate({ id: customer.id, isActive });
   };
 
   const handleOpenDelete = (customer: CustomerProfile) => {
@@ -213,9 +213,15 @@ const CustomerAdminList = () => {
             error={listError}
             onRetry={refetch}
             onBulkDelete={canManageCustomers ? handleBulkDelete : undefined}
-            onEdit={canManageCustomers ? handleEdit : undefined}
             onView={canViewCustomers ? handleView : undefined}
             onDelete={canManageCustomers ? handleOpenDelete : undefined}
+            onStatusToggle={canManageCustomers ? handleStatusToggle : undefined}
+            statusPendingId={
+              customerStatusMutation.isPending
+                ? String(customerStatusMutation.variables?.id)
+                : null
+            }
+            canEdit={canManageCustomers}
           />
         </div>
 

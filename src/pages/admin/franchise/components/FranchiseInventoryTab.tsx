@@ -1,3 +1,4 @@
+import { useState } from "react";
 import {
   Table,
   TableBody,
@@ -7,13 +8,43 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { useProductFranchisesQuery } from "@/hooks/product-franchise/useProductFranchiseQuery";
+import { Eye, Edit, Trash2 } from "lucide-react";
+import { DeleteDialog } from "@/components/form-dialog/DeleteDialog";
+import { 
+  useProductFranchisesQuery,
+  useDeleteProductFranchiseMutation 
+} from "@/hooks/product-franchise/useProductFranchiseQuery";
+import { AddFranchiseProductModal } from "./AddFranchiseProductModal";
+import { EditFranchiseProductModal } from "./EditFranchiseProductModal";
+import { ViewFranchiseProductModal } from "./ViewFranchiseProductModal";
 
 interface FranchiseInventoryTabProps {
   franchiseId: string;
+  createOpen?: boolean;
+  onCreateOpenChange?: (open: boolean) => void;
 }
 
-export const FranchiseInventoryTab = ({ franchiseId }: FranchiseInventoryTabProps) => {
+interface ProductFranchise {
+  id: number | string;
+  productName?: string;
+  size?: string;
+  priceBase: number;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export const FranchiseInventoryTab = ({ 
+  franchiseId, 
+  createOpen = false, 
+  onCreateOpenChange 
+}: FranchiseInventoryTabProps) => {
+  const [selectedProduct, setSelectedProduct] = useState<ProductFranchise | null>(null);
+  const [viewOpen, setViewOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deletingProduct, setDeletingProduct] = useState<ProductFranchise | null>(null);
+
   const { data: productFranchises, isLoading, error } = useProductFranchisesQuery({
     searchCondition: {
       keyword: "",
@@ -30,8 +61,80 @@ export const FranchiseInventoryTab = ({ franchiseId }: FranchiseInventoryTabProp
     },
   });
 
+  const deleteMutation = useDeleteProductFranchiseMutation();
+
+  const handleView = (pf: ProductFranchise) => {
+    setSelectedProduct(pf);
+    setViewOpen(true);
+  };
+
+  const handleEdit = (pf: ProductFranchise) => {
+    setSelectedProduct(pf);
+    setEditOpen(true);
+  };
+
+  const handleDeleteClick = (pf: ProductFranchise) => {
+    setDeletingProduct(pf);
+    setDeleteOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!deletingProduct) return;
+    
+    try {
+      await deleteMutation.mutateAsync(deletingProduct.id);
+      setDeleteOpen(false);
+      setDeletingProduct(null);
+    } catch (error) {
+      console.error("Failed to delete product franchise:", error);
+    }
+  };
+
   return (
-    <div className="h-full flex flex-col bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+    <>
+      <AddFranchiseProductModal
+        franchiseId={franchiseId}
+        open={createOpen}
+        onClose={() => onCreateOpenChange?.(false)}
+        onSuccess={() => onCreateOpenChange?.(false)}
+      />
+
+      <EditFranchiseProductModal
+        productFranchise={selectedProduct}
+        open={editOpen}
+        onClose={() => {
+          setEditOpen(false);
+          setSelectedProduct(null);
+        }}
+        onSuccess={() => {
+          setEditOpen(false);
+          setSelectedProduct(null);
+        }}
+      />
+
+      <ViewFranchiseProductModal
+        productFranchise={selectedProduct}
+        open={viewOpen}
+        onClose={() => {
+          setViewOpen(false);
+          setSelectedProduct(null);
+        }}
+      />
+
+      <DeleteDialog
+        open={deleteOpen}
+        onOpenChange={setDeleteOpen}
+        entity={deletingProduct}
+        entityName="Product"
+        onConfirm={confirmDelete}
+        isDeleting={deleteMutation.isPending}
+        getDisplayName={(pf) => pf.productName || "this product"}
+        deleteMessage={(pf) => 
+          `Remove the "${pf.productName || 'this product'}" from this franchise's inventory? This action cannot be undone.`
+        }
+      />
+      
+      <div className="h-full flex flex-col bg-white rounded-lg shadow-sm border border-gray-200 p-6">
       <h2 className="text-xl font-semibold text-[#4A3B2A] mb-4 shrink-0">
         Inventory Stock
       </h2>
@@ -51,11 +154,11 @@ export const FranchiseInventoryTab = ({ franchiseId }: FranchiseInventoryTabProp
               <TableHeader>
                 <TableRow className="bg-[#FAF9F6]">
                   <TableHead className="font-semibold text-[#4A3B2A]">Product</TableHead>
-                  <TableHead className="font-semibold text-[#4A3B2A]">SKU</TableHead>
                   <TableHead className="font-semibold text-[#4A3B2A]">Size</TableHead>
                   <TableHead className="font-semibold text-[#4A3B2A]">Price</TableHead>
                   <TableHead className="font-semibold text-[#4A3B2A]">Status</TableHead>
                   <TableHead className="font-semibold text-[#4A3B2A]">Last Updated</TableHead>
+                  <TableHead className="font-semibold text-[#4A3B2A] text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -63,9 +166,6 @@ export const FranchiseInventoryTab = ({ franchiseId }: FranchiseInventoryTabProp
                   <TableRow key={pf.id} className="hover:bg-[#FAF9F6]">
                     <TableCell className="font-medium text-[#4A3B2A]">
                       {pf.productName || "N/A"}
-                    </TableCell>
-                    <TableCell className="text-gray-700 font-mono text-sm">
-                      {pf.productSku || "N/A"}
                     </TableCell>
                     <TableCell className="text-gray-700">
                       {pf.size || "DEFAULT"}
@@ -88,6 +188,22 @@ export const FranchiseInventoryTab = ({ franchiseId }: FranchiseInventoryTabProp
                     <TableCell className="text-gray-700">
                       {new Date(pf.updatedAt).toLocaleDateString()}
                     </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex gap-3 justify-end">
+                        <Eye 
+                          className="h-5 w-5 text-gray-600 hover:text-blue-600 cursor-pointer transition-colors" 
+                          onClick={() => handleView(pf)}
+                        />
+                        <Edit 
+                          className="h-5 w-5 text-blue-600 hover:text-blue-700 cursor-pointer transition-colors" 
+                          onClick={() => handleEdit(pf)}
+                        />
+                        <Trash2 
+                          className="h-5 w-5 text-red-600 hover:text-red-700 cursor-pointer transition-colors" 
+                          onClick={() => handleDeleteClick(pf)}
+                        />
+                      </div>
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -102,5 +218,6 @@ export const FranchiseInventoryTab = ({ franchiseId }: FranchiseInventoryTabProp
         )}
       </div>
     </div>
+    </>
   );
 };

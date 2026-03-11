@@ -71,20 +71,30 @@ const resolveContext = (
     };
   }
 
-  // Find the role whose code matches activeContext.role
-  const matchedRole = roles.find((r) => r.code === activeContext.role);
-  // Find the franchiseRole whose franchiseId matches
-  const matchedFR = franchiseRoles.find(
-    (fr) =>
-      fr.roleId === matchedRole?.id &&
+  // Match by iterating franchiseRoles and checking both role code AND franchiseId.
+  // This handles duplicate role codes (same role at multiple franchises).
+  const matchedFR = franchiseRoles.find((fr) => {
+    const role = roles.find((r) => r.id === fr.roleId);
+    return (
+      role?.code === activeContext.role &&
       (fr.franchiseId === activeContext.franchiseId ||
-        (!fr.franchiseId && !activeContext.franchiseId)),
-  );
+        (!fr.franchiseId && !activeContext.franchiseId))
+    );
+  });
+
+  // Fallback: match by franchiseId only (in case role code doesn't match)
+  const fallbackFR =
+    matchedFR ||
+    franchiseRoles.find(
+      (fr) =>
+        fr.franchiseId === activeContext.franchiseId ||
+        (!fr.franchiseId && !activeContext.franchiseId),
+    );
 
   return {
-    currentRoleId: matchedFR?.roleId ?? matchedRole?.id ?? null,
+    currentRoleId: fallbackFR?.roleId ?? roles[0]?.id ?? null,
     currentFranchiseId:
-      matchedFR?.franchiseId ?? activeContext.franchiseId ?? null,
+      fallbackFR?.franchiseId ?? activeContext.franchiseId ?? null,
   };
 };
 
@@ -236,7 +246,8 @@ export const useSwitchContext = () => {
   const { authUser, login } = useAuthStore();
 
   return useMutation({
-    mutationFn: async (data: SwitchContextRequest) => {
+    mutationFn: async (data: SwitchContextRequest & { role_id?: number }) => {
+      useAuthStore.getState().setSwitchingRole(true);
       await authApi.switchContext(data);
       // getProfile returns the confirmed activeContext after the switch
       const freshProfile = await authApi.getProfile();
@@ -259,17 +270,18 @@ export const useSwitchContext = () => {
       const updatedAuthUser = {
         ...authUser,
         user: freshProfile.user,
-        // PRESERVE original roles/franchiseRoles so user can switch again
-        roles: authUser.roles,
-        franchiseRoles: authUser.franchiseRoles,
+        roles,
+        franchiseRoles,
         currentRoleId,
         currentFranchiseId,
       };
 
       login(updatedAuthUser);
+      useAuthStore.getState().setSwitchingRole(false);
       toast.success("Role switched successfully");
     },
     onError: (error) => {
+      useAuthStore.getState().setSwitchingRole(false);
       console.error("[useSwitchContext] Switch context error:", error);
       toast.error("Failed to switch role", {
         description: error.message || "Please try again",
