@@ -254,7 +254,7 @@ export const InventoryTable = ({
           error={error}
           onRetry={onRetry}
           emptyMessage="No inventory items found matching your criteria."
-          initialPageSize={5}
+          initialPageSize={10}
           enableRowSelection={!!onBulkExport}
           enableColumnVisibility
           columnFilters={columnFilters}
