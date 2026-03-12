@@ -3,7 +3,6 @@ import { useAuthStore } from "@/stores/auth-store";
 import { ProfileHeader } from "./components/profile-header";
 import { ProfileDetails } from "./components/profile-details";
 import { EditProfileDialog } from "./components/edit-profile-dialog";
-import { FooterInfo } from "@/components/common/FooterInfo";
 
 const ProfilePage = () => {
   const { authUser } = useAuthStore();
@@ -19,9 +18,9 @@ const ProfilePage = () => {
   const memberSince = new Date(user.createdAt).getFullYear();
 
   return (
-    <div className="bg-[#FAF8F5] min-h-screen">
+    <div>
       {/* ═══ Page Title Section ═══ */}
-      <section className="container mx-auto px-4 pt-12 pb-6 max-w-5xl">
+      <section className="mb-6">
         <h1 className="font-coffee text-4xl md:text-5xl italic text-[#3E2723] mb-2">
           My Profile
         </h1>
@@ -31,7 +30,7 @@ const ProfilePage = () => {
       </section>
 
       {/* ═══ Profile Banner Card ═══ */}
-      <section className="container mx-auto px-4 max-w-5xl mb-10">
+      <section className="mb-10">
         <div className="bg-white rounded-2xl shadow-md border border-[#E8E0D8] overflow-hidden">
           {/* Gradient Banner */}
           <div className="relative h-36 bg-linear-to-r from-[#8D6E63] via-[#A1887F] to-[#BCAAA4]">
@@ -111,7 +110,7 @@ const ProfilePage = () => {
       </section>
 
       {/* ═══ Contact & Account Details ═══ */}
-      <section className="container mx-auto px-4 max-w-5xl mb-10">
+      <section className="mb-10">
         <ProfileDetails user={user} />
       </section>
 
@@ -124,8 +123,6 @@ const ProfilePage = () => {
         open={editDialogOpen}
         onOpenChange={setEditDialogOpen}
       />
-
-      <FooterInfo />
     </div>
   );
 };
