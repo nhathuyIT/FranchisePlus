@@ -212,7 +212,9 @@ const InventoryList = () => {
       if (thresholdChanged) {
         parts.push(`threshold → ${newAlertThreshold}`);
       }
-      toast.success(`Updated "${item.productName}": ${parts.join(", ")}`);
+      toast.success(
+        `Updated "${item.productName}": ${parts.join(", ")}`,
+      );
 
       void refetch();
     },

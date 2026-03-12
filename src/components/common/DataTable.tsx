@@ -710,24 +710,24 @@ export function DataTable<TData>({
                     const rowClass = getRowClassName?.(row.original) ?? "";
                     const rowStyle = getRowStyle?.(row.original);
                     return (
-                      <TableRow
-                        key={row.id}
-                        data-state={row.getIsSelected() && "selected"}
-                        className={[
-                          "transition-colors border-b border-[#E8DFD6]",
-                          rowClass || "hover:bg-[#FAF8F5]",
-                        ].join(" ")}
-                        style={rowStyle}
-                      >
-                        {row.getVisibleCells().map((cell) => (
-                          <TableCell key={cell.id} className="text-[#5D4037]">
-                            {flexRender(
-                              cell.column.columnDef.cell,
-                              cell.getContext(),
-                            )}
-                          </TableCell>
-                        ))}
-                      </TableRow>
+                    <TableRow
+                      key={row.id}
+                      data-state={row.getIsSelected() && "selected"}
+                      className={[
+                        "transition-colors border-b border-[#E8DFD6]",
+                        rowClass || "hover:bg-[#FAF8F5]",
+                      ].join(" ")}
+                      style={rowStyle}
+                    >
+                      {row.getVisibleCells().map((cell) => (
+                        <TableCell key={cell.id} className="text-[#5D4037]">
+                          {flexRender(
+                            cell.column.columnDef.cell,
+                            cell.getContext(),
+                          )}
+                        </TableCell>
+                      ))}
+                    </TableRow>
                     );
                   })
                 )}
