@@ -4,7 +4,6 @@ import { PRODUCTS_CLIENT } from "@/const/product-client.const";
 import { createProductSlug, parseProductIdFromSlug } from "@/lib/slugify";
 import { useCart } from "@/pages/client/cart/useCart";
 
-
 const ProductDetailPage = () => {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
@@ -12,46 +11,42 @@ const ProductDetailPage = () => {
 
   const product = useMemo(() => {
     if (!slug) return null;
-    
+
     // Try to parse ID from slug first
     const idFromSlug = parseProductIdFromSlug(slug);
     if (idFromSlug) {
-      const foundProduct = PRODUCTS_CLIENT.find((p) => p.id.toString() === idFromSlug);
+      const foundProduct = PRODUCTS_CLIENT.find(
+        (p) => p.id.toString() === idFromSlug,
+      );
       if (foundProduct) return foundProduct;
     }
-    
+
     // Fallback: match by generated slug
-    return PRODUCTS_CLIENT.find((p) => createProductSlug(p.name, p.id) === slug);
+    return PRODUCTS_CLIENT.find(
+      (p) => createProductSlug(p.name, p.id) === slug,
+    );
   }, [slug]);
 
   const [quantity, setQuantity] = useState(1);
-  const [selectedImage, setSelectedImage] = useState(product?.imageUrl || "/placeholder-coffee.jpg");
+  const [selectedImage, setSelectedImage] = useState(
+    product?.imageUrl || "/placeholder-coffee.jpg",
+  );
 
   const handleAddToCart = () => {
     if (!product) return;
-    
-    addItem(
-      product.id,
-      product.name,
-      product.minPrice,
-      quantity
-    );
-    
+
+    addItem(product.id, product.name, product.minPrice, quantity);
+
     // Show confirmation
     alert(`Added ${quantity} "${product.name}" to cart!`);
   };
 
   const handleBuyNow = () => {
     if (!product) return;
-    
+
     // Add to cart first
-    addItem(
-      product.id,
-      product.name,
-      product.minPrice,
-      quantity
-    );
-    
+    addItem(product.id, product.name, product.minPrice, quantity);
+
     // Navigate to cart
     navigate("/client/cart");
   };
@@ -80,9 +75,9 @@ const ProductDetailPage = () => {
   }
 
   const galleryImages = [
-    product.imageUrl || '/placeholder-coffee.jpg', 
-    product.imageUrl || '/placeholder-coffee.jpg', 
-    product.imageUrl || '/placeholder-coffee.jpg'
+    product.imageUrl || "/placeholder-coffee.jpg",
+    product.imageUrl || "/placeholder-coffee.jpg",
+    product.imageUrl || "/placeholder-coffee.jpg",
   ];
 
   const handleDecrease = () => {
@@ -100,9 +95,11 @@ const ProductDetailPage = () => {
         <div className="flex flex-1 flex-col gap-4 lg:max-w-xl">
           <div className="overflow-hidden rounded-3xl bg-neutral-100 shadow-sm">
             <img
-              src={selectedImage || product.imageUrl || '/placeholder-coffee.jpg'}
+              src={
+                selectedImage || product.imageUrl || "/placeholder-coffee.jpg"
+              }
               alt={product.name}
-              className="h-full w-full max-h-[460px] object-cover"
+              className="h-full w-full max-h-115 object-cover"
             />
           </div>
 
@@ -113,7 +110,9 @@ const ProductDetailPage = () => {
                 type="button"
                 onClick={() => setSelectedImage(img)}
                 className={`flex h-20 w-24 items-center justify-center overflow-hidden rounded-xl border bg-white transition ${
-                  (selectedImage || product.imageUrl || '/placeholder-coffee.jpg') === img
+                  (selectedImage ||
+                    product.imageUrl ||
+                    "/placeholder-coffee.jpg") === img
                     ? "border-black-500 ring-2 ring-black-500/40"
                     : "border-neutral-200 hover:border-brown-300"
                 }`}
@@ -174,7 +173,7 @@ const ProductDetailPage = () => {
                 >
                   -
                 </button>
-                <span className="min-w-[2.5rem] text-center text-sm font-medium text-neutral-900">
+                <span className="min-w-10 text-center text-sm font-medium text-neutral-900">
                   {quantity}
                 </span>
                 <button

@@ -7,9 +7,14 @@ export const ToppingCard = ({
   onViewDetail,
 }: {
   product: ProductListItem;
-  onViewDetail: (productId: string | number) => void;
+  onViewDetail: (
+    product: ProductListItem,
+    productFranchiseId: string | number,
+  ) => void;
 }) => {
   const minPrice = getMinPrice(product.sizes);
+  const availableSizes = product.sizes.filter((s) => s.isAvailable);
+  const defaultProductFranchiseId = availableSizes[0]?.productFranchiseId;
 
   return (
     <div
@@ -66,7 +71,10 @@ export const ToppingCard = ({
         )}
         <button
           type="button"
-          onClick={() => onViewDetail(product.productId)}
+          onClick={() => {
+            if (defaultProductFranchiseId == null) return;
+            onViewDetail(product, defaultProductFranchiseId);
+          }}
           className="flex items-center gap-1 px-2.5 py-1 text-xs font-medium
                      text-amber-700 hover:text-white bg-amber-50 hover:bg-amber-600
                      rounded-full border border-amber-200 hover:border-amber-600

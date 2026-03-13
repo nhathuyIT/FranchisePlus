@@ -1,5 +1,14 @@
 import type { ID, BaseTimestamp, SoftDeletable, Activatable } from "./common";
 
+export type ProductSizeCode =
+  | "DEFAULT"
+  | "SMALL"
+  | "MEDIUM"
+  | "LARGE"
+  | "S"
+  | "M"
+  | "L";
+
 /**
  * Product entity - global product definition
  */
@@ -44,7 +53,7 @@ export interface ProductCategoryFranchise
  */
 export interface ProductSizeInfo {
   productFranchiseId: ID;
-  size: "DEFAULT" | "SMALL" | "MEDIUM" | "LARGE";
+  size: ProductSizeCode;
   price: number;
   isAvailable: boolean;
 }
@@ -73,3 +82,40 @@ export interface ProductListResponse {
   success: boolean;
   data: ProductListItem[];
 }
+
+/**
+ * Product detail size info (client detail endpoint)
+ */
+export interface ProductDetailSizeInfo {
+  productFranchiseId: ID;
+  size: ProductSizeCode;
+  price: number;
+  isAvailable: boolean;
+}
+
+/**
+ * Product detail item (client detail endpoint)
+ */
+export interface ProductDetailItem {
+  productId: ID;
+  categoryId: ID;
+  categoryName: string;
+  sku: string;
+  name: string;
+  description: string;
+  content: string;
+  imageUrl: string;
+  imagesUrl: string[];
+  isHaveTopping: boolean | null;
+  sizes: ProductDetailSizeInfo[];
+}
+
+/**
+ * Product detail response (client detail endpoint)
+ */
+export interface ProductDetailResponse {
+  success: boolean;
+  data: ProductDetailItem;
+}
+
+
