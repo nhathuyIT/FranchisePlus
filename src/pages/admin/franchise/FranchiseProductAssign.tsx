@@ -34,6 +34,7 @@ const FranchiseProductAssign = () => {
 
   const [productSearch, setProductSearch] = useState("");
   const [activeTabId, setActiveTabId] = useState<string | null>(null);
+  const [assignmentView, setAssignmentView] = useState<"unassigned" | "assigned">("unassigned");
   const [selectedProductIds, setSelectedProductIds] = useState<Set<string>>(
     new Set(),
   );
@@ -216,60 +217,53 @@ const FranchiseProductAssign = () => {
 
   // Derived data
 
-  // Products filtered by: active tab + search
-  const filteredProducts = useMemo(() => {
-    let list = productFranchises;
-
-    // Tab filter
-    if (tabProductIds) {
-      list = list.filter((p) => tabProductIds.has(String(p.id)));
-    }
-
-    // Text search
+  // Products filtered by search text only
+  const searchedProducts = useMemo(() => {
     const kw = productSearch.toLowerCase().trim();
-    if (kw) {
-      list = list.filter(
-        (p) =>
-          p.productName?.toLowerCase().includes(kw) ||
-          p.productSku?.toLowerCase().includes(kw),
-      );
-    }
+    if (!kw) return productFranchises;
+    return productFranchises.filter(
+      (p) =>
+        p.productName?.toLowerCase().includes(kw) ||
+        p.productSku?.toLowerCase().includes(kw),
+    );
+  }, [productFranchises, productSearch]);
 
-    return list;
-  }, [productFranchises, tabProductIds, productSearch]);
+  // Product ids that already have at least one category assignment
+  const assignedProductIds = useMemo(() => {
+    const ids = new Set<string>();
+    for (const a of allAssignments) ids.add(a.productFranchiseId);
+    return ids;
+  }, [allAssignments]);
 
-  // "Select all" checkbox state for current filtered list
-  const allFilteredSelected = useMemo(
-    () =>
-      filteredProducts.length > 0 &&
-      filteredProducts.every((p) => selectedProductIds.has(String(p.id))),
-    [filteredProducts, selectedProductIds],
+  const unassignedProducts = useMemo(
+    () => searchedProducts.filter((p) => !assignedProductIds.has(String(p.id))),
+    [searchedProducts, assignedProductIds],
   );
 
-  // Handlers
-  const handleToggleProduct = useCallback((pid: string) => {
-    setSelectedProductIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(pid)) next.delete(pid);
-      else next.add(pid);
-      return next;
-    });
+  const assignedProducts = useMemo(() => {
+    if (tabProductIds) {
+      return searchedProducts.filter((p) => tabProductIds.has(String(p.id)));
+    }
+    return searchedProducts.filter((p) => assignedProductIds.has(String(p.id)));
+  }, [searchedProducts, assignedProductIds, tabProductIds]);
+
+  const visibleProducts = useMemo(
+    () => (assignmentView === "unassigned" ? unassignedProducts : assignedProducts),
+    [assignmentView, unassignedProducts, assignedProducts],
+  );
+
+  const formatSizeLabel = useCallback((size?: string | null) => {
+    if (!size) return "-";
+    return size.replaceAll("_", " ");
   }, []);
 
-  const handleSelectAll = useCallback(() => {
-    const allIds = filteredProducts.map((p) => String(p.id));
-    setSelectedProductIds((prev) => {
-      if (allIds.every((id) => prev.has(id))) {
-        const next = new Set(prev);
-        allIds.forEach((id) => next.delete(id));
-        return next;
-      } else {
-        const next = new Set(prev);
-        allIds.forEach((id) => next.add(id));
-        return next;
-      }
-    });
-  }, [filteredProducts]);
+  // Handlers
+  const handleOpenAssignDialog = useCallback((pid: string) => {
+    setSelectedProductIds(new Set([pid]));
+    setAssignCategoryId("");
+    setAssignCategorySearch("");
+    setShowAssignDialog(true);
+  }, []);
 
   const handleAssign = async () => {
     if (!assignCategoryId) {
@@ -355,7 +349,7 @@ const FranchiseProductAssign = () => {
     <div className="h-full flex flex-col bg-[#F5F0EB]">
       <div className="shrink-0 flex items-center gap-3 px-6 py-3 bg-white border-b border-[#E8DFD6]">
         <Link
-          to={`${ROUTER_URL.ADMIN}/${ROUTER_URL.ADMIN_ROUTER.FRANCHISES}/${franchiseId}`}
+          to={`${ROUTER_URL.ADMIN}/${ROUTER_URL.ADMIN_ROUTER.FRANCHISES}`}
           className="flex items-center gap-1.5 text-sm font-medium text-[#5D4037] hover:text-[#3E2723] transition-colors px-3 py-1.5 rounded-full border border-[#D7CCC8] hover:border-[#6D4C41] bg-white"
         >
           <ArrowLeft className="h-3.5 w-3.5" />
@@ -379,28 +373,10 @@ const FranchiseProductAssign = () => {
           />
         </div>
 
-        {/* Assign to Category button */}
-        <Button
-          onClick={() => {
-            setAssignCategoryId("");
-            setAssignCategorySearch("");
-            setShowAssignDialog(true);
-          }}
-          disabled={selectedProductIds.size === 0}
-          className="flex items-center gap-2 bg-[#3E2723] hover:bg-[#5D4037] text-white rounded-full px-4 py-2 text-sm font-medium disabled:opacity-40 cursor-pointer"
-        >
-          <Tag className="h-4 w-4" />
-          Assign to Category
-          {selectedProductIds.size > 0 && (
-            <span className="ml-1 bg-white/25 rounded-full px-1.5 py-0.5 text-xs font-semibold">
-              {selectedProductIds.size}
-            </span>
-          )}
-        </Button>
       </div>
 
       {/* Category filter tabs */}
-      <div className="shrink-0 flex items-center gap-2 px-6 pt-3 pb-3 bg-white border-b border-[#E8DFD6] overflow-x-auto">
+      <div className="shrink-0 flex flex-wrap items-center gap-2 px-6 pt-3 pb-3 bg-white border-b border-[#E8DFD6]">
         <button
           onClick={() => setActiveTabId(null)}
           className={[
@@ -477,174 +453,177 @@ const FranchiseProductAssign = () => {
               </div>
             ))}
           </div>
-        ) : filteredProducts.length === 0 ? (
+        ) : searchedProducts.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-64 text-[#5D4037]/60">
             <PackageSearch className="h-12 w-12 mb-3 opacity-40" />
             <p className="text-sm">No products found.</p>
           </div>
         ) : (
-          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-gray-200 bg-gray-50">
-                  <th className="px-4 py-3 w-10">
-                    <input
-                      type="checkbox"
-                      checked={allFilteredSelected}
-                      onChange={handleSelectAll}
-                      className="rounded border-gray-300 accent-[#6D4C41] cursor-pointer"
-                    />
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                    Product
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider w-36">
-                    Price
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                    Categories
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {filteredProducts.map((product) => {
-                  const pid = String(product.id);
-                  const isSelected = selectedProductIds.has(pid);
-                  const categories = productCategoryMap.get(pid) ?? [];
-                  const imageUrl =
-                    product.productImageUrl ||
-                    productImageMap.get(String(product.productId)) ||
-                    null;
+          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm min-w-0">
+            <div className="px-4 py-3 border-b border-gray-200 bg-[#F8F3EF] flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setAssignmentView("unassigned")}
+                  className={[
+                    "px-3 py-1.5 rounded-full text-xs font-semibold border transition-colors cursor-pointer",
+                    assignmentView === "unassigned"
+                      ? "bg-[#6D4C41] text-white border-[#6D4C41]"
+                      : "bg-white text-[#6D4C41] border-[#D7CCC8] hover:border-[#6D4C41]",
+                  ].join(" ")}
+                >
+                  Not assigned ({unassignedProducts.length})
+                </button>
+                <button
+                  onClick={() => setAssignmentView("assigned")}
+                  className={[
+                    "px-3 py-1.5 rounded-full text-xs font-semibold border transition-colors cursor-pointer",
+                    assignmentView === "assigned"
+                      ? "bg-[#6D4C41] text-white border-[#6D4C41]"
+                      : "bg-white text-[#6D4C41] border-[#D7CCC8] hover:border-[#6D4C41]",
+                  ].join(" ")}
+                >
+                  Assigned ({assignedProducts.length})
+                </button>
+              </div>
+              <span className="text-xs font-medium text-[#6D4C41] tabular-nums">
+                Showing {visibleProducts.length} item(s)
+              </span>
+            </div>
 
-                  return (
-                    <tr
-                      key={pid}
-                      onClick={() => handleToggleProduct(pid)}
-                      className={[
-                        "transition-colors cursor-pointer select-none",
-                        isSelected
-                          ? "bg-[#FDF0E8]"
-                          : "bg-white hover:bg-gray-50",
-                      ].join(" ")}
-                    >
-                      {/* Checkbox */}
-                      <td
-                        className="px-4 py-3.5 w-10"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <input
-                          type="checkbox"
-                          checked={isSelected}
-                          onChange={() => handleToggleProduct(pid)}
-                          className="rounded border-gray-300 accent-[#6D4C41] cursor-pointer"
-                        />
-                      </td>
-
-                      {/* Image + Name */}
-                      <td className="px-4 py-3.5">
-                        <div className="flex items-center gap-3">
-                          <div className="h-10 w-10 rounded-lg overflow-hidden bg-gray-100 shrink-0">
-                            {imageUrl ? (
-                              <img
-                                src={imageUrl}
-                                alt={product.productName ?? ""}
-                                className="h-full w-full object-cover"
-                              />
-                            ) : (
-                              <div className="h-full w-full flex items-center justify-center">
-                                <PackageSearch className="h-5 w-5 text-gray-400" />
-                              </div>
-                            )}
-                          </div>
-                          <span className="font-semibold text-gray-800">
-                            {product.productName ?? "Unnamed"}
-                          </span>
-                        </div>
-                      </td>
-
-                      {/* Price */}
-                      <td className="px-4 py-3.5 text-gray-600 font-medium whitespace-nowrap">
-                        {product.priceBase != null
-                          ? `${product.priceBase.toLocaleString("vi-VN")}đ`
-                          : <span className="text-gray-400">—</span>}
-                      </td>
-
-                      {/* Categories */}
-                      <td
-                        className="px-4 py-3.5"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <div className="flex flex-wrap gap-1.5">
-                          {categories.length === 0 ? (
-                            <span className="text-xs text-gray-400 italic">
-                              Not assigned
-                            </span>
-                          ) : (
-                            categories.map(({ catFranchise, assignmentId }) => (
-                              <span
-                                key={assignmentId}
-                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-[#6D4C41]/10 text-[#6D4C41] border border-[#6D4C41]/15 whitespace-nowrap"
-                              >
-                                {catFranchise.categoryName}
-                                <button
-                                  onClick={(e) =>
-                                    handleRemoveAssignment(assignmentId, e)
-                                  }
-                                  disabled={removeMutation.isPending}
-                                  className="hover:text-red-500 transition-colors disabled:opacity-40 cursor-pointer ml-0.5"
-                                  title="Remove from this category"
-                                >
-                                  <X className="h-3 w-3" />
-                                </button>
-                              </span>
-                            ))
-                          )}
-                        </div>
-                      </td>
+            {visibleProducts.length === 0 ? (
+              <div className="px-4 py-10 text-center text-sm text-gray-400">
+                {assignmentView === "unassigned"
+                  ? "No unassigned products."
+                  : "No assigned products."}
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm min-w-[780px]">
+                  <thead>
+                    <tr className="border-b border-gray-200 bg-gray-50">
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                        Product
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider w-28">
+                        Size
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider w-36">
+                        Price
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider w-64">
+                        {assignmentView === "unassigned" ? "Status" : "Categories"}
+                      </th>
                     </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {visibleProducts.map((product) => {
+                      const pid = String(product.id);
+                      const categories = productCategoryMap.get(pid) ?? [];
+                      const imageUrl =
+                        product.productImageUrl ||
+                        productImageMap.get(String(product.productId)) ||
+                        null;
+
+                      return (
+                        <tr
+                          key={pid}
+                          className="transition-colors bg-white hover:bg-gray-50"
+                        >
+                          <td className="px-4 py-3.5">
+                            <div className="flex items-center gap-3">
+                              <div className="h-10 w-10 rounded-lg overflow-hidden bg-gray-100 shrink-0">
+                                {imageUrl ? (
+                                  <img
+                                    src={imageUrl}
+                                    alt={product.productName ?? ""}
+                                    className="h-full w-full object-cover"
+                                  />
+                                ) : (
+                                  <div className="h-full w-full flex items-center justify-center">
+                                    <PackageSearch className="h-5 w-5 text-gray-400" />
+                                  </div>
+                                )}
+                              </div>
+                              <span className="font-semibold text-gray-800">
+                                {product.productName ?? "Unnamed"}
+                              </span>
+                            </div>
+                          </td>
+
+                          <td className="px-4 py-3.5 text-gray-600 font-medium whitespace-nowrap uppercase">
+                            {formatSizeLabel(product.size)}
+                          </td>
+
+                          <td className="px-4 py-3.5 text-gray-600 font-medium whitespace-nowrap">
+                            {product.priceBase != null ? (
+                              `${product.priceBase.toLocaleString("vi-VN")}đ`
+                            ) : (
+                              <span className="text-gray-400">-</span>
+                            )}
+                          </td>
+
+                          {assignmentView === "unassigned" ? (
+                            <td className="px-4 py-3.5">
+                              <div className="flex items-center gap-2">
+                                <span className="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium bg-gray-100 text-gray-600 border border-gray-200">
+                                  Not assigned
+                                </span>
+                                <Button
+                                  size="sm"
+                                  onClick={() => handleOpenAssignDialog(pid)}
+                                  className="h-7 px-3 bg-[#3E2723] hover:bg-[#5D4037] text-white rounded-lg text-xs"
+                                >
+                                  <Tag className="h-3.5 w-3.5 mr-1" />
+                                  Assign
+                                </Button>
+                              </div>
+                            </td>
+                          ) : (
+                            <td
+                              className="px-4 py-3.5 max-w-64"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <div className="flex flex-wrap gap-1.5">
+                                {categories.map(({ catFranchise, assignmentId }) => (
+                                  <span
+                                    key={assignmentId}
+                                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-[#6D4C41]/10 text-[#6D4C41] border border-[#6D4C41]/15 break-words"
+                                  >
+                                    {catFranchise.categoryName}
+                                    <button
+                                      onClick={(e) =>
+                                        handleRemoveAssignment(assignmentId, e)
+                                      }
+                                      disabled={removeMutation.isPending}
+                                      className="hover:text-red-500 transition-colors disabled:opacity-40 cursor-pointer ml-0.5"
+                                      title="Remove from this category"
+                                    >
+                                      <X className="h-3 w-3" />
+                                    </button>
+                                  </span>
+                                ))}
+                              </div>
+                            </td>
+                          )}
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
         )}
       </div>
-
-      {/* Floating selection bar */}
-      {selectedProductIds.size > 0 && (
-        <div className="shrink-0 border-t border-[#E8DFD6] bg-white px-6 py-3 flex items-center gap-3">
-          <span className="text-sm text-[#5D4037]">
-            <span className="font-semibold text-[#3E2723]">
-              {selectedProductIds.size}
-            </span>{" "}
-            product(s) selected
-          </span>
-          <button
-            onClick={() => setSelectedProductIds(new Set())}
-            className="text-xs text-[#A1887F] hover:text-[#5D4037] transition-colors cursor-pointer underline"
-          >
-            Clear
-          </button>
-          <div className="flex-1" />
-          <Button
-            onClick={() => {
-              setAssignCategoryId("");
-              setAssignCategorySearch("");
-              setShowAssignDialog(true);
-            }}
-            className="bg-[#3E2723] hover:bg-[#5D4037] text-white rounded-xl px-5 text-sm font-medium cursor-pointer"
-          >
-            <Tag className="h-4 w-4 mr-2" />
-            Assign to Category
-          </Button>
-        </div>
-      )}
 
       {/* Assign Category Dialog */}
       {showAssignDialog && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/30"
-          onClick={() => setShowAssignDialog(false)}
+          onClick={() => {
+            setShowAssignDialog(false);
+            setSelectedProductIds(new Set());
+          }}
         >
           <div
             className="bg-white rounded-2xl shadow-2xl border border-[#E8DFD6] w-full max-w-md mx-4 p-5"
@@ -655,7 +634,10 @@ const FranchiseProductAssign = () => {
                 Assign to Category
               </h3>
               <button
-                onClick={() => setShowAssignDialog(false)}
+                onClick={() => {
+                  setShowAssignDialog(false);
+                  setSelectedProductIds(new Set());
+                }}
                 className="h-7 w-7 rounded-full flex items-center justify-center hover:bg-[#F5F0EB] text-[#5D4037] transition-colors cursor-pointer"
               >
                 <X className="h-4 w-4" />
@@ -735,7 +717,10 @@ const FranchiseProductAssign = () => {
               <Button
                 variant="outline"
                 className="flex-1 border-[#D7CCC8] text-[#5D4037] hover:bg-[#F5F0EB] rounded-xl cursor-pointer"
-                onClick={() => setShowAssignDialog(false)}
+                onClick={() => {
+                  setShowAssignDialog(false);
+                  setSelectedProductIds(new Set());
+                }}
               >
                 Cancel
               </Button>
