@@ -26,9 +26,13 @@ import { InventoryErrorBanner } from "./InventoryErrorBanner";
 
 interface InventoryTableProps {
   items: InventorySearchItem[];
+  baselineItems?: InventorySearchItem[];
   isLoading?: boolean;
   error?: Error | null;
   onRetry?: () => void;
+  onImport?: (file: File) => void;
+  isImporting?: boolean;
+  onDiscardChanges?: () => void;
   onEdit?: (item: InventorySearchItem) => void;
   onDelete?: (item: InventorySearchItem) => void;
   onBulkExport?: (items: InventorySearchItem[]) => void;
@@ -97,9 +101,13 @@ const SaveBar = ({ hasDirtyRows, isSaving, onSave, onReset }: SaveBarProps) => {
 
 export const InventoryTable = ({
   items,
+  baselineItems,
   isLoading = false,
   error = null,
   onRetry,
+  onImport,
+  isImporting = false,
+  onDiscardChanges,
   onEdit,
   onDelete,
   onBulkExport,
@@ -149,6 +157,7 @@ export const InventoryTable = ({
     saveAllChanges,
   } = useInventoryInlineEdit({
     items,
+    baselineItems,
     onSaveRow: safeOnSaveRow,
   });
 
@@ -176,6 +185,7 @@ export const InventoryTable = ({
 
   const handleDiscard = () => {
     methods.reset();
+    onDiscardChanges?.();
   };
 
   // ── Row style for stock status highlighting ─────────────────────────────
@@ -260,8 +270,11 @@ export const InventoryTable = ({
           columnFilters={columnFilters}
           bulkActions={bulkActions}
           getRowStyle={getRowStyle}
+          onImport={onImport}
+          isImporting={isImporting}
           onExport={handleExport}
           isExporting={isExporting}
+          importLabel="Import Excel"
           exportLabel="Export Excel"
           renderActions={
             onEdit || onDelete

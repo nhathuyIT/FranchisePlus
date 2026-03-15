@@ -36,6 +36,7 @@ export interface RowValidationError {
 
 interface UseInventoryInlineEditOptions {
   items: InventorySearchItem[];
+  baselineItems?: InventorySearchItem[];
   /**
    * Called once per dirty row when user clicks "Save Changes".
    * Quantity: caller computes delta and calls adjust API.
@@ -50,6 +51,7 @@ interface UseInventoryInlineEditOptions {
 
 export function useInventoryInlineEdit({
   items,
+  baselineItems,
   onSaveRow,
 }: UseInventoryInlineEditOptions) {
   // ── Default values ────────────────────────────────────────────────────────
@@ -91,6 +93,14 @@ export function useInventoryInlineEdit({
   useEffect(() => {
     methods.reset(buildDefaultValues());
   }, [buildDefaultValues, methods]);
+
+  const baselineItemMap = useMemo<Record<string, InventorySearchItem>>(() => {
+    const map: Record<string, InventorySearchItem> = {};
+    (baselineItems ?? items).forEach((item) => {
+      map[String(item.id)] = item;
+    });
+    return map;
+  }, [baselineItems, items]);
 
   // ── fieldIndexMap: inventoryId → index in fields array ───────────────────
 
@@ -142,18 +152,42 @@ export function useInventoryInlineEdit({
     (inventoryId: string): boolean => {
       const idx = fieldIndexMap[inventoryId];
       if (idx === undefined) return false;
+
+      const currentItem = items[idx];
+      const baselineItem = currentItem
+        ? baselineItemMap[String(currentItem.id)]
+        : undefined;
+      if (
+        currentItem &&
+        baselineItem &&
+        (currentItem.quantity !== baselineItem.quantity ||
+          currentItem.alertThreshold !== baselineItem.alertThreshold)
+      ) {
+        return true;
+      }
+
       const dirtyRows = methods.formState.dirtyFields.rows;
       if (!dirtyRows?.[idx]) return false;
       return !!(dirtyRows[idx].quantity || dirtyRows[idx].alertThreshold);
     },
-    [methods.formState.dirtyFields.rows, fieldIndexMap],
+    [items, baselineItemMap, methods.formState.dirtyFields.rows, fieldIndexMap],
   );
 
   const hasDirtyRows = useMemo((): boolean => {
+    const hasImportedDiff = items.some((item) => {
+      const baselineItem = baselineItemMap[String(item.id)];
+      if (!baselineItem) return false;
+      return (
+        item.quantity !== baselineItem.quantity ||
+        item.alertThreshold !== baselineItem.alertThreshold
+      );
+    });
+    if (hasImportedDiff) return true;
+
     const dirtyRows = methods.formState.dirtyFields.rows;
     if (!dirtyRows?.length) return false;
     return dirtyRows.some((row) => row?.quantity || row?.alertThreshold);
-  }, [methods.formState.dirtyFields.rows]);
+  }, [items, baselineItemMap, methods.formState.dirtyFields.rows]);
 
   // ── Save all dirty rows ───────────────────────────────────────────────────
 
@@ -161,23 +195,28 @@ export function useInventoryInlineEdit({
     const isValid = await methods.trigger();
     if (!isValid) return false;
 
-    const dirtyRows = methods.formState.dirtyFields.rows ?? [];
     const values = methods.getValues();
 
-    const savePromises = dirtyRows
-      .map((dirtyRow, idx) => {
-        if (!dirtyRow?.quantity && !dirtyRow?.alertThreshold) return null;
-        const originalItem = items[idx];
-        if (!originalItem) return null;
-        const row = values.rows[idx];
+    const savePromises = values.rows
+      .map((row, idx) => {
+        const currentItem = items[idx];
+        if (!currentItem) return null;
 
-        return onSaveRow(originalItem, row.quantity, row.alertThreshold);
+        const baselineItem =
+          baselineItemMap[String(currentItem.id)] ?? currentItem;
+        const quantityChanged = row.quantity !== baselineItem.quantity;
+        const thresholdChanged =
+          row.alertThreshold !== baselineItem.alertThreshold;
+
+        if (!quantityChanged && !thresholdChanged) return null;
+
+        return onSaveRow(baselineItem, row.quantity, row.alertThreshold);
       })
       .filter(Boolean) as Promise<void>[];
 
     await Promise.all(savePromises);
     return true;
-  }, [methods, items, onSaveRow]);
+  }, [methods, items, baselineItemMap, onSaveRow]);
 
   return {
     methods,
