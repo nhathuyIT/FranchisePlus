@@ -4,6 +4,7 @@ export const ROUTER_URL = {
   CONTACT: "/contact",
   LOCATIONS: "/locations",
   MENU: "menu",
+  MENU_PRODUCT_DETAIL: "menu/product/:franchiseId/:productFranchiseId",
 
   PRODUCTS: "/products",
   CLIENT: "/client",
@@ -22,9 +23,11 @@ export const ROUTER_URL = {
   ACCOUNT: "/account",
   ACCOUNT_ROUTER: {
     MY_PROFILE: "my-profile",
+    MY_ORDER: "my-order",
   },
 
   ADMIN: "/admin",
+  VERIFIED_ACCOUNT: "verify-email/:id",
   ADMIN_ROUTER: {
     LOGIN: "/admin/login",
     Forgot_PASSWORD: "/admin/forgot-password",

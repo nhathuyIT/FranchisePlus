@@ -3,12 +3,14 @@ import { z } from "zod";
 /**
  * Adjust Inventory schema (INVENTORY-06)
  * POST /api/inventories/adjust
- * For adjusting quantity via change delta (positive to add, negative to subtract)
+ * For adjusting quantity via change delta and updating alert threshold.
+ * change=0 is valid when only updating alertThreshold.
  */
 export const AdjustInventorySchema = z.object({
-  change: z
-    .number()
-    .refine((val) => val !== 0, "Change amount cannot be zero"),
+  change: z.number({ message: "Quantity change must be a number" }),
+  alertThreshold: z
+    .number({ message: "Alert threshold must be a number" })
+    .min(0, "Alert threshold cannot be negative"),
   reason: z.string().optional(),
 });
 

@@ -1,11 +1,12 @@
-import type { Franchise, FranchiseList } from "@/types/franchise";
+import type { Franchise } from "@/types/franchise";
 import { httpClient } from "../httpClient.api";
 import type { CategoryList } from "@/types/category";
 import type { MenuCategory } from "@/types/menu.type";
-import type { ProductListItem } from "@/types/product.type";
+import type { ProductListItem, ProductDetailItem } from "@/types/product.type";
+import type { FranchiseListResponse } from "../franchise";
 
-export const getAllFranchise = async (): Promise<FranchiseList[]> => {
-  const response = await httpClient.get<FranchiseList[]>({
+export const getAllFranchise = async (): Promise<FranchiseListResponse> => {
+  const response = await httpClient.get<FranchiseListResponse>({
     url: "/api/clients/franchises",
   });
   return response!;
@@ -32,6 +33,16 @@ export const getMenuByFranchiseFilterByCategory = async (
   return response!;
 };
 
+export const getMenuByFranchise = async (
+  franchiseID: string,
+): Promise<MenuCategory[]> => {
+  const response = await httpClient.get<MenuCategory[]>({
+    url: `/api/clients/menu?franchiseId=${franchiseID}`,
+  });
+
+  return response!;
+};
+
 // Get topping
 export const getProductByFranchiseFilterByCategory = async (
   franchiseID: string,
@@ -44,13 +55,26 @@ export const getProductByFranchiseFilterByCategory = async (
   return response!;
 };
 
-// export const getProductDetail = async (productFranchiseID: string) => {
-//   const response = await httpClient.get({
-//     url: `/api/clients/products/${productFranchiseID}`,
-//   });
+export const getProductByFranchise = async (
+  franchiseID: string,
+): Promise<ProductListItem[]> => {
+  const response = await httpClient.get<ProductListItem[]>({
+    url: `/api/clients/products?franchiseId=${franchiseID}`,
+  });
 
-//   return response!;
-// };
+  return response!;
+};
+
+export const getProductDetail = async (
+  franchiseID: string,
+  productFranchiseID: string,
+): Promise<ProductDetailItem> => {
+  const response = await httpClient.get<ProductDetailItem>({
+    url: `/api/clients/franchises/${franchiseID}/products/${productFranchiseID}`,
+  });
+
+  return response!;
+};
 
 export const getFranchiseDetail = async (
   franchiseId: string,

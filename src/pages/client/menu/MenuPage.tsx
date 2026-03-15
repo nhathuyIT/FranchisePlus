@@ -12,6 +12,7 @@ import {
 import {
   useGetAllFranchise,
   useGetCategoriesByFranchise,
+  useGetMenuByFranchise,
   useGetMenuByFranchiseAndCategory,
   useGetProductsByFranchiseAndCategory,
 } from "@/hooks/client/useProduct.hook";
@@ -78,19 +79,75 @@ const MenuPage = () => {
   const { data: categories, isLoading: isLoadingCategories } =
     useGetCategoriesByFranchise(activeFranchiseId);
 
+  const { data: menuDataAll, isLoading: isLoadingMenuAll } =
+    useGetMenuByFranchise(activeFranchiseId);
+
+  const allMenuProducts: MenuProduct[] = useMemo(() => {
+    if (!menuDataAll) return [];
+    return menuDataAll.flatMap((mc) => mc.products);
+  }, [menuDataAll]);
+
+  const allMenuProductsVisible = useMemo(
+    () =>
+      allMenuProducts.filter((product) =>
+        product.sizes.some((s) => s.isAvailable),
+      ),
+    [allMenuProducts],
+  );
+
+  const categoryMenuCounts = useMemo(() => {
+    const counts = new Map<string, number>();
+    if (!menuDataAll) return counts;
+
+    menuDataAll.forEach((category) => {
+      const count = category.products.filter((product) =>
+        product.sizes.some((s) => s.isAvailable),
+      ).length;
+      counts.set(String(category.categoryId), count);
+    });
+
+    return counts;
+  }, [menuDataAll]);
+
+  const categoriesVisible = useMemo(() => {
+    if (!categories) return [];
+    return categories.filter(
+      (category) =>
+        (categoryMenuCounts.get(String(category.categoryId)) ?? 0) > 0,
+    );
+  }, [categories, categoryMenuCounts]);
+
+  const availableCategoryIds = useMemo(
+    () => categoriesVisible.map((category) => String(category.categoryId)),
+    [categoriesVisible],
+  );
+
   // Resolve the actual category ID (user-selected or first from list)
   const activeCategoryId = useMemo(() => {
-    if (selectedCategoryId) return selectedCategoryId;
-    if (categories && categories.length > 0)
-      return String(categories[0].categoryId);
+    if (selectedCategoryId === "ALL") return "ALL";
+    if (
+      selectedCategoryId &&
+      availableCategoryIds.includes(selectedCategoryId)
+    ) {
+      return selectedCategoryId;
+    }
+    if (allMenuProductsVisible.length > 0) return "ALL";
+    if (availableCategoryIds.length > 0) return availableCategoryIds[0];
     return "";
-  }, [selectedCategoryId, categories]);
+  }, [selectedCategoryId, availableCategoryIds, allMenuProductsVisible.length]);
 
-  const { data: menuData, isLoading: isLoadingMenu } =
-    useGetMenuByFranchiseAndCategory(activeFranchiseId, activeCategoryId);
+  const categoryIdForQuery = activeCategoryId === "ALL" ? "" : activeCategoryId;
 
-  const { data: toppingData, isLoading: isLoadingToppings } =
-    useGetProductsByFranchiseAndCategory(activeFranchiseId, activeCategoryId);
+  const { data: menuDataByCategory, isLoading: isLoadingMenuByCategory } =
+    useGetMenuByFranchiseAndCategory(activeFranchiseId, categoryIdForQuery);
+
+  const {
+    data: toppingDataByCategory,
+    isLoading: isLoadingToppingsByCategory,
+  } = useGetProductsByFranchiseAndCategory(
+    activeFranchiseId,
+    categoryIdForQuery,
+  );
 
   // ── Derived state ──────────────────────────────────────────────────────
   const selectedFranchise = useMemo(
@@ -98,22 +155,62 @@ const MenuPage = () => {
     [franchises, activeFranchiseId],
   );
 
-  const selectedCategory = useMemo(
-    () => categories?.find((c) => String(c.categoryId) === activeCategoryId),
-    [categories, activeCategoryId],
-  );
+  const selectedCategory = useMemo(() => {
+    if (activeCategoryId === "ALL") return null;
+    return categories?.find((c) => String(c.categoryId) === activeCategoryId);
+  }, [categories, activeCategoryId]);
+
+  const menuDataActive =
+    activeCategoryId === "ALL" ? menuDataAll : menuDataByCategory;
 
   // Menu products from menuData
   const menuProducts: MenuProduct[] = useMemo(() => {
-    if (!menuData) return [];
-    return menuData.flatMap((mc) => mc.products);
-  }, [menuData]);
+    if (!menuDataActive) return [];
+    return menuDataActive.flatMap((mc) => mc.products);
+  }, [menuDataActive]);
 
   // Toppings from toppingData
   const toppings: ProductListItem[] = useMemo(() => {
-    return toppingData ?? [];
-  }, [toppingData]);
+    if (activeCategoryId === "ALL") return [];
+    return toppingDataByCategory ?? [];
+  }, [activeCategoryId, toppingDataByCategory]);
 
+  const categoryTabs = useMemo(() => {
+    const tabs: { id: string; name: string; count: number }[] = [];
+    if (allMenuProductsVisible.length > 0) {
+      tabs.push({
+        id: "ALL",
+        name: "All",
+        count: allMenuProductsVisible.length,
+      });
+    }
+    categoriesVisible.forEach((category) => {
+      tabs.push({
+        id: String(category.categoryId),
+        name: category.categoryName,
+        count: categoryMenuCounts.get(String(category.categoryId)) ?? 0,
+      });
+    });
+    return tabs;
+  }, [categoriesVisible, categoryMenuCounts, allMenuProductsVisible.length]);
+
+  const menuProductsVisible = useMemo(
+    () =>
+      menuProducts.filter((product) =>
+        product.sizes.some((s) => s.isAvailable),
+      ),
+    [menuProducts],
+  );
+
+  const toppingsVisible = useMemo(
+    () =>
+      toppings.filter((product) => product.sizes.some((s) => s.isAvailable)),
+    [toppings],
+  );
+
+  const isLoadingMenu =
+    activeCategoryId === "ALL" ? isLoadingMenuAll : isLoadingMenuByCategory;
+  const isLoadingToppings = isLoadingToppingsByCategory;
   const isLoadingProducts = isLoadingMenu || isLoadingToppings;
 
   // ── Handlers ───────────────────────────────────────────────────────────
@@ -123,8 +220,12 @@ const MenuPage = () => {
     setIsFranchiseDropdownOpen(false);
   };
 
-  const handleViewDetail = (productId: string | number) => {
-    navigate(`/api/product/${productId}`);
+  const handleViewDetail = (
+    franchiseId: string,
+    productId: string | number,
+  ) => {
+    if (!franchiseId || !productId) return;
+    navigate(`/menu/product/${franchiseId}/${productId}`);
   };
 
   // ── Close dropdown on outside click ────────────────────────────────────
@@ -267,19 +368,17 @@ const MenuPage = () => {
       <div className="container mx-auto px-4 pb-20 -mt-2">
         {/* ── Category tabs ──────────────────────────────────────────── */}
         <div className="mb-10 mt-3">
-          {isLoadingCategories ? (
+          {isLoadingCategories || isLoadingMenuAll ? (
             <CategorySkeleton />
-          ) : categories && categories.length > 0 ? (
+          ) : categoryTabs.length > 0 ? (
             <div className="flex flex-wrap gap-2 justify-center">
-              {categories.map((cat) => {
-                const isActive = String(cat.categoryId) === activeCategoryId;
+              {categoryTabs.map((cat) => {
+                const isActive = cat.id === activeCategoryId;
                 return (
                   <button
-                    key={cat.categoryId}
+                    key={cat.id}
                     type="button"
-                    onClick={() =>
-                      setSelectedCategoryId(String(cat.categoryId))
-                    }
+                    onClick={() => setSelectedCategoryId(cat.id)}
                     className={`relative px-5 py-2.5 rounded-full text-sm font-medium
                                transition-all duration-300 ease-out
                                ${
@@ -288,7 +387,17 @@ const MenuPage = () => {
                                    : "bg-white text-stone-600 border border-stone-200 shadow-sm hover:border-amber-300 hover:text-amber-700 hover:shadow-md hover:scale-[1.02]"
                                }`}
                   >
-                    {cat.categoryName}
+                    <span>{cat.name}</span>
+                    <span
+                      className={`ml-2 rounded-full px-2 py-0.5 text-[11px] font-semibold
+                                  ${
+                                    isActive
+                                      ? "bg-white/20 text-white"
+                                      : "bg-amber-50 text-amber-700"
+                                  }`}
+                    >
+                      {cat.count}
+                    </span>
                     {isActive && (
                       <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1.5 h-1.5 bg-amber-300 rounded-full" />
                     )}
@@ -306,13 +415,15 @@ const MenuPage = () => {
         </div>
 
         {/* ── Current selection info ─────────────────────────────────── */}
-        {selectedCategory && (
+        {(selectedCategory || activeCategoryId === "ALL") && (
           <div className="text-center mb-10">
             <p className="text-xs uppercase tracking-[0.3em] text-amber-600/70 font-medium mb-1">
               {selectedFranchise?.name}
             </p>
             <h2 className="font-serif text-3xl md:text-4xl font-bold text-stone-800 mb-2">
-              {selectedCategory.categoryName}
+              {activeCategoryId === "ALL"
+                ? "All"
+                : selectedCategory?.categoryName}
             </h2>
             <div className="flex items-center justify-center gap-3">
               <div className="h-px w-12 bg-amber-400/40" />
@@ -356,19 +467,24 @@ const MenuPage = () => {
         ) : (
           <>
             {/* ── Menu Section ───────────────────────────────────────── */}
-            {menuProducts.length > 0 ? (
+            {menuProductsVisible.length > 0 ? (
               <section className="mb-14">
                 <SectionDivider
                   icon={UtensilsCrossed}
                   title="Menu"
-                  count={menuProducts.length}
+                  count={menuProductsVisible.length}
                 />
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                  {menuProducts.map((product) => (
+                  {menuProductsVisible.map((product) => (
                     <MenuProductCard
                       key={product.productId}
                       product={product}
-                      onViewDetail={handleViewDetail}
+                      onViewDetail={() =>
+                        handleViewDetail(
+                          activeFranchiseId,
+                          String(product.productId),
+                        )
+                      }
                     />
                   ))}
                 </div>
@@ -387,19 +503,24 @@ const MenuPage = () => {
             )}
 
             {/* ── Topping Section ────────────────────────────────────── */}
-            {toppings.length > 0 ? (
+            {toppingsVisible.length > 0 ? (
               <section>
                 <SectionDivider
                   icon={Cookie}
                   title="Topping"
-                  count={toppings.length}
+                  count={toppingsVisible.length}
                 />
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {toppings.map((product) => (
+                  {toppingsVisible.map((product) => (
                     <ToppingCard
                       key={product.productId}
                       product={product}
-                      onViewDetail={handleViewDetail}
+                      onViewDetail={() =>
+                        handleViewDetail(
+                          activeFranchiseId,
+                          String(product.productId),
+                        )
+                      }
                     />
                   ))}
                 </div>
