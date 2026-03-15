@@ -13,7 +13,7 @@ const AdminLayout = () => {
   return (
     <div className="flex h-screen overflow-hidden bg-[#FAF8F5]">
       {isSwitchingRole && (
-        <LoadingLayout forceVisible message="Switching role" />
+        <LoadingLayout forceVisible message="Switching" />
       )}
       <AdminSidebar collapsed={sidebarCollapsed} />
 
