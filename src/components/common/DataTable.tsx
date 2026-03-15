@@ -114,6 +114,10 @@ export interface DataTableProps<TData> {
   isImporting?: boolean;
   exportLabel?: string;
   importLabel?: string;
+  /** Controlled search value — when provided, the search input is driven by the parent */
+  searchValue?: string;
+  /** Called whenever the search input changes — use with searchValue for API-based search */
+  onSearchChange?: (value: string) => void;
 }
 
 // Internal Components
@@ -176,6 +180,8 @@ export function DataTable<TData>({
   isImporting = false,
   exportLabel = "Export",
   importLabel = "Import",
+  searchValue,
+  onSearchChange,
 }: DataTableProps<TData>) {
   // State Management
   const [sorting, setSorting] = useState<SortingState>([]);
@@ -312,9 +318,12 @@ export function DataTable<TData>({
   const clearAllFilters = () => {
     setColumnFilters([]);
     setGlobalFilter("");
+    onSearchChange?.("");
   };
 
-  const hasActiveFilters = columnFilters.length > 0 || globalFilter !== "";
+  const activeSearchValue =
+    onSearchChange !== undefined ? (searchValue ?? "") : globalFilter;
+  const hasActiveFilters = columnFilters.length > 0 || activeSearchValue !== "";
 
   // Helper function to get filter display label
   const getFilterLabel = (filterId: string, filterValue: unknown): string => {
@@ -358,8 +367,16 @@ export function DataTable<TData>({
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#5D4037]" />
             <Input
               placeholder={searchPlaceholder}
-              value={globalFilter}
-              onChange={(e) => setGlobalFilter(e.target.value)}
+              value={
+                onSearchChange !== undefined
+                  ? (searchValue ?? "")
+                  : globalFilter
+              }
+              onChange={(e) =>
+                onSearchChange !== undefined
+                  ? onSearchChange(e.target.value)
+                  : setGlobalFilter(e.target.value)
+              }
               className="pl-10 border-[#E8DFD6] focus:border-[#6D4C41] focus:ring-[#6D4C41]"
             />
           </div>
@@ -507,7 +524,7 @@ export function DataTable<TData>({
                   size="icon"
                   className="h-9 w-9 border-[#E8DFD6] hover:bg-[#FAF8F5]"
                 >
-                  {(isImporting || isExporting) ? (
+                  {isImporting || isExporting ? (
                     <Loader2 className="h-4 w-4 animate-spin text-[#6D4C41]" />
                   ) : (
                     <EllipsisVertical className="h-4 w-4 text-[#5D4037]" />
@@ -518,7 +535,9 @@ export function DataTable<TData>({
                 {onImport && (
                   <DropdownMenuItem
                     disabled={isImporting}
-                    onClick={() => document.getElementById("excel-import-input")?.click()}
+                    onClick={() =>
+                      document.getElementById("excel-import-input")?.click()
+                    }
                     className="gap-2 cursor-pointer"
                   >
                     <Upload className="h-4 w-4" />
@@ -546,15 +565,18 @@ export function DataTable<TData>({
       {hasActiveFilters && (
         <div className="flex items-center gap-2 flex-wrap shrink-0 pb-4">
           <span className="text-sm text-[#5D4037]">Active filters:</span>
-          {globalFilter && (
+          {activeSearchValue && (
             <Badge
               variant="secondary"
               className="gap-1 bg-[#E8DFD6] text-[#3E2723]"
             >
-              Search: {globalFilter}
+              Search: {activeSearchValue}
               <X
                 className="h-3 w-3 cursor-pointer"
-                onClick={() => setGlobalFilter("")}
+                onClick={() => {
+                  setGlobalFilter("");
+                  onSearchChange?.("");
+                }}
               />
             </Badge>
           )}

@@ -22,6 +22,7 @@ import {
 import { Permission } from "@/config/permission";
 import { useAuthStore } from "@/stores/auth-store";
 import * as customerAdminApi from "@/api/customer/customer-admin.api";
+import { useDebounce } from "@/hooks/common/useDebounce";
 
 const CustomerAdminList = () => {
   const { getCurrentPermissions } = useAuthStore();
@@ -32,23 +33,22 @@ const CustomerAdminList = () => {
     Permission.MANAGE_CUSTOMERS,
   );
 
-  const pageNum = 1;
-  const pageSize = 1000;
-
-  const searchParams = useMemo(
-    () => ({
-      searchCondition: { isDeleted: false },
-      pageInfo: { pageNum, pageSize },
-    }),
-    [pageNum],
-  );
+  const [keyword, setKeyword] = useState("");
+  const debouncedKeyword = useDebounce(keyword, 350, keyword);
 
   const {
     data: searchResult,
     isLoading,
+    isFetching,
     error,
     refetch,
-  } = useCustomerAdminSearch(searchParams);
+  } = useCustomerAdminSearch({
+    searchCondition: {
+      isDeleted: false,
+      ...(debouncedKeyword ? { keyword: debouncedKeyword } : {}),
+    },
+    pageInfo: { pageNum: 1, pageSize: 1000 },
+  });
 
   const customers: CustomerProfile[] = searchResult?.pageData ?? [];
 
@@ -155,8 +155,6 @@ const CustomerAdminList = () => {
 
   // ── Action Handlers ──────────────────────────────────────────────────────
 
-
-
   const handleView = (customer: CustomerProfile) => {
     if (!canViewCustomers) {
       toast.error("You do not have permission to view customers.");
@@ -209,7 +207,7 @@ const CustomerAdminList = () => {
         <div className="flex-1 min-h-0 flex flex-col bg-white rounded-2xl shadow-lg border border-[#E8DFD6] p-6">
           <CustomerAdminTable
             customers={canViewCustomers ? customers : []}
-            isLoading={isLoading || deleteMutation.isPending}
+            isLoading={isLoading || isFetching || deleteMutation.isPending}
             error={listError}
             onRetry={refetch}
             onBulkDelete={canManageCustomers ? handleBulkDelete : undefined}
@@ -222,6 +220,8 @@ const CustomerAdminList = () => {
                 : null
             }
             canEdit={canManageCustomers}
+            searchValue={keyword}
+            onSearchChange={setKeyword}
           />
         </div>
 

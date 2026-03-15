@@ -1,4 +1,4 @@
-  import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { Link } from "react-router";
 import { Package, Plus, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -53,7 +53,11 @@ const InventoryList = () => {
 
   /** Client-side filter: product name text search (API has no keyword field) */
   const [productNameQuery, setProductNameQuery] = useState<string>("");
-  const debouncedProductName = useDebounce(productNameQuery, 300);
+  const debouncedProductName = useDebounce(
+    productNameQuery,
+    300,
+    productNameQuery,
+  );
 
   // ── Cache scope key ────────────────────────────────────────────────────────
 

@@ -58,7 +58,7 @@ const FranchiseList = () => {
   // ── Search state (server-side via keyword field) ─────────────────────────
 
   const [keyword, setKeyword] = useState("");
-  const debouncedKeyword = useDebounce(keyword, 350);
+  const debouncedKeyword = useDebounce(keyword, 350, keyword);
 
   // Cache scope key for query isolation
   const franchiseScopeKey = authUser
