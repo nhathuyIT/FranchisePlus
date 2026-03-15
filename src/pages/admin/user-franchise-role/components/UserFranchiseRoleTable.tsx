@@ -15,6 +15,8 @@ interface UserFranchiseRoleTableProps {
   onRetry?: () => void;
   onDelete?: (assignment: UserFranchiseRoleItem) => void;
   onBulkDelete?: (assignments: UserFranchiseRoleItem[]) => void;
+  searchValue?: string;
+  onSearchChange?: (value: string) => void;
 }
 
 export const UserFranchiseRoleTable = ({
@@ -24,6 +26,8 @@ export const UserFranchiseRoleTable = ({
   onRetry,
   onDelete,
   onBulkDelete,
+  searchValue,
+  onSearchChange,
 }: UserFranchiseRoleTableProps) => {
   const columnFilters: ColumnFilter[] = [
     {
@@ -59,6 +63,8 @@ export const UserFranchiseRoleTable = ({
       searchPlaceholder="Search by user name, email, role, or franchise..."
       emptyMessage="No role assignments found."
       initialPageSize={10}
+      searchValue={searchValue}
+      onSearchChange={onSearchChange}
       enableRowSelection={!!onBulkDelete}
       enableColumnVisibility
       columnFilters={columnFilters}

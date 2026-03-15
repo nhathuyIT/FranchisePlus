@@ -1,6 +1,7 @@
 import type { ColumnDef } from "@tanstack/react-table";
 import { StockStatusBadge } from "@/components/common/StockStatusBadge";
 import type { InventorySearchItem } from "@/api/inventory/inventory.type";
+import { InlineEditCell } from "../components/InlineEditCell";
 
 export const inventoryColumns: ColumnDef<InventorySearchItem>[] = [
   {
@@ -22,19 +23,17 @@ export const inventoryColumns: ColumnDef<InventorySearchItem>[] = [
   {
     accessorKey: "quantity",
     header: "Quantity",
+    // Delegates to InlineEditCell which reads form state via Context.
+    // Falls back to plain text when context marks isEditable=false.
     cell: ({ row }) => (
-      <span className="text-[#3E2723] font-semibold">
-        {row.original.quantity}
-      </span>
+      <InlineEditCell item={row.original} fieldName="quantity" />
     ),
   },
   {
     accessorKey: "alertThreshold",
     header: "Threshold",
     cell: ({ row }) => (
-      <span className="text-[#5D4037]">
-        {row.original.alertThreshold}
-      </span>
+      <InlineEditCell item={row.original} fieldName="alertThreshold" />
     ),
   },
   {

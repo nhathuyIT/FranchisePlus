@@ -138,9 +138,7 @@ export const restore = async (id: string): Promise<void> => {
  * This is the only way to update inventory quantity per the PDF spec.
  * Uses httpClient -> interceptor auto-converts camelCase -> snake_case
  */
-export const adjust = async (
-  data: InventoryAdjustRequest,
-): Promise<void> => {
+export const adjust = async (data: InventoryAdjustRequest): Promise<void> => {
   await httpClient.post<null, InventoryAdjustRequest>({
     url: `${BASE_URL}/adjust`,
     data,

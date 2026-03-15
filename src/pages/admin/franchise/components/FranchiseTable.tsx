@@ -1,6 +1,10 @@
 import { useMemo } from "react";
 import { Eye, Pencil, Trash2, LayoutGrid } from "lucide-react";
-import { DataTable, type ColumnFilter, type BulkAction } from "@/components/common/DataTable";
+import {
+  DataTable,
+  type ColumnFilter,
+  type BulkAction,
+} from "@/components/common/DataTable";
 import { createFranchiseColumns } from "../columns/franchise.columns";
 import { Button } from "@/components/ui/button";
 import type { Franchise } from "@/types/franchise";
@@ -51,7 +55,7 @@ export const FranchiseTable = ({
 
   const columns = useMemo(
     () => createFranchiseColumns({ onStatusToggle, statusPendingId, canEdit }),
-    [onStatusToggle, statusPendingId, canEdit]
+    [onStatusToggle, statusPendingId, canEdit],
   );
 
   const { parseFile, validateRows, isParsing } = useExcelImport({
@@ -75,7 +79,9 @@ export const FranchiseTable = ({
     if (result.success) {
       toast.success(`Successfully imported ${result.validRows} rows`);
     } else {
-      toast.error(`Import failed: ${result.validRows} valid, ${result.invalidRows} errors`);
+      toast.error(
+        `Import failed: ${result.validRows} valid, ${result.invalidRows} errors`,
+      );
     }
   };
 
@@ -109,10 +115,8 @@ export const FranchiseTable = ({
       isLoading={isLoading}
       error={error}
       onRetry={onRetry}
-      searchable
-      searchPlaceholder="Search franchises by name, code, or address..."
       emptyMessage="No franchises found matching your search."
-      initialPageSize={5}
+      initialPageSize={10}
       enableRowSelection={!!onBulkDelete}
       enableColumnVisibility
       defaultHiddenColumns={["address", "closedAt"]}

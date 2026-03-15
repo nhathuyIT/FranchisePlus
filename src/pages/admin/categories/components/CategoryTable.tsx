@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { Pencil, Trash2 } from "lucide-react";
+import { Pencil, Trash2, Eye } from "lucide-react";
 import { DataTable, type ColumnFilter, type BulkAction } from "@/components/common/DataTable";
 import { createCategoryColumns } from "../columns/category.columns";
 import { Button } from "@/components/ui/button";
@@ -18,6 +18,7 @@ interface CategoryTableProps {
   isLoading?: boolean;
   error?: Error | null;
   onRetry?: () => void;
+  onView?: (category: Category) => void;
   onEdit?: (category: Category) => void;
   onDelete?: (category: Category) => void;
   onBulkDelete?: (categories: Category[]) => void;
@@ -31,6 +32,7 @@ export const CategoryTable = ({
   isLoading = false,
   error = null,
   onRetry,
+  onView,
   onEdit,
   onDelete,
   onBulkDelete,
@@ -124,6 +126,16 @@ export const CategoryTable = ({
       importLabel="Import Excel"
       renderActions={(category) => (
         <>
+          {onView && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onView(category)}
+              className="border-2 border-[#6D4C41] text-[#6D4C41] hover:bg-[#6D4C41] hover:text-white rounded-lg transition-all duration-200 cursor-pointer"
+            >
+              <Eye className="h-4 w-4" />
+            </Button>
+          )}
           {onEdit && (
             <Button
               variant="outline"
