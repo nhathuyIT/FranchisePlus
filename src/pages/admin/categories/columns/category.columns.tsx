@@ -11,15 +11,6 @@ interface ColumnOptions {
 
 export const createCategoryColumns = (options?: ColumnOptions): ColumnDef<Category>[] => [
   {
-    accessorKey: "id",
-    header: "ID",
-    cell: ({ row }) => (
-      <span className="font-mono text-sm text-[#5D4037]">
-        {row.original.id}
-      </span>
-    ),
-  },
-  {
     accessorKey: "code",
     header: "Code",
     cell: ({ row }) => (
@@ -38,11 +29,18 @@ export const createCategoryColumns = (options?: ColumnOptions): ColumnDef<Catego
   {
     accessorKey: "description",
     header: "Description",
-    cell: ({ row }) => (
-      <span className="text-[#5D4037]">
-        {row.original.description || "N/A"}
-      </span>
-    ),
+    cell: ({ row }) => {
+      const description = row.original.description || "N/A";
+      const words = description.split(" ");
+      const truncated = words.length > 13 
+        ? words.slice(0, 13).join(" ") + "..."
+        : description;
+      return (
+        <span className="text-[#5D4037]">
+          {truncated}
+        </span>
+      );
+    },
   },
   {
     accessorKey: "isActive",

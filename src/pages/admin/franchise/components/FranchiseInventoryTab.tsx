@@ -171,7 +171,7 @@ export const FranchiseInventoryTab = ({
                       {pf.size || "DEFAULT"}
                     </TableCell>
                     <TableCell className="text-gray-700 font-semibold">
-                      ${pf.priceBase.toFixed(2)}
+                      {pf.priceBase.toLocaleString('vi-VN')}₫
                     </TableCell>
                     <TableCell>
                       <Badge

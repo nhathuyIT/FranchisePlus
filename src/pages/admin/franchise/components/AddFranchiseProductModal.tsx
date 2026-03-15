@@ -48,6 +48,7 @@ export const AddFranchiseProductModal = ({
 }: AddFranchiseProductModalProps) => {
   const queryClient = useQueryClient();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
   const [formData, setFormData] = useState<CreateForm>({
     productId: "",
     size: "",
@@ -66,6 +67,7 @@ export const AddFranchiseProductModal = ({
         isActive: true,
       });
       setErrors({});
+      setSearchTerm("");
     }
   }, [open]);
 
@@ -85,6 +87,11 @@ export const AddFranchiseProductModal = ({
       }),
     enabled: open,
   });
+
+  // Filter products based on search term
+  const filteredProducts = products.filter((product) =>
+    `${product.name} ${product.sku}`.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -142,12 +149,9 @@ export const AddFranchiseProductModal = ({
             <Select
               value={formData.productId}
               onValueChange={(value) => {
-                const product = products.find((p) => String(p.id) === value);
                 setFormData({
                   ...formData,
                   productId: value,
-                  // Auto-fill price with product's min price if available
-                  priceBase: product?.minPrice ?? formData.priceBase,
                 });
                 setErrors({ ...errors, productId: "" });
               }}
@@ -157,11 +161,26 @@ export const AddFranchiseProductModal = ({
                 <SelectValue placeholder={isLoadingProducts ? "Loading products..." : "Select a product"} />
               </SelectTrigger>
               <SelectContent>
-                {products.map((product) => (
-                  <SelectItem key={product.id} value={String(product.id)}>
-                    {product.name} - {product.sku} ({product.minPrice.toLocaleString()}₫ - {product.maxPrice.toLocaleString()}₫)
-                  </SelectItem>
-                ))}
+                <div className="sticky top-0 bg-white p-2 border-b z-10">
+                  <Input
+                    placeholder="Search products..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    onClick={(e) => e.stopPropagation()}
+                    onKeyDown={(e) => e.stopPropagation()}
+                  />
+                </div>
+                {filteredProducts.length === 0 ? (
+                  <div className="py-6 text-center text-sm text-gray-500">
+                    No product found.
+                  </div>
+                ) : (
+                  filteredProducts.map((product) => (
+                    <SelectItem key={product.id} value={String(product.id)}>
+                      {product.name} - {product.sku} ({product.minPrice.toLocaleString()}₫ - {product.maxPrice.toLocaleString()}₫)
+                    </SelectItem>
+                  ))
+                )}
               </SelectContent>
             </Select>
             {errors.productId && (
