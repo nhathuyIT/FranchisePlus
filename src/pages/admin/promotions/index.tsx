@@ -203,6 +203,7 @@ const PromotionsPage = () => {
   const {
     data: promotionsResponse,
     isLoading,
+    isFetching,
     error,
     refetch,
   } = usePromotionsQuery(searchParams);
@@ -214,6 +215,13 @@ const PromotionsPage = () => {
 
   const promotions = promotionsResponse?.data ?? [];
   const responsePageInfo = promotionsResponse?.pageInfo;
+  const isTableLoading =
+    isLoading ||
+    isFetching ||
+    createMutation.isPending ||
+    updateMutation.isPending ||
+    deleteMutation.isPending ||
+    restoreMutation.isPending;
 
   const handlePageChange = (nextPageNum: number) => {
     setPageInfo((prev) => ({ ...prev, pageNum: nextPageNum }));
@@ -305,7 +313,7 @@ const PromotionsPage = () => {
               onPageChange: handlePageChange,
               onPageSizeChange: handlePageSizeChange,
             }}
-            isLoading={isLoading}
+            isLoading={isTableLoading}
             error={error as Error | null}
             onRetry={handleRetry}
             onView={handleView}

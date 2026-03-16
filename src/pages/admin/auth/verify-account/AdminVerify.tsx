@@ -26,7 +26,6 @@ const AdminVerifyAccount = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token]);
 
-  // Redirect to login after success
   useEffect(() => {
     if (!verifyMutation.isSuccess) return;
     const timer = setTimeout(() => {

@@ -217,6 +217,7 @@ const VouchersPage = () => {
   const {
     data: vouchersResponse,
     isLoading,
+    isFetching,
     error,
     refetch,
   } = useVouchersQuery(searchParams);
@@ -228,6 +229,13 @@ const VouchersPage = () => {
 
   const vouchers = vouchersResponse?.data ?? [];
   const responsePageInfo = vouchersResponse?.pageInfo;
+  const isTableLoading =
+    isLoading ||
+    isFetching ||
+    createMutation.isPending ||
+    updateMutation.isPending ||
+    deleteMutation.isPending ||
+    restoreMutation.isPending;
 
   const handlePageChange = (nextPageNum: number) => {
     setPageInfo((prev) => ({ ...prev, pageNum: nextPageNum }));
@@ -320,7 +328,7 @@ const VouchersPage = () => {
               onPageChange: handlePageChange,
               onPageSizeChange: handlePageSizeChange,
             }}
-            isLoading={isLoading}
+            isLoading={isTableLoading}
             error={error as Error | null}
             onRetry={handleRetry}
             onView={handleView}
