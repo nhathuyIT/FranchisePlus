@@ -12,6 +12,7 @@ import {
   getPaginationRowModel,
   useReactTable,
 } from "@tanstack/react-table";
+import "@/types/table.types";
 import {
   ChevronLeft,
   ChevronRight,
@@ -62,6 +63,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { cn } from "@/lib/utils";
 
 // Type Definitions
 export interface ColumnFilter {
@@ -226,6 +228,7 @@ export function DataTable<TData>({
         id: "actions",
         header: () => <div className="text-right">Actions</div>,
         enableSorting: false,
+        meta: { align: "right" as const },
         cell: ({ row }) => (
           <div className="flex justify-end gap-2">
             {renderActions(row.original)}
@@ -640,15 +643,19 @@ export function DataTable<TData>({
                     {headerGroup.headers.map((header) => (
                       <TableHead
                         key={header.id}
-                        className="font-semibold text-[#3E2723]"
+                        className={cn(
+                          "font-semibold text-[#3E2723]",
+                          header.column.columnDef.meta?.align === "right" && "text-right",
+                          header.column.columnDef.meta?.align === "center" && "text-center",
+                        )}
                       >
                         {header.isPlaceholder ? null : (
                           <div
-                            className={
-                              header.column.getCanSort()
-                                ? "flex items-center gap-2 cursor-pointer select-none"
-                                : ""
-                            }
+                            className={cn(
+                              header.column.getCanSort() && "flex items-center gap-2 cursor-pointer select-none",
+                              header.column.columnDef.meta?.align === "right" && "justify-end",
+                              header.column.columnDef.meta?.align === "center" && "justify-center",
+                            )}
                             onClick={header.column.getToggleSortingHandler()}
                           >
                             {flexRender(
@@ -711,8 +718,14 @@ export function DataTable<TData>({
                         style={rowStyle}
                       >
                         {row.getVisibleCells().map((cell) => (
-                          <TableCell key={cell.id} className="text-[#5D4037]">
-                            {flexRender(
+                          <TableCell
+                            key={cell.id}
+                            className={cn(
+                              "text-[#5D4037]",
+                              cell.column.columnDef.meta?.align === "right" && "text-right",
+                              cell.column.columnDef.meta?.align === "center" && "text-center",
+                            )}
+                          >                            {flexRender(
                               cell.column.columnDef.cell,
                               cell.getContext(),
                             )}
