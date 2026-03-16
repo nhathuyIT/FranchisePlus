@@ -31,15 +31,43 @@ export const createShift = async (
 export const searchShift = async (
   data: ShiftSearchRequest,
 ): Promise<ShiftSearchResponse> => {
-  const response = await httpClient.post<
-    ShiftSearchResponse,
-    ShiftSearchRequest
+  const payload = {
+    searchCondition: {
+      name: data.searchCondition.name ?? "",
+      franchise_id:
+        data.searchCondition.franchise_id ??
+        data.searchCondition.franchiseId ??
+        "",
+      start_time:
+        data.searchCondition.start_time ??
+        data.searchCondition.startTime ??
+        "",
+      end_time:
+        data.searchCondition.end_time ?? data.searchCondition.endTime ?? "",
+      is_active:
+        data.searchCondition.is_active ?? data.searchCondition.isActive ?? "",
+      is_deleted:
+        data.searchCondition.is_deleted ?? data.searchCondition.isDeleted ?? false,
+    },
+    pageInfo: {
+      pageNum: data.pageInfo.pageNum,
+      pageSize: data.pageInfo.pageSize,
+    },
+  };
+
+  const response = await httpClient.postPaginatedRaw<
+    ShiftSearchResponse["data"][number],
+    typeof payload
   >({
     url: "/api/shifts/search",
-    data,
+    data: payload,
   });
 
-  return response!;
+  if (!response?.success) {
+    throw new Error("Failed to search shifts");
+  }
+
+  return response;
 };
 
 export const getShift = async (shiftID: string): Promise<GetShiftResponse> => {

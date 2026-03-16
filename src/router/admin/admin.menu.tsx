@@ -78,6 +78,13 @@ export const ADMIN_MENU: AdminMenuItem[] = [
     permissions: [PermissionEnum.VIEW_FRANCHISES],
   },
   {
+    label: "Shifts",
+    path: ROUTER_URL.ADMIN_ROUTER.SHIFTS,
+    icon: "calendar",
+    component: React.lazy(() => import("@/pages/admin/shift/Shift.page")),
+    isEnd: true,
+  },
+  {
     label: "Inventory",
     path: ROUTER_URL.ADMIN_ROUTER.INVENTORY,
     icon: "package",

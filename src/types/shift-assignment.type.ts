@@ -26,16 +26,25 @@ export interface AssignShiftForUserRequest {
   user_id: string;
   shift_id: string;
   work_date: string;
-  note: string;
+  note?: string;
+}
+
+export interface AssignShiftsForUserBulkRequest {
+  items: AssignShiftForUserRequest[];
+}
+
+export interface AssignShiftsForUserBulkResponse {
+  success: boolean;
+  data: ShiftAssignment[];
 }
 
 export interface ShiftAssignmentSearchCondition {
-  shiftId?: string;
-  userId?: string;
-  workDate?: string;
-  assignedBy?: string;
-  status?: ShiftAssignmentStatus;
-  isDeleted: boolean;
+  shift_id?: string;
+  user_id?: string;
+  work_date?: string;
+  assigned_by?: string;
+  status?: ShiftAssignmentStatus | "";
+  is_deleted: boolean;
 }
 
 export interface PageInfo {

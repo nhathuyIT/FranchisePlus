@@ -1,6 +1,8 @@
 import type {
   AssignShiftForUserRequest,
   AssignShiftForUserResponse,
+  AssignShiftsForUserBulkRequest,
+  AssignShiftsForUserBulkResponse,
   GetShiftAssignmentResponse,
   SearchShiftAssignmentsRequest,
   SearchShiftAssignmentsResponse,
@@ -24,24 +26,51 @@ export const assignShiftForUser = async (
   return response!;
 };
 
-// export const assignShiftsForUser = async () => {
-//     const response = await httpClient.post({
-//         url: ''
-//     })
-// }
-
-export const searchAssignedShiftForUser = async (
-  data: SearchShiftAssignmentsRequest,
-): Promise<SearchShiftAssignmentsResponse> => {
+export const assignShiftsForUser = async (
+  data: AssignShiftsForUserBulkRequest,
+): Promise<AssignShiftsForUserBulkResponse> => {
   const response = await httpClient.post<
-    SearchShiftAssignmentsResponse,
-    SearchShiftAssignmentsRequest
+    AssignShiftsForUserBulkResponse,
+    AssignShiftsForUserBulkRequest
   >({
-    url: "/api/shift-assignments/search",
+    url: "/api/shift-assignments/bulk",
     data,
   });
 
   return response!;
+};
+
+export const searchAssignedShiftForUser = async (
+  data: SearchShiftAssignmentsRequest,
+): Promise<SearchShiftAssignmentsResponse> => {
+  const payload: SearchShiftAssignmentsRequest = {
+    searchCondition: {
+      shift_id: data.searchCondition.shift_id ?? "",
+      user_id: data.searchCondition.user_id ?? "",
+      work_date: data.searchCondition.work_date ?? "",
+      assigned_by: data.searchCondition.assigned_by ?? "",
+      status: data.searchCondition.status ?? "",
+      is_deleted: data.searchCondition.is_deleted,
+    },
+    pageInfo: {
+      pageNum: data.pageInfo.pageNum,
+      pageSize: data.pageInfo.pageSize,
+    },
+  };
+
+  const response = await httpClient.postPaginatedRaw<
+    SearchShiftAssignmentsResponse["data"][number],
+    SearchShiftAssignmentsRequest
+  >({
+    url: "/api/shift-assignments/search",
+    data: payload,
+  });
+
+  if (!response?.success) {
+    throw new Error("Failed to search shift assignments");
+  }
+
+  return response;
 };
 
 export const getAssignedShiftForUser = async (
@@ -81,7 +110,7 @@ export const getAllShiftsAssignByUser = async (
 };
 
 export const getAllShiftAssignByFranchise = async (franchiseId: string) => {
-  const response = await httpClient.get({
+  const response = await httpClient.get<ShiftAssignmentListResponse>({
     url: `/api/shift-assignments/franchise/${franchiseId}`,
   });
 

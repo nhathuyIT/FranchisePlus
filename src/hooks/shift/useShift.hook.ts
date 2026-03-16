@@ -1,8 +1,9 @@
-﻿import {
+import {
+  keepPreviousData,
   useMutation,
+  useQueries,
   useQuery,
   useQueryClient,
-  keepPreviousData,
 } from "@tanstack/react-query";
 import { toast } from "sonner";
 import * as shiftApi from "@/api/shift/shift.api";
@@ -24,10 +25,14 @@ const SHIFT_KEYS = {
 /**
  * Search shifts with condition and pagination
  */
-export const useShiftSearchQuery = (searchParams: ShiftSearchRequest) => {
+export const useShiftSearchQuery = (
+  searchParams: ShiftSearchRequest,
+  enabled = true,
+) => {
   return useQuery({
     queryKey: SHIFT_KEYS.search(searchParams),
     queryFn: () => shiftApi.searchShift(searchParams),
+    enabled,
     placeholderData: keepPreviousData,
   });
 };
@@ -40,6 +45,23 @@ export const useShiftDetailQuery = (shiftId: string, enabled = true) => {
     queryKey: SHIFT_KEYS.detail(shiftId),
     queryFn: () => shiftApi.getShift(shiftId),
     enabled: !!shiftId && enabled,
+  });
+};
+
+/**
+ * Get multiple shift details by ids
+ */
+export const useShiftDetailQueries = (
+  shiftIds: string[],
+  enabled = true,
+) => {
+  return useQueries({
+    queries: shiftIds.map((shiftId) => ({
+      queryKey: SHIFT_KEYS.detail(shiftId),
+      queryFn: () => shiftApi.getShift(shiftId),
+      enabled: !!shiftId && enabled,
+      staleTime: 5 * 60 * 1000,
+    })),
   });
 };
 

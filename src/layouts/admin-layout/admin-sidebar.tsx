@@ -10,6 +10,7 @@ import {
   ShoppingBag,
   ShieldCheck,
   UserCheck,
+  CalendarDays,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -29,6 +30,7 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   product: ShoppingBag,
   shield: ShieldCheck,
   customers: UserCheck,
+  calendar: CalendarDays,
 };
 
 const sidebarMenuItems = ADMIN_MENU.filter((item) => {
