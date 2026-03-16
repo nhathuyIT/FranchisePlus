@@ -5,6 +5,7 @@ import type {
   InventorySearchResponse,
   InventorySearchItem,
   InventoryAdjustRequest,
+  InventoryBulkAdjustRequest,
   InventoryLowStockItem,
   InventoryLogItem,
   PageInfoResponse,
@@ -141,6 +142,22 @@ export const restore = async (id: string): Promise<void> => {
 export const adjust = async (data: InventoryAdjustRequest): Promise<void> => {
   await httpClient.post<null, InventoryAdjustRequest>({
     url: `${BASE_URL}/adjust`,
+    data,
+  });
+};
+
+/**
+ * POST /api/inventories/adjust/bulk
+ * Body: { items: [{ product_franchise_id, change, alert_threshold, reason }] }
+ *
+ * Sends all inline-edit changes in a single request instead of per-row.
+ * Uses httpClient -> interceptor auto-converts camelCase -> snake_case.
+ */
+export const adjustBulk = async (
+  data: InventoryBulkAdjustRequest,
+): Promise<void> => {
+  await httpClient.post<null, InventoryBulkAdjustRequest>({
+    url: `${BASE_URL}/adjust/bulk`,
     data,
   });
 };
