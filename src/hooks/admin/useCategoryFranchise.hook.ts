@@ -34,13 +34,8 @@ export const useCategoryFranchiseSearchQuery = (
   return useQuery({
     queryKey: CATEGORY_FRANCHISE_KEYS.search(searchParams),
     queryFn: async () => {
-      console.log(
-        "[CategoryFranchise API] Searching category franchises...",
-        searchParams,
-      );
       const result =
         await categoryFranchiseApi.searchItemsByConditions(searchParams);
-      console.log("[CategoryFranchise API] Search response:", result);
       return result;
     },
     placeholderData: keepPreviousData,
@@ -87,23 +82,23 @@ export const useAddCategoryToFranchiseMutation = () => {
   return useMutation({
     mutationFn: (data: CategoryFranchiseRequest) =>
       categoryFranchiseApi.addCategoryToFranchise(data),
-    onSuccess: (response) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: CATEGORY_FRANCHISE_KEYS.all,
       });
       toast.success("Category added to franchise successfully!", {
         description: `Category has been added to the franchise`,
       });
-      console.log("[CategoryFranchise API] Add success:", response);
     },
     onError: (error: Error) => {
       toast.error("Failed to add category to franchise", {
         description: error.message,
       });
-      console.error("[CategoryFranchise API] Add error:", error);
     },
   });
 };
+
+export const useAddCategoryToFranchise = useAddCategoryToFranchiseMutation;
 
 /**
  * Change category franchise status
@@ -133,7 +128,6 @@ export const useChangeCategoryFranchiseStatusMutation = () => {
       toast.error("Failed to change category franchise status", {
         description: error.message,
       });
-      console.error("[CategoryFranchise API] Status change error:", error);
     },
   });
 };
@@ -147,20 +141,18 @@ export const useDeleteCategoryFranchiseMutation = () => {
   return useMutation({
     mutationFn: (categoryFranchiseId: string) =>
       categoryFranchiseApi.deleteItemByCategoryFranchiseId(categoryFranchiseId),
-    onSuccess: (response) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: CATEGORY_FRANCHISE_KEYS.all,
       });
       toast.success("Category franchise deleted successfully!", {
         description: "The category franchise has been removed",
       });
-      console.log("[CategoryFranchise API] Delete success:", response);
     },
     onError: (error: Error) => {
       toast.error("Failed to delete category franchise", {
         description: error.message,
       });
-      console.error("[CategoryFranchise API] Delete error:", error);
     },
   });
 };
@@ -176,20 +168,18 @@ export const useRestoreCategoryFranchiseMutation = () => {
       categoryFranchiseApi.restoreItemByCategoryFranchiseId(
         categoryFranchiseId,
       ),
-    onSuccess: (response) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: CATEGORY_FRANCHISE_KEYS.all,
       });
       toast.success("Category franchise restored successfully!", {
         description: "The category franchise has been restored",
       });
-      console.log("[CategoryFranchise API] Restore success:", response);
     },
     onError: (error: Error) => {
       toast.error("Failed to restore category franchise", {
         description: error.message,
       });
-      console.error("[CategoryFranchise API] Restore error:", error);
     },
   });
 };
