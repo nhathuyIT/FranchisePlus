@@ -3,15 +3,17 @@ import { Badge } from "@/components/ui/badge";
 import { StatusToggleCell } from "@/components/common/StatusToggleCell";
 import type { Product } from "@/types/product.type";
 
+type ProductRow = Product & { quantity?: number };
+
 interface ColumnOptions {
-  onStatusToggle?: (row: Product, isActive: boolean) => void;
+  onStatusToggle?: (row: ProductRow, isActive: boolean) => void;
   statusPendingId?: string | null;
   canEdit?: boolean;
   isManagerView?: boolean;
 }
 
-export const createProductColumns = (options?: ColumnOptions): ColumnDef<Product>[] => {
-  const columns: ColumnDef<Product>[] = [];
+export const createProductColumns = (options?: ColumnOptions): ColumnDef<ProductRow>[] => {
+  const columns: ColumnDef<ProductRow>[] = [];
 
   if (!options?.isManagerView) {
     columns.push(
@@ -70,6 +72,19 @@ export const createProductColumns = (options?: ColumnOptions): ColumnDef<Product
       </span>
     ),
   },
+  ...(options?.isManagerView
+    ? ([
+        {
+          accessorKey: "quantity",
+          header: "Quantity",
+          cell: ({ row }) => (
+            <span className="text-[#5D4037] tabular-nums">
+              {(row.original.quantity ?? 0).toLocaleString("en-US")}
+            </span>
+          ),
+        },
+      ] as ColumnDef<ProductRow>[]) 
+    : []),
   {
     accessorKey: "isActive",
     header: "Status",

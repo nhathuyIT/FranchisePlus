@@ -553,7 +553,7 @@ const MenuProductDetailPage = () => {
 
                   {/* ── Topping Selection ───────────────────────────── */}
                   {detailHasTopping && (
-                    <div className="mt-6 pt-6 border-t border-stone-100">
+                    <div className="mt-6 pt-6 border-t border-stone-100 scrollbar-hide scrollbar-invisible">
                       <div className="flex items-start gap-4">
                         <span className="text-sm text-stone-500 w-24 shrink-0 pt-1">
                           Topping

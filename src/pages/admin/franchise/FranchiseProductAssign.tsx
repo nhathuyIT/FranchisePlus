@@ -21,7 +21,7 @@ import {
   useDeleteProductCategoryFranchise,
 } from "@/hooks/product-category-franchise/useProductCategoryFranchise";
 import { searchItemsByConditions } from "@/api/category-franchise/CategoryFranchise.api";
-import { useAddCategoryToFranchise } from "@/hooks/category-franchise/useCategoryFranchise";
+import { useAddCategoryToFranchise } from "@/hooks/admin/useCategoryFranchise.hook";
 import { useQuery } from "@tanstack/react-query";
 import { useFranchise } from "@/hooks/franchise";
 import { useCategoriesQuery } from "@/hooks/category/useCategoryQuery";
@@ -110,10 +110,8 @@ const FranchiseProductAssign = () => {
     [franchiseId],
   );
 
-  const {
-    data: allAssignments = [],
-    isLoading: assignmentsLoading,
-  } = useProductCategoryFranchisesQuery(allAssignmentsParams, !!franchiseId);
+  const { data: allAssignments = [], isLoading: assignmentsLoading } =
+    useProductCategoryFranchisesQuery(allAssignmentsParams, !!franchiseId);
 
   // Derived maps from allAssignments 
   // Map: categoryFranchiseId â†’ assignment[]
@@ -168,7 +166,13 @@ const FranchiseProductAssign = () => {
 
   // Products (for images)
   const { data: allProducts = [] } = useProductsQuery({
-    searchCondition: { keyword: "", min_price: "", max_price: "", is_active: "", is_deleted: false },
+    searchCondition: {
+      keyword: "",
+      min_price: "",
+      max_price: "",
+      is_active: "",
+      is_deleted: false,
+    },
     pageInfo: { pageNum: 1, pageSize: 1000 },
   });
 

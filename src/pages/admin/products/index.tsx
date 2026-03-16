@@ -27,6 +27,12 @@ import {
   useCreateProductFranchiseMutation,
 } from "@/hooks/product-franchise/useProductFranchiseQuery";
 import { useAuthStore } from "@/stores/auth-store";
+import {
+  useAdjustInventory,
+  useCreateInventory,
+  useInventorySearch,
+} from "@/hooks/inventory/useInventory.hooks";
+import type { InventorySearchItem } from "@/api/inventory/inventory.type";
 
 // ── Form schema ─────────────────────────────────────────────────────────────
 
@@ -45,6 +51,7 @@ const productSchema = z
       .or(z.literal("")),
     minPrice: z.number().min(0, "Min price must be positive"),
     maxPrice: z.number().min(0, "Max price must be positive"),
+    quantity: z.number().min(0, "Quantity must be 0 or greater").optional(),
     isActive: z.boolean(),
   })
   .refine((data) => data.maxPrice >= data.minPrice, {
@@ -53,6 +60,14 @@ const productSchema = z
   });
 
 type ProductFormData = z.infer<typeof productSchema>;
+
+type ProductRow = Product & {
+  franchiseProductId?: string;
+  size?: string;
+  quantity?: number;
+  inventoryId?: string;
+  alertThreshold?: number;
+};
 
 // ── Field configurations ────────────────────────────────────────────────────
 
@@ -84,6 +99,14 @@ const getProductFields = (
         label: "Price",
         placeholder: "0.00",
         step: 0.01,
+        min: 0,
+        required: true,
+      },
+      {
+        name: "quantity",
+        type: "number",
+        label: "Quantity",
+        placeholder: "0",
         min: 0,
         required: true,
       },
@@ -265,7 +288,7 @@ const ProductsPage = () => {
     useState<ProductSearchRequest>(DEFAULT_SEARCH_PARAMS);
 
   // Dialog state
-  const dialog = useFormDialog<Product & { franchiseProductId?: string; size?: string }>();
+  const dialog = useFormDialog<ProductRow>();
   
   // View modal state (separate from form dialog)
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
@@ -340,15 +363,45 @@ const ProductsPage = () => {
     },
   });
 
+  const { data: inventorySearch, isLoading: isLoadingInventory } = useInventorySearch(
+    {
+      searchCondition: { franchiseId },
+      pageInfo: { pageNum: 1, pageSize: 1000 },
+    },
+    { enabled: isManagerView && !!franchiseId },
+  );
+
+  const inventoryByProductFranchiseId = React.useMemo(() => {
+    const map = new Map<string, InventorySearchItem>();
+    for (const item of inventorySearch?.pageData ?? []) {
+      map.set(String(item.productFranchiseId), item);
+    }
+    return map;
+  }, [inventorySearch?.pageData]);
+
   // Product Franchise mutations (for managers)
   const createProductFranchiseMutation = useCreateProductFranchiseMutation();
   const updateProductFranchiseMutation = useUpdateProductFranchiseMutation();
   const deleteProductFranchiseMutation = useDeleteProductFranchiseMutation();
   const changeStatusProductFranchiseMutation = useChangeStatusProductFranchiseMutation();
 
+  const adjustInventoryMutation = useAdjustInventory();
+  const createInventoryMutation = useCreateInventory();
+
   // Select appropriate data based on context
   const products = isManagerView
     ? (franchiseProducts?.map((pf) => ({
+        ...(inventoryByProductFranchiseId.get(String(pf.id))
+          ? {
+              quantity:
+                inventoryByProductFranchiseId.get(String(pf.id))?.quantity ?? 0,
+              inventoryId: String(
+                inventoryByProductFranchiseId.get(String(pf.id))?.id ?? "",
+              ),
+              alertThreshold:
+                inventoryByProductFranchiseId.get(String(pf.id))?.alertThreshold ?? 0,
+            }
+          : { quantity: 0, inventoryId: undefined, alertThreshold: 0 }),
         id: pf.productId,
         franchiseProductId: String(pf.id), // Store ProductFranchise ID for updates/deletes
         size: pf.size || "", // Store size for updates
@@ -363,10 +416,10 @@ const ProductsPage = () => {
         isDeleted: pf.isDeleted,
         createdAt: pf.createdAt,
         updatedAt: pf.updatedAt,
-      })) as (Product & { franchiseProductId?: string; size?: string })[] ?? [])
+      })) as ProductRow[] ?? [])
     : (globalProducts ?? []);
 
-  const isLoading = isManagerView ? isLoadingFranchise : isLoadingGlobal;
+  const isLoading = isManagerView ? (isLoadingFranchise || isLoadingInventory) : isLoadingGlobal;
   const error = isManagerView ? franchiseError : globalError;
   const refetch = isManagerView ? refetchFranchise : refetchGlobal;
 
@@ -428,6 +481,29 @@ const ProductsPage = () => {
             { id: franchiseProductId, data: { is_active: data.isActive } }
           );
         }
+
+        // Inventory: set quantity (create if missing, adjust if exists)
+        const desiredQuantity = data.quantity;
+        if (typeof desiredQuantity === "number" && Number.isFinite(desiredQuantity)) {
+          const currentQuantity = (editingProduct.quantity ?? 0) as number;
+          if (desiredQuantity !== currentQuantity) {
+            const hasInventory = !!editingProduct.inventoryId;
+            if (hasInventory) {
+              await adjustInventoryMutation.mutateAsync({
+                productFranchiseId: String(franchiseProductId),
+                change: desiredQuantity - currentQuantity,
+                alertThreshold: editingProduct.alertThreshold ?? 0,
+                reason: "Manual set quantity",
+              });
+            } else if (desiredQuantity > 0) {
+              await createInventoryMutation.mutateAsync({
+                productFranchiseId: String(franchiseProductId),
+                quantity: desiredQuantity,
+                alertThreshold: 0,
+              });
+            }
+          }
+        }
       } else {
         // Admin editing global product
         const payload = {
@@ -484,6 +560,9 @@ const ProductsPage = () => {
       ...product,
       franchiseProductId: (product as any).franchiseProductId,
       size: (product as any).size || "",
+      quantity: (product as any).quantity ?? 0,
+      inventoryId: (product as any).inventoryId,
+      alertThreshold: (product as any).alertThreshold ?? 0,
     };
     dialog.openEdit(editData);
   };
@@ -539,7 +618,7 @@ const ProductsPage = () => {
   const productFields = getProductFields(isManagerView, formMode, productDropdownCache);
 
   // ── Status toggle handler ───────────────────────────────────────────────
-  const handleStatusToggle = (product: Product, isActive: boolean) => {
+  const handleStatusToggle = (product: ProductRow, isActive: boolean) => {
     if (isManagerView && (product as any).franchiseProductId) {
       changeStatusProductFranchiseMutation.mutate({
         id: (product as any).franchiseProductId,
