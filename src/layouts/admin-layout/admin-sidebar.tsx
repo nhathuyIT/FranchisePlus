@@ -10,6 +10,7 @@ import {
   ShoppingBag,
   ShieldCheck,
   UserCheck,
+  TicketPercent,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -27,6 +28,8 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   "alert-triangle": AlertTriangle,
   category: Grid3x3,
   product: ShoppingBag,
+  promotion: TicketPercent,
+  voucher: TicketPercent,
   shield: ShieldCheck,
   customers: UserCheck,
 };
@@ -117,7 +120,7 @@ const AdminSideBar = ({ collapsed = false }: AdminSidebarProps) => {
             </Avatar>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-semibold truncate">{user?.name}</p>
-              <p className="text-xs text-blue-300 truncate">{roleName}</p>
+              <p className="text-xs text-amber-300 truncate">{roleName}</p>
             </div>
           </div>
         </div>
