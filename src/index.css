@@ -1,5 +1,6 @@
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600&display=swap');
 @import "tailwindcss";
+@import "tailwind-scrollbar-hide/v4";
 @import "tw-animate-css";
 
 @custom-variant dark (&:is(.dark *));
@@ -123,4 +124,13 @@
   body {
     @apply bg-background text-foreground;
   }
+}
+
+.scrollbar-invisible {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-invisible::-webkit-scrollbar {
+  display: none;
 }

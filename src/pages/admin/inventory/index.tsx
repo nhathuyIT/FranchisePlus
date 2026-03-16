@@ -1,33 +1,9 @@
-  import { useState, useMemo, useCallback } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { Link } from "react-router";
 import { Package, Plus, Search } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { toast } from "sonner";
-import { ROUTER_URL } from "@/router/route.const";
-import { PageHeader } from "@/components/common/PageHeader";
-import { InventoryTable } from "./components/InventoryTable";
-import {
-  FormDialog,
-  useFormDialog,
-  DeleteDialog,
-} from "@/components/form-dialog";
-import {
-  adjustInventoryFields,
-  adjustInventorySchema,
-  addInventoryFields,
-  addInventorySchema,
-} from "./inventory-form.config";
-import type { AdjustInventoryFormData } from "@/lib/schemas/inventory.schema";
-import type { AddInventoryItemFormData } from "@/lib/schemas/inventory.schema";
-import type { SubmitResult } from "@/components/form-dialog/types";
-import type { InventorySearchItem } from "@/api/inventory/inventory.type";
-import { useInventorySearch, useDeleteInventory } from "@/hooks/inventory";
-import { useFranchiseSelect } from "@/hooks/franchise";
-import { Permission } from "@/config/permission";
-import { useAuthStore } from "@/stores/auth-store";
-import * as inventoryApi from "@/api/inventory/inventory.api";
-import { useDebounce } from "@/hooks/common/useDebounce";
 import {
   Select,
   SelectContent,
@@ -35,48 +11,62 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { PageHeader } from "@/components/common/PageHeader";
+import {
+  DeleteDialog,
+  FormDialog,
+  useFormDialog,
+} from "@/components/form-dialog";
+import type { SubmitResult } from "@/components/form-dialog/types";
+import { Permission } from "@/config/permission";
+import * as inventoryApi from "@/api/inventory/inventory.api";
+import type { InventorySearchItem } from "@/api/inventory/inventory.type";
+import { useDeleteInventory, useInventorySearch } from "@/hooks/inventory";
+import { useFranchiseSelect } from "@/hooks/franchise";
+import { useDebounce } from "@/hooks/common/useDebounce";
+import type {
+  AddInventoryItemFormData,
+  AdjustInventoryFormData,
+} from "@/lib/schemas/inventory.schema";
+import { ROUTER_URL } from "@/router/route.const";
+import { useAuthStore } from "@/stores/auth-store";
+import {
+  addInventoryFields,
+  addInventorySchema,
+  adjustInventoryFields,
+  adjustInventorySchema,
+} from "./inventory-form.config";
+import { InventoryImportPreview } from "./components/InventoryImportPreview";
+import { InventoryTable } from "./components/InventoryTable";
+import { useUpdateInventoryFromExcel } from "./hooks/useUpdateInventoryFromExcel";
 
 const InventoryList = () => {
   const { authUser, getCurrentPermissions } = useAuthStore();
   const userPermissions = getCurrentPermissions();
 
-  // Permission checks
   const canViewInventory = userPermissions.includes(Permission.VIEW_INVENTORY);
   const canManageInventory = userPermissions.includes(
     Permission.MANAGE_INVENTORY,
   );
 
-  // ── Search / filter state ─────────────────────────────────────────────────
-
-  /** Server-side filter: franchiseId */
-  const [selectedFranchiseId, setSelectedFranchiseId] = useState<string>("");
-
-  /** Client-side filter: product name text search (API has no keyword field) */
-  const [productNameQuery, setProductNameQuery] = useState<string>("");
-  const debouncedProductName = useDebounce(productNameQuery, 300);
-
-  // ── Cache scope key ────────────────────────────────────────────────────────
+  const [selectedFranchiseId, setSelectedFranchiseId] = useState("");
+  const [productNameQuery, setProductNameQuery] = useState("");
+  const debouncedProductName = useDebounce(
+    productNameQuery,
+    300,
+    productNameQuery,
+  );
 
   const inventoryScopeKey = authUser
     ? `${authUser.user.id}-${authUser.currentRoleId ?? "none"}-${authUser.currentFranchiseId ?? "global"}`
     : "anonymous";
 
-  // ── Data fetching ──────────────────────────────────────────────────────────
-
-  /**
-   * Franchise dropdown options for the server-side filter.
-   * Uses FranchiseSelect API (lightweight, no pagination).
-   */
   const { data: franchiseOptions = [] } = useFranchiseSelect();
 
-  /**
-   * Main inventory search — re-fetches when franchiseId changes.
-   * Product name search is client-side (INVENTORY-02 has no keyword field).
-   */
   const {
     data: inventorySearchResult,
-    isLoading, // true ONLY on first load (no cached data) → page skeleton
-    isFetching, // true on any fetch including refetch on filter change
+    isLoading,
+    isFetching,
     error,
     refetch,
   } = useInventorySearch(
@@ -91,25 +81,31 @@ const InventoryList = () => {
   );
 
   const inventoryItems = inventorySearchResult?.pageData ?? [];
+  const {
+    mainTableData,
+    baselineTableData,
+    previewTableData,
+    isImportPreviewMode,
+    isImporting,
+    importFromExcel,
+    acceptImportedRows,
+    cancelImportPreview,
+    resetMainTableData,
+  } = useUpdateInventoryFromExcel(inventoryItems);
 
-  /**
-   * Client-side filter by product name on top of API-filtered data.
-   * This is necessary because INVENTORY-02 API doesn't support keyword search.
-   */
   const filteredItems = useMemo(() => {
-    if (!debouncedProductName.trim()) return inventoryItems;
-    const q = debouncedProductName.toLowerCase();
-    return inventoryItems.filter(
+    if (!debouncedProductName.trim()) return mainTableData;
+    const query = debouncedProductName.toLowerCase();
+
+    return mainTableData.filter(
       (item) =>
-        item.productName.toLowerCase().includes(q) ||
-        item.franchiseName.toLowerCase().includes(q),
+        item.productName.toLowerCase().includes(query) ||
+        item.franchiseName.toLowerCase().includes(query),
     );
-  }, [inventoryItems, debouncedProductName]);
+  }, [mainTableData, debouncedProductName]);
 
   const deleteMutation = useDeleteInventory({ suppressToast: true });
   const listError = error instanceof Error ? error : null;
-
-  // ── Form dialogs ───────────────────────────────────────────────────────────
 
   const adjustDialog = useFormDialog<InventorySearchItem>();
   const addDialog = useFormDialog<InventorySearchItem>();
@@ -121,12 +117,41 @@ const InventoryList = () => {
     void refetch();
   };
 
-  // ── Submit handlers ────────────────────────────────────────────────────────
+  const handleImport = useCallback(
+    async (file: File) => {
+      const result = await importFromExcel(file);
+
+      if (!result.success) {
+        toast.error(result.message);
+        return;
+      }
+
+      toast.success(result.message);
+    },
+    [importFromExcel],
+  );
+
+  const handleAcceptImport = useCallback(
+    (selectedRowNumbers: number[]) => {
+      const acceptedItems = acceptImportedRows(selectedRowNumbers);
+
+      if (acceptedItems.length === 0) {
+        toast.error("Select at least one valid row before accepting changes.");
+        return;
+      }
+
+      toast.success(
+        `Local inventory table overwritten with ${acceptedItems.length} row(s).`,
+      );
+    },
+    [acceptImportedRows],
+  );
 
   const handleAdjustSubmit = async (
     data: AdjustInventoryFormData,
   ): Promise<SubmitResult | void> => {
     if (!adjustDialog.data) return;
+
     await inventoryApi.adjust({
       productFranchiseId: String(adjustDialog.data.productFranchiseId),
       change: data.change,
@@ -144,12 +169,17 @@ const InventoryList = () => {
       quantity: data.quantity,
       alertThreshold: data.alertThreshold,
     });
-    if (!response) throw new Error("Failed to create inventory item");
+
+    if (!response) {
+      throw new Error("Failed to create inventory item");
+    }
+
     toast.success("Inventory item added successfully");
   };
 
   const handleDelete = async () => {
     if (!deleteTarget) return;
+
     try {
       await deleteMutation.mutateAsync(String(deleteTarget.id));
       toast.success(
@@ -167,6 +197,7 @@ const InventoryList = () => {
       toast.error("You do not have permission to edit inventory.");
       return;
     }
+
     adjustDialog.openEdit(item);
   };
 
@@ -175,13 +206,10 @@ const InventoryList = () => {
       toast.error("You do not have permission to delete inventory items.");
       return;
     }
+
     setDeleteTarget(item);
   };
 
-  /**
-   * Inline save: calls INVENTORY-06 adjust API for quantity and/or alertThreshold changes.
-   * The adjust API accepts { change (delta), alert_threshold (absolute), reason }.
-   */
   const handleSaveRow = useCallback(
     async (
       item: InventorySearchItem,
@@ -206,11 +234,9 @@ const InventoryList = () => {
         parts.push(`quantity ${delta > 0 ? "+" : ""}${delta}`);
       }
       if (thresholdChanged) {
-        parts.push(`threshold → ${newAlertThreshold}`);
+        parts.push(`threshold -> ${newAlertThreshold}`);
       }
-      toast.success(
-        `Updated "${item.productName}": ${parts.join(", ")}`,
-      );
+      toast.success(`Updated "${item.productName}": ${parts.join(", ")}`);
 
       void refetch();
     },
@@ -227,11 +253,9 @@ const InventoryList = () => {
     return `Current quantity: ${adjustDialog.data.quantity} | Threshold: ${adjustDialog.data.alertThreshold}`;
   }, [adjustDialog.data]);
 
-  // ── Render ─────────────────────────────────────────────────────────────────
-
   return (
-    <div className="h-full flex flex-col">
-      <div className="flex-1 flex flex-col min-h-0 max-w-7xl mx-auto w-full">
+    <div className="flex h-full flex-col">
+      <div className="mx-auto flex min-h-0 w-full max-w-7xl flex-1 flex-col">
         <PageHeader
           title="Inventory Management"
           description="Track all products across franchises"
@@ -240,7 +264,7 @@ const InventoryList = () => {
               {canManageInventory && (
                 <Button
                   onClick={addDialog.openCreate}
-                  className="bg-[#6D4C41] hover:bg-[#3E2723] text-white rounded-full shadow-md hover:shadow-lg transition-all duration-300 cursor-pointer"
+                  className="cursor-pointer rounded-full bg-[#6D4C41] text-white shadow-md transition-all duration-300 hover:bg-[#3E2723] hover:shadow-lg"
                 >
                   <Plus className="mr-2 h-4 w-4" />
                   Add Item
@@ -249,7 +273,7 @@ const InventoryList = () => {
               <Link
                 to={`${ROUTER_URL.ADMIN}/${ROUTER_URL.ADMIN_ROUTER.INVENTORY_LOW_STOCK}`}
               >
-                <Button className="bg-[#D97706] hover:bg-[#B45309] text-white rounded-full shadow-md hover:shadow-lg transition-all duration-300 cursor-pointer">
+                <Button className="cursor-pointer rounded-full bg-[#D97706] text-white shadow-md transition-all duration-300 hover:bg-[#B45309] hover:shadow-lg">
                   <Package className="mr-2 h-4 w-4" />
                   Low Stock Alert
                 </Button>
@@ -258,63 +282,71 @@ const InventoryList = () => {
           }
         />
 
-        <div className="flex-1 min-h-0 flex flex-col bg-white rounded-2xl shadow-lg border border-[#E8DFD6] p-6">
-          {/* ── Search & Filter bar ───────────────────────────────────── */}
-          <div className="flex items-center gap-3 mb-4 shrink-0 flex-wrap">
-            {/* Product name search (client-side — API has no keyword) */}
-            <div className="relative flex-1 min-w-[200px] max-w-xs">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#5D4037]" />
-              <Input
-                placeholder="Search by product or franchise..."
-                value={productNameQuery}
-                onChange={(e) => setProductNameQuery(e.target.value)}
-                className="pl-10 border-[#E8DFD6] focus:border-[#6D4C41] focus:ring-[#6D4C41]"
-              />
+        <div className="flex min-h-0 flex-1 flex-col rounded-2xl border border-[#E8DFD6] bg-white p-6 shadow-lg">
+          {!isImportPreviewMode && (
+            <div className="mb-4 flex shrink-0 flex-wrap items-center gap-3">
+              <div className="relative max-w-xs min-w-[200px] flex-1">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#5D4037]" />
+                <Input
+                  placeholder="Search by product or franchise..."
+                  value={productNameQuery}
+                  onChange={(e) => setProductNameQuery(e.target.value)}
+                  className="border-[#E8DFD6] pl-10 focus:border-[#6D4C41] focus:ring-[#6D4C41]"
+                />
+              </div>
+
+              <Select
+                value={selectedFranchiseId || "all"}
+                onValueChange={(value) =>
+                  setSelectedFranchiseId(value === "all" ? "" : value)
+                }
+              >
+                <SelectTrigger className="w-52 border-[#E8DFD6] focus:border-[#6D4C41]">
+                  <SelectValue placeholder="All Franchises" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Franchises</SelectItem>
+                  {franchiseOptions.map((franchise) => (
+                    <SelectItem key={franchise.value} value={franchise.value}>
+                      {franchise.name} ({franchise.code})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              {!isFetching && (
+                <span className="ml-auto text-xs text-[#8D6E63]">
+                  {filteredItems.length} item
+                  {filteredItems.length !== 1 ? "s" : ""}
+                </span>
+              )}
             </div>
+          )}
 
-            {/* Franchise filter (server-side — API supports franchiseId) */}
-            <Select
-              value={selectedFranchiseId || "all"}
-              onValueChange={(v) =>
-                setSelectedFranchiseId(v === "all" ? "" : v)
-              }
-            >
-              <SelectTrigger className="w-52 border-[#E8DFD6] focus:border-[#6D4C41]">
-                <SelectValue placeholder="All Franchises" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Franchises</SelectItem>
-                {franchiseOptions.map((f) => (
-                  <SelectItem key={f.value} value={f.value}>
-                    {f.name} ({f.code})
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            {/* Result count */}
-            {!isFetching && (
-              <span className="text-xs text-[#8D6E63] ml-auto">
-                {filteredItems.length} item
-                {filteredItems.length !== 1 ? "s" : ""}
-              </span>
-            )}
-          </div>
-
-          {/* DataTable handling its own loading state natively via TanStack Table */}
-          <InventoryTable
-            items={canViewInventory ? filteredItems : []}
-            isLoading={isLoading || isFetching || deleteMutation.isPending}
-            error={listError}
-            onRetry={refetch}
-            onEdit={canManageInventory ? handleEdit : undefined}
-            onDelete={canManageInventory ? handleOpenDelete : undefined}
-            canEdit={canManageInventory}
-            onSaveRow={canManageInventory ? handleSaveRow : undefined}
-          />
+          {isImportPreviewMode ? (
+            <InventoryImportPreview
+              rows={previewTableData}
+              onAccept={handleAcceptImport}
+              onCancel={cancelImportPreview}
+            />
+          ) : (
+            <InventoryTable
+              items={canViewInventory ? filteredItems : []}
+              baselineItems={canViewInventory ? baselineTableData : []}
+              isLoading={isLoading || isFetching || deleteMutation.isPending}
+              isImporting={isImporting}
+              error={listError}
+              onRetry={refetch}
+              onImport={canManageInventory ? handleImport : undefined}
+              onDiscardChanges={resetMainTableData}
+              onEdit={canManageInventory ? handleEdit : undefined}
+              onDelete={canManageInventory ? handleOpenDelete : undefined}
+              canEdit={canManageInventory}
+              onSaveRow={canManageInventory ? handleSaveRow : undefined}
+            />
+          )}
         </div>
 
-        {/* Adjust Stock Dialog (INVENTORY-06) */}
         <FormDialog<AdjustInventoryFormData>
           open={adjustDialog.isOpen}
           onOpenChange={(open) => !open && adjustDialog.close()}
@@ -334,7 +366,6 @@ const InventoryList = () => {
           }}
         />
 
-        {/* Add Inventory Item Dialog (INVENTORY-01) */}
         <FormDialog<AddInventoryItemFormData>
           open={addDialog.isOpen}
           onOpenChange={(open) => !open && addDialog.close()}
@@ -351,7 +382,6 @@ const InventoryList = () => {
           }}
         />
 
-        {/* Delete Confirmation Dialog (INVENTORY-04) */}
         <DeleteDialog<InventorySearchItem>
           open={!!deleteTarget}
           onOpenChange={(open) => !open && setDeleteTarget(null)}

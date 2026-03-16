@@ -29,6 +29,8 @@ interface CustomerTableProps {
   onStatusToggle?: (row: User, isActive: boolean) => void;
   statusPendingId?: string | null;
   canEdit?: boolean;
+  searchValue?: string;
+  onSearchChange?: (value: string) => void;
 }
 
 export const CustomerTable = ({
@@ -43,6 +45,8 @@ export const CustomerTable = ({
   onStatusToggle,
   statusPendingId,
   canEdit,
+  searchValue,
+  onSearchChange,
 }: CustomerTableProps) => {
   // Excel Export
   const { exportToExcel, isExporting } = useExcelExport({
@@ -54,7 +58,7 @@ export const CustomerTable = ({
 
   const columns = useMemo(
     () => createCustomerColumns({ onStatusToggle, statusPendingId, canEdit }),
-    [onStatusToggle, statusPendingId, canEdit]
+    [onStatusToggle, statusPendingId, canEdit],
   );
 
   // Excel Import
@@ -124,6 +128,8 @@ export const CustomerTable = ({
       searchPlaceholder="Search customers by name, phone, or email..."
       emptyMessage="No customers found matching your search."
       initialPageSize={5}
+      searchValue={searchValue}
+      onSearchChange={onSearchChange}
       // NEW FEATURES
       enableRowSelection={!!onBulkDelete}
       enableColumnVisibility

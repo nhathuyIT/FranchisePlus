@@ -46,4 +46,5 @@ export {
 export {
   INVENTORY_REVERSE_HEADER_MAPPING,
   flattenInventoryItem,
+  type InventoryImportData,
 } from "./inventory-excel.config";

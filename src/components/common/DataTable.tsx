@@ -28,7 +28,6 @@ import {
   Download,
   Upload,
   Loader2,
-  EllipsisVertical,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -59,8 +58,6 @@ import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
@@ -114,6 +111,10 @@ export interface DataTableProps<TData> {
   isImporting?: boolean;
   exportLabel?: string;
   importLabel?: string;
+  /** Controlled search value — when provided, the search input is driven by the parent */
+  searchValue?: string;
+  /** Called whenever the search input changes — use with searchValue for API-based search */
+  onSearchChange?: (value: string) => void;
 }
 
 // Internal Components
@@ -176,6 +177,8 @@ export function DataTable<TData>({
   isImporting = false,
   exportLabel = "Export",
   importLabel = "Import",
+  searchValue,
+  onSearchChange,
 }: DataTableProps<TData>) {
   // State Management
   const [sorting, setSorting] = useState<SortingState>([]);
@@ -312,9 +315,12 @@ export function DataTable<TData>({
   const clearAllFilters = () => {
     setColumnFilters([]);
     setGlobalFilter("");
+    onSearchChange?.("");
   };
 
-  const hasActiveFilters = columnFilters.length > 0 || globalFilter !== "";
+  const activeSearchValue =
+    onSearchChange !== undefined ? (searchValue ?? "") : globalFilter;
+  const hasActiveFilters = columnFilters.length > 0 || activeSearchValue !== "";
 
   // Helper function to get filter display label
   const getFilterLabel = (filterId: string, filterValue: unknown): string => {
@@ -358,8 +364,16 @@ export function DataTable<TData>({
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#5D4037]" />
             <Input
               placeholder={searchPlaceholder}
-              value={globalFilter}
-              onChange={(e) => setGlobalFilter(e.target.value)}
+              value={
+                onSearchChange !== undefined
+                  ? (searchValue ?? "")
+                  : globalFilter
+              }
+              onChange={(e) =>
+                onSearchChange !== undefined
+                  ? onSearchChange(e.target.value)
+                  : setGlobalFilter(e.target.value)
+              }
               className="pl-10 border-[#E8DFD6] focus:border-[#6D4C41] focus:ring-[#6D4C41]"
             />
           </div>
@@ -479,10 +493,10 @@ export function DataTable<TData>({
           </DropdownMenu>
         )}
 
-        {/* Spacer to push three-dot menu to far right */}
+        {/* Spacer to push import/export actions to far right */}
         {(onImport || onExport) && <div className="flex-1" />}
 
-        {/* Three-dot menu for Import / Export */}
+        {/* Import / Export Actions */}
         {(onImport || onExport) && (
           <>
             {onImport && (
@@ -500,44 +514,40 @@ export function DataTable<TData>({
                 }}
               />
             )}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
+            <div className="flex items-center gap-2">
+              {onImport && (
                 <Button
                   variant="outline"
-                  size="icon"
-                  className="h-9 w-9 border-[#E8DFD6] hover:bg-[#FAF8F5]"
+                  disabled={isImporting}
+                  onClick={() =>
+                    document.getElementById("excel-import-input")?.click()
+                  }
+                  className="gap-2 border-[#E8DFD6] bg-white text-[#5D4037] hover:bg-[#FAF8F5]"
                 >
-                  {(isImporting || isExporting) ? (
+                  {isImporting ? (
                     <Loader2 className="h-4 w-4 animate-spin text-[#6D4C41]" />
                   ) : (
-                    <EllipsisVertical className="h-4 w-4 text-[#5D4037]" />
-                  )}
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48">
-                {onImport && (
-                  <DropdownMenuItem
-                    disabled={isImporting}
-                    onClick={() => document.getElementById("excel-import-input")?.click()}
-                    className="gap-2 cursor-pointer"
-                  >
                     <Upload className="h-4 w-4" />
-                    {importLabel}
-                  </DropdownMenuItem>
-                )}
-                {onImport && onExport && <DropdownMenuSeparator />}
-                {onExport && (
-                  <DropdownMenuItem
-                    disabled={isExporting || data.length === 0}
-                    onClick={onExport}
-                    className="gap-2 cursor-pointer"
-                  >
+                  )}
+                  {importLabel}
+                </Button>
+              )}
+              {onExport && (
+                <Button
+                  variant="outline"
+                  disabled={isExporting || data.length === 0}
+                  onClick={onExport}
+                  className="gap-2 border-[#E8DFD6] bg-white text-[#5D4037] hover:bg-[#FAF8F5]"
+                >
+                  {isExporting ? (
+                    <Loader2 className="h-4 w-4 animate-spin text-[#6D4C41]" />
+                  ) : (
                     <Download className="h-4 w-4" />
-                    {exportLabel}
-                  </DropdownMenuItem>
-                )}
-              </DropdownMenuContent>
-            </DropdownMenu>
+                  )}
+                  {exportLabel}
+                </Button>
+              )}
+            </div>
           </>
         )}
       </div>
@@ -546,15 +556,18 @@ export function DataTable<TData>({
       {hasActiveFilters && (
         <div className="flex items-center gap-2 flex-wrap shrink-0 pb-4">
           <span className="text-sm text-[#5D4037]">Active filters:</span>
-          {globalFilter && (
+          {activeSearchValue && (
             <Badge
               variant="secondary"
               className="gap-1 bg-[#E8DFD6] text-[#3E2723]"
             >
-              Search: {globalFilter}
+              Search: {activeSearchValue}
               <X
                 className="h-3 w-3 cursor-pointer"
-                onClick={() => setGlobalFilter("")}
+                onClick={() => {
+                  setGlobalFilter("");
+                  onSearchChange?.("");
+                }}
               />
             </Badge>
           )}
@@ -688,24 +701,24 @@ export function DataTable<TData>({
                     const rowClass = getRowClassName?.(row.original) ?? "";
                     const rowStyle = getRowStyle?.(row.original);
                     return (
-                    <TableRow
-                      key={row.id}
-                      data-state={row.getIsSelected() && "selected"}
-                      className={[
-                        "transition-colors border-b border-[#E8DFD6]",
-                        rowClass || "hover:bg-[#FAF8F5]",
-                      ].join(" ")}
-                      style={rowStyle}
-                    >
-                      {row.getVisibleCells().map((cell) => (
-                        <TableCell key={cell.id} className="text-[#5D4037]">
-                          {flexRender(
-                            cell.column.columnDef.cell,
-                            cell.getContext(),
-                          )}
-                        </TableCell>
-                      ))}
-                    </TableRow>
+                      <TableRow
+                        key={row.id}
+                        data-state={row.getIsSelected() && "selected"}
+                        className={[
+                          "transition-colors border-b border-[#E8DFD6]",
+                          rowClass || "hover:bg-[#FAF8F5]",
+                        ].join(" ")}
+                        style={rowStyle}
+                      >
+                        {row.getVisibleCells().map((cell) => (
+                          <TableCell key={cell.id} className="text-[#5D4037]">
+                            {flexRender(
+                              cell.column.columnDef.cell,
+                              cell.getContext(),
+                            )}
+                          </TableCell>
+                        ))}
+                      </TableRow>
                     );
                   })
                 )}

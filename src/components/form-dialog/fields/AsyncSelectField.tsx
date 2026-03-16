@@ -8,15 +8,7 @@ import {
   FormDescription,
   FormMessage,
 } from "@/components/ui/form";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
-import { Loader2 } from "lucide-react";
+import { PopoverSearchSelect } from "@/components/form-dialog/PopoverSearchSelect";
 import type { FieldConfig, SelectOption } from "@/lib/form/field-config";
 
 export interface AsyncSelectFieldProps<TFormData extends FieldValues> {
@@ -125,61 +117,28 @@ function AsyncSelectFieldComponent<TFormData extends FieldValues>({
             {config.label}
             {config.required && <span className="text-destructive ml-1">*</span>}
           </FormLabel>
-          <Select
-            onValueChange={field.onChange}
-            value={field.value?.toString() ?? ""}
-            disabled={disabled}
-            onOpenChange={setIsOpen}
-            open={isOpen}
-          >
-            <FormControl>
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder={config.placeholder ?? "Select..."} />
-              </SelectTrigger>
-            </FormControl>
-            <SelectContent>
-              {/* Search input */}
-              <div className="p-2">
-                <Input
-                  placeholder="Search..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="h-8"
-                  onClick={(e) => e.stopPropagation()}
-                />
-              </div>
-
-              {/* Loading state */}
-              {isLoading && (
-                <div className="flex items-center justify-center py-4">
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  <span className="ml-2 text-sm text-muted-foreground">
-                    Loading...
-                  </span>
-                </div>
-              )}
-
-              {/* Options */}
-              {!isLoading && options.length === 0 && (
-                <div className="py-4 text-center text-sm text-muted-foreground">
-                  {searchTerm.length < minChars
-                    ? `Type at least ${minChars} characters to search`
-                    : "No options found"}
-                </div>
-              )}
-
-              {!isLoading &&
-                options.map((option) => (
-                  <SelectItem
-                    key={String(option.value)}
-                    value={String(option.value)}
-                    disabled={option.disabled}
-                  >
-                    {option.label}
-                  </SelectItem>
-                ))}
-            </SelectContent>
-          </Select>
+          <FormControl>
+            <PopoverSearchSelect
+              value={field.value?.toString() ?? ""}
+              onValueChange={field.onChange}
+              options={options.map((o) => ({
+                value: String(o.value),
+                label: o.label,
+                disabled: o.disabled,
+              }))}
+              placeholder={config.placeholder ?? "Select..."}
+              searchPlaceholder={"Search..."}
+              emptyText={"No options found"}
+              isLoading={isLoading}
+              disabled={disabled}
+              open={isOpen}
+              onOpenChange={setIsOpen}
+              searchValue={searchTerm}
+              onSearchValueChange={setSearchTerm}
+              minChars={minChars}
+              resetSearchOnClose
+            />
+          </FormControl>
           {config.description && (
             <FormDescription>{config.description}</FormDescription>
           )}

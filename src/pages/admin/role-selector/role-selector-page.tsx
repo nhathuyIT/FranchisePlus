@@ -53,8 +53,8 @@ export const RoleSelectorPage = () => {
 
       const matchedFR = (state.franchiseRoles || []).find(
         (fr) =>
-          fr.franchiseId === activeContext.franchiseId ||
-          (!fr.franchiseId && !activeContext.franchiseId),
+          fr.roleId === context.roleId &&
+          (fr.franchiseId ?? null) === (activeContext.franchiseId ?? null),
       );
 
       const authUser = {
