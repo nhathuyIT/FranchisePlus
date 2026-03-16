@@ -81,7 +81,7 @@ const MyProfilePage = () => {
 		data: profile,
 		isLoading,
 		error,
-		refetch,
+		// refetch,
 	} = useAdminProfileQuery();
 
 	const updateProfileMutation = useUpdateAdminProfileMutation();
@@ -130,12 +130,12 @@ const MyProfilePage = () => {
 						? error.message
 						: "Failed to load profile information."}
 				</p>
-				<button
+				{/* <button
 					onClick={() => void refetch()}
 					className="inline-flex px-4 py-2 border border-[#6D4C41] text-[#6D4C41] rounded-lg hover:bg-[#6D4C41] hover:text-white transition-colors"
 				>
 					Retry
-				</button>
+				</button> */}
 			</div>
 		);
 	}
@@ -275,7 +275,7 @@ const MyProfilePage = () => {
 				onSubmit={handleSubmit}
 				onSuccess={() => {
 					dialog.close();
-					void refetch();
+					// void refetch();
 				}}
 			/>
 		</>
