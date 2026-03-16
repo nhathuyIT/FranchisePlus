@@ -1,62 +1,114 @@
-import { useState, useMemo } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { Link } from "react-router";
-import { Package, Plus } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Package, Plus, Search } from "lucide-react";
 import { toast } from "sonner";
-import { ROUTER_URL } from "@/router/route.const";
-import { PageHeader } from "@/components/common/PageHeader";
-import { InventoryTable } from "./components/InventoryTable";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { PageHeader } from "@/components/common/PageHeader";
+import {
+  DeleteDialog,
   FormDialog,
   useFormDialog,
-  DeleteDialog,
 } from "@/components/form-dialog";
+import type { SubmitResult } from "@/components/form-dialog/types";
+import { Permission } from "@/config/permission";
+import * as inventoryApi from "@/api/inventory/inventory.api";
+import type { InventorySearchItem } from "@/api/inventory/inventory.type";
+import { useDeleteInventory, useInventorySearch } from "@/hooks/inventory";
+import { useFranchiseSelect } from "@/hooks/franchise";
+import { useDebounce } from "@/hooks/common/useDebounce";
+import type {
+  AddInventoryItemFormData,
+  AdjustInventoryFormData,
+} from "@/lib/schemas/inventory.schema";
+import { ROUTER_URL } from "@/router/route.const";
+import { useAuthStore } from "@/stores/auth-store";
 import {
-  adjustInventoryFields,
-  adjustInventorySchema,
   addInventoryFields,
   addInventorySchema,
+  adjustInventoryFields,
+  adjustInventorySchema,
 } from "./inventory-form.config";
-import type { AdjustInventoryFormData } from "@/lib/schemas/inventory.schema";
-import type { AddInventoryItemFormData } from "@/lib/schemas/inventory.schema";
-import type { SubmitResult } from "@/components/form-dialog/types";
-import type { InventorySearchItem } from "@/api/inventory/inventory.type";
-import { useInventories, useDeleteInventory } from "@/hooks/inventory";
-import { Permission } from "@/config/permission";
-import { useAuthStore } from "@/stores/auth-store";
-import * as inventoryApi from "@/api/inventory/inventory.api";
+import { InventoryImportPreview } from "./components/InventoryImportPreview";
+import { InventoryTable } from "./components/InventoryTable";
+import { useUpdateInventoryFromExcel } from "./hooks/useUpdateInventoryFromExcel";
 
 const InventoryList = () => {
   const { authUser, getCurrentPermissions } = useAuthStore();
   const userPermissions = getCurrentPermissions();
 
-  // Permission checks
   const canViewInventory = userPermissions.includes(Permission.VIEW_INVENTORY);
   const canManageInventory = userPermissions.includes(
     Permission.MANAGE_INVENTORY,
   );
 
-  // Cache scope key for query isolation
+  const [selectedFranchiseId, setSelectedFranchiseId] = useState("");
+  const [productNameQuery, setProductNameQuery] = useState("");
+  const debouncedProductName = useDebounce(
+    productNameQuery,
+    300,
+    productNameQuery,
+  );
+
   const inventoryScopeKey = authUser
     ? `${authUser.user.id}-${authUser.currentRoleId ?? "none"}-${authUser.currentFranchiseId ?? "global"}`
     : "anonymous";
 
-  // Fetch all inventory items
+  const { data: franchiseOptions = [] } = useFranchiseSelect();
+
   const {
-    data: inventoryItems = [],
+    data: inventorySearchResult,
     isLoading,
+    isFetching,
     error,
     refetch,
-  } = useInventories(canViewInventory, inventoryScopeKey);
+  } = useInventorySearch(
+    {
+      searchCondition: {
+        isDeleted: false,
+        ...(selectedFranchiseId ? { franchiseId: selectedFranchiseId } : {}),
+      },
+      pageInfo: { pageNum: 1, pageSize: 100 },
+    },
+    { enabled: canViewInventory, scopeKey: inventoryScopeKey },
+  );
+
+  const inventoryItems = inventorySearchResult?.pageData ?? [];
+  const {
+    mainTableData,
+    baselineTableData,
+    previewTableData,
+    isImportPreviewMode,
+    isImporting,
+    importFromExcel,
+    acceptImportedRows,
+    cancelImportPreview,
+    resetMainTableData,
+  } = useUpdateInventoryFromExcel(inventoryItems);
+
+  const filteredItems = useMemo(() => {
+    if (!debouncedProductName.trim()) return mainTableData;
+    const query = debouncedProductName.toLowerCase();
+
+    return mainTableData.filter(
+      (item) =>
+        item.productName.toLowerCase().includes(query) ||
+        item.franchiseName.toLowerCase().includes(query),
+    );
+  }, [mainTableData, debouncedProductName]);
 
   const deleteMutation = useDeleteInventory({ suppressToast: true });
   const listError = error instanceof Error ? error : null;
 
-  // Form dialog states
   const adjustDialog = useFormDialog<InventorySearchItem>();
   const addDialog = useFormDialog<InventorySearchItem>();
-
-  // Delete confirmation state
   const [deleteTarget, setDeleteTarget] = useState<InventorySearchItem | null>(
     null,
   );
@@ -65,7 +117,35 @@ const InventoryList = () => {
     void refetch();
   };
 
-  // ── Adjust Submit Handler (INVENTORY-06) ─────────────────────────────────
+  const handleImport = useCallback(
+    async (file: File) => {
+      const result = await importFromExcel(file);
+
+      if (!result.success) {
+        toast.error(result.message);
+        return;
+      }
+
+      toast.success(result.message);
+    },
+    [importFromExcel],
+  );
+
+  const handleAcceptImport = useCallback(
+    (selectedRowNumbers: number[]) => {
+      const acceptedItems = acceptImportedRows(selectedRowNumbers);
+
+      if (acceptedItems.length === 0) {
+        toast.error("Select at least one valid row before accepting changes.");
+        return;
+      }
+
+      toast.success(
+        `Local inventory table overwritten with ${acceptedItems.length} row(s).`,
+      );
+    },
+    [acceptImportedRows],
+  );
 
   const handleAdjustSubmit = async (
     data: AdjustInventoryFormData,
@@ -75,13 +155,11 @@ const InventoryList = () => {
     await inventoryApi.adjust({
       productFranchiseId: String(adjustDialog.data.productFranchiseId),
       change: data.change,
+      alertThreshold: data.alertThreshold,
       reason: data.reason,
     });
-
     toast.success("Inventory adjusted successfully");
   };
-
-  // ── Add Submit Handler (INVENTORY-01) ─────────────────────────────────────
 
   const handleAddSubmit = async (
     data: AddInventoryItemFormData,
@@ -98,8 +176,6 @@ const InventoryList = () => {
 
     toast.success("Inventory item added successfully");
   };
-
-  // ── Delete Handler (INVENTORY-04) ─────────────────────────────────────────
 
   const handleDelete = async () => {
     if (!deleteTarget) return;
@@ -121,6 +197,7 @@ const InventoryList = () => {
       toast.error("You do not have permission to edit inventory.");
       return;
     }
+
     adjustDialog.openEdit(item);
   };
 
@@ -129,8 +206,42 @@ const InventoryList = () => {
       toast.error("You do not have permission to delete inventory items.");
       return;
     }
+
     setDeleteTarget(item);
   };
+
+  const handleSaveRow = useCallback(
+    async (
+      item: InventorySearchItem,
+      newQuantity: number,
+      newAlertThreshold: number,
+    ) => {
+      const quantityChanged = newQuantity !== item.quantity;
+      const thresholdChanged = newAlertThreshold !== item.alertThreshold;
+
+      if (!quantityChanged && !thresholdChanged) return;
+
+      const delta = newQuantity - item.quantity;
+      await inventoryApi.adjust({
+        productFranchiseId: String(item.productFranchiseId),
+        change: quantityChanged ? delta : 0,
+        alertThreshold: newAlertThreshold,
+        reason: "Inline table edit",
+      });
+
+      const parts: string[] = [];
+      if (quantityChanged) {
+        parts.push(`quantity ${delta > 0 ? "+" : ""}${delta}`);
+      }
+      if (thresholdChanged) {
+        parts.push(`threshold -> ${newAlertThreshold}`);
+      }
+      toast.success(`Updated "${item.productName}": ${parts.join(", ")}`);
+
+      void refetch();
+    },
+    [refetch],
+  );
 
   const adjustDialogTitle = useMemo(() => {
     if (!adjustDialog.data) return "Adjust Stock";
@@ -143,8 +254,8 @@ const InventoryList = () => {
   }, [adjustDialog.data]);
 
   return (
-    <div className="h-full flex flex-col">
-      <div className="flex-1 flex flex-col min-h-0 max-w-7xl mx-auto w-full">
+    <div className="flex h-full flex-col">
+      <div className="mx-auto flex min-h-0 w-full max-w-7xl flex-1 flex-col">
         <PageHeader
           title="Inventory Management"
           description="Track all products across franchises"
@@ -153,7 +264,7 @@ const InventoryList = () => {
               {canManageInventory && (
                 <Button
                   onClick={addDialog.openCreate}
-                  className="bg-[#6D4C41] hover:bg-[#3E2723] text-white rounded-full shadow-md hover:shadow-lg transition-all duration-300 cursor-pointer"
+                  className="cursor-pointer rounded-full bg-[#6D4C41] text-white shadow-md transition-all duration-300 hover:bg-[#3E2723] hover:shadow-lg"
                 >
                   <Plus className="mr-2 h-4 w-4" />
                   Add Item
@@ -162,7 +273,7 @@ const InventoryList = () => {
               <Link
                 to={`${ROUTER_URL.ADMIN}/${ROUTER_URL.ADMIN_ROUTER.INVENTORY_LOW_STOCK}`}
               >
-                <Button className="bg-[#D97706] hover:bg-[#B45309] text-white rounded-full shadow-md hover:shadow-lg transition-all duration-300 cursor-pointer">
+                <Button className="cursor-pointer rounded-full bg-[#D97706] text-white shadow-md transition-all duration-300 hover:bg-[#B45309] hover:shadow-lg">
                   <Package className="mr-2 h-4 w-4" />
                   Low Stock Alert
                 </Button>
@@ -171,18 +282,71 @@ const InventoryList = () => {
           }
         />
 
-        <div className="flex-1 min-h-0 flex flex-col bg-white rounded-2xl shadow-lg border border-[#E8DFD6] p-6">
-          <InventoryTable
-            items={canViewInventory ? inventoryItems : []}
-            isLoading={isLoading || deleteMutation.isPending}
-            error={listError}
-            onRetry={refetch}
-            onEdit={canManageInventory ? handleEdit : undefined}
-            onDelete={canManageInventory ? handleOpenDelete : undefined}
-          />
+        <div className="flex min-h-0 flex-1 flex-col rounded-2xl border border-[#E8DFD6] bg-white p-6 shadow-lg">
+          {!isImportPreviewMode && (
+            <div className="mb-4 flex shrink-0 flex-wrap items-center gap-3">
+              <div className="relative max-w-xs min-w-[200px] flex-1">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#5D4037]" />
+                <Input
+                  placeholder="Search by product or franchise..."
+                  value={productNameQuery}
+                  onChange={(e) => setProductNameQuery(e.target.value)}
+                  className="border-[#E8DFD6] pl-10 focus:border-[#6D4C41] focus:ring-[#6D4C41]"
+                />
+              </div>
+
+              <Select
+                value={selectedFranchiseId || "all"}
+                onValueChange={(value) =>
+                  setSelectedFranchiseId(value === "all" ? "" : value)
+                }
+              >
+                <SelectTrigger className="w-52 border-[#E8DFD6] focus:border-[#6D4C41]">
+                  <SelectValue placeholder="All Franchises" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Franchises</SelectItem>
+                  {franchiseOptions.map((franchise) => (
+                    <SelectItem key={franchise.value} value={franchise.value}>
+                      {franchise.name} ({franchise.code})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              {!isFetching && (
+                <span className="ml-auto text-xs text-[#8D6E63]">
+                  {filteredItems.length} item
+                  {filteredItems.length !== 1 ? "s" : ""}
+                </span>
+              )}
+            </div>
+          )}
+
+          {isImportPreviewMode ? (
+            <InventoryImportPreview
+              rows={previewTableData}
+              onAccept={handleAcceptImport}
+              onCancel={cancelImportPreview}
+            />
+          ) : (
+            <InventoryTable
+              items={canViewInventory ? filteredItems : []}
+              baselineItems={canViewInventory ? baselineTableData : []}
+              isLoading={isLoading || isFetching || deleteMutation.isPending}
+              isImporting={isImporting}
+              error={listError}
+              onRetry={refetch}
+              onImport={canManageInventory ? handleImport : undefined}
+              onDiscardChanges={resetMainTableData}
+              onEdit={canManageInventory ? handleEdit : undefined}
+              onDelete={canManageInventory ? handleOpenDelete : undefined}
+              canEdit={canManageInventory}
+              onSaveRow={canManageInventory ? handleSaveRow : undefined}
+            />
+          )}
         </div>
 
-        {/* Adjust Stock Dialog (INVENTORY-06) */}
         <FormDialog<AdjustInventoryFormData>
           open={adjustDialog.isOpen}
           onOpenChange={(open) => !open && adjustDialog.close()}
@@ -191,6 +355,9 @@ const InventoryList = () => {
           size="md"
           schema={adjustInventorySchema}
           fields={adjustInventoryFields}
+          defaultValues={{
+            alertThreshold: adjustDialog.data?.alertThreshold ?? 0,
+          }}
           mode={adjustDialog.mode === "view" ? "view" : "edit"}
           onSubmit={handleAdjustSubmit}
           onSuccess={() => {
@@ -199,7 +366,6 @@ const InventoryList = () => {
           }}
         />
 
-        {/* Add Inventory Item Dialog (INVENTORY-01) */}
         <FormDialog<AddInventoryItemFormData>
           open={addDialog.isOpen}
           onOpenChange={(open) => !open && addDialog.close()}
@@ -216,7 +382,6 @@ const InventoryList = () => {
           }}
         />
 
-        {/* Delete Confirmation Dialog (INVENTORY-04) */}
         <DeleteDialog<InventorySearchItem>
           open={!!deleteTarget}
           onOpenChange={(open) => !open && setDeleteTarget(null)}

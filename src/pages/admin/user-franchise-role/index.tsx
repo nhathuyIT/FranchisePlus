@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useDebounce } from "@/hooks/common/useDebounce";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/common/PageHeader";
 import { UserFranchiseRoleTable } from "./components/UserFranchiseRoleTable";
@@ -23,7 +24,6 @@ import {
   useRoles,
 } from "@/hooks/user-franchise-role";
 import { useFranchiseSelect } from "@/hooks/franchise";
-import type { UserFranchiseRoleSearchRequest } from "@/api/user-franchise-role";
 import * as ufrApi from "@/api/user-franchise-role/user-franchise-role.api";
 import { Permission } from "@/config/permission";
 import { useAuthStore } from "@/stores/auth-store";
@@ -46,17 +46,22 @@ const UserFranchiseRolePage = () => {
 
   // ── Data Fetching ────────────────────────────────────────────────────────
 
-  const [searchParams] = useState<UserFranchiseRoleSearchRequest>({
-    searchCondition: { isDeleted: false },
-    pageInfo: { pageNum: 1, pageSize: 100 },
-  });
+  const [keyword, setKeyword] = useState("");
+  const debouncedKeyword = useDebounce(keyword, 350, keyword);
 
   const {
     data: searchResult,
     isLoading,
+    isFetching,
     error,
     refetch,
-  } = useUserFranchiseRoleSearch(searchParams);
+  } = useUserFranchiseRoleSearch({
+    searchCondition: {
+      isDeleted: false,
+      ...(debouncedKeyword ? { keyword: debouncedKeyword } : {}),
+    },
+    pageInfo: { pageNum: 1, pageSize: 100 },
+  });
 
   const { data: roles = [] } = useRoles();
   const { data: franchiseSelectItems = [] } = useFranchiseSelect();
@@ -165,10 +170,12 @@ const UserFranchiseRolePage = () => {
         <div className="flex-1 min-h-0 flex flex-col bg-white rounded-2xl shadow-lg border border-[#E8DFD6] p-6">
           <UserFranchiseRoleTable
             assignments={canView ? assignments : []}
-            isLoading={isLoading || deleteMutation.isPending}
+            isLoading={isLoading || isFetching || deleteMutation.isPending}
             error={listError}
             onRetry={refetch}
             onDelete={canManage ? (a) => setDeleteTarget(a) : undefined}
+            searchValue={keyword}
+            onSearchChange={setKeyword}
           />
         </div>
 

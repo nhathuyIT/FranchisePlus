@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Coffee, LogOut, KeyRound, Loader2 } from "lucide-react";
+import { Coffee, LogOut, KeyRound } from "lucide-react";
 import {
   LayoutDashboard,
   Users,
@@ -54,7 +54,6 @@ const AdminSideBar = ({ collapsed = false }: AdminSidebarProps) => {
     getAvailableContexts,
     getCurrentPermissions,
     getCurrentRole,
-    isSwitchingRole: isSwitching,
   } = useAuthStore();
   const user = authUser?.user;
   const currentRole = getCurrentRole();
@@ -85,37 +84,27 @@ const AdminSideBar = ({ collapsed = false }: AdminSidebarProps) => {
   return (
     <aside
       className={cn(
-        "relative h-screen bg-amber-700  text-amber-50 transition-all duration-300 flex flex-col shadow-2xl",
+        "relative h-screen bg-[#38220f]  text-amber-200 transition-all duration-300 flex flex-col shadow-2xl",
         collapsed ? "w-16" : "w-64",
       )}
     >
-      {/* Full-sidebar loading overlay while switching role */}
-      {isSwitching && (
-        <div className="absolute inset-0 z-50 flex flex-col items-center justify-center gap-3 bg-amber-900/70 backdrop-blur-sm rounded-none">
-          <Loader2 className="w-8 h-8 text-amber-200 animate-spin" />
-          {!collapsed && (
-            <p className="text-sm text-amber-100 font-medium">
-              Switching role...
-            </p>
-          )}
-        </div>
-      )}
-      <div className="h-14 flex items-center justify-center border-b border-amber-800/50 px-4">
+      <div className="h-14 flex items-center  border-b border-amber-800/50 px-4">
         {collapsed ? (
-          <Coffee size={24} className="text-amber-300" />
+          <Coffee size={30} className="text-amber-300" />
         ) : (
           <Link to="/admin/dashboard" className="flex items-center gap-2">
-            <Coffee size={24} className="text-amber-300" />
+            <Coffee size={30} className="text-amber-500" />
             <div className="flex flex-col">
-              <span className="font-bold text-sm">FranchisePlus</span>
-              <span className="text-xs text-amber-300">Admin</span>
+              <span className="font-bold text-md text-amber-400">
+                Goat Coffee
+              </span>
             </div>
           </Link>
         )}
       </div>
 
       {!collapsed && (
-        <div className="p-4 border-b border-amber-800/50">
+        <div className="p-4  border-amber-800/50">
           <div className="flex items-center gap-3">
             <Avatar className="h-10 w-10 border-2 border-amber-300">
               <AvatarImage
@@ -158,8 +147,8 @@ const AdminSideBar = ({ collapsed = false }: AdminSidebarProps) => {
                   to={`/admin/${item.path}`}
                   className={cn(
                     "flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-200",
-                    "hover:bg-amber-800/50",
-                    active && "bg-amber-700 shadow-lg font-semibold",
+                    "hover:bg-[#967259]",
+                    active && "bg-[#634832] shadow-lg font-semibold",
                     collapsed && "justify-center px-2",
                   )}
                   title={collapsed ? item.label : undefined}
@@ -168,7 +157,7 @@ const AdminSideBar = ({ collapsed = false }: AdminSidebarProps) => {
                     <Icon
                       className={cn(
                         "shrink-0",
-                        active ? "text-amber-100" : "text-amber-300",
+                        active ? "text-[#dbc1ac]" : "text-amber-100",
                       )}
                     />
                   )}
@@ -176,7 +165,7 @@ const AdminSideBar = ({ collapsed = false }: AdminSidebarProps) => {
                     <span
                       className={cn(
                         "text-sm",
-                        active ? "text-amber-50" : "text-amber-200",
+                        active ? "text-[#dbc1ac}" : "text-amber-100",
                       )}
                     >
                       {item.label}

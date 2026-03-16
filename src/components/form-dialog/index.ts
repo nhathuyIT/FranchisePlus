@@ -4,6 +4,8 @@ export { FormContent } from "./FormContent";
 export { FormErrorBanner } from "./FormErrorBanner";
 export { FormFooter } from "./FormFooter";
 export { DeleteDialog } from "./DeleteDialog";
+export { PopoverSearchSelect } from "./PopoverSearchSelect";
+export type { PopoverSearchSelectOption } from "./PopoverSearchSelect";
 
 // Hooks
 export { useFormDialog, useFormSubmit } from "./hooks";

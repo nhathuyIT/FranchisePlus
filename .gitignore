@@ -24,6 +24,7 @@ dist-ssr
 *.sw?
 *.env
 .claude/
-.agents/
+.agent/
 CLAUDE.md
 
+.abc

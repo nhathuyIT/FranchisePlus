@@ -111,6 +111,10 @@ const CategoriesPage = () => {
     dialog.openEdit(category);
   };
 
+  const handleView = (category: Category) => {
+    dialog.openView(category);
+  };
+
   const handleDelete = (category: Category) => {
     const confirmDelete = window.confirm(
       `Are you sure you want to delete "${category.name}"? This action cannot be undone.`
@@ -160,6 +164,7 @@ const CategoriesPage = () => {
             isLoading={isLoading}
             error={error}
             onRetry={handleRetry}
+            onView={handleView}
             onEdit={handleEdit}
             onDelete={handleDelete}
             onBulkDelete={handleBulkDelete}

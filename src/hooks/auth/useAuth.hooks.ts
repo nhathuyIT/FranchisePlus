@@ -243,6 +243,7 @@ export const useClientLogin = () => {
  * Preserves all roles & franchiseRoles so user can switch again later.
  */
 export const useSwitchContext = () => {
+  const navigate = useNavigate();
   const { authUser, login } = useAuthStore();
 
   return useMutation({
@@ -253,7 +254,7 @@ export const useSwitchContext = () => {
       const freshProfile = await authApi.getProfile();
       return freshProfile;
     },
-    onSuccess: (freshProfile) => {
+    onSuccess: (freshProfile, variables) => {
       if (!freshProfile || !authUser) return;
 
       const { roles, franchiseRoles } = parseProfileRoles(
@@ -261,11 +262,26 @@ export const useSwitchContext = () => {
         authUser.user.id,
       );
 
-      const { currentRoleId, currentFranchiseId } = resolveContext(
+      const resolvedContext = resolveContext(
         freshProfile.activeContext,
         roles,
         franchiseRoles,
       );
+      const requestedFranchiseId = variables.franchiseId ?? null;
+      const requestedRoleId = variables.role_id ?? null;
+      const requestedContextExists =
+        requestedRoleId !== null &&
+        franchiseRoles.some(
+          (fr) =>
+            fr.roleId === requestedRoleId &&
+            (fr.franchiseId ?? null) === requestedFranchiseId,
+        );
+      const currentRoleId = requestedContextExists
+        ? requestedRoleId
+        : resolvedContext.currentRoleId;
+      const currentFranchiseId = requestedContextExists
+        ? requestedFranchiseId
+        : resolvedContext.currentFranchiseId;
 
       const updatedAuthUser = {
         ...authUser,
@@ -279,6 +295,9 @@ export const useSwitchContext = () => {
       login(updatedAuthUser);
       useAuthStore.getState().setSwitchingRole(false);
       toast.success("Role switched successfully");
+      navigate(ROUTER_URL.ADMIN + "/" + ROUTER_URL.ADMIN_ROUTER.DASHBOARD, {
+        replace: true,
+      });
     },
     onError: (error) => {
       useAuthStore.getState().setSwitchingRole(false);

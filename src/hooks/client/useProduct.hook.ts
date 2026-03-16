@@ -38,6 +38,17 @@ export const useGetMenuByFranchiseAndCategory = (
 };
 
 /**
+ * Hook to get menu for all categories in a franchise
+ */
+export const useGetMenuByFranchise = (franchiseId: string) => {
+  return useQuery({
+    queryKey: ["menu", franchiseId, "all"],
+    queryFn: () => productApi.getMenuByFranchise(franchiseId),
+    enabled: !!franchiseId,
+  });
+};
+
+/**
  * Hook to get products (toppings) by franchise and category
  */
 export const useGetProductsByFranchiseAndCategory = (
@@ -51,6 +62,29 @@ export const useGetProductsByFranchiseAndCategory = (
     enabled: !!franchiseId && !!categoryId,
   });
 };
+
+/**
+ * Hook to get products (toppings) for all categories in a franchise
+ */
+export const useGetProductsByFranchise = (franchiseId: string) => {
+  return useQuery({
+    queryKey: ["products", franchiseId, "all"],
+    queryFn: () => productApi.getProductByFranchise(franchiseId),
+    enabled: !!franchiseId,
+  });
+};
+
+export const useGetProductDetail = (
+  franchiseId: string,
+  franchiseProductId: string,
+) => {
+  return useQuery({
+    queryKey: ["productsDetail", franchiseId, franchiseProductId],
+    queryFn: () => productApi.getProductDetail(franchiseId, franchiseProductId),
+    enabled: !!franchiseId && !!franchiseProductId,
+  });
+};
+
 export const useGetFranchiseDetail = (franchiseId: string) => {
   return useQuery({
     queryKey: ["franchise", franchiseId],

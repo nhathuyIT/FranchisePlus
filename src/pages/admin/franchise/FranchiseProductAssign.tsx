@@ -21,7 +21,7 @@ import {
   useDeleteProductCategoryFranchise,
 } from "@/hooks/product-category-franchise/useProductCategoryFranchise";
 import { searchItemsByConditions } from "@/api/category-franchise/CategoryFranchise.api";
-import { useAddCategoryToFranchise } from "@/hooks/category-franchise/useCategoryFranchise";
+import { useAddCategoryToFranchise } from "@/hooks/admin/useCategoryFranchise.hook";
 import { useQuery } from "@tanstack/react-query";
 import { useFranchise } from "@/hooks/franchise";
 import { useDebounce } from "@/hooks/common/useDebounce";
@@ -46,16 +46,18 @@ const FranchiseProductAssign = () => {
   const [assignCategorySearch, setAssignCategorySearch] = useState("");
 
   // Add category dialog
+
+  // Assign dialog
+  const [showAssignDialog, setShowAssignDialog] = useState(false);
+  const [assignCategoryId, setAssignCategoryId] = useState("");
+  const [assignCategorySearch, setAssignCategorySearch] = useState("");
+
+  // Add category dialog
   const [showAddCategoryDialog, setShowAddCategoryDialog] = useState(false);
   const [dialogCategoryId, setDialogCategoryId] = useState("");
   const [dialogCategorySearch, setDialogCategorySearch] = useState("");
 
-  // Debounced search values
-  const debouncedProductSearch = useDebounce(productSearch, 300, productSearch);
-  const debouncedAssignCategorySearch = useDebounce(assignCategorySearch, 300, assignCategorySearch);
-  const debouncedDialogCategorySearch = useDebounce(dialogCategorySearch, 300, dialogCategorySearch);
-
-  // Franchise info
+  // ── Franchise info ────────────────────────────────────────────────────────
   const { data: franchise } = useFranchise(franchiseId ?? "", {
     enabled: !!franchiseId,
   });
@@ -116,10 +118,8 @@ const FranchiseProductAssign = () => {
     [franchiseId],
   );
 
-  const {
-    data: allAssignments = [],
-    isLoading: assignmentsLoading,
-  } = useProductCategoryFranchisesQuery(allAssignmentsParams, !!franchiseId);
+  const { data: allAssignments = [], isLoading: assignmentsLoading } =
+    useProductCategoryFranchisesQuery(allAssignmentsParams, !!franchiseId);
 
   // Derived maps from allAssignments 
   // Map: categoryFranchiseId â†’ assignment[]
@@ -145,7 +145,9 @@ const FranchiseProductAssign = () => {
   }, [assignmentsByCat]);
 
   // Set of productFranchiseIds for the ACTIVE TAB (table filtering)
+  // Set of productFranchiseIds for the ACTIVE TAB (table filtering)
   const tabProductIds = useMemo(() => {
+    if (!activeTabId) return null;
     if (!activeTabId) return null;
     const items = assignmentsByCat.get(activeTabId) ?? [];
     return new Set(items.map((a) => a.productFranchiseId));
@@ -171,13 +173,41 @@ const FranchiseProductAssign = () => {
     }
     return map;
   }, [assignmentsByCat, categoryFranchises]);
+  // Map: productFranchiseId â†’ list of { catFranchise, assignmentId }
+  const productCategoryMap = useMemo(() => {
+    const map = new Map<
+      string,
+      Array<{ catFranchise: SearchCategoryFranchise; assignmentId: string }>
+    >();
+    for (const [catFranchiseId, assignments] of assignmentsByCat) {
+      const catFranchise = categoryFranchises.find(
+        (c) => c.id === catFranchiseId,
+      );
+      if (!catFranchise) continue;
+      for (const a of assignments) {
+        const pid = a.productFranchiseId;
+        const existing = map.get(pid) ?? [];
+        existing.push({ catFranchise, assignmentId: a.id });
+        map.set(pid, existing);
+      }
+    }
+    return map;
+  }, [assignmentsByCat, categoryFranchises]);
 
   // Products (for images)
+  // Products (for images)
   const { data: allProducts = [] } = useProductsQuery({
-    searchCondition: { keyword: "", min_price: "", max_price: "", is_active: "", is_deleted: false },
+    searchCondition: {
+      keyword: "",
+      min_price: "",
+      max_price: "",
+      is_active: "",
+      is_deleted: false,
+    },
     pageInfo: { pageNum: 1, pageSize: 1000 },
   });
 
+  // Map: productId (string) â†’ imageUrl
   // Map: productId (string) â†’ imageUrl
   const productImageMap = useMemo(() => {
     const map = new Map<string, string | null>();
@@ -188,10 +218,12 @@ const FranchiseProductAssign = () => {
   }, [allProducts]);
 
   // Mutations
+  // Mutations
   const addMutation = useAddProductToCategoryFranchise();
   const removeMutation = useDeleteProductCategoryFranchise();
   const addCategoryMutation = useAddCategoryToFranchise();
 
+  // All categories (for the add-category dialog)
   // All categories (for the add-category dialog)
   const { data: allCategories = [] } = useCategoriesQuery({
     searchCondition: { keyword: "", is_active: true, is_deleted: false },
@@ -269,9 +301,22 @@ const FranchiseProductAssign = () => {
     setAssignCategoryId("");
     setAssignCategorySearch("");
     setShowAssignDialog(true);
+  const formatSizeLabel = useCallback((size?: string | null) => {
+    if (!size) return "-";
+    return size.replaceAll("_", " ");
+  }, []);
+
+  // Handlers
+  const handleOpenAssignDialog = useCallback((pid: string) => {
+    setSelectedProductIds(new Set([pid]));
+    setAssignCategoryId("");
+    setAssignCategorySearch("");
+    setShowAssignDialog(true);
   }, []);
 
   const handleAssign = async () => {
+    if (!assignCategoryId) {
+      toast.error("Please select a category.");
     if (!assignCategoryId) {
       toast.error("Please select a category.");
       return;
@@ -281,6 +326,24 @@ const FranchiseProductAssign = () => {
       return;
     }
 
+    // Skip products already assigned to this category
+    const existingInCat = new Set(
+      (assignmentsByCat.get(assignCategoryId) ?? []).map(
+        (a) => a.productFranchiseId,
+      ),
+    );
+    const ids = Array.from(selectedProductIds).filter(
+      (id) => !existingInCat.has(id),
+    );
+
+    if (ids.length === 0) {
+      toast.info(
+        "All selected products are already assigned to this category.",
+      );
+      return;
+    }
+
+    const existingCount = (assignmentsByCat.get(assignCategoryId) ?? []).length;
     // Skip products already assigned to this category
     const existingInCat = new Set(
       (assignmentsByCat.get(assignCategoryId) ?? []).map(
@@ -351,10 +414,13 @@ const FranchiseProductAssign = () => {
 
   const isLoading = productsLoading || assignmentsLoading;
 
+  const isLoading = productsLoading || assignmentsLoading;
+
   return (
     <div className="h-full flex flex-col bg-[#F5F0EB]">
       <div className="shrink-0 flex items-center gap-3 px-6 py-3 bg-white border-b border-[#E8DFD6]">
         <Link
+          to={`${ROUTER_URL.ADMIN}/${ROUTER_URL.ADMIN_ROUTER.FRANCHISES}`}
           to={`${ROUTER_URL.ADMIN}/${ROUTER_URL.ADMIN_ROUTER.FRANCHISES}`}
           className="flex items-center gap-1.5 text-sm font-medium text-[#5D4037] hover:text-[#3E2723] transition-colors px-3 py-1.5 rounded-full border border-[#D7CCC8] hover:border-[#6D4C41] bg-white"
         >
@@ -379,8 +445,69 @@ const FranchiseProductAssign = () => {
           />
         </div>
 
+
       </div>
 
+      {/* Category filter tabs */}
+      <div className="shrink-0 flex flex-wrap items-center gap-2 px-6 pt-3 pb-3 bg-white border-b border-[#E8DFD6]">
+        <button
+          onClick={() => setActiveTabId(null)}
+          className={[
+            "px-4 py-1.5 rounded-full text-sm font-medium transition-all whitespace-nowrap border cursor-pointer",
+            !activeTabId
+              ? "bg-[#6D4C41] text-white border-[#6D4C41] shadow-md"
+              : "bg-[#F5F0EB] text-[#5D4037] border-[#D7CCC8] hover:border-[#6D4C41]",
+          ].join(" ")}
+        >
+          All
+        </button>
+
+        {categoriesLoading ? (
+          <div className="flex gap-2">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <Skeleton key={i} className="h-8 w-24 rounded-full" />
+            ))}
+          </div>
+        ) : (
+          categoryFranchises.map((cat) => {
+            const count = productCountByCat.get(cat.id) ?? 0;
+            return (
+              <button
+                key={cat.id}
+                onClick={() =>
+                  setActiveTabId((prev) => (prev === cat.id ? null : cat.id))
+                }
+                className={[
+                  "px-4 py-1.5 rounded-full text-sm font-medium transition-all whitespace-nowrap border cursor-pointer",
+                  activeTabId === cat.id
+                    ? "bg-[#6D4C41] text-white border-[#6D4C41] shadow-md"
+                    : "bg-[#F5F0EB] text-[#5D4037] border-[#D7CCC8] hover:border-[#6D4C41]",
+                ].join(" ")}
+              >
+                {cat.categoryName}
+                {count > 0 && (
+                  <span className="ml-1.5 text-[11px] opacity-80">
+                    ({count})
+                  </span>
+                )}
+              </button>
+            );
+          })
+        )}
+
+        {/* Add category to franchise */}
+        <button
+          onClick={() => {
+            setDialogCategoryId("");
+            setDialogCategorySearch("");
+            setShowAddCategoryDialog(true);
+          }}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm text-[#6D4C41] hover:bg-[#F5F0EB] border border-dashed border-[#D7CCC8] hover:border-[#6D4C41] transition-all whitespace-nowrap cursor-pointer ml-1"
+        >
+          <Plus className="h-3.5 w-3.5" />
+          Add Category
+        </button>
+      </div>
       {/* Category filter tabs */}
       <div className="shrink-0 flex flex-wrap items-center gap-2 px-6 pt-3 pb-3 bg-white border-b border-[#E8DFD6]">
         <button

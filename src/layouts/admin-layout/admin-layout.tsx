@@ -3,16 +3,22 @@ import AdminSidebar from "./admin-sidebar";
 import { Button } from "@/components/ui/button";
 import { Menu } from "lucide-react";
 import { useState } from "react";
+import LoadingLayout from "../loading-layout";
+import { useAuthStore } from "@/stores/auth-store";
 
 const AdminLayout = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const isSwitchingRole = useAuthStore((state) => state.isSwitchingRole);
 
   return (
     <div className="flex h-screen overflow-hidden bg-[#FAF8F5]">
+      {isSwitchingRole && (
+        <LoadingLayout forceVisible message="Switching role" />
+      )}
       <AdminSidebar collapsed={sidebarCollapsed} />
 
       <div className="flex-1 flex flex-col overflow-hidden">
-        <header className="h-14 bg-white border-b border-stone-200 flex items-center px-4 shadow-sm">
+        <header className="h-14  bg-[#f0e8e1] border-b border-stone-200 flex items-center px-4 shadow-sm">
           <Button
             variant="ghost"
             size="icon"
@@ -24,7 +30,7 @@ const AdminLayout = () => {
           <div className="flex-1"></div>
         </header>
 
-        <main className="flex-1 overflow-hidden flex flex-col bg-gradient-to-br from-[#FAF8F5] via-[#F5F1EB] to-[#EDE7DD]">
+        <main className="flex-1 overflow-hidden flex flex-col bg-[#f0e8e1]">
           <div className="flex-1 overflow-hidden container mx-auto p-6 flex flex-col">
             <Outlet />
           </div>

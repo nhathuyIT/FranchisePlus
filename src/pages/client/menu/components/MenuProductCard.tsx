@@ -1,24 +1,21 @@
 import type { MenuProduct } from "@/types/menu.type";
 import { formatPrice, getMinPrice, getSizeLabel } from "../lib/helpers";
 import { Cookie, Eye } from "lucide-react";
-import { useCart } from "@/pages/client/cart";
-import { toast } from "sonner";
 
 export const MenuProductCard = ({
   product,
   onViewDetail,
 }: {
   product: MenuProduct;
-  onViewDetail: (productId: string | number) => void;
+  onViewDetail: (
+    product: MenuProduct,
+    productFranchiseId: string | number,
+  ) => void;
 }) => {
+  const availableSizes = product.sizes.filter((s) => s.isAvailable);
   const minPrice = getMinPrice(product.sizes);
-  const { addItem } = useCart();
 
-  const handleAddToCart = (productFranchiseId: string | number, price: number) => {
-    if (productFranchiseId == null || productFranchiseId === '') return;
-    addItem(productFranchiseId, product.name, price, 1, product.imageUrl);
-    toast.success(`Đã thêm "${product.name}" vào giỏ hàng`);
-  };
+  const defaultProductFranchiseId = availableSizes[0]?.productFranchiseId;
 
   return (
     <div
@@ -58,7 +55,10 @@ export const MenuProductCard = ({
         {/* View detail button */}
         <button
           type="button"
-          onClick={() => onViewDetail(product.productId)}
+          onClick={() => {
+            if (defaultProductFranchiseId == null) return;
+            onViewDetail(product, defaultProductFranchiseId);
+          }}
           className="absolute bottom-3 right-3 flex items-center gap-1.5 px-3 py-1.5 
                      bg-white/90 text-stone-800 text-xs font-semibold rounded-full
                      shadow-lg backdrop-blur-sm
@@ -89,35 +89,23 @@ export const MenuProductCard = ({
 
         {/* Sizes & Prices */}
         <div className="mt-auto pt-4 flex flex-col gap-2">
-          {product.sizes.map((s) => (
+          {availableSizes.map((s) => (
             <div
               key={s.size}
-              onClick={() => s.isAvailable && handleAddToCart(s.productFranchiseId, s.price)}
-              className={`group/row flex items-center justify-between px-4 py-2.5 rounded-xl 
+              onClick={() => onViewDetail(product, s.productFranchiseId)}
+              className="group/row flex items-center justify-between px-4 py-2.5 rounded-xl 
                           border transition-all duration-300
-                          ${
-                            s.isAvailable
-                              ? "bg-amber-50/80 border-amber-200/70 hover:bg-red-500 hover:border-red-500 hover:shadow-lg hover:shadow-red-500/25 hover:scale-[1.03] cursor-pointer"
-                              : "bg-stone-50 border-stone-200/40 opacity-50 cursor-not-allowed"
-                          }`}
+                          bg-amber-50/80 border-amber-200/70 hover:bg-red-500 hover:border-red-500 hover:shadow-lg hover:shadow-red-500/25 hover:scale-[1.03] cursor-pointer"
             >
               <span
-                className={`text-sm font-semibold transition-colors duration-300
-                            ${
-                              s.isAvailable
-                                ? "text-stone-700 group-hover/row:text-white"
-                                : "text-stone-400 line-through"
-                            }`}
+                className="text-sm font-semibold transition-colors duration-300
+                            text-stone-700 group-hover/row:text-white"
               >
                 {getSizeLabel(s.size)}
               </span>
               <span
-                className={`font-serif text-lg font-bold transition-colors duration-300 flex justify-center w-full
-                            ${
-                              s.isAvailable
-                                ? "text-amber-700 group-hover/row:text-white"
-                                : "text-stone-400 line-through"
-                            }`}
+                className="font-serif text-lg font-bold transition-colors duration-300 flex justify-center w-full
+                            text-amber-700 group-hover/row:text-white"
               >
                 {formatPrice(s.price)}
               </span>
