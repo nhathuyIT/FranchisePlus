@@ -1,12 +1,6 @@
-import { useState } from "react";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { useMemo, useState } from "react";
+import type { ColumnDef } from "@tanstack/react-table";
+import { DataTable } from "@/components/common/DataTable";
 import { Badge } from "@/components/ui/badge";
 import { Eye, Edit, Trash2 } from "lucide-react";
 import { DeleteDialog } from "@/components/form-dialog/DeleteDialog";
@@ -14,6 +8,8 @@ import {
   useProductFranchisesQuery,
   useDeleteProductFranchiseMutation 
 } from "@/hooks/product-franchise/useProductFranchiseQuery";
+import { useInventorySearch } from "@/hooks/inventory/useInventory.hooks";
+import type { InventorySearchItem } from "@/api/inventory/inventory.type";
 import { AddFranchiseProductModal } from "./AddFranchiseProductModal";
 import { EditFranchiseProductModal } from "./EditFranchiseProductModal";
 import { ViewFranchiseProductModal } from "./ViewFranchiseProductModal";
@@ -32,6 +28,9 @@ interface ProductFranchise {
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
+  quantity?: number;
+  inventoryId?: string;
+  alertThreshold?: number;
 }
 
 export const FranchiseInventoryTab = ({ 
@@ -61,6 +60,34 @@ export const FranchiseInventoryTab = ({
     },
   });
 
+  const { data: inventorySearch, isLoading: isLoadingInventory } = useInventorySearch(
+    {
+      searchCondition: { franchiseId },
+      pageInfo: { pageNum: 1, pageSize: 1000 },
+    },
+    { enabled: !!franchiseId },
+  );
+
+  const inventoryByProductFranchiseId = useMemo(() => {
+    const map = new Map<string, InventorySearchItem>();
+    for (const item of inventorySearch?.pageData ?? []) {
+      map.set(String(item.productFranchiseId), item);
+    }
+    return map;
+  }, [inventorySearch?.pageData]);
+
+  const rows = useMemo<ProductFranchise[]>(() => {
+    return (productFranchises ?? []).map((pf) => {
+      const inv = inventoryByProductFranchiseId.get(String(pf.id));
+      return {
+        ...pf,
+        quantity: inv?.quantity ?? 0,
+        inventoryId: inv ? String(inv.id) : undefined,
+        alertThreshold: inv?.alertThreshold ?? 0,
+      };
+    });
+  }, [productFranchises, inventoryByProductFranchiseId]);
+
   const deleteMutation = useDeleteProductFranchiseMutation();
 
   const handleView = (pf: ProductFranchise) => {
@@ -89,6 +116,71 @@ export const FranchiseInventoryTab = ({
       console.error("Failed to delete product franchise:", error);
     }
   };
+
+  const columns = useMemo<ColumnDef<ProductFranchise>[]>(
+    () => [
+      {
+        accessorKey: "productName",
+        header: "Product",
+        cell: ({ row }) => (
+          <span className="font-medium text-[#4A3B2A]">
+            {row.original.productName || "N/A"}
+          </span>
+        ),
+      },
+      {
+        accessorKey: "size",
+        header: "Size",
+        cell: ({ row }) => (
+          <span className="text-gray-700">{row.original.size || "DEFAULT"}</span>
+        ),
+      },
+      {
+        accessorKey: "priceBase",
+        header: "Price",
+        cell: ({ row }) => (
+          <span className="text-gray-700 font-semibold">
+            {row.original.priceBase.toLocaleString("vi-VN")}₫
+          </span>
+        ),
+      },
+      {
+        accessorKey: "quantity",
+        header: "Quantity",
+        cell: ({ row }) => (
+          <span className="text-gray-700 font-semibold tabular-nums">
+            {(row.original.quantity ?? 0).toLocaleString("en-US")}
+          </span>
+        ),
+      },
+      {
+        accessorKey: "isActive",
+        header: "Status",
+        cell: ({ row }) => (
+          <Badge
+            variant={row.original.isActive ? "default" : "secondary"}
+            className={
+              row.original.isActive
+                ? "bg-green-600 hover:bg-green-700"
+                : "bg-gray-500 hover:bg-gray-600"
+            }
+          >
+            {row.original.isActive ? "Active" : "Inactive"}
+          </Badge>
+        ),
+      },
+      {
+        accessorKey: "updatedAt",
+        header: "Last Updated",
+        cell: ({ row }) => (
+          <span className="text-gray-700">
+            {new Date(row.original.updatedAt).toLocaleDateString()}
+          </span>
+        ),
+      },
+    ],
+    []
+  );
 
   return (
     <>
@@ -135,88 +227,44 @@ export const FranchiseInventoryTab = ({
       />
       
       <div className="h-full flex flex-col bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-      <h2 className="text-xl font-semibold text-[#4A3B2A] mb-4 shrink-0">
-        Inventory Stock
-      </h2>
+        <h2 className="text-xl font-semibold text-[#4A3B2A] mb-4 shrink-0">
+          Inventory Stock
+        </h2>
 
-      <div className="flex-1 min-h-0 overflow-auto">
-        {isLoading ? (
-          <div className="text-center py-8 text-gray-500">
-            Loading inventory...
-          </div>
-        ) : error ? (
-          <div className="text-center py-8 text-red-500">
-            Failed to load inventory. Please try again.
-          </div>
-        ) : (
-          <>
-            <Table>
-              <TableHeader>
-                <TableRow className="bg-[#FAF9F6]">
-                  <TableHead className="font-semibold text-[#4A3B2A]">Product</TableHead>
-                  <TableHead className="font-semibold text-[#4A3B2A]">Size</TableHead>
-                  <TableHead className="font-semibold text-[#4A3B2A]">Price</TableHead>
-                  <TableHead className="font-semibold text-[#4A3B2A]">Status</TableHead>
-                  <TableHead className="font-semibold text-[#4A3B2A]">Last Updated</TableHead>
-                  <TableHead className="font-semibold text-[#4A3B2A] text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {productFranchises?.map((pf) => (
-                  <TableRow key={pf.id} className="hover:bg-[#FAF9F6]">
-                    <TableCell className="font-medium text-[#4A3B2A]">
-                      {pf.productName || "N/A"}
-                    </TableCell>
-                    <TableCell className="text-gray-700">
-                      {pf.size || "DEFAULT"}
-                    </TableCell>
-                    <TableCell className="text-gray-700 font-semibold">
-                      {pf.priceBase.toLocaleString('vi-VN')}₫
-                    </TableCell>
-                    <TableCell>
-                      <Badge
-                        variant={pf.isActive ? "default" : "secondary"}
-                        className={
-                          pf.isActive
-                            ? "bg-green-600 hover:bg-green-700"
-                            : "bg-gray-500 hover:bg-gray-600"
-                        }
-                      >
-                        {pf.isActive ? "Active" : "Inactive"}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-gray-700">
-                      {new Date(pf.updatedAt).toLocaleDateString()}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex gap-3 justify-end">
-                        <Eye 
-                          className="h-5 w-5 text-gray-600 hover:text-blue-600 cursor-pointer transition-colors" 
-                          onClick={() => handleView(pf)}
-                        />
-                        <Edit 
-                          className="h-5 w-5 text-blue-600 hover:text-blue-700 cursor-pointer transition-colors" 
-                          onClick={() => handleEdit(pf)}
-                        />
-                        <Trash2 
-                          className="h-5 w-5 text-red-600 hover:text-red-700 cursor-pointer transition-colors" 
-                          onClick={() => handleDeleteClick(pf)}
-                        />
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-
-            {(!productFranchises || productFranchises.length === 0) && (
-              <div className="text-center py-8 text-gray-500">
-                No inventory items found for this franchise.
+        <div className="flex-1 min-h-0">
+          <DataTable<ProductFranchise>
+            columns={columns}
+            data={rows}
+            searchable
+            searchPlaceholder="Search products..."
+            emptyMessage="No inventory items found for this franchise."
+            initialPageSize={5}
+            isLoading={isLoading || isLoadingInventory}
+            error={
+              error
+                ? error instanceof Error
+                  ? error
+                  : new Error("Failed to load inventory")
+                : null
+            }
+            renderActions={(pf) => (
+              <div className="flex gap-3 justify-end">
+                <Eye
+                  className="h-5 w-5 text-gray-600 hover:text-blue-600 cursor-pointer transition-colors"
+                  onClick={() => handleView(pf)}
+                />
+                <Edit
+                  className="h-5 w-5 text-blue-600 hover:text-blue-700 cursor-pointer transition-colors"
+                  onClick={() => handleEdit(pf)}
+                />
+                <Trash2
+                  className="h-5 w-5 text-red-600 hover:text-red-700 cursor-pointer transition-colors"
+                  onClick={() => handleDeleteClick(pf)}
+                />
               </div>
             )}
-          </>
-        )}
-      </div>
+          />
+        </div>
     </div>
     </>
   );

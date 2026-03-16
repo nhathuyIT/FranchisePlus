@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { useUpdateProductFranchiseMutation } from "@/hooks/product-franchise/useProductFranchiseQuery";
+import { useAdjustInventory, useCreateInventory } from "@/hooks/inventory/useInventory.hooks";
 
 interface ProductFranchise {
   id: number | string;
@@ -19,6 +20,9 @@ interface ProductFranchise {
   size?: string;
   priceBase: number;
   isActive: boolean;
+  quantity?: number;
+  inventoryId?: string;
+  alertThreshold?: number;
 }
 
 interface EditFranchiseProductModalProps {
@@ -36,14 +40,18 @@ export const EditFranchiseProductModal = ({
 }: EditFranchiseProductModalProps) => {
   const [size, setSize] = useState("");
   const [price, setPrice] = useState("");
+  const [quantity, setQuantity] = useState("");
   const [isActive, setIsActive] = useState(true);
 
   const updateMutation = useUpdateProductFranchiseMutation();
+  const adjustInventoryMutation = useAdjustInventory();
+  const createInventoryMutation = useCreateInventory();
 
   useEffect(() => {
     if (productFranchise) {
       setSize(productFranchise.size || "");
       setPrice(productFranchise.priceBase.toString());
+      setQuantity(String(productFranchise.quantity ?? 0));
       setIsActive(productFranchise.isActive);
     }
   }, [productFranchise]);
@@ -57,6 +65,11 @@ export const EditFranchiseProductModal = ({
       return;
     }
 
+    const quantityValue = Number(quantity);
+    if (!Number.isFinite(quantityValue) || quantityValue < 0) {
+      return;
+    }
+
     try {
       await updateMutation.mutateAsync({
         id: productFranchise.id,
@@ -66,6 +79,26 @@ export const EditFranchiseProductModal = ({
           is_active: isActive,
         },
       });
+
+      const currentQuantity = productFranchise.quantity ?? 0;
+      if (quantityValue !== currentQuantity) {
+        const productFranchiseId = String(productFranchise.id);
+        if (productFranchise.inventoryId) {
+          await adjustInventoryMutation.mutateAsync({
+            productFranchiseId,
+            change: quantityValue - currentQuantity,
+            alertThreshold: productFranchise.alertThreshold ?? 0,
+            reason: "Manual set quantity",
+          });
+        } else if (quantityValue > 0) {
+          await createInventoryMutation.mutateAsync({
+            productFranchiseId,
+            quantity: quantityValue,
+            alertThreshold: 0,
+          });
+        }
+      }
+
       onSuccess();
     } catch (error) {
       console.error("Failed to update product franchise:", error);
@@ -75,6 +108,7 @@ export const EditFranchiseProductModal = ({
   const handleClose = () => {
     setSize("");
     setPrice("");
+    setQuantity("");
     onClose();
   };
 
@@ -128,6 +162,23 @@ export const EditFranchiseProductModal = ({
               />
             </div>
 
+            <div className="space-y-2">
+              <Label htmlFor="quantity" className="text-[#4A3B2A]">
+                Quantity *
+              </Label>
+              <Input
+                id="quantity"
+                type="number"
+                step="1"
+                min={0}
+                value={quantity}
+                onChange={(e) => setQuantity(e.target.value)}
+                placeholder="0"
+                required
+                className="border-gray-300 focus:border-[#4A3B2A] focus:ring-[#4A3B2A]"
+              />
+            </div>
+
             <div className="flex items-center justify-between space-x-2">
               <div className="space-y-0.5">
                 <Label htmlFor="status" className="text-[#4A3B2A] font-semibold">
@@ -151,16 +202,18 @@ export const EditFranchiseProductModal = ({
               variant="outline"
               onClick={handleClose}
               className="border-gray-300 text-gray-700 hover:bg-gray-100"
-              disabled={updateMutation.isPending}
+              disabled={updateMutation.isPending || adjustInventoryMutation.isPending || createInventoryMutation.isPending}
             >
               Cancel
             </Button>
             <Button
               type="submit"
               className="bg-[#4A3B2A] hover:bg-[#3A2B1A] text-white"
-              disabled={updateMutation.isPending}
+              disabled={updateMutation.isPending || adjustInventoryMutation.isPending || createInventoryMutation.isPending}
             >
-              {updateMutation.isPending ? "Updating..." : "Update Product"}
+              {updateMutation.isPending || adjustInventoryMutation.isPending || createInventoryMutation.isPending
+                ? "Updating..."
+                : "Update Product"}
             </Button>
           </DialogFooter>
         </form>
