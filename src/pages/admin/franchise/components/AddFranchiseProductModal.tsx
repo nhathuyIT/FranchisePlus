@@ -10,16 +10,10 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { PopoverSearchSelect } from "@/components/form-dialog";
 import { searchProducts } from "@/api/product/product.api";
 import { createProductFranchise } from "@/api/product-franchise/product-franchise.api";
 import { Loader2 } from "lucide-react";
@@ -48,7 +42,6 @@ export const AddFranchiseProductModal = ({
 }: AddFranchiseProductModalProps) => {
   const queryClient = useQueryClient();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [searchTerm, setSearchTerm] = useState("");
   const [formData, setFormData] = useState<CreateForm>({
     productId: "",
     size: "",
@@ -67,7 +60,6 @@ export const AddFranchiseProductModal = ({
         isActive: true,
       });
       setErrors({});
-      setSearchTerm("");
     }
   }, [open]);
 
@@ -88,10 +80,10 @@ export const AddFranchiseProductModal = ({
     enabled: open,
   });
 
-  // Filter products based on search term
-  const filteredProducts = products.filter((product) =>
-    `${product.name} ${product.sku}`.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const productOptions = products.map((product) => ({
+    value: String(product.id),
+    label: `${product.name} - ${product.sku} (${product.minPrice.toLocaleString()}₫ - ${product.maxPrice.toLocaleString()}₫)`,
+  }));
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -146,7 +138,8 @@ export const AddFranchiseProductModal = ({
             <Label htmlFor="product">
               Product <span className="text-red-500">*</span>
             </Label>
-            <Select
+            <PopoverSearchSelect
+              id="product"
               value={formData.productId}
               onValueChange={(value) => {
                 setFormData({
@@ -155,34 +148,15 @@ export const AddFranchiseProductModal = ({
                 });
                 setErrors({ ...errors, productId: "" });
               }}
+              options={productOptions}
+              placeholder={isLoadingProducts ? "Loading products..." : "Select a product"}
+              searchPlaceholder="Search products..."
+              emptyText="No product found."
+              isLoading={isLoadingProducts}
               disabled={isLoadingProducts}
-            >
-              <SelectTrigger id="product" className="w-full">
-                <SelectValue placeholder={isLoadingProducts ? "Loading products..." : "Select a product"} />
-              </SelectTrigger>
-              <SelectContent>
-                <div className="sticky top-0 bg-white p-2 border-b z-10">
-                  <Input
-                    placeholder="Search products..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    onClick={(e) => e.stopPropagation()}
-                    onKeyDown={(e) => e.stopPropagation()}
-                  />
-                </div>
-                {filteredProducts.length === 0 ? (
-                  <div className="py-6 text-center text-sm text-gray-500">
-                    No product found.
-                  </div>
-                ) : (
-                  filteredProducts.map((product) => (
-                    <SelectItem key={product.id} value={String(product.id)}>
-                      {product.name} - {product.sku} ({product.minPrice.toLocaleString()}₫ - {product.maxPrice.toLocaleString()}₫)
-                    </SelectItem>
-                  ))
-                )}
-              </SelectContent>
-            </Select>
+              minChars={0}
+              resetSearchOnClose
+            />
             {errors.productId && (
               <p className="text-sm text-red-500">{errors.productId}</p>
             )}

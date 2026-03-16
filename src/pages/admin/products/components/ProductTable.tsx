@@ -15,7 +15,7 @@ import {
 } from "@/lib/excel";
 
 interface ProductTableProps {
-  products: Product[];
+  products: (Product & { quantity?: number })[];
   isLoading?: boolean;
   error?: Error | null;
   onRetry?: () => void;
@@ -25,7 +25,7 @@ interface ProductTableProps {
   onBulkDelete?: (products: Product[]) => void;
   // Server-side search
   onSearch?: (keyword: string) => void;
-  onStatusToggle?: (row: Product, isActive: boolean) => void;
+  onStatusToggle?: (row: Product & { quantity?: number }, isActive: boolean) => void;
   statusPendingId?: string | null;
   canEdit?: boolean;
   isManagerView?: boolean;
