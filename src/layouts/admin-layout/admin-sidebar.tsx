@@ -10,6 +10,7 @@ import {
   ShoppingBag,
   ShieldCheck,
   UserCheck,
+  TicketPercent,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -28,6 +29,8 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   "alert-triangle": AlertTriangle,
   category: Grid3x3,
   product: ShoppingBag,
+  promotion: TicketPercent,
+  voucher: TicketPercent,
   shield: ShieldCheck,
   customers: UserCheck,
 };
