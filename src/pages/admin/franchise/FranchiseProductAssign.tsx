@@ -24,6 +24,7 @@ import { searchItemsByConditions } from "@/api/category-franchise/CategoryFranch
 import { useAddCategoryToFranchise } from "@/hooks/category-franchise/useCategoryFranchise";
 import { useQuery } from "@tanstack/react-query";
 import { useFranchise } from "@/hooks/franchise";
+import { useDebounce } from "@/hooks/common/useDebounce";
 import { useCategoriesQuery } from "@/hooks/category/useCategoryQuery";
 import { useProductsQuery } from "@/hooks/product/useProductQuery";
 import type { SearchCategoryFranchise } from "@/types/categoryFranchise.type";
@@ -48,6 +49,11 @@ const FranchiseProductAssign = () => {
   const [showAddCategoryDialog, setShowAddCategoryDialog] = useState(false);
   const [dialogCategoryId, setDialogCategoryId] = useState("");
   const [dialogCategorySearch, setDialogCategorySearch] = useState("");
+
+  // Debounced search values
+  const debouncedProductSearch = useDebounce(productSearch, 300, productSearch);
+  const debouncedAssignCategorySearch = useDebounce(assignCategorySearch, 300, assignCategorySearch);
+  const debouncedDialogCategorySearch = useDebounce(dialogCategorySearch, 300, dialogCategorySearch);
 
   // Franchise info
   const { data: franchise } = useFranchise(franchiseId ?? "", {
@@ -129,7 +135,7 @@ const FranchiseProductAssign = () => {
     return map;
   }, [allAssignments]);
 
-  // Map: categoryFranchiseId â†’ count of products
+  // Map: categoryFranchiseId count of products
   const productCountByCat = useMemo(() => {
     const map = new Map<string, number>();
     for (const [catId, items] of assignmentsByCat) {
@@ -198,35 +204,35 @@ const FranchiseProductAssign = () => {
   );
 
   const availableCategories = useMemo(() => {
-    const kw = dialogCategorySearch.toLowerCase().trim();
+    const kw = debouncedDialogCategorySearch.toLowerCase().trim();
     return allCategories.filter(
       (c) =>
         !existingCategoryIds.has(String(c.id)) &&
         (!kw || c.name.toLowerCase().includes(kw)),
     );
-  }, [allCategories, existingCategoryIds, dialogCategorySearch]);
+  }, [allCategories, existingCategoryIds, debouncedDialogCategorySearch]);
 
   // Filtered categories for the assign dialog
   const filteredAssignCategories = useMemo(() => {
-    const kw = assignCategorySearch.toLowerCase().trim();
+    const kw = debouncedAssignCategorySearch.toLowerCase().trim();
     if (!kw) return categoryFranchises;
     return categoryFranchises.filter((c) =>
       c.categoryName.toLowerCase().includes(kw),
     );
-  }, [categoryFranchises, assignCategorySearch]);
+  }, [categoryFranchises, debouncedAssignCategorySearch]);
 
   // Derived data
 
   // Products filtered by search text only
   const searchedProducts = useMemo(() => {
-    const kw = productSearch.toLowerCase().trim();
+    const kw = debouncedProductSearch.toLowerCase().trim();
     if (!kw) return productFranchises;
     return productFranchises.filter(
       (p) =>
         p.productName?.toLowerCase().includes(kw) ||
         p.productSku?.toLowerCase().includes(kw),
     );
-  }, [productFranchises, productSearch]);
+  }, [productFranchises, debouncedProductSearch]);
 
   // Product ids that already have at least one category assignment
   const assignedProductIds = useMemo(() => {
@@ -437,7 +443,7 @@ const FranchiseProductAssign = () => {
       </div>
 
       {/* Product table */}
-      <div className="flex-1 overflow-y-auto px-6 py-4">
+      <div className="flex-1 overflow-y-auto scrollbar-hide px-6 py-4">
         {isLoading ? (
           <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
             {Array.from({ length: 7 }).map((_, i) => (
@@ -497,7 +503,7 @@ const FranchiseProductAssign = () => {
                   : "No assigned products."}
               </div>
             ) : (
-              <div className="overflow-x-auto">
+              <div className="overflow-x-auto scrollbar-hide">
                 <table className="w-full text-sm min-w-[780px]">
                   <thead>
                     <tr className="border-b border-gray-200 bg-gray-50">
@@ -665,7 +671,7 @@ const FranchiseProductAssign = () => {
             </div>
 
             {/* Category list */}
-            <div className="max-h-56 overflow-y-auto space-y-1 mb-4">
+            <div className="max-h-56 overflow-y-auto scrollbar-hide space-y-1 mb-4">
               {filteredAssignCategories.length === 0 ? (
                 <p className="text-xs text-[#5D4037]/60 text-center py-6">
                   No categories found.
@@ -772,7 +778,7 @@ const FranchiseProductAssign = () => {
               />
             </div>
 
-            <div className="max-h-56 overflow-y-auto space-y-1 mb-4">
+            <div className="max-h-56 overflow-y-auto scrollbar-hide space-y-1 mb-4">
               {availableCategories.length === 0 ? (
                 <p className="text-xs text-[#5D4037]/60 text-center py-6">
                   {allCategories.length === 0
