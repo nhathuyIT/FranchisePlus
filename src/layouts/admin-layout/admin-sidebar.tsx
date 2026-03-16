@@ -117,7 +117,7 @@ const AdminSideBar = ({ collapsed = false }: AdminSidebarProps) => {
             </Avatar>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-semibold truncate">{user?.name}</p>
-              <p className="text-xs text-amber-300 truncate">{roleName}</p>
+              <p className="text-xs text-blue-300 truncate">{roleName}</p>
             </div>
           </div>
         </div>
