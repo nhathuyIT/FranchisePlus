@@ -322,20 +322,22 @@ const InventoryList = () => {
               onCancel={cancelImportPreview}
             />
           ) : (
-            <InventoryTable
-              items={canViewInventory ? filteredItems : []}
-              baselineItems={canViewInventory ? baselineTableData : []}
-              isLoading={isLoading || isFetching || deleteMutation.isPending}
-              isImporting={isImporting}
-              error={listError}
-              onRetry={refetch}
-              onImport={canManageInventory ? handleImport : undefined}
-              onDiscardChanges={resetMainTableData}
-              onEdit={canManageInventory ? handleEdit : undefined}
-              onDelete={canManageInventory ? handleOpenDelete : undefined}
-              canEdit={canManageInventory}
-              onSaveBulk={canManageInventory ? handleSaveBulk : undefined}
-            />
+            <div className="flex-1 flex flex-col min-h-0">
+              <InventoryTable
+                items={canViewInventory ? filteredItems : []}
+                baselineItems={canViewInventory ? baselineTableData : []}
+                isLoading={isLoading || isFetching || deleteMutation.isPending}
+                isImporting={isImporting}
+                error={listError}
+                onRetry={refetch}
+                onImport={canManageInventory ? handleImport : undefined}
+                onDiscardChanges={resetMainTableData}
+                onEdit={canManageInventory ? handleEdit : undefined}
+                onDelete={canManageInventory ? handleOpenDelete : undefined}
+                canEdit={canManageInventory}
+                onSaveBulk={canManageInventory ? handleSaveBulk : undefined}
+              />
+            </div>
           )}
         </div>
 
