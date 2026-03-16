@@ -37,10 +37,12 @@ interface InventoryTableProps {
   onDelete?: (item: InventorySearchItem) => void;
   onBulkExport?: (items: InventorySearchItem[]) => void;
   /** When provided, enables inline editing for quantity + alertThreshold */
-  onSaveRow?: (
-    item: InventorySearchItem,
-    newQuantity: number,
-    newAlertThreshold: number,
+  onSaveBulk?: (
+    changes: Array<{
+      item: InventorySearchItem;
+      newQuantity: number;
+      newAlertThreshold: number;
+    }>,
   ) => Promise<void>;
   /** Whether the current user has edit permission */
   canEdit?: boolean;
@@ -111,7 +113,7 @@ export const InventoryTable = ({
   onEdit,
   onDelete,
   onBulkExport,
-  onSaveRow,
+  onSaveBulk,
   canEdit = false,
 }: InventoryTableProps) => {
   const [isSaving, setIsSaving] = useState(false);
@@ -135,17 +137,19 @@ export const InventoryTable = ({
 
   // ── Inline edit hook ──────────────────────────────────────────────────────
 
-  const safeOnSaveRow = useCallback(
+  const safeOnSaveBulk = useCallback(
     async (
-      item: InventorySearchItem,
-      newQuantity: number,
-      newAlertThreshold: number,
+      changes: Array<{
+        item: InventorySearchItem;
+        newQuantity: number;
+        newAlertThreshold: number;
+      }>,
     ) => {
-      if (onSaveRow) {
-        await onSaveRow(item, newQuantity, newAlertThreshold);
+      if (onSaveBulk) {
+        await onSaveBulk(changes);
       }
     },
-    [onSaveRow],
+    [onSaveBulk],
   );
 
   const {
@@ -158,7 +162,7 @@ export const InventoryTable = ({
   } = useInventoryInlineEdit({
     items,
     baselineItems,
-    onSaveRow: safeOnSaveRow,
+    onSaveBulk: safeOnSaveBulk,
   });
 
   // ── Derived validation errors (live, onChange) ────────────────────────────
@@ -243,7 +247,7 @@ export const InventoryTable = ({
           errors: methods.formState.errors,
           fieldIndexMap,
           isRowDirty,
-          isEditable: canEdit && !!onSaveRow,
+          isEditable: canEdit && !!onSaveBulk,
         }}
       >
         {/* Error banner */}
