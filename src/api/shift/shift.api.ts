@@ -34,20 +34,11 @@ export const searchShift = async (
   const payload = {
     searchCondition: {
       name: data.searchCondition.name ?? "",
-      franchise_id:
-        data.searchCondition.franchise_id ??
-        data.searchCondition.franchiseId ??
-        "",
-      start_time:
-        data.searchCondition.start_time ??
-        data.searchCondition.startTime ??
-        "",
-      end_time:
-        data.searchCondition.end_time ?? data.searchCondition.endTime ?? "",
-      is_active:
-        data.searchCondition.is_active ?? data.searchCondition.isActive ?? "",
-      is_deleted:
-        data.searchCondition.is_deleted ?? data.searchCondition.isDeleted ?? false,
+      franchise_id: data.searchCondition.franchise_id ?? "",
+      start_time: data.searchCondition.start_time ?? "",
+      end_time: data.searchCondition.end_time ?? "",
+      is_active: data.searchCondition.is_active ?? "",
+      is_deleted: data.searchCondition.is_deleted ?? false,
     },
     pageInfo: {
       pageNum: data.pageInfo.pageNum,
@@ -63,11 +54,7 @@ export const searchShift = async (
     data: payload,
   });
 
-  if (!response?.success) {
-    throw new Error("Failed to search shifts");
-  }
-
-  return response;
+  return response!;
 };
 
 export const getShift = async (shiftID: string): Promise<GetShiftResponse> => {

@@ -38,21 +38,22 @@ interface UseInventoryInlineEditOptions {
   items: InventorySearchItem[];
   baselineItems?: InventorySearchItem[];
   /**
-   * Called once per dirty row when user clicks "Save Changes".
-   * Quantity: caller computes delta and calls adjust API.
-   * AlertThreshold: caller handles (API pending).
+   * Called once with all dirty rows when user clicks "Save Changes".
+   * Replaces per-row onSaveRow to send a single bulk API request.
    */
-  onSaveRow: (
-    item: InventorySearchItem,
-    newQuantity: number,
-    newAlertThreshold: number,
+  onSaveBulk: (
+    changes: Array<{
+      item: InventorySearchItem;
+      newQuantity: number;
+      newAlertThreshold: number;
+    }>,
   ) => Promise<void>;
 }
 
 export function useInventoryInlineEdit({
   items,
   baselineItems,
-  onSaveRow,
+  onSaveBulk,
 }: UseInventoryInlineEditOptions) {
   // ── Default values ────────────────────────────────────────────────────────
 
@@ -189,7 +190,7 @@ export function useInventoryInlineEdit({
     return dirtyRows.some((row) => row?.quantity || row?.alertThreshold);
   }, [items, baselineItemMap, methods.formState.dirtyFields.rows]);
 
-  // ── Save all dirty rows ───────────────────────────────────────────────────
+  // ── Save all dirty rows (bulk) ──────────────────────────────────────────
 
   const saveAllChanges = useCallback(async (): Promise<boolean> => {
     const isValid = await methods.trigger();
@@ -197,26 +198,36 @@ export function useInventoryInlineEdit({
 
     const values = methods.getValues();
 
-    const savePromises = values.rows
-      .map((row, idx) => {
-        const currentItem = items[idx];
-        if (!currentItem) return null;
+    const changes: Array<{
+      item: InventorySearchItem;
+      newQuantity: number;
+      newAlertThreshold: number;
+    }> = [];
 
-        const baselineItem =
-          baselineItemMap[String(currentItem.id)] ?? currentItem;
-        const quantityChanged = row.quantity !== baselineItem.quantity;
-        const thresholdChanged =
-          row.alertThreshold !== baselineItem.alertThreshold;
+    values.rows.forEach((row, idx) => {
+      const currentItem = items[idx];
+      if (!currentItem) return;
 
-        if (!quantityChanged && !thresholdChanged) return null;
+      const baselineItem =
+        baselineItemMap[String(currentItem.id)] ?? currentItem;
+      const quantityChanged = row.quantity !== baselineItem.quantity;
+      const thresholdChanged =
+        row.alertThreshold !== baselineItem.alertThreshold;
 
-        return onSaveRow(baselineItem, row.quantity, row.alertThreshold);
-      })
-      .filter(Boolean) as Promise<void>[];
+      if (!quantityChanged && !thresholdChanged) return;
 
-    await Promise.all(savePromises);
+      changes.push({
+        item: baselineItem,
+        newQuantity: row.quantity,
+        newAlertThreshold: row.alertThreshold,
+      });
+    });
+
+    if (changes.length === 0) return true;
+
+    await onSaveBulk(changes);
     return true;
-  }, [methods, items, baselineItemMap, onSaveRow]);
+  }, [methods, items, baselineItemMap, onSaveBulk]);
 
   return {
     methods,

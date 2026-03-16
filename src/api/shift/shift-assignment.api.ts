@@ -43,14 +43,14 @@ export const assignShiftsForUser = async (
 export const searchAssignedShiftForUser = async (
   data: SearchShiftAssignmentsRequest,
 ): Promise<SearchShiftAssignmentsResponse> => {
-  const payload: SearchShiftAssignmentsRequest = {
+  const payload = {
     searchCondition: {
       shift_id: data.searchCondition.shift_id ?? "",
       user_id: data.searchCondition.user_id ?? "",
       work_date: data.searchCondition.work_date ?? "",
       assigned_by: data.searchCondition.assigned_by ?? "",
       status: data.searchCondition.status ?? "",
-      is_deleted: data.searchCondition.is_deleted,
+      is_deleted: data.searchCondition.is_deleted ?? false,
     },
     pageInfo: {
       pageNum: data.pageInfo.pageNum,
@@ -60,17 +60,13 @@ export const searchAssignedShiftForUser = async (
 
   const response = await httpClient.postPaginatedRaw<
     SearchShiftAssignmentsResponse["data"][number],
-    SearchShiftAssignmentsRequest
+    typeof payload
   >({
     url: "/api/shift-assignments/search",
     data: payload,
   });
 
-  if (!response?.success) {
-    throw new Error("Failed to search shift assignments");
-  }
-
-  return response;
+  return response!;
 };
 
 export const getAssignedShiftForUser = async (
@@ -110,7 +106,7 @@ export const getAllShiftsAssignByUser = async (
 };
 
 export const getAllShiftAssignByFranchise = async (franchiseId: string) => {
-  const response = await httpClient.get<ShiftAssignmentListResponse>({
+  const response = await httpClient.get({
     url: `/api/shift-assignments/franchise/${franchiseId}`,
   });
 

@@ -30,7 +30,7 @@ interface AuthState {
   logout: (callApi?: boolean) => Promise<void>;
   hydrate: () => void;
   updateProfile: (
-    data: Partial<Pick<User, "name" | "email" | "phone">>,
+    data: Partial<Pick<User, "name" | "email" | "phone" | "avatarUrl">>,
   ) => void;
 
   getAvailableContexts: () => AvailableContext[];
