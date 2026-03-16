@@ -5,13 +5,13 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ROUTER_URL } from "@/router/route.const";
-import { FranchiseInfoCard } from "./components/FranchiseInfoCard";
-import { FranchiseStaffTab } from "./components/FranchiseStaffTab";
-import { FranchiseInventoryTab } from "./components/FranchiseInventoryTab";
+import { FranchiseInfoCard } from "./components/general/FranchiseInfoCard";
+import { FranchiseStaffTab } from "./components/staff/FranchiseStaffTab";
+import { FranchiseInventoryTab } from "./components/inventory/FranchiseInventoryTab";
 import { useFranchise } from "@/hooks/franchise";
 import { Permission } from "@/config/permission";
 import { useAuthStore } from "@/stores/auth-store";
-import { FranchiseCategoryTab } from "./components/FranchiseCategoryTab";
+import { FranchiseCategoryTab } from "./components/categories/FranchiseCategoryTab";
 
 const FranchiseDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -195,7 +195,7 @@ const FranchiseDetail = () => {
                 Create Item
               </Button>
             )}
-            
+
             {activeTab === "categories" && (
               <Button
                 onClick={() => setCreateCategoryOpen(true)}
@@ -228,7 +228,7 @@ const FranchiseDetail = () => {
             value="inventory"
             className="mt-6 flex-1 min-h-0 flex flex-col"
           >
-            <FranchiseInventoryTab 
+            <FranchiseInventoryTab
               franchiseId={id!}
               createOpen={createProductOpen}
               onCreateOpenChange={setCreateProductOpen}
