@@ -28,7 +28,6 @@ import {
   Download,
   Upload,
   Loader2,
-  EllipsisVertical,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -59,8 +58,6 @@ import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
@@ -496,10 +493,10 @@ export function DataTable<TData>({
           </DropdownMenu>
         )}
 
-        {/* Spacer to push three-dot menu to far right */}
+        {/* Spacer to push import/export actions to far right */}
         {(onImport || onExport) && <div className="flex-1" />}
 
-        {/* Three-dot menu for Import / Export */}
+        {/* Import / Export Actions */}
         {(onImport || onExport) && (
           <>
             {onImport && (
@@ -517,46 +514,40 @@ export function DataTable<TData>({
                 }}
               />
             )}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
+            <div className="flex items-center gap-2">
+              {onImport && (
                 <Button
                   variant="outline"
-                  size="icon"
-                  className="h-9 w-9 border-[#E8DFD6] hover:bg-[#FAF8F5]"
+                  disabled={isImporting}
+                  onClick={() =>
+                    document.getElementById("excel-import-input")?.click()
+                  }
+                  className="gap-2 border-[#E8DFD6] bg-white text-[#5D4037] hover:bg-[#FAF8F5]"
                 >
-                  {isImporting || isExporting ? (
+                  {isImporting ? (
                     <Loader2 className="h-4 w-4 animate-spin text-[#6D4C41]" />
                   ) : (
-                    <EllipsisVertical className="h-4 w-4 text-[#5D4037]" />
-                  )}
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48">
-                {onImport && (
-                  <DropdownMenuItem
-                    disabled={isImporting}
-                    onClick={() =>
-                      document.getElementById("excel-import-input")?.click()
-                    }
-                    className="gap-2 cursor-pointer"
-                  >
                     <Upload className="h-4 w-4" />
-                    {importLabel}
-                  </DropdownMenuItem>
-                )}
-                {onImport && onExport && <DropdownMenuSeparator />}
-                {onExport && (
-                  <DropdownMenuItem
-                    disabled={isExporting || data.length === 0}
-                    onClick={onExport}
-                    className="gap-2 cursor-pointer"
-                  >
+                  )}
+                  {importLabel}
+                </Button>
+              )}
+              {onExport && (
+                <Button
+                  variant="outline"
+                  disabled={isExporting || data.length === 0}
+                  onClick={onExport}
+                  className="gap-2 border-[#E8DFD6] bg-white text-[#5D4037] hover:bg-[#FAF8F5]"
+                >
+                  {isExporting ? (
+                    <Loader2 className="h-4 w-4 animate-spin text-[#6D4C41]" />
+                  ) : (
                     <Download className="h-4 w-4" />
-                    {exportLabel}
-                  </DropdownMenuItem>
-                )}
-              </DropdownMenuContent>
-            </DropdownMenu>
+                  )}
+                  {exportLabel}
+                </Button>
+              )}
+            </div>
           </>
         )}
       </div>
@@ -710,24 +701,24 @@ export function DataTable<TData>({
                     const rowClass = getRowClassName?.(row.original) ?? "";
                     const rowStyle = getRowStyle?.(row.original);
                     return (
-                    <TableRow
-                      key={row.id}
-                      data-state={row.getIsSelected() && "selected"}
-                      className={[
-                        "transition-colors border-b border-[#E8DFD6]",
-                        rowClass || "hover:bg-[#FAF8F5]",
-                      ].join(" ")}
-                      style={rowStyle}
-                    >
-                      {row.getVisibleCells().map((cell) => (
-                        <TableCell key={cell.id} className="text-[#5D4037]">
-                          {flexRender(
-                            cell.column.columnDef.cell,
-                            cell.getContext(),
-                          )}
-                        </TableCell>
-                      ))}
-                    </TableRow>
+                      <TableRow
+                        key={row.id}
+                        data-state={row.getIsSelected() && "selected"}
+                        className={[
+                          "transition-colors border-b border-[#E8DFD6]",
+                          rowClass || "hover:bg-[#FAF8F5]",
+                        ].join(" ")}
+                        style={rowStyle}
+                      >
+                        {row.getVisibleCells().map((cell) => (
+                          <TableCell key={cell.id} className="text-[#5D4037]">
+                            {flexRender(
+                              cell.column.columnDef.cell,
+                              cell.getContext(),
+                            )}
+                          </TableCell>
+                        ))}
+                      </TableRow>
                     );
                   })
                 )}

@@ -6,6 +6,7 @@ import {
   AccountRoute,
 } from "./router";
 import NotFoundPage from "./pages/NotFoundPage.page";
+import UnauthorizedPage from "./pages/UnauthorizedPage.page";
 import AdminAuthRoute from "./router/admin/admin.auth.route";
 import ClientAuthRoute from "./router/client/client.auth.route";
 import { Toaster } from "@/components/ui/sonner";
@@ -21,7 +22,7 @@ function App() {
   }, [hydrate]);
 
   if (!isInitialized) {
-    return <LoadingLayout />;
+    return <LoadingLayout forceVisible />;
   }
 
   return (
@@ -35,6 +36,7 @@ function App() {
           {ClientRoute}
           {AccountRoute}
           {ClientPublicRoute}
+          <Route path="/unauthorized" element={<UnauthorizedPage />} />
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </BrowserRouter>
