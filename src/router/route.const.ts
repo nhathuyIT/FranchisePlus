@@ -31,6 +31,7 @@ export const ROUTER_URL = {
   ADMIN_ROUTER: {
     LOGIN: "/admin/login",
     Forgot_PASSWORD: "/admin/forgot-password",
+    MY_PROFILE: "my-profile",
     CHANGE_PASSWORD: "change-password",
     ROLE_SELECTOR: "select-role",
     DASHBOARD: "dashboard",
@@ -51,6 +52,8 @@ export const ROUTER_URL = {
     PRODUCTS_CREATE: "products/create",
     PRODUCTS_EDIT: "products/:id/edit",
     PRODUCTS_DETAIL: "products/:id",
+    PROMOTIONS: "promotions",
+    VOUCHERS: "vouchers",
     USER_FRANCHISE_ROLES: "user-franchise-roles",
     CUSTOMERS: "customers",
   },

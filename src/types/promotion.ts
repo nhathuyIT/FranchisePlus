@@ -10,8 +10,12 @@ export type PromotionType = "PERCENT" | "FIXED";
  */
 export interface Promotion extends BaseTimestamp, SoftDeletable, Activatable {
   id: ID;
+  name: string;
   franchiseId: ID; // Promotion theo store
+  franchiseName: string; // Tên franchise
   productFranchiseId: ID | null; // NULL = áp dụng toàn store
+  productId: ID | null; // ID của product
+  productName: string; // Tên product
   type: PromotionType;
   value: number; // decimal - % or money
   startTime: string; // timestamp
