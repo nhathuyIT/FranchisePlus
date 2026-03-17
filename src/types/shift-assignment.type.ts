@@ -104,3 +104,13 @@ export interface ShiftAssignmentListResponse {
   success: boolean;
   data: ShiftAssignment[];
 }
+
+export interface ShiftAssignmentByFranchiseResponse {
+  success: boolean;
+  data: ShiftAssignmentListItem[];
+}
+
+export interface ShiftAssignmentByShiftResponse {
+  success: boolean;
+  data: ShiftAssignmentListItem[];
+}

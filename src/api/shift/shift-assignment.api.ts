@@ -6,6 +6,8 @@ import type {
   GetShiftAssignmentResponse,
   SearchShiftAssignmentsRequest,
   SearchShiftAssignmentsResponse,
+  ShiftAssignmentByFranchiseResponse,
+  ShiftAssignmentByShiftResponse,
   ShiftAssignmentListResponse,
   ShiftAssignmentResponse,
   ShiftAssignmentStatusRequest,
@@ -105,9 +107,21 @@ export const getAllShiftsAssignByUser = async (
   return response!;
 };
 
-export const getAllShiftAssignByFranchise = async (franchiseId: string) => {
-  const response = await httpClient.get({
+export const getAllShiftAssignByFranchise = async (
+  franchiseId: string,
+): Promise<ShiftAssignmentByFranchiseResponse> => {
+  const response = await httpClient.get<ShiftAssignmentByFranchiseResponse>({
     url: `/api/shift-assignments/franchise/${franchiseId}`,
+  });
+
+  return response!;
+};
+
+export const getAllShiftAssignByShiftID = async (
+  shiftId: string,
+): Promise<ShiftAssignmentByShiftResponse> => {
+  const response = await httpClient.get<ShiftAssignmentByShiftResponse>({
+    url: `/api/shift-assignments/shift/${shiftId}`,
   });
 
   return response!;

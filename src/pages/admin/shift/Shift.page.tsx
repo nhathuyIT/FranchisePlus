@@ -1,704 +1,591 @@
-import { useMemo, useState, type FormEvent } from "react";
+import { useState } from "react";
 import { CalendarDays } from "lucide-react";
-import { toast } from "sonner";
+import type {
+  PopoverSearchSelectOption,
+  SubmitResult,
+} from "@/components/form-dialog";
+import { DeleteDialog } from "@/components/form-dialog";
 import { PageHeader } from "@/components/common/PageHeader";
-import { useFormDialog, type SubmitResult } from "@/components/form-dialog";
-import { useSearchUsers } from "@/hooks/admin/useUser.hooks";
-import { useFranchiseSelect } from "@/hooks/franchise";
-import { useUserFranchiseRoleSearch } from "@/hooks/user-franchise-role";
 import {
-  useCreateShiftMutation,
-  useShiftDetailQueries,
-  useShiftSearchQuery,
-} from "@/hooks/shift/useShift.hook";
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import type { SelectOption } from "@/lib/form/field-config";
+import type { CreateShiftFormData, UpdateShiftFormData } from "@/lib/schemas/shift.schema";
+import type {
+  AssignShiftFormData,
+  ShiftStatusUpdateFormData,
+} from "@/lib/schemas/shift-assignment.schema";
+import { useFranchiseSelect } from "@/hooks/franchise";
+import { useCreateShiftMutation, useDeleteShiftMutation, useUpdateShiftMutation } from "@/hooks/shift/useShift.hook";
 import {
   useAssignShiftForUserMutation,
+  useAssignShiftsForUserBulkMutation,
   useChangeShiftAssignmentStatusMutation,
-  useShiftAssignmentSearchQuery,
 } from "@/hooks/shift/useShiftAssignment.hook";
 import { useAuthStore } from "@/stores/auth-store";
 import type { Shift } from "@/types/shift";
-import type { UserFranchiseRoleSearchRequest } from "@/api/user-franchise-role/user-franchise-role.type";
-import type {
-  ShiftAssignmentListItem,
-  SearchShiftAssignmentsRequest,
-} from "@/types/shift-assignment.type";
+import { AssignShiftDialog } from "./components/AssignShiftDialog";
+import { CreateShiftDialog } from "./components/CreateShiftDialog";
+import { ShiftAssignmentDialog } from "./components/ShiftAssignmentDialog";
+import { ShiftCalendar } from "./components/ShiftCalendar";
+import { ShiftCalendarToolbar } from "./components/ShiftCalendarToolbar";
+import { ShiftDetailDialog } from "./components/ShiftDetailDialog";
+import { ShiftListPanel } from "./components/ShiftListPanel";
+import { ShiftSearchBar } from "./components/ShiftSearchBar";
+import { StaffShiftView } from "./components/StaffShiftView";
+import { UpdateShiftDialog } from "./components/UpdateShiftDialog";
 import {
-  AssignShiftDialog,
-  CreateShiftDialog,
-  ShiftAssignmentDetailDialog,
-  ShiftCalendarBoard,
-  ShiftOverviewFilters,
-  UnassignedShiftPanel,
-} from "./components";
-import type { CreateShiftFormData } from "./create-shift-form.config";
-import type { ShiftAssignmentDetailFormData } from "./shift-assignment-detail-form.config";
+  type ShiftCalendarEvent,
+  useShiftPageData,
+} from "./hooks/useShiftPageData";
+import { useShiftCalendarState } from "./hooks/useShiftCalendarState";
 import {
-  buildCalendarDays,
-  formatClock,
-  formatDateKey,
   formatReadableDate,
-  parseDateKey,
-  startOfMonth,
-  type AssignShiftFormState,
-  normalizeWorkDate,
-} from "./shift-page.utils";
+  formatTimeLabel,
+  getDisplayShiftName,
+  type ShiftSearchMode,
+} from "./utils/shiftFormatters";
 
-const ShiftPage = () => {
-  const { authUser, getCurrentRole, isAdmin } = useAuthStore();
-  const currentRole = getCurrentRole();
-  const currentRoleCode =
-    currentRole?.code ||
-    (currentRole as unknown as { role?: string } | null)?.role ||
-    "";
+type AssignmentDialogState = {
+  assignmentId: string;
+  values: ShiftStatusUpdateFormData;
+};
+
+function buildAssignmentDialogValues(
+  event: ShiftCalendarEvent,
+  assignedByName: string,
+): ShiftStatusUpdateFormData {
+  return {
+    shiftName: getDisplayShiftName(event.shiftName),
+    employeeName: event.employeeName,
+    assignedBy: assignedByName,
+    workDate: event.workDate,
+    startTime: event.startTime,
+    endTime: event.endTime,
+    status: event.status,
+  };
+}
+
+function getSearchHelperText(
+  mode: ShiftSearchMode,
+  canSelectFranchise: boolean,
+) {
+  if (mode === "userName") {
+    return "Shows all assignments for the selected user across all dates.";
+  }
+
+  if (mode === "shiftName") {
+    return "Loads assignments for the selected shift name.";
+  }
+
+  if (canSelectFranchise) {
+    return "Search a franchise name to switch the page context.";
+  }
+
+  return "Your account is already scoped to a single franchise.";
+}
+
+function ShiftAdminPage() {
+  const { authUser, isAdmin } = useAuthStore();
   const canSelectFranchise = isAdmin();
-  const canManageShifts =
-    canSelectFranchise || currentRoleCode === "MANAGER";
   const currentFranchiseId = authUser?.currentFranchiseId
     ? String(authUser.currentFranchiseId)
     : "";
-  const lockedFranchiseId =
-    !canSelectFranchise && currentFranchiseId ? currentFranchiseId : "";
   const currentFranchiseName =
     authUser?.franchiseRoles?.find(
       (franchiseRole) => franchiseRole.franchiseId === currentFranchiseId,
     )?.franchiseName ?? "";
-  const todayKey = formatDateKey(new Date());
 
   const [selectedFranchiseId, setSelectedFranchiseId] =
-    useState(canSelectFranchise ? currentFranchiseId : "");
-  const [selectedDateKey, setSelectedDateKey] = useState(todayKey);
-  const [monthCursor, setMonthCursor] = useState(() =>
-    startOfMonth(parseDateKey(todayKey)),
-  );
-  const [selectedAssignmentId, setSelectedAssignmentId] = useState<
-    string | null
-  >(null);
+    useState(currentFranchiseId);
+  const [searchMode, setSearchMode] = useState<ShiftSearchMode>("userName");
+  const [searchTargetId, setSearchTargetId] = useState("");
   const [isCreateShiftOpen, setIsCreateShiftOpen] = useState(false);
   const [assigningShift, setAssigningShift] = useState<Shift | null>(null);
-  const [assignForm, setAssignForm] = useState<AssignShiftFormState>({
-    userId: "",
-    workDate: todayKey,
-    note: "",
-  });
+  const [detailShift, setDetailShift] = useState<Shift | null>(null);
+  const [updatingShift, setUpdatingShift] = useState<Shift | null>(null);
+  const [deletingShift, setDeletingShift] = useState<Shift | null>(null);
+  const [assignmentDialogState, setAssignmentDialogState] =
+    useState<AssignmentDialogState | null>(null);
 
   const { data: franchiseOptions = [] } = useFranchiseSelect();
+  const calendar = useShiftCalendarState();
+
+  const activeFranchiseId = canSelectFranchise
+    ? selectedFranchiseId || franchiseOptions[0]?.value || currentFranchiseId
+    : currentFranchiseId;
+
+  const pageData = useShiftPageData({
+    franchiseId: activeFranchiseId,
+    selectedDateKey: calendar.selectedDateKey,
+    searchMode:
+      searchMode === "franchiseName"
+        ? null
+        : searchMode === "userName" || searchMode === "shiftName"
+          ? searchMode
+          : null,
+    searchTargetId,
+  });
+
   const createShiftMutation = useCreateShiftMutation();
+  const updateShiftMutation = useUpdateShiftMutation();
+  const deleteShiftMutation = useDeleteShiftMutation();
   const assignShiftMutation = useAssignShiftForUserMutation();
+  const assignShiftBulkMutation = useAssignShiftsForUserBulkMutation();
   const changeShiftAssignmentStatusMutation =
     useChangeShiftAssignmentStatusMutation();
-  const assignmentDialog = useFormDialog<ShiftAssignmentListItem>();
 
-  const activeFranchiseId =
-    lockedFranchiseId ||
-    selectedFranchiseId ||
-    franchiseOptions[0]?.value ||
+  const selectedFranchise =
+    franchiseOptions.find((option) => option.value === activeFranchiseId) ??
+    (activeFranchiseId
+      ? {
+          value: activeFranchiseId,
+          name: currentFranchiseName || activeFranchiseId,
+          code: "",
+        }
+      : undefined);
+
+  const assignerFranchiseName =
+    authUser?.franchiseRoles?.find(
+      (fr) =>
+        String(fr.userId) === String(authUser.user.id) &&
+        fr.franchiseId === activeFranchiseId,
+    )?.franchiseName ||
+    selectedFranchise?.name ||
     "";
-  const createShiftDefaultValues = useMemo(
-    (): CreateShiftFormData => ({
-      franchiseId:
-        lockedFranchiseId ||
-        activeFranchiseId ||
-        franchiseOptions[0]?.value ||
-        "",
-      name: "",
-      startTime: "",
-      endTime: "",
+
+  const employeeFieldOptions: SelectOption[] = pageData.employees.map(
+    (employee) => ({
+      label: employee.email
+        ? `${employee.name} (${employee.email})`
+        : employee.name,
+      value: String(employee.id),
     }),
-    [activeFranchiseId, franchiseOptions, lockedFranchiseId],
   );
 
-  const shiftSearchParams = useMemo(
-    () => ({
-      searchCondition: {
-        franchise_id: activeFranchiseId || undefined,
-        is_deleted: false,
-      },
-      pageInfo: {
-        pageNum: 1,
-        pageSize: 100,
-      },
+  const createShiftFranchiseOptions: SelectOption[] = franchiseOptions.map(
+    (franchise) => ({
+      label: franchise.code
+        ? `${franchise.name} (${franchise.code})`
+        : franchise.name,
+      value: franchise.value,
     }),
-    [activeFranchiseId],
   );
 
-  const userSearchParams = useMemo(
-    () => ({
-      searchCondition: {
-        keyword: "",
-        isDeleted: false,
-      },
-      pageInfo: {
-        pageNum: 1,
-        pageSize: 1000,
-      },
-    }),
-    [],
-  );
-  const employeeScopeFranchiseId = canSelectFranchise
-    ? activeFranchiseId
-    : currentFranchiseId;
-  const employeeFranchiseRoleSearchParams =
-    useMemo<UserFranchiseRoleSearchRequest>(
-      () => ({
-        searchCondition: {
-          franchiseId: employeeScopeFranchiseId || undefined,
-          isDeleted: false,
-        },
-        pageInfo: {
-          pageNum: 1,
-          pageSize: 1000,
-        },
-      }),
-      [employeeScopeFranchiseId],
-    );
-  const assignmentSearchParams = useMemo<SearchShiftAssignmentsRequest>(
-    () => ({
-      searchCondition: {
-        shift_id: "",
-        user_id: "",
-        work_date: "",
-        assigned_by: "",
-        status: "" as const,
-        is_deleted: false,
-      },
-      pageInfo: {
-        pageNum: 1,
-        pageSize: 1000,
-      },
-    }),
-    [],
-  );
-
-  const shiftsQuery = useShiftSearchQuery(
-    shiftSearchParams,
-    !!activeFranchiseId,
-  );
-  const assignmentSearchQuery = useShiftAssignmentSearchQuery(
-    assignmentSearchParams,
-    !!activeFranchiseId,
-  );
-  const employeeFranchiseRolesQuery = useUserFranchiseRoleSearch(
-    employeeFranchiseRoleSearchParams,
-    {
-      enabled: !!employeeScopeFranchiseId,
-    },
-  );
-  const usersQuery = useSearchUsers(userSearchParams);
-
-  const users = useMemo(
-    () =>
-      [...(usersQuery.data?.users ?? [])]
-        .filter((user) => user.isActive && !user.isDeleted)
-        .sort((left, right) => left.name.localeCompare(right.name)),
-    [usersQuery.data?.users],
-  );
-
-  const allUsersById = useMemo(
-    () =>
-      new Map(
-        (usersQuery.data?.users ?? []).map((user) => [String(user.id), user]),
+  const employeeSearchOptions: PopoverSearchSelectOption[] =
+    pageData.employees.map((employee) => ({
+      value: String(employee.id),
+      label: (
+        <div className="flex min-w-0 flex-col">
+          <span className="truncate font-medium">{employee.name}</span>
+          <span className="truncate text-xs text-[#8D6E63]">
+            {employee.email}
+          </span>
+        </div>
       ),
-    [usersQuery.data?.users],
-  );
+      searchText: `${employee.name} ${employee.email}`,
+    }));
 
-  const usersById = useMemo(
-    () => new Map(users.map((user) => [String(user.id), user])),
-    [users],
-  );
-  const assignableUserIds = useMemo(
-    () =>
-      new Set(
-        (employeeFranchiseRolesQuery.data?.pageData ?? [])
-          .filter((assignment) => !assignment.isDeleted && assignment.userId)
-          .map((assignment) => String(assignment.userId)),
+  const shiftSearchOptions: PopoverSearchSelectOption[] = pageData.shifts.map(
+    (shift) => ({
+      value: String(shift.id),
+      label: (
+        <div className="flex min-w-0 items-center justify-between gap-3">
+          <span className="truncate font-medium">{shift.name}</span>
+          <span className="shrink-0 text-xs text-[#8D6E63]">
+            {formatTimeLabel(shift.startTime)} -{" "}
+            {formatTimeLabel(shift.endTime)}
+          </span>
+        </div>
       ),
-    [employeeFranchiseRolesQuery.data?.pageData],
-  );
-  const assignableUsers = useMemo(
-    () =>
-      users.filter((user) => assignableUserIds.has(String(user.id))),
-    [assignableUserIds, users],
+      searchText: shift.name,
+    }),
   );
 
-  const shifts = useMemo(
-    () =>
-      [...(shiftsQuery.data?.data ?? [])]
-        .filter((shift) => shift.isActive && !shift.isDeleted)
-        .sort((left, right) => left.startTime.localeCompare(right.startTime)),
-    [shiftsQuery.data?.data],
-  );
-
-  const shiftsById = useMemo(
-    () => new Map(shifts.map((shift) => [shift.id, shift])),
-    [shifts],
-  );
-  const searchedAssignments = useMemo(
-    () =>
-      [...(assignmentSearchQuery.data?.data ?? [])].filter(
-        (assignment) =>
-          !assignment.isDeleted && shiftsById.has(String(assignment.shiftId)),
-      ),
-    [assignmentSearchQuery.data?.data, shiftsById],
-  );
-  const assignmentShiftIds = useMemo(
-    () =>
-      Array.from(
-        new Set(
-          searchedAssignments.map((assignment) => String(assignment.shiftId)),
+  const franchiseSearchOptions: PopoverSearchSelectOption[] = canSelectFranchise
+    ? franchiseOptions.map((franchise) => ({
+        value: franchise.value,
+        label: (
+          <div className="flex min-w-0 flex-col">
+            <span className="truncate font-medium">{franchise.name}</span>
+            <span className="truncate text-xs text-[#8D6E63]">
+              {franchise.code}
+            </span>
+          </div>
         ),
-      ),
-    [searchedAssignments],
+        searchText: `${franchise.name} ${franchise.code}`,
+      }))
+    : activeFranchiseId
+      ? [
+          {
+            value: activeFranchiseId,
+            label: (
+              <div className="flex min-w-0 flex-col">
+                <span className="truncate font-medium">
+                  {selectedFranchise?.name || currentFranchiseName}
+                </span>
+              </div>
+            ),
+            searchText:
+              selectedFranchise?.name ||
+              currentFranchiseName ||
+              activeFranchiseId,
+          },
+        ]
+      : [];
+
+  let searchOptions = employeeSearchOptions;
+  if (searchMode === "shiftName") {
+    searchOptions = shiftSearchOptions;
+  }
+  if (searchMode === "franchiseName") {
+    searchOptions = franchiseSearchOptions;
+  }
+
+  const selectedEmployee = pageData.employees.find(
+    (employee) => String(employee.id) === searchTargetId,
   );
-  const shiftDetailQueries = useShiftDetailQueries(
-    assignmentShiftIds,
-    !!activeFranchiseId,
-  );
-  const assignmentShiftDetailsById = useMemo(() => {
-    const map = new Map<string, Shift>();
-
-    assignmentShiftIds.forEach((shiftId, index) => {
-      const shift = shiftDetailQueries[index]?.data?.data;
-      if (shift) {
-        map.set(shiftId, shift);
-      }
-    });
-
-    return map;
-  }, [assignmentShiftIds, shiftDetailQueries]);
-
-  const assignmentsByDate = useMemo(() => {
-    const grouped = new Map<string, ShiftAssignmentListItem[]>();
-
-    for (const assignment of searchedAssignments) {
-      const dateKey = normalizeWorkDate(assignment.workDate);
-      const currentItems = grouped.get(dateKey) ?? [];
-      currentItems.push(assignment);
-      grouped.set(dateKey, currentItems);
-    }
-
-    for (const [dateKey, items] of grouped) {
-      grouped.set(
-        dateKey,
-        [...items].sort((left, right) => {
-          const leftShift =
-            assignmentShiftDetailsById.get(String(left.shiftId)) ??
-            shiftsById.get(String(left.shiftId));
-          const rightShift =
-            assignmentShiftDetailsById.get(String(right.shiftId)) ??
-            shiftsById.get(String(right.shiftId));
-          const leftUserName =
-            left.userName || usersById.get(String(left.userId))?.name || "";
-          const rightUserName =
-            right.userName || usersById.get(String(right.userId))?.name || "";
-
-          return (
-            (left.startTime || leftShift?.startTime || "").localeCompare(
-              right.startTime || rightShift?.startTime || "",
-            ) ||
-            (left.endTime || leftShift?.endTime || "").localeCompare(
-              right.endTime || rightShift?.endTime || "",
-            ) ||
-            (leftShift?.name ?? "").localeCompare(rightShift?.name ?? "") ||
-            leftUserName.localeCompare(rightUserName)
-          );
-        }),
-      );
-    }
-
-    return grouped;
-  }, [assignmentShiftDetailsById, searchedAssignments, shiftsById, usersById]);
-
-  const selectedDayAssignments = useMemo(
-    () => assignmentsByDate.get(selectedDateKey) ?? [],
-    [assignmentsByDate, selectedDateKey],
+  const selectedShift = pageData.shifts.find(
+    (shift) => String(shift.id) === searchTargetId,
   );
 
-  const activeSelectedAssignmentId = useMemo(
-    () =>
-      selectedDayAssignments.some(
-        (assignment) => assignment.id === selectedAssignmentId,
-      )
-        ? selectedAssignmentId
-        : null,
-    [selectedAssignmentId, selectedDayAssignments],
-  );
+  let summaryText = `Showing ${pageData.displayedResultCount} assignment(s) for ${selectedFranchise?.name || "the active franchise"}.`;
 
-  const activeAssignmentShiftIds = useMemo(
-    () =>
-      new Set(
-        selectedDayAssignments.map((assignment) => String(assignment.shiftId)),
-      ),
-    [selectedDayAssignments],
-  );
+  if (searchMode === "userName" && selectedEmployee) {
+    summaryText = `Showing ${pageData.displayedResultCount} assignment(s) for ${selectedEmployee.name} on ${formatReadableDate(calendar.selectedDateKey)}.`;
+  }
 
-  const unassignedShifts = useMemo(
-    () =>
-      shifts.filter((shift) => !activeAssignmentShiftIds.has(String(shift.id))),
-    [activeAssignmentShiftIds, shifts],
-  );
+  if (searchMode === "shiftName" && selectedShift) {
+    summaryText = `Showing ${pageData.displayedResultCount} assignment(s) for the ${selectedShift.name} shift.`;
+  }
 
-  const calendarDays = useMemo(
-    () => buildCalendarDays(monthCursor),
-    [monthCursor],
-  );
+  const selectedSearchOptionId =
+    searchMode === "franchiseName"
+      ? activeFranchiseId || undefined
+      : searchTargetId || undefined;
 
-  const selectedFranchise = useMemo(() => {
-    const activeFranchise = franchiseOptions.find(
-      (option) => option.value === activeFranchiseId,
-    );
-
-    if (activeFranchise) {
-      return activeFranchise;
-    }
-
-    if (activeFranchiseId && currentFranchiseName) {
-      return {
-        value: activeFranchiseId,
-        name: currentFranchiseName,
-        code: "",
-      };
-    }
-
-    return undefined;
-  }, [activeFranchiseId, currentFranchiseName, franchiseOptions]);
-  const assignmentDialogValues = useMemo<
-    ShiftAssignmentDetailFormData | undefined
-  >(() => {
-    if (!assignmentDialog.data) {
-      return undefined;
-    }
-
-    const selectedAssignment = assignmentDialog.data;
-    const selectedShift =
-      assignmentShiftDetailsById.get(String(selectedAssignment.shiftId)) ??
-      shiftsById.get(String(selectedAssignment.shiftId)) ??
-      null;
-    const selectedUser =
-      allUsersById.get(String(selectedAssignment.userId)) ??
-      usersById.get(String(selectedAssignment.userId)) ??
-      null;
-    const assignedByUserName =
-      allUsersById.get(String(selectedAssignment.assignedBy))?.name ||
-      usersById.get(String(selectedAssignment.assignedBy))?.name ||
-      selectedAssignment.assignedBy ||
-      "Unknown";
-
-    return {
-      taskName: selectedShift?.name ?? "Unknown shift",
-      employeeName:
-        selectedAssignment.userName ||
-        selectedUser?.name ||
-        "Loading employee...",
-      employeeEmail: selectedUser?.email ?? "No email available",
-      employeePhone: selectedUser?.phone || "No phone number available",
-      workDate: formatReadableDate(
-        normalizeWorkDate(selectedAssignment.workDate),
-      ),
-      shiftTime: `${formatClock(
-        selectedAssignment.startTime || selectedShift?.startTime,
-      )} - ${formatClock(selectedAssignment.endTime || selectedShift?.endTime)}`,
-      note: selectedAssignment.note?.trim() || "No notes for this assignment.",
-      assignedBy: assignedByUserName,
-      createdAt: formatReadableDate(
-        normalizeWorkDate(selectedAssignment.createdAt),
-        {
-          month: "short",
-          day: "numeric",
-          year: "numeric",
-        },
-      ),
-      updatedAt: formatReadableDate(
-        normalizeWorkDate(selectedAssignment.updatedAt),
-        {
-          month: "short",
-          day: "numeric",
-          year: "numeric",
-        },
-      ),
-      status: selectedAssignment.status,
-    };
-  }, [
-    allUsersById,
-    assignmentDialog.data,
-    assignmentShiftDetailsById,
-    shiftsById,
-    usersById,
-  ]);
-
-  const boardLoading =
-    !!activeFranchiseId &&
-    (shiftsQuery.isLoading ||
-      assignmentSearchQuery.isLoading ||
-      usersQuery.isLoading);
-  const boardRefreshing =
-    !!activeFranchiseId &&
-    (shiftsQuery.isFetching ||
-      assignmentSearchQuery.isFetching ||
-      usersQuery.isFetching ||
-      shiftDetailQueries.some((query) => query.isFetching));
-  const boardError =
-    (shiftsQuery.error instanceof Error && shiftsQuery.error) ||
-    (assignmentSearchQuery.error instanceof Error &&
-      assignmentSearchQuery.error) ||
-    (usersQuery.error instanceof Error && usersQuery.error) ||
-    null;
-
-  const updateSelectedDate = (nextDateKey: string) => {
-    setSelectedDateKey(nextDateKey);
-    setMonthCursor(startOfMonth(parseDateKey(nextDateKey)));
-    setAssignForm((prev) => ({ ...prev, workDate: nextDateKey }));
-  };
-
-  const handleOpenCreateShift = () => {
-    if (!canManageShifts) {
-      toast.error("Your current role can only view shifts.");
-      return;
-    }
-
-    const franchiseId =
-      lockedFranchiseId || activeFranchiseId || franchiseOptions[0]?.value;
-
-    if (!franchiseId) {
-      toast.error("Select a franchise before creating a shift.");
-      return;
-    }
-
-    setIsCreateShiftOpen(true);
-  };
-
-  const handleCloseAssignmentDialog = () => {
-    assignmentDialog.close();
-    setSelectedAssignmentId(null);
-  };
-
-  const handleCreateShift = async (
+  async function handleCreateShift(
     values: CreateShiftFormData,
-  ): Promise<SubmitResult | void> => {
-    if (!canManageShifts) {
+  ): Promise<SubmitResult | void> {
+    if (!activeFranchiseId && !values.franchise_id) {
       return {
         success: false,
-        error: "Your current role can only view shifts.",
+        error: "Choose a franchise before creating a shift.",
       };
     }
 
     await createShiftMutation.mutateAsync({
-      franchise_id: lockedFranchiseId || values.franchiseId,
-      name: values.name,
-      start_time: values.startTime,
-      end_time: values.endTime,
+      ...values,
+      franchise_id: values.franchise_id || activeFranchiseId,
     });
+  }
 
-    setIsCreateShiftOpen(false);
-  };
+  async function handleUpdateShift(
+    values: UpdateShiftFormData,
+  ): Promise<SubmitResult | void> {
+    if (!updatingShift) {
+      return { success: false, error: "No shift selected for update." };
+    }
 
-  const handleUpdateAssignmentStatus = async (
-    values: ShiftAssignmentDetailFormData,
-  ): Promise<SubmitResult | void> => {
-    if (!canManageShifts) {
+    await updateShiftMutation.mutateAsync({
+      shiftId: String(updatingShift.id),
+      data: values,
+    });
+  }
+
+  async function handleDeleteShift() {
+    if (!deletingShift) return;
+    await deleteShiftMutation.mutateAsync(String(deletingShift.id));
+    setDeletingShift(null);
+  }
+
+  async function handleAssignShift(
+    values: AssignShiftFormData,
+  ): Promise<SubmitResult | void> {
+    if (!assigningShift) {
       return {
         success: false,
-        error: "Your current role can only view shifts.",
+        error: "Choose a shift before assigning employees.",
       };
     }
 
-    const selectedAssignment = assignmentDialog.data;
+    const assignmentItems = values.userIds.map((userId) => ({
+      user_id: userId,
+      shift_id: assigningShift.id,
+      work_date: values.workDate,
+      note: values.note?.trim() || undefined,
+    }));
 
-    if (!selectedAssignment) {
+    if (assignmentItems.length === 1) {
+      await assignShiftMutation.mutateAsync(assignmentItems[0]);
+      return;
+    }
+
+    await assignShiftBulkMutation.mutateAsync({
+      items: assignmentItems,
+    });
+  }
+
+  async function handleChangeAssignmentStatus(
+    values: ShiftStatusUpdateFormData,
+  ): Promise<SubmitResult | void> {
+    if (!assignmentDialogState) {
       return {
         success: false,
-        error: "No assignment selected.",
+        error: "Choose an assignment before updating status.",
       };
     }
 
     await changeShiftAssignmentStatusMutation.mutateAsync({
-      shiftAssignmentId: selectedAssignment.id,
+      shiftAssignmentId: assignmentDialogState.assignmentId,
       data: {
         status: values.status,
       },
     });
-  };
+  }
 
-  const handleOpenAssignShift = (shift: Shift) => {
-    if (!canManageShifts) {
-      toast.error("Your current role can only view shifts.");
-      return;
-    }
-
-    if (!employeeScopeFranchiseId) {
-      toast.error("Select a franchise before assigning the shift.");
-      return;
-    }
-
-    if (
-      employeeFranchiseRolesQuery.isLoading ||
-      employeeFranchiseRolesQuery.isFetching
-    ) {
-      toast.error("Employee list is still loading for this franchise.");
-      return;
-    }
-
-    if (employeeFranchiseRolesQuery.error instanceof Error) {
-      toast.error("Failed to load employees for this franchise.", {
-        description: employeeFranchiseRolesQuery.error.message,
-      });
-      return;
-    }
-
-    if (assignableUsers.length === 0) {
-      toast.error("No employees are assigned to this franchise.");
-      return;
-    }
-
-    setAssigningShift(shift);
-    setAssignForm({
-      userId: "",
-      workDate: selectedDateKey,
-      note: "",
-    });
-  };
-
-  const handleAssignShift = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-
-    if (!canManageShifts) {
-      toast.error("Your current role can only view shifts.");
-      return;
-    }
-
-    if (!assigningShift || !assignForm.userId || !assignForm.workDate) {
-      toast.error("Choose a user and work date before assigning the shift.");
-      return;
-    }
-
-    await assignShiftMutation.mutateAsync({
-      user_id: assignForm.userId,
-      shift_id: assigningShift.id,
-      work_date: assignForm.workDate,
-      note: assignForm.note.trim() || undefined,
-    });
-
-    updateSelectedDate(assignForm.workDate);
+  function handleFranchiseChange(nextFranchiseId: string) {
+    setSelectedFranchiseId(nextFranchiseId);
+    setSearchTargetId("");
     setAssigningShift(null);
-  };
+    setAssignmentDialogState(null);
+  }
 
-  const handleRetry = () => {
-    if (activeFranchiseId) {
-      void shiftsQuery.refetch();
-      void assignmentSearchQuery.refetch();
-      shiftDetailQueries.forEach((query) => {
-        void query.refetch();
-      });
+  function handleSearchModeChange(nextMode: ShiftSearchMode) {
+    setSearchMode(nextMode);
+    setSearchTargetId("");
+  }
+
+  function handleSearchOptionChange(nextValue: string) {
+    if (searchMode === "franchiseName") {
+      handleFranchiseChange(nextValue);
+      return;
     }
-    void usersQuery.refetch();
-  };
+
+    setSearchTargetId(nextValue);
+  }
+
+  function handleClearSearch() {
+    if (searchMode !== "franchiseName") {
+      setSearchTargetId("");
+    }
+  }
 
   return (
-    <div className="flex h-full min-h-0 flex-col overflow-y-auto scrollbar-hide scrollbar-invisible">
-      <div className="mx-auto flex min-h-0 w-full max-w-7xl flex-1 flex-col pb-6">
+    <div className="flex h-full flex-col overflow-y-auto scrollbar-hide">
+      <div className="mx-auto flex min-h-0 w-full max-w-7xl flex-1 flex-col">
         <PageHeader
-          title="Shifts"
-          description="Coordinate daily assignments with a calendar-first board."
+          title="Shift Management"
+          description="Schedule shift assignments, update attendance status, and manage franchise coverage."
           icon={CalendarDays}
+          action={
+            canSelectFranchise ? (
+              <div className="min-w-70">
+                <p className="mb-2 text-xs font-semibold uppercase tracking-[0.18em] text-[#8D6E63]">
+                  Franchise
+                </p>
+                <Select
+                  value={activeFranchiseId || undefined}
+                  onValueChange={handleFranchiseChange}
+                  disabled={franchiseOptions.length === 0}
+                >
+                  <SelectTrigger className="w-full border-[#E8DFD6] bg-white">
+                    <SelectValue placeholder="Select franchise" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {franchiseOptions.map((franchise) => (
+                      <SelectItem key={franchise.value} value={franchise.value}>
+                        {franchise.name}{" "}
+                        {franchise.code ? `(${franchise.code})` : ""}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            ) : (
+              <div className="min-w-60 rounded-2xl border border-[#E8DFD6] bg-white px-4 py-3 shadow-sm">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#8D6E63]">
+                  Active Franchise
+                </p>
+                <p className="mt-1 text-sm font-semibold text-[#3E2723]">
+                  {selectedFranchise?.name ||
+                    currentFranchiseName ||
+                    "Scoped Franchise"}
+                </p>
+              </div>
+            )
+          }
         />
 
-        <ShiftOverviewFilters
-          canSelectFranchise={canSelectFranchise}
-          franchiseOptions={franchiseOptions}
-          activeFranchiseId={activeFranchiseId}
-          selectedFranchise={selectedFranchise}
-          scopedFranchiseName={currentFranchiseName}
-          selectedDateKey={selectedDateKey}
-          assignedCount={selectedDayAssignments.length}
-          openSlotsCount={unassignedShifts.length}
-          onFranchiseChange={(franchiseId) => {
-            setSelectedFranchiseId(franchiseId);
-            setSelectedAssignmentId(null);
-          }}
-          onDateChange={updateSelectedDate}
-        />
+        <div className="mb-6 rounded-2xl border border-[#E8DFD6] bg-white p-4 shadow-lg">
+          <p className="text-sm font-medium text-[#6D4C41]">{summaryText}</p>
+        </div>
 
-        <div className="grid min-h-0 flex-1 gap-6 lg:grid-cols-[1.55fr_0.95fr]">
-          <div className="flex min-h-0 flex-col">
-            <ShiftCalendarBoard
-              activeFranchiseId={activeFranchiseId}
-              boardError={boardError}
-              boardLoading={boardLoading}
-              boardRefreshing={boardRefreshing}
-              monthCursor={monthCursor}
-              calendarDays={calendarDays}
-              assignmentsByDate={assignmentsByDate}
-              selectedDateKey={selectedDateKey}
-              activeSelectedAssignmentId={activeSelectedAssignmentId}
-              shiftDetailsById={assignmentShiftDetailsById}
-              shiftsById={shiftsById}
-              usersById={usersById}
-              onPreviousMonth={() =>
-                setMonthCursor(
-                  (prev) =>
-                    new Date(prev.getFullYear(), prev.getMonth() - 1, 1),
-                )
-              }
-              onNextMonth={() =>
-                setMonthCursor(
-                  (prev) =>
-                    new Date(prev.getFullYear(), prev.getMonth() + 1, 1),
-                )
-              }
-              onSelectDate={updateSelectedDate}
-              onSelectAssignment={(assignment, dateKey) => {
-                updateSelectedDate(dateKey);
-                setSelectedAssignmentId(assignment.id);
-                assignmentDialog.openEdit(assignment);
-              }}
-              onRetry={handleRetry}
-            />
+        <div className="grid min-h-0 flex-1 gap-6 lg:grid-cols-10">
+          <div className="lg:col-span-7">
+            <div className="rounded-2xl border border-[#E8DFD6] bg-white p-6 shadow-lg">
+              <ShiftCalendarToolbar
+                view={calendar.view}
+                label={calendar.label}
+                selectedDateKey={calendar.selectedDateKey}
+                onViewChange={calendar.setView}
+                onPrevious={calendar.goToPrevious}
+                onNext={calendar.goToNext}
+                onToday={calendar.goToToday}
+              />
+
+              <ShiftCalendar
+                franchiseId={activeFranchiseId}
+                franchiseName={assignerFranchiseName}
+                view={calendar.view}
+                days={calendar.days}
+                selectedDateKey={calendar.selectedDateKey}
+                eventsByDate={pageData.displayedEventsByDate}
+                activeAssignmentId={assignmentDialogState?.assignmentId ?? null}
+                isLoading={pageData.isCalendarLoading}
+                isRefreshing={pageData.isCalendarFetching}
+                error={pageData.calendarError}
+                onSelectDate={calendar.selectDate}
+                onSelectAssignment={(event) =>
+                  setAssignmentDialogState({
+                    assignmentId: event.id,
+                    values: buildAssignmentDialogValues(
+                      event,
+                      authUser?.user?.name ?? "",
+                    ),
+                  })
+                }
+                onRetry={() => {
+                  void pageData.refetchAll();
+                }}
+              />
+            </div>
           </div>
 
-          <UnassignedShiftPanel
-            activeFranchiseId={activeFranchiseId}
-            boardLoading={boardLoading}
-            canManageShifts={canManageShifts}
-            selectedDateKey={selectedDateKey}
-            selectedFranchise={selectedFranchise}
-            unassignedShifts={unassignedShifts}
-            onCreate={handleOpenCreateShift}
-            onAssign={handleOpenAssignShift}
-          />
+          <div className="lg:col-span-3">
+            <ShiftListPanel
+              franchiseId={activeFranchiseId}
+              selectedDateKey={calendar.selectedDateKey}
+              shifts={pageData.shiftsForPanel}
+              isLoading={pageData.isShiftListLoading}
+              error={pageData.shiftListError}
+              onCreateShift={() => setIsCreateShiftOpen(true)}
+              onAssign={(shift) => setAssigningShift(shift)}
+              onDetail={(shift) => setDetailShift(shift)}
+              onUpdate={(shift) => setUpdatingShift(shift)}
+              onDelete={(shift) => setDeletingShift(shift)}
+              onRetry={() => {
+                void pageData.refetchAll();
+              }}
+              searchBar={
+                <ShiftSearchBar
+                  mode={searchMode}
+                  options={searchOptions}
+                  selectedOptionId={selectedSearchOptionId}
+                  helperText={getSearchHelperText(
+                    searchMode,
+                    canSelectFranchise,
+                  )}
+                  disableClear={searchMode === "franchiseName"}
+                  onModeChange={handleSearchModeChange}
+                  onOptionChange={handleSearchOptionChange}
+                  onClear={handleClearSearch}
+                />
+              }
+            />
+          </div>
         </div>
       </div>
 
       <CreateShiftDialog
         open={isCreateShiftOpen}
+        activeFranchiseId={activeFranchiseId}
+        canSelectFranchise={canSelectFranchise}
+        franchiseOptions={createShiftFranchiseOptions}
         onOpenChange={setIsCreateShiftOpen}
-        currentFranchiseId={lockedFranchiseId}
-        franchiseOptions={franchiseOptions}
-        defaultValues={createShiftDefaultValues}
         onSubmit={handleCreateShift}
-      />
-
-      <ShiftAssignmentDetailDialog
-        open={assignmentDialog.isOpen}
-        onOpenChange={(open) => !open && handleCloseAssignmentDialog()}
-        values={assignmentDialogValues}
-        canManageStatus={canManageShifts}
-        onSubmit={handleUpdateAssignmentStatus}
+        onSuccess={() => setIsCreateShiftOpen(false)}
       />
 
       <AssignShiftDialog
         open={!!assigningShift}
         shift={assigningShift}
-        users={assignableUsers}
-        form={assignForm}
-        onOpenChange={(open) => !open && setAssigningShift(null)}
-        onFormChange={(patch) =>
-          setAssignForm((prev) => ({ ...prev, ...patch }))
-        }
+        employeeOptions={employeeFieldOptions}
+        defaultWorkDate={calendar.selectedDateKey}
+        onOpenChange={(open) => {
+          if (!open) {
+            setAssigningShift(null);
+          }
+        }}
         onSubmit={handleAssignShift}
-        isPending={assignShiftMutation.isPending}
+        onSuccess={() => setAssigningShift(null)}
+      />
+
+      <ShiftAssignmentDialog
+        open={!!assignmentDialogState}
+        values={assignmentDialogState?.values}
+        onOpenChange={(open) => {
+          if (!open) {
+            setAssignmentDialogState(null);
+          }
+        }}
+        onSubmit={handleChangeAssignmentStatus}
+        onSuccess={() => setAssignmentDialogState(null)}
+      />
+
+      <ShiftDetailDialog
+        open={!!detailShift}
+        shift={detailShift}
+        onOpenChange={(open) => {
+          if (!open) setDetailShift(null);
+        }}
+      />
+
+      <UpdateShiftDialog
+        open={!!updatingShift}
+        shift={updatingShift}
+        onOpenChange={(open) => {
+          if (!open) setUpdatingShift(null);
+        }}
+        onSubmit={handleUpdateShift}
+        onSuccess={() => setUpdatingShift(null)}
+      />
+
+      <DeleteDialog
+        open={!!deletingShift}
+        onOpenChange={(open) => {
+          if (!open) setDeletingShift(null);
+        }}
+        entity={deletingShift}
+        entityName="Shift"
+        onConfirm={handleDeleteShift}
+        isDeleting={deleteShiftMutation.isPending}
+        getDisplayName={(shift) => shift.name}
+        deleteMessage={(shift) =>
+          `Delete the "${shift.name}" shift? All assignments for this shift will also be removed.`
+        }
       />
     </div>
   );
-};
+}
+
+function ShiftPage() {
+  const { isAdmin, getCurrentRole } = useAuthStore();
+  const currentRole = getCurrentRole();
+  const roleCode =
+    currentRole?.code ||
+    (currentRole as unknown as { role?: string })?.role ||
+    "";
+
+  if (isAdmin() || roleCode === "MANAGER") {
+    return <ShiftAdminPage />;
+  }
+
+  return <StaffShiftView />;
+}
 
 export default ShiftPage;

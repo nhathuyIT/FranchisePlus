@@ -21,6 +21,8 @@ const SHIFT_ASSIGNMENT_KEYS = {
     ["shift-assignments", "detail", shiftAssignmentId] as const,
   byUser: (userId: string, date: string) =>
     ["shift-assignments", "user", userId, date] as const,
+  byShift: (shiftId: string) =>
+    ["shift-assignments", "shift", shiftId] as const,
   byFranchise: (franchiseId: string) =>
     ["shift-assignments", "franchise", franchiseId] as const,
 };
@@ -58,7 +60,7 @@ export const useShiftAssignmentDetailQuery = (
 /**
  * Get all shift assignments by user and work date
  */
-export const useShiftAssignmentsByUserQuery = (
+export const useGetAllShiftsAssignByUserQuery = (
   userId: string,
   date: string,
   enabled = true,
@@ -71,9 +73,23 @@ export const useShiftAssignmentsByUserQuery = (
 };
 
 /**
+ * Get all shift assignments by shift id
+ */
+export const useGetAllShiftAssignByShiftIDQuery = (
+  shiftId: string,
+  enabled = true,
+) => {
+  return useQuery({
+    queryKey: SHIFT_ASSIGNMENT_KEYS.byShift(shiftId),
+    queryFn: () => shiftAssignmentApi.getAllShiftAssignByShiftID(shiftId),
+    enabled: !!shiftId && enabled,
+  });
+};
+
+/**
  * Get all shift assignments by franchise
  */
-export const useShiftAssignmentsByFranchiseQuery = (
+export const useGetAllShiftAssignByFranchiseQuery = (
   franchiseId: string,
   enabled = true,
 ) => {
@@ -84,6 +100,12 @@ export const useShiftAssignmentsByFranchiseQuery = (
     enabled: !!franchiseId && enabled,
   });
 };
+
+export const useShiftAssignmentsByUserQuery =
+  useGetAllShiftsAssignByUserQuery;
+
+export const useShiftAssignmentsByFranchiseQuery =
+  useGetAllShiftAssignByFranchiseQuery;
 
 /**
  * Assign a shift for one user
