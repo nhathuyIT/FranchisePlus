@@ -1,5 +1,12 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Coffee, LogOut, KeyRound, UserRound } from "lucide-react";
+import {
+  Coffee,
+  LogOut,
+  KeyRound,
+  UserRound,
+  ShoppingCart,
+  BadgePercent,
+} from "lucide-react";
 import {
   LayoutDashboard,
   Users,
@@ -31,10 +38,11 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   category: Grid3x3,
   product: ShoppingBag,
   promotion: TicketPercent,
-  voucher: TicketPercent,
+  voucher: BadgePercent,
   shield: ShieldCheck,
   customers: UserCheck,
   calendar: CalendarDays,
+  cart: ShoppingCart,
 };
 
 const sidebarMenuItems = ADMIN_MENU.filter((item) => {
@@ -115,7 +123,9 @@ const AdminSideBar = ({ collapsed = false }: AdminSidebarProps) => {
       {!collapsed && (
         <button
           type="button"
-          onClick={() => navigate(`/admin/${ROUTER_URL.ADMIN_ROUTER.MY_PROFILE}`)}
+          onClick={() =>
+            navigate(`/admin/${ROUTER_URL.ADMIN_ROUTER.MY_PROFILE}`)
+          }
           className="p-4 border-amber-800/50 text-left hover:bg-amber-900/20 transition-colors"
         >
           <div className="flex items-center gap-3">
@@ -139,7 +149,9 @@ const AdminSideBar = ({ collapsed = false }: AdminSidebarProps) => {
       {collapsed && (
         <button
           type="button"
-          onClick={() => navigate(`/admin/${ROUTER_URL.ADMIN_ROUTER.MY_PROFILE}`)}
+          onClick={() =>
+            navigate(`/admin/${ROUTER_URL.ADMIN_ROUTER.MY_PROFILE}`)
+          }
           className="p-2 border-b border-amber-800/50 flex justify-center w-full hover:bg-amber-900/20 transition-colors"
           title="My Profile"
         >
@@ -208,7 +220,9 @@ const AdminSideBar = ({ collapsed = false }: AdminSidebarProps) => {
         <div className="p-4 flex flex-col gap-1">
           <Button
             variant="ghost"
-            onClick={() => navigate(`/admin/${ROUTER_URL.ADMIN_ROUTER.MY_PROFILE}`)}
+            onClick={() =>
+              navigate(`/admin/${ROUTER_URL.ADMIN_ROUTER.MY_PROFILE}`)
+            }
             className={cn(
               "w-full gap-3 text-amber-200 hover:text-amber-50 hover:bg-amber-800/50",
               isMyProfileActive && "bg-amber-800/60 text-amber-50",
