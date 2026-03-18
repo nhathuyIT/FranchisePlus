@@ -1,4 +1,5 @@
 import * as z from "zod";
+import { useMemo, useState } from "react";
 import { Image as ImageIcon, SquarePen } from "lucide-react";
 import { ImageUpload } from "@/components/ui/image-upload";
 import { FormDialog, useFormDialog } from "@/components/form-dialog";
@@ -12,6 +13,7 @@ import type {
 	AdminProfile,
 	UpdateAdminProfileInput,
 } from "@/types/admin-profile.type";
+import LoadingLayout from "@/layouts/loading-layout";
 
 const editProfileSchema = z.object({
 	name: z.string().min(1, "Name is required"),
@@ -66,13 +68,17 @@ const editProfileFields: FieldConfig<EditProfileFormData>[] = [
 	},
 ];
 
-const profileToFormValues = (profile: AdminProfile): EditProfileFormData => ({
-	name: profile.name ?? "",
-	email: profile.email ?? "",
-	phone: profile.phone ?? "",
-	address: profile.address ?? "",
-	avatarUrl: profile.avatarUrl ?? "",
+const profileToFormValues = (
+	profile: AdminProfile | null,
+): EditProfileFormData => ({
+	name: profile?.name ?? "",
+	email: profile?.email ?? "",
+	phone: profile?.phone ?? "",
+	address: profile?.address ?? "",
+	avatarUrl: profile?.avatarUrl ?? "",
 });
+
+const DIALOG_CLOSE_ANIMATION_MS = 220;
 
 const MyProfilePage = () => {
 	const dialog = useFormDialog<AdminProfile>();
@@ -81,18 +87,24 @@ const MyProfilePage = () => {
 		data: profile,
 		isLoading,
 		error,
-		// refetch,
+		refetch,
 	} = useAdminProfileQuery();
 
 	const updateProfileMutation = useUpdateAdminProfileMutation();
+	const [isReloadingAfterSave, setIsReloadingAfterSave] = useState(false);
+	const currentProfile = profile ?? null;
+	const dialogValues = useMemo(
+		() => profileToFormValues(currentProfile),
+		[currentProfile],
+	);
 
-	const memberSince = profile?.createdAt
-		? new Date(profile.createdAt).getFullYear().toString()
+	const memberSince = currentProfile?.createdAt
+		? new Date(currentProfile.createdAt).getFullYear().toString()
 		: "";
 
 	const handleOpenEdit = () => {
-		if (!profile) return;
-		dialog.openEdit(profile);
+		if (!currentProfile) return;
+		dialog.openEdit(currentProfile);
 	};
 
 	const handleSubmit = async (values: EditProfileFormData) => {
@@ -114,15 +126,28 @@ const MyProfilePage = () => {
 		});
 	};
 
-	if (isLoading) {
+	const handleDialogSuccess = async () => {
+		dialog.close();
+
+		await new Promise<void>((resolve) => {
+			setTimeout(resolve, DIALOG_CLOSE_ANIMATION_MS);
+		});
+
+		setIsReloadingAfterSave(true);
+		try {
+			await refetch();
+		} finally {
+			setIsReloadingAfterSave(false);
+		}
+	};
+
+	if (isLoading || isReloadingAfterSave) {
 		return (
-			<div className="bg-white rounded-2xl border border-[#E8E0D8] p-6">
-				<p className="text-[#6D4C41]">Loading profile...</p>
-			</div>
+			<LoadingLayout forceVisible mode="fullscreen" message="Loading profile" />
 		);
 	}
 
-	if (error || !profile) {
+	if (error || !currentProfile) {
 		return (
 			<div className="bg-white rounded-2xl border border-[#E8E0D8] p-6 space-y-4">
 				<p className="text-red-600">
@@ -159,16 +184,16 @@ const MyProfilePage = () => {
 						<div className="relative px-6 md:px-10 pb-8">
 							<div className="absolute -top-16 left-6 md:left-10">
 								<div className="w-32 h-32 rounded-full border-4 border-white shadow-lg overflow-hidden bg-[#EFEBE9]">
-									{profile.avatarUrl ? (
+									{currentProfile.avatarUrl ? (
 										<img
-											src={profile.avatarUrl}
-											alt={profile.name}
+											src={currentProfile.avatarUrl}
+											alt={currentProfile.name}
 											className="w-full h-full object-cover"
 										/>
 									) : (
 										<div className="w-full h-full flex items-center justify-center">
 											<span className="text-5xl font-bold text-[#6D4C41]">
-												{profile.name?.charAt(0)?.toUpperCase() || "U"}
+												{currentProfile.name?.charAt(0)?.toUpperCase() || "U"}
 											</span>
 										</div>
 									)}
@@ -178,7 +203,7 @@ const MyProfilePage = () => {
 							<div className="pt-20 md:pt-6 md:ml-40 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
 								<div>
 									<h2 className="font-coffee text-3xl text-[#3E2723] mb-1">
-										{profile.name || "Admin"}
+										{currentProfile.name || "Admin"}
 									</h2>
 									<div className="flex items-center gap-3 text-sm">
 										<span className="flex items-center gap-1.5 text-[#C97B3D] font-semibold uppercase tracking-wider text-xs">
@@ -227,7 +252,7 @@ const MyProfilePage = () => {
 												Email Address
 											</p>
 											<p className="text-sm font-medium text-[#3E2723]">
-												{profile.email || "Not provided"}
+												{currentProfile.email || "Not provided"}
 											</p>
 										</div>
 									</div>
@@ -241,14 +266,14 @@ const MyProfilePage = () => {
 												Phone Number
 											</p>
 											<p className="text-sm font-medium text-[#3E2723]">
-												{profile.phone || "Not provided"}
+												{currentProfile.phone || "Not provided"}
 											</p>
 										</div>
 									</div>
 								</div>
 							</div>
 
-							<div className="p-8">
+							{/* <div className="p-8">
 								<h3 className="font-coffee text-xl text-[#3E2723] mb-6">
 									Address
 								</h3>
@@ -256,7 +281,7 @@ const MyProfilePage = () => {
 								<p className="text-sm font-medium text-[#3E2723] leading-relaxed whitespace-pre-line">
 									{profile.address || "No address provided"}
 								</p>
-							</div>
+							</div> */}
 						</div>
 					</div>
 				</section>
@@ -270,13 +295,10 @@ const MyProfilePage = () => {
 				size="lg"
 				schema={editProfileSchema}
 				fields={editProfileFields}
-				values={profileToFormValues(dialog.data ?? profile)}
+				values={dialogValues}
 				mode="edit"
 				onSubmit={handleSubmit}
-				onSuccess={() => {
-					dialog.close();
-					// void refetch();
-				}}
+				onSuccess={handleDialogSuccess}
 			/>
 		</>
 	);
