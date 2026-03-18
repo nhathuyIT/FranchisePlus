@@ -12,6 +12,7 @@ import {
   getPaginationRowModel,
   useReactTable,
 } from "@tanstack/react-table";
+import "@/types/table.types";
 import {
   ChevronLeft,
   ChevronRight,
@@ -62,6 +63,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { cn } from "@/lib/utils";
 
 // Type Definitions
 export interface ColumnFilter {
@@ -115,6 +117,15 @@ export interface DataTableProps<TData> {
   searchValue?: string;
   /** Called whenever the search input changes — use with searchValue for API-based search */
   onSearchChange?: (value: string) => void;
+  /** Optional server-side pagination config */
+  serverPagination?: {
+    pageNum: number;
+    pageSize: number;
+    totalItems: number;
+    totalPages: number;
+    onPageChange: (pageNum: number) => void;
+    onPageSizeChange?: (pageSize: number) => void;
+  };
 }
 
 // Internal Components
@@ -179,6 +190,7 @@ export function DataTable<TData>({
   importLabel = "Import",
   searchValue,
   onSearchChange,
+  serverPagination,
 }: DataTableProps<TData>) {
   // State Management
   const [sorting, setSorting] = useState<SortingState>([]);
@@ -195,6 +207,14 @@ export function DataTable<TData>({
     pageIndex: 0,
     pageSize: initialPageSize,
   });
+
+  const isServerPagination = Boolean(serverPagination);
+  const currentPagination = isServerPagination
+    ? {
+        pageIndex: Math.max(0, serverPagination!.pageNum - 1),
+        pageSize: serverPagination!.pageSize,
+      }
+    : pagination;
 
   // Add checkbox column if row selection is enabled
   const checkboxColumn: ColumnDef<TData> = {
@@ -226,6 +246,7 @@ export function DataTable<TData>({
         id: "actions",
         header: () => <div className="text-right">Actions</div>,
         enableSorting: false,
+        meta: { align: "right" as const },
         cell: ({ row }) => (
           <div className="flex justify-end gap-2">
             {renderActions(row.original)}
@@ -254,7 +275,7 @@ export function DataTable<TData>({
       globalFilter,
       columnVisibility,
       rowSelection,
-      pagination,
+      pagination: currentPagination,
     },
     onSortingChange: setSorting,
     onColumnFiltersChange: (updater) => {
@@ -281,7 +302,29 @@ export function DataTable<TData>({
         onRowSelectionChange(selectedRows);
       }
     },
-    onPaginationChange: setPagination,
+    onPaginationChange: (updater) => {
+      if (!isServerPagination) {
+        setPagination(updater);
+        return;
+      }
+
+      const current = {
+        pageIndex: Math.max(0, serverPagination!.pageNum - 1),
+        pageSize: serverPagination!.pageSize,
+      };
+
+      const next = typeof updater === "function" ? updater(current) : updater;
+
+      if (next.pageSize !== current.pageSize) {
+        serverPagination!.onPageSizeChange?.(next.pageSize);
+      }
+
+      if (next.pageIndex !== current.pageIndex) {
+        serverPagination!.onPageChange(next.pageIndex + 1);
+      }
+    },
+    manualPagination: isServerPagination,
+    pageCount: isServerPagination ? serverPagination!.totalPages : undefined,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
@@ -344,15 +387,22 @@ export function DataTable<TData>({
   };
 
   // Pagination Info
+  const totalRows = isServerPagination
+    ? serverPagination!.totalItems
+    : table.getFilteredRowModel().rows.length;
   const startRow =
-    table.getState().pagination.pageIndex *
-      table.getState().pagination.pageSize +
-    1;
-  const endRow = Math.min(
-    startRow + table.getState().pagination.pageSize - 1,
-    table.getFilteredRowModel().rows.length,
-  );
-  const totalRows = table.getFilteredRowModel().rows.length;
+    totalRows === 0
+      ? 0
+      : table.getState().pagination.pageIndex *
+          table.getState().pagination.pageSize +
+        1;
+  const endRow =
+    totalRows === 0
+      ? 0
+      : Math.min(
+          startRow + table.getState().pagination.pageSize - 1,
+          totalRows,
+        );
 
   return (
     <div className="flex flex-col h-full">
@@ -640,15 +690,24 @@ export function DataTable<TData>({
                     {headerGroup.headers.map((header) => (
                       <TableHead
                         key={header.id}
-                        className="font-semibold text-[#3E2723]"
+                        className={cn(
+                          "font-semibold text-[#3E2723]",
+                          header.column.columnDef.meta?.align === "right" &&
+                            "text-right",
+                          header.column.columnDef.meta?.align === "center" &&
+                            "text-center",
+                        )}
                       >
                         {header.isPlaceholder ? null : (
                           <div
-                            className={
-                              header.column.getCanSort()
-                                ? "flex items-center gap-2 cursor-pointer select-none"
-                                : ""
-                            }
+                            className={cn(
+                              header.column.getCanSort() &&
+                                "flex items-center gap-2 cursor-pointer select-none",
+                              header.column.columnDef.meta?.align === "right" &&
+                                "justify-end",
+                              header.column.columnDef.meta?.align ===
+                                "center" && "justify-center",
+                            )}
                             onClick={header.column.getToggleSortingHandler()}
                           >
                             {flexRender(
@@ -676,7 +735,7 @@ export function DataTable<TData>({
               <TableBody>
                 {/* Loading State */}
                 {isLoading ? (
-                  <TableSkeleton rows={pagination.pageSize} />
+                  <TableSkeleton rows={table.getState().pagination.pageSize} />
                 ) : /* Error State */ error ? (
                   <TableRow>
                     <TableCell
@@ -711,7 +770,17 @@ export function DataTable<TData>({
                         style={rowStyle}
                       >
                         {row.getVisibleCells().map((cell) => (
-                          <TableCell key={cell.id} className="text-[#5D4037]">
+                          <TableCell
+                            key={cell.id}
+                            className={cn(
+                              "text-[#5D4037]",
+                              cell.column.columnDef.meta?.align === "right" &&
+                                "text-right",
+                              cell.column.columnDef.meta?.align === "center" &&
+                                "text-center",
+                            )}
+                          >
+                            {" "}
                             {flexRender(
                               cell.column.columnDef.cell,
                               cell.getContext(),
@@ -735,13 +804,15 @@ export function DataTable<TData>({
           <div className="flex items-center gap-2">
             <span className="text-sm text-[#5D4037]">Rows per page</span>
             <Select
-              value={String(pagination.pageSize)}
+              value={String(table.getState().pagination.pageSize)}
               onValueChange={(value) => {
                 table.setPageSize(Number(value));
               }}
             >
               <SelectTrigger className="w-[70px] border-[#E8DFD6]">
-                <SelectValue placeholder={String(pagination.pageSize)} />
+                <SelectValue
+                  placeholder={String(table.getState().pagination.pageSize)}
+                />
               </SelectTrigger>
               <SelectContent side="top">
                 {[5, 10, 20, 30, 50].map((pageSize) => (

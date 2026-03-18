@@ -93,6 +93,27 @@ export interface InventoryAdjustRequest {
   reason?: string;
 }
 
+/**
+ * Single item in a bulk adjust request.
+ * Reuses the same fields as InventoryAdjustRequest.
+ */
+export interface InventoryBulkAdjustItem {
+  productFranchiseId: string;
+  change: number;
+  alertThreshold: number;
+  reason?: string;
+}
+
+/**
+ * POST /api/inventories/adjust/bulk
+ * Body: { items: [{ product_franchise_id, change, alert_threshold, reason }] }
+ *
+ * Axios interceptor auto-converts camelCase → snake_case on request.
+ */
+export interface InventoryBulkAdjustRequest {
+  items: InventoryBulkAdjustItem[];
+}
+
 // =============================================================================
 // Response Types
 // =============================================================================

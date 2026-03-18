@@ -210,34 +210,26 @@ const InventoryList = () => {
     setDeleteTarget(item);
   };
 
-  const handleSaveRow = useCallback(
+  const handleSaveBulk = useCallback(
     async (
-      item: InventorySearchItem,
-      newQuantity: number,
-      newAlertThreshold: number,
+      changes: Array<{
+        item: InventorySearchItem;
+        newQuantity: number;
+        newAlertThreshold: number;
+      }>,
     ) => {
-      const quantityChanged = newQuantity !== item.quantity;
-      const thresholdChanged = newAlertThreshold !== item.alertThreshold;
-
-      if (!quantityChanged && !thresholdChanged) return;
-
-      const delta = newQuantity - item.quantity;
-      await inventoryApi.adjust({
+      const items = changes.map(({ item, newQuantity, newAlertThreshold }) => ({
         productFranchiseId: String(item.productFranchiseId),
-        change: quantityChanged ? delta : 0,
+        change: newQuantity - item.quantity,
         alertThreshold: newAlertThreshold,
         reason: "Inline table edit",
-      });
+      }));
 
-      const parts: string[] = [];
-      if (quantityChanged) {
-        parts.push(`quantity ${delta > 0 ? "+" : ""}${delta}`);
-      }
-      if (thresholdChanged) {
-        parts.push(`threshold -> ${newAlertThreshold}`);
-      }
-      toast.success(`Updated "${item.productName}": ${parts.join(", ")}`);
+      await inventoryApi.adjustBulk({ items });
 
+      toast.success(
+        `Updated ${changes.length} inventory item(s) successfully`,
+      );
       void refetch();
     },
     [refetch],
@@ -330,20 +322,22 @@ const InventoryList = () => {
               onCancel={cancelImportPreview}
             />
           ) : (
-            <InventoryTable
-              items={canViewInventory ? filteredItems : []}
-              baselineItems={canViewInventory ? baselineTableData : []}
-              isLoading={isLoading || isFetching || deleteMutation.isPending}
-              isImporting={isImporting}
-              error={listError}
-              onRetry={refetch}
-              onImport={canManageInventory ? handleImport : undefined}
-              onDiscardChanges={resetMainTableData}
-              onEdit={canManageInventory ? handleEdit : undefined}
-              onDelete={canManageInventory ? handleOpenDelete : undefined}
-              canEdit={canManageInventory}
-              onSaveRow={canManageInventory ? handleSaveRow : undefined}
-            />
+            <div className="flex-1 flex flex-col min-h-0">
+              <InventoryTable
+                items={canViewInventory ? filteredItems : []}
+                baselineItems={canViewInventory ? baselineTableData : []}
+                isLoading={isLoading || isFetching || deleteMutation.isPending}
+                isImporting={isImporting}
+                error={listError}
+                onRetry={refetch}
+                onImport={canManageInventory ? handleImport : undefined}
+                onDiscardChanges={resetMainTableData}
+                onEdit={canManageInventory ? handleEdit : undefined}
+                onDelete={canManageInventory ? handleOpenDelete : undefined}
+                canEdit={canManageInventory}
+                onSaveBulk={canManageInventory ? handleSaveBulk : undefined}
+              />
+            </div>
           )}
         </div>
 

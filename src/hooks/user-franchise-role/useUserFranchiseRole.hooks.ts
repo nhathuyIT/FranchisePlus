@@ -27,10 +27,14 @@ export const userFranchiseRoleKeys = {
  */
 export const useUserFranchiseRoleSearch = (
   params: UserFranchiseRoleSearchRequest,
+  options?: {
+    enabled?: boolean;
+  },
 ) => {
   return useQuery({
     queryKey: userFranchiseRoleKeys.list(params),
     queryFn: () => ufrApi.search(params),
+    enabled: options?.enabled ?? true,
   });
 };
 

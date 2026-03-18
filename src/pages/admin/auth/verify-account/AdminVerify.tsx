@@ -9,14 +9,13 @@ import {
   RefreshCw,
 } from "lucide-react";
 import { ROUTER_URL } from "@/router/route.const";
-import { useResendClientToken } from "@/hooks/client/useClient.hooks";
-import { useVerifyToken } from "@/hooks/auth/useAuth.hooks";
+import { useResendToken, useVerifyToken } from "@/hooks/auth/useAuth.hooks";
 
 const AdminVerifyAccount = () => {
   const { id: token } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const verifyMutation = useVerifyToken();
-  const resendMutation = useResendClientToken();
+  const resendMutation = useResendToken();
   const [email, setEmail] = useState("");
 
   // Trigger on mount
@@ -27,7 +26,6 @@ const AdminVerifyAccount = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token]);
 
-  // Redirect to login after success
   useEffect(() => {
     if (!verifyMutation.isSuccess) return;
     const timer = setTimeout(() => {

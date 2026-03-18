@@ -39,11 +39,16 @@ export interface PageInfoResponse {
 
 export interface ShiftSearchCondition {
   name?: string;
+  franchise_id?: string;
+  start_time?: string;
+  end_time?: string;
+  is_active?: boolean | string;
+  is_deleted: boolean;
   franchiseId?: string;
   startTime?: string;
   endTime?: string;
-  isActive?: string;
-  isDeleted: boolean;
+  isActive?: boolean | string;
+  isDeleted?: boolean;
 }
 
 export interface ShiftSearchRequest {

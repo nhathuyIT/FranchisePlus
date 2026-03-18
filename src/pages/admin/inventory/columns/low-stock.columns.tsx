@@ -1,4 +1,5 @@
 import type { ColumnDef } from "@tanstack/react-table";
+import "@/types/table.types";
 import { StockStatusBadge } from "@/components/common/StockStatusBadge";
 import type { InventorySearchItem } from "@/api/inventory/inventory.type";
 
@@ -22,6 +23,7 @@ export const lowStockColumns: ColumnDef<InventorySearchItem>[] = [
   {
     accessorKey: "quantity",
     header: "Current",
+    meta: { align: "right" },
     cell: ({ row }) => (
       <span className="text-[#3E2723] font-semibold">
         {row.original.quantity}
@@ -31,6 +33,7 @@ export const lowStockColumns: ColumnDef<InventorySearchItem>[] = [
   {
     accessorKey: "alertThreshold",
     header: "Threshold",
+    meta: { align: "right" },
     cell: ({ row }) => (
       <span className="text-[#5D4037]">
         {row.original.alertThreshold}
@@ -41,6 +44,7 @@ export const lowStockColumns: ColumnDef<InventorySearchItem>[] = [
     id: "shortage",
     header: "Shortage",
     enableSorting: false,
+    meta: { align: "right" },
     cell: ({ row }) => {
       const shortage =
         row.original.alertThreshold - row.original.quantity;

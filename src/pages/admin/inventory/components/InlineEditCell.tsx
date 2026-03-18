@@ -51,7 +51,7 @@ export const InlineEditCell = ({ item, fieldName }: InlineEditCellProps) => {
       control={control}
       name={`rows.${fieldIndex}.${fieldName}`}
       render={({ field }) => (
-        <div className="relative group">
+        <div className="relative group flex justify-end">
           <input
             id={`inventory-inline-${fieldName}-${String(item.id)}`}
             type="number"
@@ -70,7 +70,7 @@ export const InlineEditCell = ({ item, fieldName }: InlineEditCellProps) => {
             }}
             onBlur={field.onBlur}
             className={[
-              "w-24 px-2 py-1 text-sm rounded-md border-2 transition-all duration-200",
+              "w-24 px-2 py-1 text-sm text-right rounded-md border-2 transition-all duration-200",
               "focus:outline-none focus:ring-2 focus:ring-offset-0",
               "[-moz-appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none",
               hasError

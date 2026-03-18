@@ -338,32 +338,34 @@ const FranchiseList = () => {
           </div>
 
           {/* DataTable — never passes TanStack isLoading to avoid double loader */}
-          <FranchiseTable
-            franchises={canViewFranchises ? franchises : []}
-            isLoading={isLoading || isFetching || deleteMutation.isPending}
-            error={listError}
-            onRetry={refetch}
-            onBulkDelete={canManageFranchises ? handleBulkDelete : undefined}
-            onEdit={
-              canManageFranchises || canManageOwnFranchise
-                ? handleEdit
-                : undefined
-            }
-            onView={canViewFranchises ? handleView : undefined}
-            onDelete={canManageFranchises ? handleOpenDelete : undefined}
-            onStatusToggle={
-              canManageFranchises ? handleStatusToggle : undefined
-            }
-            statusPendingId={
-              statusMutation.isPending
-                ? String(statusMutation.variables?.id)
-                : null
-            }
-            canEdit={canManageFranchises}
-            onAssignProducts={
-              canViewFranchises ? handleAssignProducts : undefined
-            }
-          />
+          <div className="flex-1 flex flex-col min-h-0">
+            <FranchiseTable
+              franchises={canViewFranchises ? franchises : []}
+              isLoading={isLoading || isFetching || deleteMutation.isPending}
+              error={listError}
+              onRetry={refetch}
+              onBulkDelete={canManageFranchises ? handleBulkDelete : undefined}
+              onEdit={
+                canManageFranchises || canManageOwnFranchise
+                  ? handleEdit
+                  : undefined
+              }
+              onView={canViewFranchises ? handleView : undefined}
+              onDelete={canManageFranchises ? handleOpenDelete : undefined}
+              onStatusToggle={
+                canManageFranchises ? handleStatusToggle : undefined
+              }
+              statusPendingId={
+                statusMutation.isPending
+                  ? String(statusMutation.variables?.id)
+                  : null
+              }
+              canEdit={canManageFranchises}
+              onAssignProducts={
+                canViewFranchises ? handleAssignProducts : undefined
+              }
+            />
+          </div>
         </div>
 
         {/* Form Dialog using new reusable component */}
