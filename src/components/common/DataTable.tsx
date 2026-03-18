@@ -692,16 +692,21 @@ export function DataTable<TData>({
                         key={header.id}
                         className={cn(
                           "font-semibold text-[#3E2723]",
-                          header.column.columnDef.meta?.align === "right" && "text-right",
-                          header.column.columnDef.meta?.align === "center" && "text-center",
+                          header.column.columnDef.meta?.align === "right" &&
+                            "text-right",
+                          header.column.columnDef.meta?.align === "center" &&
+                            "text-center",
                         )}
                       >
                         {header.isPlaceholder ? null : (
                           <div
                             className={cn(
-                              header.column.getCanSort() && "flex items-center gap-2 cursor-pointer select-none",
-                              header.column.columnDef.meta?.align === "right" && "justify-end",
-                              header.column.columnDef.meta?.align === "center" && "justify-center",
+                              header.column.getCanSort() &&
+                                "flex items-center gap-2 cursor-pointer select-none",
+                              header.column.columnDef.meta?.align === "right" &&
+                                "justify-end",
+                              header.column.columnDef.meta?.align ===
+                                "center" && "justify-center",
                             )}
                             onClick={header.column.getToggleSortingHandler()}
                           >
@@ -769,10 +774,14 @@ export function DataTable<TData>({
                             key={cell.id}
                             className={cn(
                               "text-[#5D4037]",
-                              cell.column.columnDef.meta?.align === "right" && "text-right",
-                              cell.column.columnDef.meta?.align === "center" && "text-center",
+                              cell.column.columnDef.meta?.align === "right" &&
+                                "text-right",
+                              cell.column.columnDef.meta?.align === "center" &&
+                                "text-center",
                             )}
-                          >                            {flexRender(
+                          >
+                            {" "}
+                            {flexRender(
                               cell.column.columnDef.cell,
                               cell.getContext(),
                             )}
