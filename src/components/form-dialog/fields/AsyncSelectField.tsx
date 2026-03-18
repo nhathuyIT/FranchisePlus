@@ -32,6 +32,8 @@ function AsyncSelectFieldComponent<TFormData extends FieldValues>({
   const asyncConfig = config.asyncOptions;
   const debounceMs = asyncConfig?.debounceMs ?? 300;
   const minChars = asyncConfig?.minChars ?? 0;
+  const emptyText = asyncConfig?.emptyText ?? "No options found";
+  const loadingText = asyncConfig?.loadingText ?? "Loading...";
 
   const loadOptions = React.useCallback(
     async (search: string) => {
@@ -88,13 +90,6 @@ function AsyncSelectFieldComponent<TFormData extends FieldValues>({
     };
   }, [searchTerm, isOpen, loadOptions, debounceMs]);
 
-  // Load initial options when opened
-  React.useEffect(() => {
-    if (isOpen && options.length === 0 && !isLoading) {
-      loadOptions("");
-    }
-  }, [isOpen, options.length, isLoading, loadOptions]);
-
   // Cleanup on unmount
   React.useEffect(() => {
     return () => {
@@ -128,7 +123,8 @@ function AsyncSelectFieldComponent<TFormData extends FieldValues>({
               }))}
               placeholder={config.placeholder ?? "Select..."}
               searchPlaceholder={"Search..."}
-              emptyText={"No options found"}
+              emptyText={emptyText}
+              loadingText={loadingText}
               isLoading={isLoading}
               disabled={disabled}
               open={isOpen}

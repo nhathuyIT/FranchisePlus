@@ -1,6 +1,6 @@
 import type { Activatable, BaseTimestamp, SoftDeletable } from "./common";
 
-export type CartStatus = string;
+export type CartStatus = "ACTIVE" | "CHECKED_OUT" | "CANCELED";
 
 export interface CartItemOptionRequest {
   productFranchiseId: string;
@@ -74,7 +74,8 @@ export interface CartOptionResponse {
   priceSnapshot: number;
   discountAmount: number;
   finalPrice: number;
-  product: CartProductInfo;
+  productName: string;
+  productImageUrl: string;
 }
 
 export interface CartItemResponse {
@@ -87,7 +88,8 @@ export interface CartItemResponse {
   finalLineTotal: number;
   optionsHash: string;
   note: string;
-  product: CartProductInfo;
+  productName: string;
+  productImageUrl: string;
   options: CartOptionResponse[];
 }
 

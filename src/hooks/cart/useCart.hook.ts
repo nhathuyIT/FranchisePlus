@@ -20,6 +20,7 @@ import type {
  * - Use `CART_KEYS.detail(cartId)` when invalidating a single cart detail query.
  * - Use `CART_KEYS.byCustomer({ customerId, status })` for customer cart lists.
  */
+
 export const CART_KEYS = {
   all: ["carts"] as const,
   lists: () => [...CART_KEYS.all, "list"] as const,
@@ -41,6 +42,7 @@ export const CART_KEYS = {
  * - Pass `cartId` when the mutation changes one specific cart.
  * - Pass `customerId` and `status` when customer cart list/count should refresh.
  */
+
 const invalidateCartQueries = async (
   queryClient: ReturnType<typeof useQueryClient>,
   options?: {
@@ -130,10 +132,7 @@ export const useCountCartByCustomerQuery = (
  * Usage:
  * `const cartItemCountQuery = useCountCartItemByCartQuery(cartId, !!cartId);`
  */
-export const useCountCartItemByCartQuery = (
-  cartId: string,
-  enabled = true,
-) => {
+export const useCountCartItemByCartQuery = (cartId: string, enabled = true) => {
   return useQuery({
     queryKey: CART_KEYS.countItemsByCart(cartId),
     queryFn: () => cartApi.countCartItemByCartId(cartId),
@@ -180,7 +179,8 @@ export const useAddProductToCartMutation = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (data: AddProductToCartRequest) => cartApi.addProductToCart(data),
+    mutationFn: (data: AddProductToCartRequest) =>
+      cartApi.addProductToCart(data),
     onSuccess: async () => {
       await invalidateCartQueries(queryClient);
       toast.success("Product added to cart successfully!");
@@ -195,11 +195,11 @@ export const useAddProductToCartMutation = () => {
 
 /**
  * Update cart-level information such as address, phone, note, or message.
- *
  * Usage:
  * `const updateCart = useUpdateCartMutation();`
  * `updateCart.mutate({ cartId, data: { address, phone, note } });`
  */
+
 export const useUpdateCartMutation = () => {
   const queryClient = useQueryClient();
 
