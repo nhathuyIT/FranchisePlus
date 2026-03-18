@@ -60,13 +60,13 @@ const editProfileFields: FieldConfig<EditProfileFormData>[] = [
 		placeholder: "Enter your phone number",
 		required: true,
 	},
-	{
-		name: "address",
-		type: "textarea",
-		label: "Address",
-		placeholder: "Enter your address",
-		rows: 3,
-	},
+	// {
+	// 	name: "address",
+	// 	type: "textarea",
+	// 	label: "Address",
+	// 	placeholder: "Enter your address",
+	// 	rows: 3,
+	// },
 ];
 
 const profileToFormValues = (
