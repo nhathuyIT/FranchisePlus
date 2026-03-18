@@ -1,5 +1,5 @@
 import * as z from "zod";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Image as ImageIcon, SquarePen } from "lucide-react";
 import { ImageUpload } from "@/components/ui/image-upload";
 import { FormDialog, useFormDialog } from "@/components/form-dialog";
@@ -9,6 +9,7 @@ import {
 	useAdminProfileQuery,
 	useUpdateAdminProfileMutation,
 } from "@/hooks/admin/useProfile.hook";
+import { useAuthStore } from "@/stores/auth-store";
 import type {
 	AdminProfile,
 	UpdateAdminProfileInput,
@@ -90,13 +91,26 @@ const MyProfilePage = () => {
 		refetch,
 	} = useAdminProfileQuery();
 
-	const updateProfileMutation = useUpdateAdminProfileMutation();
+	const updateProfileMutation = useUpdateAdminProfileMutation({
+		syncAuthOnSuccess: false,
+	});
+	const updateAuthProfile = useAuthStore((state) => state.updateProfile);
+	const [isProfileLocked, setIsProfileLocked] = useState(false);
+	const [stableProfile, setStableProfile] = useState<AdminProfile | null>(
+		profile ?? null,
+	);
 	const [isReloadingAfterSave, setIsReloadingAfterSave] = useState(false);
-	const currentProfile = profile ?? null;
+	const currentProfile = stableProfile;
 	const dialogValues = useMemo(
 		() => profileToFormValues(currentProfile),
 		[currentProfile],
 	);
+
+	useEffect(() => {
+		if (!isProfileLocked) {
+			setStableProfile(profile ?? null);
+		}
+	}, [profile, isProfileLocked]);
 
 	const memberSince = currentProfile?.createdAt
 		? new Date(currentProfile.createdAt).getFullYear().toString()
@@ -120,10 +134,16 @@ const MyProfilePage = () => {
 			address: values.address ?? "",
 		};
 
-		await updateProfileMutation.mutateAsync({
-			userId: dialog.data.id,
-			input,
-		});
+		setIsProfileLocked(true);
+		try {
+			await updateProfileMutation.mutateAsync({
+				userId: dialog.data.id,
+				input,
+			});
+		} catch (error) {
+			setIsProfileLocked(false);
+			throw error;
+		}
 	};
 
 	const handleDialogSuccess = async () => {
@@ -135,9 +155,19 @@ const MyProfilePage = () => {
 
 		setIsReloadingAfterSave(true);
 		try {
-			await refetch();
+			const { data: refreshedProfile } = await refetch();
+			setStableProfile(refreshedProfile ?? null);
+			if (refreshedProfile) {
+				updateAuthProfile({
+					name: refreshedProfile.name ?? "",
+					email: refreshedProfile.email ?? "",
+					phone: refreshedProfile.phone ?? "",
+					avatarUrl: refreshedProfile.avatarUrl ?? "",
+				});
+			}
 		} finally {
 			setIsReloadingAfterSave(false);
+			setIsProfileLocked(false);
 		}
 	};
 
