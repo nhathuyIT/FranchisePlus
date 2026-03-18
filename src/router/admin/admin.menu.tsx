@@ -133,4 +133,12 @@ export const ADMIN_MENU: AdminMenuItem[] = [
     isEnd: true,
     permissions: [PermissionEnum.VIEW_PRODUCTS],
   },
+  {
+    label: "Payments",
+    path: ROUTER_URL.ADMIN_ROUTER.PAYMENTS,
+    icon: "wallet",
+    component: React.lazy(() => import("@/pages/admin/payments/index")),
+    isEnd: true,
+    permissions: [PermissionEnum.VIEW_ORDERS],
+  },
 ];

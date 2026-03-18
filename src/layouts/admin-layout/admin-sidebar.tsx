@@ -12,6 +12,7 @@ import {
   UserCheck,
   CalendarDays,
   TicketPercent,
+  Wallet,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -32,6 +33,7 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   product: ShoppingBag,
   promotion: TicketPercent,
   voucher: TicketPercent,
+  wallet: Wallet,
   shield: ShieldCheck,
   customers: UserCheck,
   calendar: CalendarDays,
