@@ -9,17 +9,12 @@ import type {
   CountCartByCustomerParams,
   GetCartsByCustomerParams,
   RemoveCartOptionItemRequest,
+  UpdateCartItemRequest,
   UpdateCartOptionItemRequest,
   UpdateCartRequest,
 } from "@/types/cart";
 
-/**
- * Centralized react-query keys for all cart-related queries.
- *
- * Usage:
- * - Use `CART_KEYS.detail(cartId)` when invalidating a single cart detail query.
- * - Use `CART_KEYS.byCustomer({ customerId, status })` for customer cart lists.
- */
+// Centralize cart query keys so every mutation invalidates the same cache shape.
 export const CART_KEYS = {
   all: ["carts"] as const,
   lists: () => [...CART_KEYS.all, "list"] as const,
@@ -34,13 +29,7 @@ export const CART_KEYS = {
     [...CART_KEYS.counts(), "items", cartId] as const,
 };
 
-/**
- * Internal helper used by mutations to refresh affected cart caches.
- *
- * Usage:
- * - Pass `cartId` when the mutation changes one specific cart.
- * - Pass `customerId` and `status` when customer cart list/count should refresh.
- */
+// A single cart mutation can affect list, detail, and count endpoints at once.
 const invalidateCartQueries = async (
   queryClient: ReturnType<typeof useQueryClient>,
   options?: {
@@ -108,10 +97,10 @@ export const useCartDetailQuery = (cartId: string, enabled = true) => {
 };
 
 /**
- * Fetch the number of carts for a customer.
+ * Fetch the number of cart items inside one cart.
  *
  * Usage:
- * `const cartCountQuery = useCountCartByCustomerQuery({ customerId, status: "ACTIVE" });`
+ * `const cartItemCountQuery = useCountCartItemByCartQuery(cartId, !!cartId);`
  */
 export const useCountCartByCustomerQuery = (
   params: CountCartByCustomerParams,
@@ -128,7 +117,7 @@ export const useCountCartByCustomerQuery = (
  * Fetch the number of cart items inside one cart.
  *
  * Usage:
- * `const cartItemCountQuery = useCountCartItemByCartQuery(cartId, !!cartId);`
+* `const cartItemCountQuery = useCountCartItemByCartQuery(cartId, !!cartId);`
  */
 export const useCountCartItemByCartQuery = (
   cartId: string,
@@ -148,6 +137,7 @@ export const useCountCartItemByCartQuery = (
  * `const addByStaff = useAddProductToCartByStaffMutation();`
  * `addByStaff.mutate({ customerId, franchiseId, productFranchiseId, quantity, address, phone, options });`
  */
+
 export const useAddProductToCartByStaffMutation = () => {
   const queryClient = useQueryClient();
 
@@ -260,6 +250,27 @@ export const useDeleteCartItemMutation = () => {
  * `const updateOption = useUpdateCartOptionItemMutation();`
  * `updateOption.mutate({ cartItemId, optionProductFranchiseId, quantity });`
  */
+export const useUpdateCartItemMutation = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: UpdateCartItemRequest) => cartApi.updateCartItem(data),
+    onSuccess: async (response) => {
+      await invalidateCartQueries(queryClient, {
+        cartId: response?.id,
+        customerId: response?.customerId,
+        status: response?.status,
+      });
+      toast.success("Cart item updated successfully!");
+    },
+    onError: (error: Error) => {
+      toast.error("Failed to update cart item", {
+        description: error.message,
+      });
+    },
+  });
+};
+
 export const useUpdateCartOptionItemMutation = () => {
   const queryClient = useQueryClient();
 
@@ -346,11 +357,11 @@ export const useApplyVoucherInCartMutation = () => {
 };
 
 /**
- * Remove the current voucher from a cart.
+ * Apply a voucher code to a cart.
  *
  * Usage:
- * `const removeVoucher = useRemoveVoucherInCartMutation();`
- * `removeVoucher.mutate(cartId);`
+ * `const applyVoucher = useApplyVoucherInCartMutation();`
+ * `applyVoucher.mutate({ cartId, data: { voucherCode } });`
  */
 export const useRemoveVoucherInCartMutation = () => {
   const queryClient = useQueryClient();
@@ -374,11 +385,11 @@ export const useRemoveVoucherInCartMutation = () => {
 };
 
 /**
- * Checkout an existing cart.
+ * Remove the current voucher from a cart.
  *
  * Usage:
- * `const checkoutCart = useCheckoutCartMutation();`
- * `checkoutCart.mutate(cartId);`
+ * `const removeVoucher = useRemoveVoucherInCartMutation();`
+ * `removeVoucher.mutate(cartId);`
  */
 export const useCheckoutCartMutation = () => {
   const queryClient = useQueryClient();

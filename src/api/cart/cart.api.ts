@@ -18,6 +18,8 @@ import type {
   RemoveCartOptionItemRequest,
   RemoveCartOptionItemResponse,
   RemoveVoucherInCartResponse,
+  UpdateCartItemRequest,
+  UpdateCartItemResponse,
   UpdateCartOptionItemRequest,
   UpdateCartOptionItemResponse,
   UpdateCartRequest,
@@ -123,6 +125,20 @@ export const deleteCartItem = async (
 ): Promise<DeleteCartItemResponse> => {
   const response = await httpClient.delete<DeleteCartItemResponse>({
     url: `/api/carts/items/${cartItemId}`,
+  });
+
+  return response!;
+};
+
+export const updateCartItem = async (
+  data: UpdateCartItemRequest,
+): Promise<UpdateCartItemResponse> => {
+  const response = await httpClient.patch<
+    UpdateCartItemResponse,
+    UpdateCartItemRequest
+  >({
+    url: "/api/carts/items/update-cart-item",
+    data,
   });
 
   return response!;
