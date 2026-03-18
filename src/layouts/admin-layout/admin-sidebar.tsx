@@ -18,8 +18,8 @@ import {
   ShieldCheck,
   UserCheck,
   CalendarDays,
-  TicketPercent,
   Wallet,
+  TicketPercent,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -44,6 +44,7 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   customers: UserCheck,
   calendar: CalendarDays,
   cart: ShoppingCart,
+  wallet: Wallet,
 };
 
 const sidebarMenuItems = ADMIN_MENU.filter((item) => {

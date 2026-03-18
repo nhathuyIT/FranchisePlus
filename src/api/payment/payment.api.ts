@@ -46,7 +46,7 @@ export const confirmPayment = async (
   paymentId: string,
   data: ConfirmPaymentRequest,
 ): Promise<PaymentDetailResponse | null> => {
-  return httpClient.put<PaymentDetailResponse, ConfirmPaymentRequest>({
+  return httpClient.putRaw<PaymentDetailResponse, ConfirmPaymentRequest>({
     url: `${BASE_URL}/${encodeId(paymentId)}/confirm`,
     data,
   });

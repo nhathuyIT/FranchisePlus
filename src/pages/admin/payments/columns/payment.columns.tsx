@@ -24,22 +24,14 @@ const formatCurrency = (value: number): string => {
   return `${value.toLocaleString("vi-VN")}₫`;
 };
 
-const getStatusBadgeClass = (status: string): string => {
+const getStatusBadgeClass = (status: AdminPayment["status"]): string => {
   switch (status) {
     case "PENDING":
       return "border-[#D97706] text-[#D97706]";
-    case "CONFIRMED":
-      return "border-[#2563EB] text-[#2563EB]";
     case "PAID":
       return "border-[#16A34A] text-[#16A34A]";
     case "REFUNDED":
       return "border-[#7C3AED] text-[#7C3AED]";
-    case "FAILED":
-      return "border-[#DC2626] text-[#DC2626]";
-    case "CANCELLED":
-      return "border-[#6B7280] text-[#6B7280]";
-    default:
-      return "border-[#6D4C41] text-[#6D4C41]";
   }
 };
 
@@ -82,9 +74,9 @@ export const createPaymentColumns = (): ColumnDef<AdminPayment>[] => [
     cell: ({ row }) => (
       <Badge
         variant="outline"
-        className={getStatusBadgeClass(row.original.status || "")}
+        className={getStatusBadgeClass(row.original.status)}
       >
-        {row.original.status || "-"}
+        {row.original.status}
       </Badge>
     ),
   },

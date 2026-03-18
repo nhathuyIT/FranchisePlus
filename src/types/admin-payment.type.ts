@@ -8,12 +8,8 @@ export type AdminPaymentMethod =
 
 export type AdminPaymentStatus =
   | "PENDING"
-  | "CONFIRMED"
   | "PAID"
-  | "FAILED"
-  | "REFUNDED"
-  | "CANCELLED"
-  | (string & {});
+  | "REFUNDED";
 
 export interface AdminPayment {
   id: string;

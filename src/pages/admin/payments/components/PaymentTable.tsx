@@ -27,11 +27,8 @@ interface PaymentTableProps {
 
 const PAYMENT_STATUS_OPTIONS = [
   { label: "Pending", value: "PENDING" },
-  { label: "Confirmed", value: "CONFIRMED" },
   { label: "Paid", value: "PAID" },
   { label: "Refunded", value: "REFUNDED" },
-  { label: "Failed", value: "FAILED" },
-  { label: "Cancelled", value: "CANCELLED" },
 ];
 
 const canConfirm = (payment: AdminPayment): boolean => {
@@ -39,7 +36,7 @@ const canConfirm = (payment: AdminPayment): boolean => {
 };
 
 const canRefund = (payment: AdminPayment): boolean => {
-  return payment.status === "PAID" || payment.status === "CONFIRMED";
+  return payment.status === "PAID";
 };
 
 export const PaymentTable = ({
