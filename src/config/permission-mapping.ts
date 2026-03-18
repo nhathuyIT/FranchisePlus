@@ -22,6 +22,8 @@ const ROLE_PERMISSIONS: Record<string, Permission[]> = {
     Permission.EXPORT_REPORTS,
     Permission.MANAGE_USER_FRANCHISE_ROLES,
     Permission.VIEW_USER_FRANCHISE_ROLES,
+    Permission.MANAGE_CART,
+    Permission.VIEW_CART,
   ],
 
   MANAGER: [
