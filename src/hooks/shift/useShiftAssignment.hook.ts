@@ -62,13 +62,13 @@ export const useShiftAssignmentDetailQuery = (
  */
 export const useGetAllShiftsAssignByUserQuery = (
   userId: string,
-  date: string,
+  date = "",
   enabled = true,
 ) => {
   return useQuery({
     queryKey: SHIFT_ASSIGNMENT_KEYS.byUser(userId, date),
     queryFn: () => shiftAssignmentApi.getAllShiftsAssignByUser(userId, date),
-    enabled: !!userId && !!date && enabled,
+    enabled: !!userId && enabled,
   });
 };
 
