@@ -12,6 +12,8 @@ export const PRODUCT_CATEGORY_FRANCHISE_KEYS = {
   all: ["product-category-franchises"] as const,
   search: (params: ProductCategoryFranchiseSearchRequest) =>
     ["product-category-franchises", "search", params] as const,
+  byFranchise: (franchiseId: string) =>
+    ["product-category-franchises", "franchise", franchiseId] as const,
 };
 
 // ── Queries ──────────────────────────────────────────────────────────────────
@@ -27,6 +29,17 @@ export const useProductCategoryFranchisesQuery = (
   });
 };
 
+export const useProductsByFranchiseWithCategories = (
+  franchiseId: string,
+  enabled = true,
+) => {
+  return useQuery({
+    queryKey: PRODUCT_CATEGORY_FRANCHISE_KEYS.byFranchise(franchiseId),
+    queryFn: () => api.getProductsByFranchise(franchiseId),
+    enabled,
+  });
+};
+
 // ── Mutations ────────────────────────────────────────────────────────────────
 
 export const useAddProductToCategoryFranchise = () => {
@@ -35,7 +48,8 @@ export const useAddProductToCategoryFranchise = () => {
   return useMutation({
     mutationFn: (data: AddProductToCategoryFranchiseRequest) =>
       api.addProductToCategoryFranchise(data),
-    onSuccess: () => {
+    onSuccess: (data) => {
+      console.log("[ProductCategoryFranchise] Product assigned to category:", data);
       queryClient.invalidateQueries({
         queryKey: PRODUCT_CATEGORY_FRANCHISE_KEYS.all,
       });

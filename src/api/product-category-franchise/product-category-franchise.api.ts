@@ -53,6 +53,7 @@ export interface ProductCategoryFranchiseSearchRequest {
 export const addProductToCategoryFranchise = async (
   data: AddProductToCategoryFranchiseRequest,
 ): Promise<ProductCategoryFranchise> => {
+  console.log("[ProductCategoryFranchise] Assigning product to category:", data);
   const response = await httpClient.post<
     ProductCategoryFranchise,
     AddProductToCategoryFranchiseRequest
@@ -60,6 +61,7 @@ export const addProductToCategoryFranchise = async (
     url: "/api/product-category-franchises",
     data,
   });
+  console.log("[ProductCategoryFranchise] Assign response:", response);
   return response!;
 };
 
@@ -73,6 +75,7 @@ export const addProductToCategoryFranchise = async (
 export const searchProductCategoryFranchises = async (
   data: ProductCategoryFranchiseSearchRequest,
 ): Promise<ProductCategoryFranchise[]> => {
+  console.log("[ProductCategoryFranchise] Searching assignments:", data.searchCondition);
   const payload = {
     searchCondition: {
       franchise_id: data.searchCondition.franchiseId,
@@ -94,9 +97,14 @@ export const searchProductCategoryFranchises = async (
   );
 
   const responseData = res.data?.data;
-  if (Array.isArray(responseData)) return responseData as ProductCategoryFranchise[];
-  if (Array.isArray(responseData?.pageData))
+  if (Array.isArray(responseData)) {
+    console.log("[ProductCategoryFranchise] Search response:", responseData);
+    return responseData as ProductCategoryFranchise[];
+  }
+  if (Array.isArray(responseData?.pageData)) {
+    console.log("[ProductCategoryFranchise] Search response:", responseData.pageData);
     return responseData.pageData as ProductCategoryFranchise[];
+  }
   return [];
 };
 
@@ -106,4 +114,42 @@ export const searchProductCategoryFranchises = async (
  */
 export const deleteProductCategoryFranchise = async (id: string): Promise<void> => {
   await httpClient.delete<unknown>({ url: `/api/product-category-franchises/${id}` });
+};
+
+// ── Types for GET /franchise/:franchiseId ────────────────────────────────────
+
+export interface CategoryAssignment {
+  categoryId: string;       // actual category id (after camelCase conversion)
+  categoryName: string;
+}
+
+export interface ProductWithCategories {
+  id: string;               // same as productFranchiseId
+  productFranchiseId: string;
+  productId: string;
+  productName?: string;
+  productSku?: string;
+  size?: string;
+  priceBase?: number;
+  franchiseId?: string;
+  franchiseName?: string;
+  isActive?: boolean;
+  isDeleted?: boolean;
+  categories: CategoryAssignment[];
+}
+
+/**
+ * Get all products for a franchise, each with their category assignments.
+ * Products not assigned to any category will have categories: [].
+ * GET /api/product-category-franchises/franchise/:franchiseId
+ */
+export const getProductsByFranchise = async (
+  franchiseId: string,
+): Promise<ProductWithCategories[]> => {
+  console.log("[ProductCategoryFranchise] Getting products with categories, franchiseId:", franchiseId);
+  const res = await axiosClient.get(
+    `/api/product-category-franchises/franchise/${franchiseId}`,
+  );
+  console.log("[ProductCategoryFranchise] Products with categories response:", res.data?.data);
+  return res.data?.data ?? [];
 };
