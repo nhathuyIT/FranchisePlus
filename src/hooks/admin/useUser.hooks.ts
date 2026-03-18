@@ -56,6 +56,15 @@ export const useSearchUsers = (params: UserSearchRequest) => {
   });
 };
 
+export const useUserDetail = (userId: string, enabled = true) => {
+  return useQuery({
+    queryKey: ["users", "detail", userId],
+    queryFn: () => userApi.getById(userId),
+    enabled: !!userId && enabled,
+    staleTime: 5 * 60 * 1000,
+  });
+};
+
 export type UseSearchUsersResult = {
   users: Customer[];
   pageInfo: PageInfoResponse;
