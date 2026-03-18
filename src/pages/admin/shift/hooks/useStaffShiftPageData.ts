@@ -4,13 +4,12 @@ import { useShiftDetailQueries } from "@/hooks/shift/useShift.hook";
 import type { ShiftAssignment } from "@/types/shift-assignment.type";
 import type { Shift } from "@/types/shift";
 import type { ShiftCalendarEvent } from "./useShiftPageData";
-import { formatDateKey, normalizeDateKey } from "../utils/shiftFormatters";
+import { normalizeDateKey } from "../utils/shiftFormatters";
 
 type UseStaffShiftPageDataOptions = {
   userId: string;
   userName: string;
   userAvatarUrl: string | null;
-  cursorDate: Date;
 };
 
 function toStaffEvent(
@@ -62,11 +61,8 @@ export function useStaffShiftPageData({
   userId,
   userName,
   userAvatarUrl,
-  cursorDate,
 }: UseStaffShiftPageDataOptions) {
-  const dateParam = formatDateKey(cursorDate);
-
-  const assignmentsQuery = useGetAllShiftsAssignByUserQuery(userId, dateParam);
+  const assignmentsQuery = useGetAllShiftsAssignByUserQuery(userId, "");
 
   // httpClient.get already extracts res.data.data, so the actual runtime value
   // is ShiftAssignment[] — not the ShiftAssignmentListResponse wrapper.
