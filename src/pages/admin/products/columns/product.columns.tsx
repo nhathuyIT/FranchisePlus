@@ -62,6 +62,7 @@ export const createProductColumns = (options?: ColumnOptions): ColumnDef<Product
     accessorFn: (row) => `${row.minPrice}-${row.maxPrice}`,
     header: options?.isManagerView ? "Price" : "Price Range",
     enableSorting: false,
+    meta: { align: "right" },
     cell: ({ row }) => (
       <span className="text-[#5D4037]">
         {options?.isManagerView 
