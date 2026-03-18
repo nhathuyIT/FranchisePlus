@@ -202,7 +202,8 @@ export const responseInterceptor = () => {
       const isTokenExpired =
         typeof errorCode === "string" &&
         (errorCode.endsWith(ACCESS_TOKEN_EXPIRED) ||
-          INVALID_TOKEN_MESSAGES.some((msg) => errorCode === msg));
+          INVALID_TOKEN_MESSAGES.some((msg) => errorCode === msg) ||
+          "Access token has expired");
 
       if (
         status === 401 &&
