@@ -233,12 +233,16 @@ export const updateCart = async (
 
 export const deleteCartItem = async (
   cartItemId: string,
-): Promise<DeleteCartItemResponse> => {
+): Promise<DeleteCartItemResponse | null> => {
   const response = await httpClient.delete<RawCartResponse>({
     url: `/api/carts/items/${cartItemId}`,
   });
 
-  return normalizeCart(response!);
+  if (!response) {
+    return null;
+  }
+
+  return normalizeCart(response);
 };
 
 export const updateCartItem = async (
