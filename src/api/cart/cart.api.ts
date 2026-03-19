@@ -263,24 +263,6 @@ export const updateCartItem = async (
   return normalizeCart(response);
 };
 
-export const updateCartItem = async (
-  data: UpdateCartItemRequest,
-): Promise<UpdateCartItemResponse> => {
-  const response = await httpClient.patch<
-    RawCartResponse,
-    UpdateCartItemRequest
-  >({
-    url: "/api/carts/items/update-cart-item",
-    data,
-  });
-
-  if (!response) {
-    return null;
-  }
-
-  return normalizeCart(response);
-};
-
 export const updateOptionItemQuantity = async (
   data: UpdateCartOptionItemRequest,
 ): Promise<UpdateCartOptionItemResponse> => {
