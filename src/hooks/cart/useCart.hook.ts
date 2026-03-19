@@ -9,12 +9,18 @@ import type {
   CountCartByCustomerParams,
   GetCartsByCustomerParams,
   RemoveCartOptionItemRequest,
-  UpdateCartItemRequest,
   UpdateCartOptionItemRequest,
   UpdateCartRequest,
 } from "@/types/cart";
 
-// Centralize cart query keys so every mutation invalidates the same cache shape.
+/**
+ * Centralized react-query keys for all cart-related queries.
+ *
+ * Usage:
+ * - Use `CART_KEYS.detail(cartId)` when invalidating a single cart detail query.
+ * - Use `CART_KEYS.byCustomer({ customerId, status })` for customer cart lists.
+ */
+
 export const CART_KEYS = {
   all: ["carts"] as const,
   lists: () => [...CART_KEYS.all, "list"] as const,
@@ -29,7 +35,14 @@ export const CART_KEYS = {
     [...CART_KEYS.counts(), "items", cartId] as const,
 };
 
-// A single cart mutation can affect list, detail, and count endpoints at once.
+/**
+ * Internal helper used by mutations to refresh affected cart caches.
+ *
+ * Usage:
+ * - Pass `cartId` when the mutation changes one specific cart.
+ * - Pass `customerId` and `status` when customer cart list/count should refresh.
+ */
+
 const invalidateCartQueries = async (
   queryClient: ReturnType<typeof useQueryClient>,
   options?: {
@@ -97,10 +110,10 @@ export const useCartDetailQuery = (cartId: string, enabled = true) => {
 };
 
 /**
- * Fetch the number of cart items inside one cart.
+ * Fetch the number of carts for a customer.
  *
  * Usage:
- * `const cartItemCountQuery = useCountCartItemByCartQuery(cartId, !!cartId);`
+ * `const cartCountQuery = useCountCartByCustomerQuery({ customerId, status: "ACTIVE" });`
  */
 export const useCountCartByCustomerQuery = (
   params: CountCartByCustomerParams,
@@ -117,12 +130,9 @@ export const useCountCartByCustomerQuery = (
  * Fetch the number of cart items inside one cart.
  *
  * Usage:
-* `const cartItemCountQuery = useCountCartItemByCartQuery(cartId, !!cartId);`
+ * `const cartItemCountQuery = useCountCartItemByCartQuery(cartId, !!cartId);`
  */
-export const useCountCartItemByCartQuery = (
-  cartId: string,
-  enabled = true,
-) => {
+export const useCountCartItemByCartQuery = (cartId: string, enabled = true) => {
   return useQuery({
     queryKey: CART_KEYS.countItemsByCart(cartId),
     queryFn: () => cartApi.countCartItemByCartId(cartId),
@@ -137,7 +147,6 @@ export const useCountCartItemByCartQuery = (
  * `const addByStaff = useAddProductToCartByStaffMutation();`
  * `addByStaff.mutate({ customerId, franchiseId, productFranchiseId, quantity, address, phone, options });`
  */
-
 export const useAddProductToCartByStaffMutation = () => {
   const queryClient = useQueryClient();
 
@@ -170,7 +179,8 @@ export const useAddProductToCartMutation = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (data: AddProductToCartRequest) => cartApi.addProductToCart(data),
+    mutationFn: (data: AddProductToCartRequest) =>
+      cartApi.addProductToCart(data),
     onSuccess: async () => {
       await invalidateCartQueries(queryClient);
       toast.success("Product added to cart successfully!");
@@ -185,11 +195,11 @@ export const useAddProductToCartMutation = () => {
 
 /**
  * Update cart-level information such as address, phone, note, or message.
- *
  * Usage:
  * `const updateCart = useUpdateCartMutation();`
  * `updateCart.mutate({ cartId, data: { address, phone, note } });`
  */
+
 export const useUpdateCartMutation = () => {
   const queryClient = useQueryClient();
 
@@ -250,27 +260,6 @@ export const useDeleteCartItemMutation = () => {
  * `const updateOption = useUpdateCartOptionItemMutation();`
  * `updateOption.mutate({ cartItemId, optionProductFranchiseId, quantity });`
  */
-export const useUpdateCartItemMutation = () => {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: (data: UpdateCartItemRequest) => cartApi.updateCartItem(data),
-    onSuccess: async (response) => {
-      await invalidateCartQueries(queryClient, {
-        cartId: response?.id,
-        customerId: response?.customerId,
-        status: response?.status,
-      });
-      toast.success("Cart item updated successfully!");
-    },
-    onError: (error: Error) => {
-      toast.error("Failed to update cart item", {
-        description: error.message,
-      });
-    },
-  });
-};
-
 export const useUpdateCartOptionItemMutation = () => {
   const queryClient = useQueryClient();
 
@@ -357,11 +346,11 @@ export const useApplyVoucherInCartMutation = () => {
 };
 
 /**
- * Apply a voucher code to a cart.
+ * Remove the current voucher from a cart.
  *
  * Usage:
- * `const applyVoucher = useApplyVoucherInCartMutation();`
- * `applyVoucher.mutate({ cartId, data: { voucherCode } });`
+ * `const removeVoucher = useRemoveVoucherInCartMutation();`
+ * `removeVoucher.mutate(cartId);`
  */
 export const useRemoveVoucherInCartMutation = () => {
   const queryClient = useQueryClient();
@@ -385,11 +374,11 @@ export const useRemoveVoucherInCartMutation = () => {
 };
 
 /**
- * Remove the current voucher from a cart.
+ * Checkout an existing cart.
  *
  * Usage:
- * `const removeVoucher = useRemoveVoucherInCartMutation();`
- * `removeVoucher.mutate(cartId);`
+ * `const checkoutCart = useCheckoutCartMutation();`
+ * `checkoutCart.mutate(cartId);`
  */
 export const useCheckoutCartMutation = () => {
   const queryClient = useQueryClient();

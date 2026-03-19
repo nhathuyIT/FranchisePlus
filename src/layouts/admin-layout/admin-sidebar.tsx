@@ -59,6 +59,14 @@ interface AdminSidebarProps {
   collapsed?: boolean;
 }
 
+function formatRoleName(rawRoleName: string): string {
+  return rawRoleName
+    .replace(/^ROLE_/i, "")
+    .replace(/[_-]+/g, " ")
+    .toLowerCase()
+    .replace(/\b\w/g, (char) => char.toUpperCase());
+}
+
 const AdminSideBar = ({ collapsed = false }: AdminSidebarProps) => {
   const location = useLocation();
   const navigate = useNavigate();
@@ -71,7 +79,12 @@ const AdminSideBar = ({ collapsed = false }: AdminSidebarProps) => {
   } = useAuthStore();
   const user = authUser?.user;
   const currentRole = getCurrentRole();
-  const roleName = currentRole?.name || "User";
+  const roleNameRaw =
+    currentRole?.name ||
+    currentRole?.code ||
+    (currentRole as unknown as { role?: string })?.role ||
+    "User";
+  const roleName = formatRoleName(roleNameRaw);
   const availableContexts = getAvailableContexts();
   const userPermissions = getCurrentPermissions();
 

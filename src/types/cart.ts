@@ -1,4 +1,6 @@
-export type CartStatus = string;
+import type { Activatable, BaseTimestamp, SoftDeletable } from "./common";
+
+export type CartStatus = "ACTIVE" | "CHECKED_OUT" | "CANCELED";
 
 export interface CartItemOptionRequest {
   productFranchiseId: string;
@@ -45,12 +47,6 @@ export interface UpdateCartRequest {
   message?: string;
 }
 
-export interface UpdateCartItemRequest {
-  cartItemId: string;
-  quantity: number;
-  note?: string;
-}
-
 export interface UpdateCartOptionItemRequest {
   cartItemId: string;
   optionProductFranchiseId: string;
@@ -68,19 +64,18 @@ export interface ApplyVoucherInCartRequest {
 
 export interface CartProductInfo {
   id?: string;
-  name?: string;
-  imageUrl?: string | null;
+  name: string;
+  imageUrl: string;
 }
 
 export interface CartOptionResponse {
   quantity: number;
   productFranchiseId: string;
-  priceSnapshot?: number;
-  discountAmount?: number;
-  finalPrice?: number;
-  productName?: string;
-  productImageUrl?: string | null;
-  product?: CartProductInfo;
+  priceSnapshot: number;
+  discountAmount: number;
+  finalPrice: number;
+  productName: string;
+  productImageUrl: string;
 }
 
 export interface CartItemResponse {
@@ -88,53 +83,48 @@ export interface CartItemResponse {
   quantity: number;
   productFranchiseId: string;
   productCartPrice: number;
-  discountAmount?: number;
-  lineTotal?: number;
-  finalLineTotal?: number;
-  optionsHash?: string;
-  note?: string;
-  productName?: string;
-  productImageUrl?: string | null;
-  product?: CartProductInfo;
+  discountAmount: number;
+  lineTotal: number;
+  finalLineTotal: number;
+  optionsHash: string;
+  note: string;
+  productName: string;
+  productImageUrl: string;
   options: CartOptionResponse[];
 }
 
-export interface CartResponse {
+export interface CartResponse
+  extends BaseTimestamp, SoftDeletable, Activatable {
   id: string;
   customerId: string;
   franchiseId: string;
-  staffId?: string;
+  staffId: string;
   status: CartStatus;
   address: string;
   phone: string;
   note?: string;
-  message?: string;
-  promotionDiscount?: number;
-  promotionType?: string;
-  promotionValue?: number;
-  voucherDiscount?: number;
-  loyaltyPointsUsed?: number;
-  loyaltyDiscount?: number;
+  message: string;
+  promotionDiscount: number;
+  promotionType: string;
+  promotionValue: number;
+  voucherDiscount: number;
+  loyaltyPointsUsed: number;
+  loyaltyDiscount: number;
   subtotalAmount: number;
   finalAmount: number;
-  promotionId?: string;
+  promotionId: string;
   voucherId?: string;
   franchiseName: string;
-  customerName?: string;
-  staffName?: string;
-  staffEmail?: string;
+  customerName: string;
+  staffName: string;
+  staffEmail: string;
   cartItems: CartItemResponse[];
-  createdAt?: string;
-  updatedAt?: string;
-  isDeleted?: boolean;
-  isActive?: boolean;
 }
 
 export type GetCartsByCustomerResponse = CartResponse[];
 export type GetCartDetailResponse = CartResponse;
 export type UpdateCartResponse = CartResponse;
 export type DeleteCartItemResponse = CartResponse;
-export type UpdateCartItemResponse = CartResponse;
 export type UpdateCartOptionItemResponse = CartResponse;
 export type RemoveCartOptionItemResponse = CartResponse;
 export type ApplyVoucherInCartResponse = CartResponse;

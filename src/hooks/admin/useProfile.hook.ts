@@ -13,8 +13,15 @@ export const useAdminProfileQuery = () => {
 	});
 };
 
-export const useUpdateAdminProfileMutation = () => {
+interface UseUpdateAdminProfileMutationOptions {
+	syncAuthOnSuccess?: boolean;
+}
+
+export const useUpdateAdminProfileMutation = (
+	options?: UseUpdateAdminProfileMutationOptions,
+) => {
 	const queryClient = useQueryClient();
+	const syncAuthOnSuccess = options?.syncAuthOnSuccess ?? true;
 
 	return useMutation({
 		mutationFn: ({
@@ -25,12 +32,14 @@ export const useUpdateAdminProfileMutation = () => {
 			input: UpdateAdminProfileInput;
 		}) => profileApi.updateProfile(userId, input),
 		onSuccess: (updatedProfile) => {
-			useAuthStore.getState().updateProfile({
-				name: updatedProfile.name ?? "",
-				email: updatedProfile.email ?? "",
-				phone: updatedProfile.phone ?? "",
-				avatarUrl: updatedProfile.avatarUrl ?? "",
-			});
+			if (syncAuthOnSuccess) {
+				useAuthStore.getState().updateProfile({
+					name: updatedProfile.name ?? "",
+					email: updatedProfile.email ?? "",
+					phone: updatedProfile.phone ?? "",
+					avatarUrl: updatedProfile.avatarUrl ?? "",
+				});
+			}
 
 			void queryClient.invalidateQueries({ queryKey: ADMIN_PROFILE_QUERY_KEY });
 			toast.success("Profile updated successfully");

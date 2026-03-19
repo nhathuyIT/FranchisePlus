@@ -70,7 +70,6 @@ export function PopoverSearchSelect({
 }: PopoverSearchSelectProps) {
   const [internalOpen, setInternalOpen] = React.useState(false);
   const [internalSearch, setInternalSearch] = React.useState("");
-  const listRef = React.useRef<HTMLDivElement | null>(null);
 
   const open = openProp ?? internalOpen;
   const searchValue = searchValueProp ?? internalSearch;
@@ -121,19 +120,6 @@ export function PopoverSearchSelect({
 
   const showMinCharsHint = minChars > 0 && normalizeForSearch(searchValue).length < minChars;
 
-  const handleWheelCapture = React.useCallback((e: React.WheelEvent) => {
-    const listEl = listRef.current;
-    if (!listEl) return;
-
-    const canScroll = listEl.scrollHeight > listEl.clientHeight;
-    if (!canScroll) return;
-
-    // Ensure wheel scroll moves the list (and doesn't bubble to the dialog/page)
-    listEl.scrollTop += e.deltaY;
-    e.preventDefault();
-    e.stopPropagation();
-  }, []);
-
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
@@ -163,7 +149,6 @@ export function PopoverSearchSelect({
         align="start"
         sideOffset={4}
         portalled
-        onWheelCapture={handleWheelCapture}
         className={cn(
           "w-[--radix-popover-trigger-width] min-w-[29rem] max-w-[calc(100vw-2rem)] p-0",
           contentClassName
@@ -180,7 +165,6 @@ export function PopoverSearchSelect({
         </div>
 
         <div
-          ref={listRef}
           className="max-h-64 overflow-y-auto overscroll-contain p-1"
         >
           {isLoading ? (

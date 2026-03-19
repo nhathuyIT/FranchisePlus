@@ -1,72 +1,156 @@
 import type { ColumnDef } from "@tanstack/react-table";
 import { Badge } from "@/components/ui/badge";
-import { StatusToggleCell } from "@/components/common/StatusToggleCell";
-import type { Category } from "@/types/category";
+import type { CartItemResponse, CartResponse } from "@/types/cart";
+import { CartProductImage } from "../components/CartProductImage";
+import {
+  formatCartDateTime,
+  formatCartMoney,
+  getCartStatusClassName,
+} from "../utils/cartDisplay";
 
-interface ColumnOptions {
-  onStatusToggle?: (row: Category, isActive: boolean) => void;
-  statusPendingId?: string | null;
-  canEdit?: boolean;
-}
+export const createCartColumns = (): ColumnDef<CartResponse>[] => {
+  const columns: ColumnDef<CartResponse>[] = [
+    {
+      accessorKey: "customerName",
+      header: "Customer",
+      cell: ({ row }) => (
+        <div className="min-w-[160px]">
+          <p className="font-medium text-[#3E2723]">
+            {row.original.customerName || "Unknown customer"}
+          </p>
+        </div>
+      ),
+    },
+    {
+      accessorKey: "franchiseName",
+      header: "Franchise",
+      cell: ({ row }) => (
+        <span className="text-[#5D4037]">
+          {row.original.franchiseName || "N/A"}
+        </span>
+      ),
+    },
+    {
+      accessorKey: "status",
+      header: "Status",
+      cell: ({ row }) => (
+        <Badge
+          variant="outline"
+          className={getCartStatusClassName(row.original.status)}
+        >
+          {row.original.status}
+        </Badge>
+      ),
+    },
+    {
+      id: "itemsCount",
+      header: "Items",
+      meta: { align: "center" as const },
+      cell: ({ row }) => (
+        <span className="font-medium text-[#5D4037]">
+          {row.original.cartItems.length} item(s)
+        </span>
+      ),
+    },
+    {
+      accessorKey: "finalAmount",
+      header: "Final Amount",
+      meta: { align: "right" as const },
+      cell: ({ row }) => (
+        <span className="font-semibold text-[#3E2723]">
+          {formatCartMoney(row.original.finalAmount)}
+        </span>
+      ),
+    },
+    {
+      accessorKey: "updatedAt",
+      header: "Updated At",
+      cell: ({ row }) => (
+        <span className="text-sm text-[#5D4037]">
+          {formatCartDateTime(row.original.updatedAt)}
+        </span>
+      ),
+    },
+  ];
 
-export const createCartColumns = (
-  options?: ColumnOptions,
-): ColumnDef<Category>[] => [
+  return columns;
+};
+
+export const cartItemColumns: ColumnDef<CartItemResponse>[] = [
   {
-    accessorKey: "code",
-    header: "Code",
+    accessorKey: "productName",
+    header: "Product",
     cell: ({ row }) => (
-      <span className="font-mono text-sm text-[#5D4037]">
-        {row.original.code}
+      <div className="flex min-w-[220px] items-center gap-3">
+        <CartProductImage
+          src={row.original.productImageUrl}
+          alt={row.original.productName || "Cart product"}
+          className="h-12 w-12 shrink-0 rounded-lg"
+        />
+        <div className="min-w-0">
+          <p className="font-medium text-[#3E2723]">
+            {row.original.productName || "Unknown product"}
+          </p>
+          <p className="text-xs text-[#8D6E63]">
+            {row.original.productFranchiseId}
+          </p>
+        </div>
+      </div>
+    ),
+  },
+  {
+    accessorKey: "quantity",
+    header: "Qty",
+    meta: { align: "center" as const },
+    cell: ({ row }) => (
+      <span className="font-medium text-[#3E2723]">
+        {row.original.quantity}
       </span>
     ),
   },
   {
-    accessorKey: "name",
-    header: "Name",
+    accessorKey: "productCartPrice",
+    header: "Unit Price",
+    meta: { align: "right" as const },
     cell: ({ row }) => (
-      <span className="font-medium text-[#3E2723]">{row.original.name}</span>
+      <span className="text-[#5D4037]">
+        {formatCartMoney(row.original.productCartPrice)}
+      </span>
     ),
   },
   {
-    accessorKey: "description",
-    header: "Description",
-    cell: ({ row }) => {
-      const description = row.original.description || "N/A";
-      const words = description.split(" ");
-      const truncated =
-        words.length > 13 ? words.slice(0, 13).join(" ") + "..." : description;
-      return <span className="text-[#5D4037]">{truncated}</span>;
-    },
+    id: "options",
+    header: "Options",
+    meta: { align: "center" as const },
+    cell: ({ row }) => (
+      <span className="text-[#5D4037]">{row.original.options.length}</span>
+    ),
   },
   {
-    accessorKey: "isActive",
-    header: "Status",
-    filterFn: (row, _columnId, filterValue) => {
-      return row.original.isActive === filterValue;
-    },
-    cell: ({ row }) => {
-      if (options?.onStatusToggle && options.canEdit) {
-        return (
-          <StatusToggleCell
-            isActive={row.original.isActive}
-            onToggle={(val) => options.onStatusToggle!(row.original, val)}
-            isPending={options.statusPendingId === String(row.original.id)}
-          />
-        );
-      }
-      return (
-        <Badge
-          variant={row.original.isActive ? "default" : "secondary"}
-          className={
-            row.original.isActive
-              ? "bg-green-600 hover:bg-green-700 rounded-full"
-              : "bg-gray-500 hover:bg-gray-600 rounded-full"
-          }
-        >
-          {row.original.isActive ? "Active" : "Inactive"}
-        </Badge>
-      );
-    },
+    accessorKey: "discountAmount",
+    header: "Discount",
+    meta: { align: "right" as const },
+    cell: ({ row }) => (
+      <span className="text-[#5D4037]">
+        {formatCartMoney(row.original.discountAmount)}
+      </span>
+    ),
+  },
+  {
+    accessorKey: "finalLineTotal",
+    header: "Final Total",
+    meta: { align: "right" as const },
+    cell: ({ row }) => (
+      <span className="font-semibold text-[#3E2723]">
+        {formatCartMoney(row.original.finalLineTotal)}
+      </span>
+    ),
+  },
+  {
+    accessorKey: "note",
+    header: "Note",
+    cell: ({ row }) => (
+      <span className="text-[#5D4037]">{row.original.note || "N/A"}</span>
+    ),
   },
 ];
