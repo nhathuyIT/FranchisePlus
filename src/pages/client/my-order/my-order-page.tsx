@@ -1,19 +1,22 @@
-import { useState, useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Search } from "lucide-react";
 import {
-  ORDERS,
   ORDER_STATUS_TABS,
   ORDER_STATUS_STYLES,
   type OrderStatus,
   type Order,
 } from "@/const/order.const";
+import { useGetMyOrders } from "@/hooks/client/useOrder.hook";
+import { useAuthStore } from "@/stores/auth-store";
 
 const MyOrderPage = () => {
+  const customerId = useAuthStore((state) => state.authUser?.user?.id);
   const [activeTab, setActiveTab] = useState<OrderStatus | "ALL">("ALL");
   const [searchQuery, setSearchQuery] = useState("");
+  const { data: orders = [], isLoading, isError } = useGetMyOrders();
 
   const filteredOrders = useMemo(() => {
-    let filtered = ORDERS;
+    let filtered = orders;
 
     if (activeTab !== "ALL") {
       filtered = filtered.filter((order) => order.status === activeTab);
@@ -30,7 +33,7 @@ const MyOrderPage = () => {
     }
 
     return filtered;
-  }, [activeTab, searchQuery]);
+  }, [activeTab, searchQuery, orders]);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("vi-VN").format(amount) + "đ";
@@ -65,8 +68,8 @@ const MyOrderPage = () => {
             const isActive = activeTab === tab.key;
             const count =
               tab.key === "ALL"
-                ? ORDERS.length
-                : ORDERS.filter((o) => o.status === tab.key).length;
+                ? orders.length
+                : orders.filter((o) => o.status === tab.key).length;
 
             return (
               <button
@@ -107,7 +110,15 @@ const MyOrderPage = () => {
       </div>
 
       {/* ═══ Order List ═══ */}
-      {filteredOrders.length === 0 ? (
+      {!customerId && !isLoading ? (
+        <div className="rounded-xl border border-[#E8E0D8] bg-white p-4 text-sm text-[#8D6E63]">
+          Vui lòng đăng nhập để xem đơn hàng của bạn.
+        </div>
+      ) : isLoading ? (
+        <LoadingState />
+      ) : isError ? (
+        <ErrorState />
+      ) : filteredOrders.length === 0 ? (
         <EmptyState activeTab={activeTab} />
       ) : (
         <div className="space-y-4">
@@ -124,6 +135,23 @@ const MyOrderPage = () => {
     </div>
   );
 };
+
+const LoadingState = () => (
+  <div className="space-y-3">
+    {Array.from({ length: 3 }).map((_, idx) => (
+      <div
+        key={`order-loading-${idx}`}
+        className="h-28 rounded-xl border border-[#E8E0D8] bg-[#FAF8F5] animate-pulse"
+      />
+    ))}
+  </div>
+);
+
+const ErrorState = () => (
+  <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+    Không thể tải danh sách đơn hàng. Vui lòng thử lại sau.
+  </div>
+);
 
 /* ─── Empty State ─── */
 const EmptyState = ({ activeTab }: { activeTab: string }) => (
