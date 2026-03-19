@@ -1,4 +1,9 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  keepPreviousData,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
 import { toast } from "sonner";
 import * as customerAdminApi from "@/api/customer/customer-admin.api";
 import type { CustomerSearchRequest } from "@/api/customer/customer-admin.type";
@@ -27,6 +32,21 @@ export const useCustomerAdminSearch = (params: CustomerSearchRequest) => {
   return useQuery({
     queryKey: customerAdminKeys.list(params),
     queryFn: () => customerAdminApi.search(params),
+  });
+};
+
+export const useCustomerSearch = (
+  params: CustomerSearchRequest,
+  options?: { enabled?: boolean },
+) => {
+  return useQuery({
+    queryKey: customerAdminKeys.list(params),
+    queryFn: async () => {
+      const response = await customerAdminApi.search(params);
+      return response;
+    },
+    enabled: options?.enabled ?? true,
+    placeholderData: keepPreviousData,
   });
 };
 

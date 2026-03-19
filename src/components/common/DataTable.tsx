@@ -102,6 +102,7 @@ export interface DataTableProps<TData> {
   enableColumnVisibility?: boolean;
   defaultHiddenColumns?: string[];
   renderActions?: (row: TData) => React.ReactNode;
+  onRowClick?: (row: TData) => void;
   /** Optional callback to compute extra CSS classes per data row */
   getRowClassName?: (row: TData) => string;
   /** Optional callback to compute inline style per data row (highest specificity) */
@@ -180,6 +181,7 @@ export function DataTable<TData>({
   enableColumnVisibility = false,
   defaultHiddenColumns = [],
   renderActions,
+  onRowClick,
   getRowClassName,
   getRowStyle,
   onExport,
@@ -765,9 +767,24 @@ export function DataTable<TData>({
                         data-state={row.getIsSelected() && "selected"}
                         className={[
                           "transition-colors border-b border-[#E8DFD6]",
+                          onRowClick ? "cursor-pointer" : "",
                           rowClass || "hover:bg-[#FAF8F5]",
                         ].join(" ")}
                         style={rowStyle}
+                        onClick={(event) => {
+                          if (!onRowClick) return;
+
+                          const target = event.target as HTMLElement | null;
+                          if (
+                            target?.closest(
+                              "button, a, input, textarea, select, [role='checkbox'], [role='button']",
+                            )
+                          ) {
+                            return;
+                          }
+
+                          onRowClick(row.original);
+                        }}
                       >
                         {row.getVisibleCells().map((cell) => (
                           <TableCell
