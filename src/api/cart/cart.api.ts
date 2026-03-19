@@ -27,6 +27,14 @@ import type {
   CartResponse,
 } from "@/types/cart";
 
+export type UpdateCartItemRequest = {
+  cartItemId: string;
+  quantity: number;
+  note?: string;
+};
+
+export type UpdateCartItemResponse = CartResponse | null;
+
 type RawCartProductInfo = {
   name?: string;
   imageUrl?: string;
@@ -231,6 +239,24 @@ export const deleteCartItem = async (
   });
 
   return normalizeCart(response!);
+};
+
+export const updateCartItem = async (
+  data: UpdateCartItemRequest,
+): Promise<UpdateCartItemResponse> => {
+  const response = await httpClient.patch<
+    RawCartResponse,
+    UpdateCartItemRequest
+  >({
+    url: "/api/carts/items/update-cart-item",
+    data,
+  });
+
+  if (!response) {
+    return null;
+  }
+
+  return normalizeCart(response);
 };
 
 export const updateOptionItemQuantity = async (
