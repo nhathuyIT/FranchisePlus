@@ -20,8 +20,6 @@ import CartVoucherDialog from "./components/CartVoucherDialog";
 const CartPage: React.FC = () => {
   const {
     carts,
-    increaseItem,
-    decreaseItem,
     updateItemQuantity,
     removeItem,
     saveItemNote,
@@ -274,8 +272,6 @@ const CartPage: React.FC = () => {
                 indeterminate={isCartIndeterminate(singleCart.id)}
                 onToggleCart={(checked) => toggleCart(singleCart.id, checked)}
                 onToggleItem={toggleItem}
-                onIncrease={(cartItemId) => void increaseItem(cartItemId)}
-                onDecrease={(cartItemId) => void decreaseItem(cartItemId)}
                 onUpdateQuantity={(cartItemId, quantity) =>
                   void updateItemQuantity(cartItemId, quantity)
                 }

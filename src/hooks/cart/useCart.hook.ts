@@ -254,6 +254,35 @@ export const useDeleteCartItemMutation = () => {
 };
 
 /**
+ * Update one cart item, such as quantity or item note.
+ *
+ * Usage:
+ * `const updateCartItem = useUpdateCartItemMutation();`
+ * `updateCartItem.mutate({ cartItemId, quantity, note });`
+ */
+export const useUpdateCartItemMutation = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: { cartItemId: string; quantity: number; note?: string }) =>
+      cartApi.updateCartItem(data),
+    onSuccess: async (response) => {
+      await invalidateCartQueries(queryClient, {
+        cartId: response?.id,
+        customerId: response?.customerId,
+        status: response?.status,
+      });
+      toast.success("Cart item updated successfully!");
+    },
+    onError: (error: Error) => {
+      toast.error("Failed to update cart item", {
+        description: error.message,
+      });
+    },
+  });
+};
+
+/**
  * Update quantity of one option item inside a cart item.
  *
  * Usage:

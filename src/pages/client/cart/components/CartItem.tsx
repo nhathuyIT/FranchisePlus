@@ -15,8 +15,6 @@ type CartItemNoteForm = {
 interface QuantityControlProps {
   quantity: number;
   disabled?: boolean;
-  onIncrease: () => void;
-  onDecrease: () => void;
   onUpdateQuantity: (quantity: number) => void;
 }
 
@@ -30,8 +28,6 @@ interface CartItemProps {
   ) => string | undefined;
   resolveProductSize: (productFranchiseId: string) => string | undefined;
   onToggle: (checked: boolean) => void;
-  onIncrease: () => void;
-  onDecrease: () => void;
   onUpdateQuantity: (quantity: number) => void;
   onRemove: () => void;
   onSaveNote: (note: string) => Promise<boolean> | void;
@@ -40,8 +36,6 @@ interface CartItemProps {
 const QuantityControl: React.FC<QuantityControlProps> = ({
   quantity,
   disabled = false,
-  onIncrease,
-  onDecrease,
   onUpdateQuantity,
 }) => {
   const currentQuantity = Math.max(1, Number(quantity || 1));
@@ -74,7 +68,7 @@ const QuantityControl: React.FC<QuantityControlProps> = ({
       <button
         type="button"
         disabled={disabled || currentQuantity <= 1}
-        onClick={onDecrease}
+        onClick={() => onUpdateQuantity(Math.max(1, currentQuantity - 1))}
         className="h-11 w-11 text-lg text-[var(--cart-ink)] transition-colors hover:bg-[#fbf3ec] disabled:cursor-not-allowed disabled:text-[#c4b5aa] disabled:hover:bg-white"
       >
         -
@@ -118,7 +112,7 @@ const QuantityControl: React.FC<QuantityControlProps> = ({
       <button
         type="button"
         disabled={disabled}
-        onClick={onIncrease}
+        onClick={() => onUpdateQuantity(currentQuantity + 1)}
         className="h-11 w-11 text-lg text-[var(--cart-ink)] transition-colors hover:bg-[#fbf3ec] disabled:cursor-not-allowed disabled:text-[#c4b5aa] disabled:hover:bg-white"
       >
         +
@@ -134,8 +128,6 @@ const CartItem: React.FC<CartItemProps> = ({
   resolveProductImage,
   resolveProductSize,
   onToggle,
-  onIncrease,
-  onDecrease,
   onUpdateQuantity,
   onRemove,
   onSaveNote,
@@ -144,14 +136,11 @@ const CartItem: React.FC<CartItemProps> = ({
   const originalLineTotal = Number(item.lineTotal || 0);
   const finalLineTotal = Number(item.finalLineTotal || 0);
   const currentQuantity = Math.max(1, Number(item.quantity || 1));
-  const productName =
-    item.productName ?? item.product?.name ?? item.productFranchiseId;
+  const productName = item.productName || item.productFranchiseId;
   const productSizeLabel = resolveProductSize(item.productFranchiseId);
   const productImage =
-    resolveProductImage(
-      item.productFranchiseId,
-      item.productImageUrl ?? item.product?.imageUrl,
-    ) || coffeeCupIcon;
+    resolveProductImage(item.productFranchiseId, item.productImageUrl) ||
+    coffeeCupIcon;
 
   const noteForm = useForm<CartItemNoteForm>({
     defaultValues: {
@@ -226,16 +215,14 @@ const CartItem: React.FC<CartItemProps> = ({
                 <div className="mt-3 space-y-2.5">
                   {item.options.map((option) => {
                     const optionName =
-                      option.productName ??
-                      option.product?.name ??
-                      option.productFranchiseId;
+                      option.productName || option.productFranchiseId;
                     const optionSizeLabel = resolveProductSize(
                       option.productFranchiseId,
                     );
                     const optionImage =
                       resolveProductImage(
                         option.productFranchiseId,
-                        option.productImageUrl ?? option.product?.imageUrl,
+                        option.productImageUrl,
                       ) || coffeeCupIcon;
 
                     return (
@@ -314,8 +301,6 @@ const CartItem: React.FC<CartItemProps> = ({
           <QuantityControl
             quantity={currentQuantity}
             disabled={isPending}
-            onDecrease={onDecrease}
-            onIncrease={onIncrease}
             onUpdateQuantity={onUpdateQuantity}
           />
         </div>

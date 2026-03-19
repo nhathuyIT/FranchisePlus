@@ -95,12 +95,11 @@ function mapCartItems(carts: CartResponse[]): CartItem[] {
       franchiseId: cart.franchiseId,
       franchiseName: cart.franchiseName ?? "Franchise",
       productFranchiseId: item.productFranchiseId,
-      productNameSnapshot:
-        item.productName ?? item.product?.name ?? item.productFranchiseId,
+      productNameSnapshot: item.productName ?? item.productFranchiseId,
       priceSnapshot: Number(item.productCartPrice || 0),
       quantity: Number(item.quantity || 0),
       lineTotal: Number(item.finalLineTotal || item.lineTotal || 0),
-      imageUrl: item.productImageUrl ?? item.product?.imageUrl ?? undefined,
+      imageUrl: item.productImageUrl ?? undefined,
       options: (item.options ?? []).map((option) => ({
         productFranchiseId: option.productFranchiseId,
         quantity: option.quantity,
@@ -356,22 +355,6 @@ export function useCart() {
     }
   };
 
-  const increaseItem = async (cartItemId: string): Promise<boolean> => {
-    const targetItem = findItemByCartItemId(cartItemId);
-    if (!targetItem) return false;
-
-    return updateItemQuantity(cartItemId, Number(targetItem.quantity || 0) + 1);
-  };
-
-  const decreaseItem = async (cartItemId: string): Promise<boolean> => {
-    const targetItem = findItemByCartItemId(cartItemId);
-    if (!targetItem || Number(targetItem.quantity || 0) <= 1) {
-      return false;
-    }
-
-    return updateItemQuantity(cartItemId, Number(targetItem.quantity || 0) - 1);
-  };
-
   const clearCart = () => {
     const uniqueCartItemIds = Array.from(
       new Set(items.map((item) => item.cartItemId)),
@@ -386,8 +369,6 @@ export function useCart() {
     cart,
     carts,
     addItem,
-    increaseItem,
-    decreaseItem,
     updateItemQuantity,
     saveItemNote,
     removeItem,

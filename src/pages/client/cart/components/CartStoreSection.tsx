@@ -26,8 +26,6 @@ interface CartStoreSectionProps {
   indeterminate: boolean;
   onToggleCart: (checked: boolean) => void;
   onToggleItem: (cartItemId: string, checked: boolean) => void;
-  onIncrease: (cartItemId: string) => void;
-  onDecrease: (cartItemId: string) => void;
   onUpdateQuantity: (cartItemId: string, quantity: number) => void;
   onRemove: (cartItemId: string) => void;
   onSaveItemNote: (cartItemId: string, note: string) => void;
@@ -50,8 +48,6 @@ const CartStoreSection: React.FC<CartStoreSectionProps> = ({
   indeterminate,
   onToggleCart,
   onToggleItem,
-  onIncrease,
-  onDecrease,
   onUpdateQuantity,
   onRemove,
   onSaveItemNote,
@@ -76,36 +72,29 @@ const CartStoreSection: React.FC<CartStoreSectionProps> = ({
     formState: { isDirty },
   } = messageForm;
 
-  const { imageByProductFranchiseId, sizeLabelByProductFranchiseId } =
-    React.useMemo(() => {
-      const imageMap = new Map<string, string>();
-      const sizeMap = new Map<string, string>();
+  const { sizeLabelByProductFranchiseId } = React.useMemo(() => {
+    const sizeMap = new Map<string, string>();
 
-      (menuQuery.data ?? []).forEach((category) => {
-        category.products.forEach((product) => {
-          product.sizes.forEach((size) => {
-            sizeMap.set(
-              String(size.productFranchiseId),
-              getSizeLabel(String(size.size)),
-            );
-
-            if (product.imageUrl) {
-              imageMap.set(String(size.productFranchiseId), product.imageUrl);
-            }
-          });
+    (menuQuery.data ?? []).forEach((category) => {
+      category.products.forEach((product) => {
+        product.sizes.forEach((size) => {
+          sizeMap.set(
+            String(size.productFranchiseId),
+            getSizeLabel(String(size.size)),
+          );
         });
       });
+    });
 
-      return {
-        imageByProductFranchiseId: imageMap,
-        sizeLabelByProductFranchiseId: sizeMap,
-      };
-    }, [menuQuery.data]);
+    return {
+      sizeLabelByProductFranchiseId: sizeMap,
+    };
+  }, [menuQuery.data]);
 
   const resolveProductImage = (
-    productFranchiseId: string,
+    _productFranchiseId: string,
     imageUrl?: string | null,
-  ) => imageUrl || imageByProductFranchiseId.get(String(productFranchiseId));
+  ) => imageUrl || undefined;
 
   const resolveProductSize = (productFranchiseId: string) =>
     sizeLabelByProductFranchiseId.get(String(productFranchiseId));
@@ -203,8 +192,6 @@ const CartStoreSection: React.FC<CartStoreSectionProps> = ({
             resolveProductImage={resolveProductImage}
             resolveProductSize={resolveProductSize}
             onToggle={(next) => onToggleItem(item.cartItemId, next)}
-            onIncrease={() => onIncrease(item.cartItemId)}
-            onDecrease={() => onDecrease(item.cartItemId)}
             onUpdateQuantity={(quantity) =>
               onUpdateQuantity(item.cartItemId, quantity)
             }
