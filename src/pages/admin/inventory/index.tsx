@@ -36,9 +36,30 @@ import {
   adjustInventoryFields,
   adjustInventorySchema,
 } from "./inventory-form.config";
-import { InventoryImportPreview } from "./components/InventoryImportPreview";
 import { InventoryTable } from "./components/InventoryTable";
-import { useUpdateInventoryFromExcel } from "./hooks/useUpdateInventoryFromExcel";
+import {
+  type InventoryImportIssue,
+  useUpdateInventoryFromExcel,
+} from "./hooks/useUpdateInventoryFromExcel";
+
+const formatImportIssueDescription = (issues: InventoryImportIssue[]) => {
+  if (issues.length === 0) {
+    return undefined;
+  }
+
+  const previewText = issues
+    .slice(0, 3)
+    .map(
+      (issue) => `Row ${issue.rowNumber}: ${issue.messages.join(", ")}`,
+    )
+    .join(" | ");
+
+  if (issues.length <= 3) {
+    return previewText;
+  }
+
+  return `${previewText} | +${issues.length - 3} more row(s).`;
+};
 
 const InventoryList = () => {
   const { authUser, getCurrentPermissions } = useAuthStore();
@@ -84,12 +105,8 @@ const InventoryList = () => {
   const {
     mainTableData,
     baselineTableData,
-    previewTableData,
-    isImportPreviewMode,
     isImporting,
     importFromExcel,
-    acceptImportedRows,
-    cancelImportPreview,
     resetMainTableData,
   } = useUpdateInventoryFromExcel(inventoryItems);
 
@@ -120,31 +137,27 @@ const InventoryList = () => {
   const handleImport = useCallback(
     async (file: File) => {
       const result = await importFromExcel(file);
+      const description = formatImportIssueDescription(result.errors);
 
       if (!result.success) {
-        toast.error(result.message);
+        toast.error(result.message, {
+          description,
+        });
         return;
       }
 
-      toast.success(result.message);
+      if (result.invalidRows > 0) {
+        toast.info(result.message, {
+          description,
+        });
+        return;
+      }
+
+      toast.success(result.message, {
+        description,
+      });
     },
     [importFromExcel],
-  );
-
-  const handleAcceptImport = useCallback(
-    (selectedRowNumbers: number[]) => {
-      const acceptedItems = acceptImportedRows(selectedRowNumbers);
-
-      if (acceptedItems.length === 0) {
-        toast.error("Select at least one valid row before accepting changes.");
-        return;
-      }
-
-      toast.success(
-        `Local inventory table overwritten with ${acceptedItems.length} row(s).`,
-      );
-    },
-    [acceptImportedRows],
   );
 
   const handleAdjustSubmit = async (
@@ -275,70 +288,60 @@ const InventoryList = () => {
         />
 
         <div className="flex min-h-0 flex-1 flex-col rounded-2xl border border-[#E8DFD6] bg-white p-6 shadow-lg">
-          {!isImportPreviewMode && (
-            <div className="mb-4 flex shrink-0 flex-wrap items-center gap-3">
-              <div className="relative max-w-xs min-w-[200px] flex-1">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#5D4037]" />
-                <Input
-                  placeholder="Search by product or franchise..."
-                  value={productNameQuery}
-                  onChange={(e) => setProductNameQuery(e.target.value)}
-                  className="border-[#E8DFD6] pl-10 focus:border-[#6D4C41] focus:ring-[#6D4C41]"
-                />
-              </div>
-
-              <Select
-                value={selectedFranchiseId || "all"}
-                onValueChange={(value) =>
-                  setSelectedFranchiseId(value === "all" ? "" : value)
-                }
-              >
-                <SelectTrigger className="w-52 border-[#E8DFD6] focus:border-[#6D4C41]">
-                  <SelectValue placeholder="All Franchises" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Franchises</SelectItem>
-                  {franchiseOptions.map((franchise) => (
-                    <SelectItem key={franchise.value} value={franchise.value}>
-                      {franchise.name} ({franchise.code})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-
-              {!isFetching && (
-                <span className="ml-auto text-xs text-[#8D6E63]">
-                  {filteredItems.length} item
-                  {filteredItems.length !== 1 ? "s" : ""}
-                </span>
-              )}
-            </div>
-          )}
-
-          {isImportPreviewMode ? (
-            <InventoryImportPreview
-              rows={previewTableData}
-              onAccept={handleAcceptImport}
-              onCancel={cancelImportPreview}
-            />
-          ) : (
-            <div className="flex-1 flex flex-col min-h-0">
-              <InventoryTable
-                items={canViewInventory ? filteredItems : []}
-                baselineItems={canViewInventory ? baselineTableData : []}
-                isLoading={isLoading || isFetching || deleteMutation.isPending}
-                isImporting={isImporting}
-                error={listError}
-                onRetry={refetch}
-                onImport={canManageInventory ? handleImport : undefined}
-                onDiscardChanges={resetMainTableData}
-                onEdit={canManageInventory ? handleEdit : undefined}
-                onDelete={canManageInventory ? handleOpenDelete : undefined}
-                canEdit={canManageInventory}
-                onSaveBulk={canManageInventory ? handleSaveBulk : undefined}
+          <div className="mb-4 flex shrink-0 flex-wrap items-center gap-3">
+            <div className="relative max-w-xs min-w-[200px] flex-1">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#5D4037]" />
+              <Input
+                placeholder="Search by product or franchise..."
+                value={productNameQuery}
+                onChange={(e) => setProductNameQuery(e.target.value)}
+                className="border-[#E8DFD6] pl-10 focus:border-[#6D4C41] focus:ring-[#6D4C41]"
               />
             </div>
-          )}
+
+            <Select
+              value={selectedFranchiseId || "all"}
+              onValueChange={(value) =>
+                setSelectedFranchiseId(value === "all" ? "" : value)
+              }
+            >
+              <SelectTrigger className="w-52 border-[#E8DFD6] focus:border-[#6D4C41]">
+                <SelectValue placeholder="All Franchises" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Franchises</SelectItem>
+                {franchiseOptions.map((franchise) => (
+                  <SelectItem key={franchise.value} value={franchise.value}>
+                    {franchise.name} ({franchise.code})
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            {!isFetching && (
+              <span className="ml-auto text-xs text-[#8D6E63]">
+                {filteredItems.length} item
+                {filteredItems.length !== 1 ? "s" : ""}
+              </span>
+            )}
+          </div>
+
+          <div className="flex-1 flex flex-col min-h-0">
+            <InventoryTable
+              items={canViewInventory ? filteredItems : []}
+              baselineItems={canViewInventory ? baselineTableData : []}
+              isLoading={isLoading || isFetching || deleteMutation.isPending}
+              isImporting={isImporting}
+              error={listError}
+              onRetry={refetch}
+              onImport={canManageInventory ? handleImport : undefined}
+              onDiscardChanges={resetMainTableData}
+              onEdit={canManageInventory ? handleEdit : undefined}
+              onDelete={canManageInventory ? handleOpenDelete : undefined}
+              canEdit={canManageInventory}
+              onSaveBulk={canManageInventory ? handleSaveBulk : undefined}
+            />
+          </div>
         </div>
 
         <FormDialog<AdjustInventoryFormData>

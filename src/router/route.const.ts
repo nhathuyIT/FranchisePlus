@@ -55,7 +55,9 @@ export const ROUTER_URL = {
     PRODUCTS_DETAIL: "products/:id",
     PROMOTIONS: "promotions",
     VOUCHERS: "vouchers",
+    LOYALTY_RULES: "loyalty-rules",
     USER_FRANCHISE_ROLES: "user-franchise-roles",
     CUSTOMERS: "customers",
+    CART: "cart",
   },
 };

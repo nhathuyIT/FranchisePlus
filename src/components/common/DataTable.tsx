@@ -102,6 +102,7 @@ export interface DataTableProps<TData> {
   enableColumnVisibility?: boolean;
   defaultHiddenColumns?: string[];
   renderActions?: (row: TData) => React.ReactNode;
+  onRowClick?: (row: TData) => void;
   /** Optional callback to compute extra CSS classes per data row */
   getRowClassName?: (row: TData) => string;
   /** Optional callback to compute inline style per data row (highest specificity) */
@@ -180,6 +181,7 @@ export function DataTable<TData>({
   enableColumnVisibility = false,
   defaultHiddenColumns = [],
   renderActions,
+  onRowClick,
   getRowClassName,
   getRowStyle,
   onExport,
@@ -692,16 +694,21 @@ export function DataTable<TData>({
                         key={header.id}
                         className={cn(
                           "font-semibold text-[#3E2723]",
-                          header.column.columnDef.meta?.align === "right" && "text-right",
-                          header.column.columnDef.meta?.align === "center" && "text-center",
+                          header.column.columnDef.meta?.align === "right" &&
+                            "text-right",
+                          header.column.columnDef.meta?.align === "center" &&
+                            "text-center",
                         )}
                       >
                         {header.isPlaceholder ? null : (
                           <div
                             className={cn(
-                              header.column.getCanSort() && "flex items-center gap-2 cursor-pointer select-none",
-                              header.column.columnDef.meta?.align === "right" && "justify-end",
-                              header.column.columnDef.meta?.align === "center" && "justify-center",
+                              header.column.getCanSort() &&
+                                "flex items-center gap-2 cursor-pointer select-none",
+                              header.column.columnDef.meta?.align === "right" &&
+                                "justify-end",
+                              header.column.columnDef.meta?.align ===
+                                "center" && "justify-center",
                             )}
                             onClick={header.column.getToggleSortingHandler()}
                           >
@@ -760,19 +767,38 @@ export function DataTable<TData>({
                         data-state={row.getIsSelected() && "selected"}
                         className={[
                           "transition-colors border-b border-[#E8DFD6]",
+                          onRowClick ? "cursor-pointer" : "",
                           rowClass || "hover:bg-[#FAF8F5]",
                         ].join(" ")}
                         style={rowStyle}
+                        onClick={(event) => {
+                          if (!onRowClick) return;
+
+                          const target = event.target as HTMLElement | null;
+                          if (
+                            target?.closest(
+                              "button, a, input, textarea, select, [role='checkbox'], [role='button']",
+                            )
+                          ) {
+                            return;
+                          }
+
+                          onRowClick(row.original);
+                        }}
                       >
                         {row.getVisibleCells().map((cell) => (
                           <TableCell
                             key={cell.id}
                             className={cn(
                               "text-[#5D4037]",
-                              cell.column.columnDef.meta?.align === "right" && "text-right",
-                              cell.column.columnDef.meta?.align === "center" && "text-center",
+                              cell.column.columnDef.meta?.align === "right" &&
+                                "text-right",
+                              cell.column.columnDef.meta?.align === "center" &&
+                                "text-center",
                             )}
-                          >                            {flexRender(
+                          >
+                            {" "}
+                            {flexRender(
                               cell.column.columnDef.cell,
                               cell.getContext(),
                             )}

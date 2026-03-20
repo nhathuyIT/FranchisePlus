@@ -27,6 +27,7 @@ function App() {
 
   return (
     <>
+      <LoadingLayout />
       <BrowserRouter>
         <ScrollToTop />
         <Routes>
@@ -40,7 +41,16 @@ function App() {
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </BrowserRouter>
-      <Toaster position="top-center" />
+      <Toaster
+        position="top-center"
+        toastOptions={{
+          classNames: {
+            toast: "bg-white text-[#3E2723] shadow-xl",
+            title: "text-sm font-semibold text-[#2F221E]",
+            description: "text-sm text-[#6B4F45] !opacity-100",
+          },
+        }}
+      />
     </>
   );
 }

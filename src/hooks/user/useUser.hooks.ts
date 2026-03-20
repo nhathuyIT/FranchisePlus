@@ -1,4 +1,9 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  keepPreviousData,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
 import { toast } from "sonner";
 import * as userApi from "@/api/user/user.api";
 import type {
@@ -63,13 +68,18 @@ export const useUsers = (enabled = true, scopeKey = "default") => {
   });
 };
 
-export const useUserSearch = (params: UserSearchRequest) => {
+export const useUserSearch = (
+  params: UserSearchRequest,
+  options?: { enabled?: boolean },
+) => {
   return useQuery({
     queryKey: userKeys.list(params),
     queryFn: async () => {
       const response = await userApi.search(params);
       return response;
     },
+    enabled: options?.enabled ?? true,
+    placeholderData: keepPreviousData,
   });
 };
 
