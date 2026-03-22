@@ -582,126 +582,129 @@ const LoyaltyRulesPage = () => {
         />
 
         <div className="flex-1 min-h-0 flex flex-col bg-white rounded-2xl shadow-lg border border-[#E8DFD6] p-6 gap-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3">
-            <div className="space-y-1">
-              <Label htmlFor="search-franchise">Franchise</Label>
-              <Select
-                value={searchForm.franchiseId}
-                onValueChange={(value) =>
-                  setSearchForm((prev) => ({ ...prev, franchiseId: value }))
-                }
-              >
-                <SelectTrigger id="search-franchise">
-                  <SelectValue placeholder="All franchises" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All franchises</SelectItem>
-                  {franchiseOptions.map((option) => (
-                    <SelectItem
-                      key={String(option.value)}
-                      value={String(option.value)}
-                    >
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-1">
-              <Label htmlFor="search-tier">Tier</Label>
-              <Select
-                value={searchForm.tier}
-                onValueChange={(value) =>
-                  setSearchForm((prev) => ({
-                    ...prev,
-                    tier: value as LoyaltyRuleSearchFormState["tier"],
-                  }))
-                }
-              >
-                <SelectTrigger id="search-tier">
-                  <SelectValue placeholder="All tiers" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All tiers</SelectItem>
-                  <SelectItem value="BRONZE">BRONZE</SelectItem>
-                  <SelectItem value="SILVER">SILVER</SelectItem>
-                  <SelectItem value="GOLD">GOLD</SelectItem>
-                  <SelectItem value="PLATINUM">PLATINUM</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-1">
-              <Label htmlFor="search-active">Is Active</Label>
-              <Select
-                value={searchForm.isActive}
-                onValueChange={(value) =>
-                  setSearchForm((prev) => ({
-                    ...prev,
-                    isActive: value as LoyaltyRuleSearchFormState["isActive"],
-                  }))
-                }
-              >
-                <SelectTrigger id="search-active">
-                  <SelectValue placeholder="All status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All status</SelectItem>
-                  <SelectItem value="true">Active</SelectItem>
-                  <SelectItem value="false">Inactive</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-1">
-              <Label htmlFor="search-deleted">Record State</Label>
-              <Select
-                value={searchForm.isDeleted}
-                onValueChange={(value) =>
-                  setSearchForm((prev) => ({
-                    ...prev,
-                    isDeleted: value as LoyaltyRuleSearchFormState["isDeleted"],
-                  }))
-                }
-              >
-                <SelectTrigger id="search-deleted">
-                  <SelectValue placeholder="Record state" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="false">Active records</SelectItem>
-                  <SelectItem value="true">Deleted records</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <Button
-              onClick={handleSearch}
-              disabled={isSearchLoading}
-              className="bg-[#6D4C41] hover:bg-[#5D4037] text-white"
-            >
-              {isSearchLoading ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              ) : (
-                <Search className="mr-2 h-4 w-4" />
-              )}
-              Search
-            </Button>
-            <Button
-              variant="outline"
-              onClick={handleReset}
-              disabled={isSearchLoading}
-              className="border-[#6D4C41] text-[#6D4C41]"
-            >
-              <X className="mr-2 h-4 w-4" />
-              Reset
-            </Button>
-          </div>
-
           <LoyaltyRuleTable
             loyaltyRules={loyaltyRules}
+            toolbarPrefix={
+              <div className="flex flex-wrap items-end gap-3 flex-1">
+                <div className="space-y-1 min-w-44">
+                  <Label htmlFor="search-franchise">Franchise</Label>
+                  <Select
+                    value={searchForm.franchiseId}
+                    onValueChange={(value) =>
+                      setSearchForm((prev) => ({ ...prev, franchiseId: value }))
+                    }
+                  >
+                    <SelectTrigger id="search-franchise">
+                      <SelectValue placeholder="All franchises" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All franchises</SelectItem>
+                      {franchiseOptions.map((option) => (
+                        <SelectItem
+                          key={String(option.value)}
+                          value={String(option.value)}
+                        >
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-1 min-w-36">
+                  <Label htmlFor="search-tier">Tier</Label>
+                  <Select
+                    value={searchForm.tier}
+                    onValueChange={(value) =>
+                      setSearchForm((prev) => ({
+                        ...prev,
+                        tier: value as LoyaltyRuleSearchFormState["tier"],
+                      }))
+                    }
+                  >
+                    <SelectTrigger id="search-tier">
+                      <SelectValue placeholder="All tiers" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All tiers</SelectItem>
+                      <SelectItem value="BRONZE">BRONZE</SelectItem>
+                      <SelectItem value="SILVER">SILVER</SelectItem>
+                      <SelectItem value="GOLD">GOLD</SelectItem>
+                      <SelectItem value="PLATINUM">PLATINUM</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-1 min-w-36">
+                  <Label htmlFor="search-active">Is Active</Label>
+                  <Select
+                    value={searchForm.isActive}
+                    onValueChange={(value) =>
+                      setSearchForm((prev) => ({
+                        ...prev,
+                        isActive:
+                          value as LoyaltyRuleSearchFormState["isActive"],
+                      }))
+                    }
+                  >
+                    <SelectTrigger id="search-active">
+                      <SelectValue placeholder="All status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All status</SelectItem>
+                      <SelectItem value="true">Active</SelectItem>
+                      <SelectItem value="false">Inactive</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-1 min-w-40">
+                  <Label htmlFor="search-deleted">Record State</Label>
+                  <Select
+                    value={searchForm.isDeleted}
+                    onValueChange={(value) =>
+                      setSearchForm((prev) => ({
+                        ...prev,
+                        isDeleted:
+                          value as LoyaltyRuleSearchFormState["isDeleted"],
+                      }))
+                    }
+                  >
+                    <SelectTrigger id="search-deleted">
+                      <SelectValue placeholder="Record state" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="false">Active records</SelectItem>
+                      <SelectItem value="true">Deleted records</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <Button
+                    onClick={handleSearch}
+                    disabled={isSearchLoading}
+                    className="bg-[#6D4C41] hover:bg-[#5D4037] text-white"
+                  >
+                    {isSearchLoading ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <Search className="mr-2 h-4 w-4" />
+                    )}
+                    Search
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={handleReset}
+                    disabled={isSearchLoading}
+                    className="border-[#6D4C41] text-[#6D4C41]"
+                  >
+                    <X className="mr-2 h-4 w-4" />
+                    Reset
+                  </Button>
+                </div>
+              </div>
+            }
             pagination={{
               pageNum: responsePageInfo?.pageNum ?? pageInfo.pageNum,
               pageSize: responsePageInfo?.pageSize ?? pageInfo.pageSize,

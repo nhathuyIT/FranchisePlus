@@ -8,6 +8,8 @@ import {
 import { createCustomerAdminColumns } from "../columns/customer-admin.columns";
 import { Button } from "@/components/ui/button";
 import type { CustomerProfile } from "@/types/customer";
+import { toast } from "sonner";
+import { useExcelExport, CUSTOMER_REVERSE_HEADER_MAPPING } from "@/lib/excel";
 
 interface CustomerAdminTableProps {
   customers: CustomerProfile[];
@@ -38,6 +40,23 @@ export const CustomerAdminTable = ({
   searchValue,
   onSearchChange,
 }: CustomerAdminTableProps) => {
+  const { exportToExcel, isExporting } = useExcelExport({
+    headerMapping: CUSTOMER_REVERSE_HEADER_MAPPING,
+    fileName: "customers",
+    sheetName: "Customers",
+    excludeColumns: ["avatarUrl"],
+  });
+
+  const handleExport = () => {
+    exportToExcel(customers as unknown as Record<string, unknown>[])
+      .then(() => {
+        toast.success("Excel exported successfully!");
+      })
+      .catch(() => {
+        toast.error("Excel export failed!");
+      });
+  };
+
   const columnFilters: ColumnFilter[] = [
     {
       id: "isActive",
@@ -94,6 +113,9 @@ export const CustomerAdminTable = ({
       defaultHiddenColumns={["address"]}
       columnFilters={columnFilters}
       bulkActions={bulkActions}
+      onExport={handleExport}
+      isExporting={isExporting}
+      exportLabel="Export Excel"
       renderActions={(customer) => (
         <>
           {onView && (

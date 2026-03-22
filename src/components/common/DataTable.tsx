@@ -114,10 +114,12 @@ export interface DataTableProps<TData> {
   isImporting?: boolean;
   exportLabel?: string;
   importLabel?: string;
+  toolbarActions?: React.ReactNode;
   /** Controlled search value — when provided, the search input is driven by the parent */
   searchValue?: string;
   /** Called whenever the search input changes — use with searchValue for API-based search */
   onSearchChange?: (value: string) => void;
+  toolbarPrefix?: React.ReactNode;
   /** Optional server-side pagination config */
   serverPagination?: {
     pageNum: number;
@@ -190,8 +192,10 @@ export function DataTable<TData>({
   isImporting = false,
   exportLabel = "Export",
   importLabel = "Import",
+  toolbarActions,
   searchValue,
   onSearchChange,
+  toolbarPrefix,
   serverPagination,
 }: DataTableProps<TData>) {
   // State Management
@@ -366,6 +370,7 @@ export function DataTable<TData>({
   const activeSearchValue =
     onSearchChange !== undefined ? (searchValue ?? "") : globalFilter;
   const hasActiveFilters = columnFilters.length > 0 || activeSearchValue !== "";
+  const hasToolbarActions = Boolean(onImport || onExport || toolbarActions);
 
   // Helper function to get filter display label
   const getFilterLabel = (filterId: string, filterValue: unknown): string => {
@@ -409,7 +414,7 @@ export function DataTable<TData>({
   return (
     <div className="flex flex-col h-full">
       {/* Toolbar - Fixed */}
-      <div className="flex items-center gap-4 shrink-0 pb-4">
+      <div className="flex items-center gap-4 flex-wrap shrink-0 pb-4">
         {/* Global Search */}
         {searchable && (
           <div className="relative flex-1 max-w-sm">
@@ -430,6 +435,8 @@ export function DataTable<TData>({
             />
           </div>
         )}
+
+        {toolbarPrefix}
 
         {/* Column Filters */}
         {externalColumnFilters.length > 0 && (
@@ -546,10 +553,10 @@ export function DataTable<TData>({
         )}
 
         {/* Spacer to push import/export actions to far right */}
-        {(onImport || onExport) && <div className="flex-1" />}
+        {hasToolbarActions && <div className="flex-1" />}
 
         {/* Import / Export Actions */}
-        {(onImport || onExport) && (
+        {hasToolbarActions && (
           <>
             {onImport && (
               <input
@@ -599,6 +606,7 @@ export function DataTable<TData>({
                   {exportLabel}
                 </Button>
               )}
+              {toolbarActions}
             </div>
           </>
         )}

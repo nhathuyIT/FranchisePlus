@@ -48,6 +48,7 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
 const sidebarMenuItems = ADMIN_MENU.filter((item) => {
   const path = item.path.toLowerCase();
   return (
+    path !== ROUTER_URL.ADMIN_ROUTER.USER_FRANCHISE_ROLES.toLowerCase() &&
     !path.includes("detail") &&
     !path.includes("create") &&
     !path.includes("edit") &&

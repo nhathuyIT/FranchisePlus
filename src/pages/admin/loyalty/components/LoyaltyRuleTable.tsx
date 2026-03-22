@@ -12,6 +12,7 @@ interface LoyaltyRuleTableProps {
   onRetry?: () => void;
   onView?: (item: LoyaltyRule) => void;
   onEdit?: (item: LoyaltyRule) => void;
+  toolbarPrefix?: React.ReactNode;
   pagination?: {
     pageNum: number;
     pageSize: number;
@@ -29,6 +30,7 @@ export const LoyaltyRuleTable = ({
   onRetry,
   onView,
   onEdit,
+  toolbarPrefix,
   pagination,
 }: LoyaltyRuleTableProps) => {
   const columns = useMemo(() => createLoyaltyRuleColumns(), []);
@@ -57,6 +59,7 @@ export const LoyaltyRuleTable = ({
       serverPagination={pagination}
       enableColumnVisibility
       columnFilters={columnFilters}
+      toolbarPrefix={toolbarPrefix}
       renderActions={(item) => (
         <>
           {onView && (

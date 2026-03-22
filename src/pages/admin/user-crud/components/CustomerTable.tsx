@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { Eye, Pencil, Trash2 } from "lucide-react";
+import { Eye, Pencil, ShieldCheck, Trash2 } from "lucide-react";
 import {
   DataTable,
   type ColumnFilter,
@@ -9,13 +9,9 @@ import { createCustomerColumns } from "../columns/customer.columns";
 import { Button } from "@/components/ui/button";
 import type { User } from "@/types/user.type";
 import { toast } from "sonner";
-import {
-  useExcelExport,
-  useExcelImport,
-  CustomerImportSchema,
-  CUSTOMER_HEADER_MAPPING,
-  CUSTOMER_REVERSE_HEADER_MAPPING,
-} from "@/lib/excel";
+import { useExcelExport, CUSTOMER_REVERSE_HEADER_MAPPING } from "@/lib/excel";
+import { useNavigate } from "react-router-dom";
+import { ROUTER_URL } from "@/router/route.const";
 
 interface CustomerTableProps {
   customers: User[];
@@ -48,6 +44,8 @@ export const CustomerTable = ({
   searchValue,
   onSearchChange,
 }: CustomerTableProps) => {
+  const navigate = useNavigate();
+
   // Excel Export
   const { exportToExcel, isExporting } = useExcelExport({
     headerMapping: CUSTOMER_REVERSE_HEADER_MAPPING,
@@ -61,12 +59,6 @@ export const CustomerTable = ({
     [onStatusToggle, statusPendingId, canEdit],
   );
 
-  // Excel Import
-  const { importFromExcel, isImporting } = useExcelImport({
-    schema: CustomerImportSchema,
-    headerMapping: CUSTOMER_HEADER_MAPPING,
-  });
-
   const handleExport = () => {
     exportToExcel(customers as unknown as Record<string, unknown>[])
       .then(() => {
@@ -75,21 +67,6 @@ export const CustomerTable = ({
       .catch(() => {
         toast.error("Excel export failed!");
       });
-  };
-
-  const handleImport = async (file: File) => {
-    const result = await importFromExcel(file);
-    if (result.success) {
-      toast.success(`Successfully imported ${result.validRows} rows`);
-      // TODO: call API to save result.data
-    } else {
-      toast.error(
-        `Import failed: ${result.validRows} valid, ${result.invalidRows} errors`,
-      );
-      result.errors.forEach((err) =>
-        console.warn(`Row ${err.row} - ${err.field}: ${err.message}`),
-      );
-    }
   };
 
   // Column Filters Configuration
@@ -136,13 +113,24 @@ export const CustomerTable = ({
       defaultHiddenColumns={[]}
       columnFilters={columnFilters}
       bulkActions={bulkActions}
-      // Excel Import/Export
+      // Excel Export
       onExport={handleExport}
       isExporting={isExporting}
-      onImport={handleImport}
-      isImporting={isImporting}
       exportLabel="Export Excel"
-      importLabel="Import Excel"
+      toolbarActions={
+        <Button
+          variant="outline"
+          onClick={() =>
+            navigate(
+              `${ROUTER_URL.ADMIN}/${ROUTER_URL.ADMIN_ROUTER.USER_FRANCHISE_ROLES}`,
+            )
+          }
+          className="gap-2 border-[#E8DFD6] bg-white text-[#5D4037] hover:bg-[#FAF8F5]"
+        >
+          <ShieldCheck className="h-4 w-4" />
+          User Franchise Roles
+        </Button>
+      }
       renderActions={(customer) => (
         <>
           {onView && (
