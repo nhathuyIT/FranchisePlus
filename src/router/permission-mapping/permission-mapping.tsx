@@ -20,6 +20,8 @@ const ROLE_PERMISSIONS: Record<string, Permission[]> = {
     Permission.VIEW_CUSTOMERS,
     Permission.VIEW_REPORTS,
     Permission.EXPORT_REPORTS,
+    Permission.VIEW_CART,
+    Permission.MANAGE_CART,
   ],
 
   MANAGER: [
@@ -36,6 +38,8 @@ const ROLE_PERMISSIONS: Record<string, Permission[]> = {
     Permission.VIEW_CUSTOMERS,
     Permission.VIEW_REPORTS,
     Permission.EXPORT_REPORTS,
+    Permission.VIEW_CART,
+    Permission.MANAGE_CART,
   ],
 
   STAFF: [
@@ -47,6 +51,8 @@ const ROLE_PERMISSIONS: Record<string, Permission[]> = {
     Permission.VIEW_INVENTORY,
     Permission.VIEW_CUSTOMERS,
     Permission.VIEW_REPORTS,
+    Permission.VIEW_CART,
+    Permission.MANAGE_CART,
   ],
 
   CUSTOMER: [],

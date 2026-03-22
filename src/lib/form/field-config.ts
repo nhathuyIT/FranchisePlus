@@ -42,6 +42,10 @@ export interface AsyncOptionsConfig<TFormData extends FieldValues> {
   debounceMs?: number;
   /** Minimum characters before loading (default: 0) */
   minChars?: number;
+  /** Empty state text shown when async loader returns no options */
+  emptyText?: string;
+  /** Loading text shown while async loader is fetching options */
+  loadingText?: string;
   /** Cache key for deduplication */
   cacheKey?: string;
 }

@@ -134,3 +134,27 @@
 .scrollbar-invisible::-webkit-scrollbar {
   display: none;
 }
+[data-sonner-toast] {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+[data-sonner-toaster][data-x-position="center"] {
+  left: 0;
+  right: 0;
+  transform: none;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+[data-sonner-toast] [data-title] {
+  color: #2f221e !important;
+}
+
+[data-sonner-toast] [data-description] {
+  color: #6b4f45 !important;
+  opacity: 1 !important;
+  filter: none !important;
+  -webkit-text-fill-color: #6b4f45;
+  text-shadow: none !important;
+}
