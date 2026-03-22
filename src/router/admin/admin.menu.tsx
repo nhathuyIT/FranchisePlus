@@ -141,4 +141,12 @@ export const ADMIN_MENU: AdminMenuItem[] = [
     isEnd: true,
     permissions: [PermissionEnum.VIEW_PRODUCTS],
   },
+  {
+    label: "Loyalty Rules",
+    path: ROUTER_URL.ADMIN_ROUTER.LOYALTY_RULES,
+    icon: "voucher",
+    component: React.lazy(() => import("@/pages/admin/loyalty/index.tsx")),
+    isEnd: true,
+    permissions: [PermissionEnum.VIEW_PRODUCTS],
+  },
 ];

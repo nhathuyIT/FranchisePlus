@@ -50,7 +50,6 @@ export function StaffShiftView() {
     userId,
     userName,
     userAvatarUrl,
-    cursorDate: calendar.cursorDate,
   });
 
   const [viewingEvent, setViewingEvent] = useState<ShiftCalendarEvent | null>(

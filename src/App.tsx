@@ -27,6 +27,7 @@ function App() {
 
   return (
     <>
+      <LoadingLayout />
       <BrowserRouter>
         <ScrollToTop />
         <Routes>
