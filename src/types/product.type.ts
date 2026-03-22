@@ -21,6 +21,7 @@ export interface Product extends BaseTimestamp, SoftDeletable, Activatable {
   imageUrl: string | null;
   minPrice: number;
   maxPrice: number;
+  isHaveTopping?: boolean | null;
 }
 
 /**

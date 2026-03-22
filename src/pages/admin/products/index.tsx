@@ -11,7 +11,7 @@ import { ProductTable } from "./components/ProductTable";
 import { ViewProductModal } from "./components/ViewProductModal";
 import type { Product } from "@/types/product.type";
 import type { ProductSearchRequest } from "@/api/product/product.api";
-import { searchProducts } from "@/api/product/product.api";
+import { getProduct, searchProducts } from "@/api/product/product.api";
 import {
   useProductsQuery,
   useCreateProductMutation,
@@ -52,6 +52,7 @@ const productSchema = z
     minPrice: z.number().min(0, "Min price must be positive"),
     maxPrice: z.number().min(0, "Max price must be positive"),
     quantity: z.number().min(0, "Quantity must be 0 or greater").optional(),
+    isHaveTopping: z.boolean().optional(),
     isActive: z.boolean(),
   })
   .refine((data) => data.maxPrice >= data.minPrice, {
@@ -85,6 +86,11 @@ const getProductFields = (
         type: "text",
         label: "Product Name",
         disabled: true,
+      },
+      {
+        name: "isHaveTopping",
+        type: "switch",
+        label: "Has Topping",
       },
       {
         name: "size",
@@ -251,6 +257,12 @@ const getProductFields = (
       colSpan: 2,
     },
     {
+      name: "isHaveTopping",
+      type: "switch",
+      label: "Has Topping",
+      colSpan: 2,
+    },
+    {
       name: "isActive",
       type: "switch",
       label: "Active",
@@ -337,11 +349,13 @@ const ProductsPage = () => {
   // ── TanStack Query hooks ──────────────────────────────────────────────────
   // Use different queries based on user role
   const {
-    data: globalProducts,
+    data: globalProductsResponse,
     isLoading: isLoadingGlobal,
     error: globalError,
     refetch: refetchGlobal,
   } = useProductsQuery(searchParams);
+
+  const responsePageInfo = globalProductsResponse?.pageInfo;
 
   const {  data: franchiseProducts,
     isLoading: isLoadingFranchise,
@@ -412,12 +426,13 @@ const ProductsPage = () => {
         imageUrl: pf.productImageUrl || null,
         minPrice: pf.priceBase,
         maxPrice: pf.priceBase,
+        isHaveTopping: null,
         isActive: pf.isActive,
         isDeleted: pf.isDeleted,
         createdAt: pf.createdAt,
         updatedAt: pf.updatedAt,
       })) as ProductRow[] ?? [])
-    : (globalProducts ?? []);
+    : (globalProductsResponse?.data ?? []);
 
   const isLoading = isManagerView ? (isLoadingFranchise || isLoadingInventory) : isLoadingGlobal;
   const error = isManagerView ? franchiseError : globalError;
@@ -436,6 +451,20 @@ const ProductsPage = () => {
       searchCondition: { ...prev.searchCondition, keyword },
       pageInfo: { ...prev.pageInfo, pageNum: 1 },
     }));  
+  }, []);
+
+  const handlePageChange = useCallback((pageNum: number) => {
+    setSearchParams((prev) => ({
+      ...prev,
+      pageInfo: { ...prev.pageInfo, pageNum },
+    }));
+  }, []);
+
+  const handlePageSizeChange = useCallback((pageSize: number) => {
+    setSearchParams((prev) => ({
+      ...prev,
+      pageInfo: { pageNum: 1, pageSize },
+    }));
   }, []);
 
   // ── Form submission handler ──────────────────────────────────────────────
@@ -504,6 +533,17 @@ const ProductsPage = () => {
             }
           }
         }
+
+        // Optional: allow managers to update global "has topping" flag
+        if (
+          typeof data.isHaveTopping === "boolean" &&
+          data.isHaveTopping !== (editingProduct as any).isHaveTopping
+        ) {
+          await updateMutation.mutateAsync({
+            id: editingProduct.id,
+            data: { is_have_topping: data.isHaveTopping },
+          });
+        }
       } else {
         // Admin editing global product
         const payload = {
@@ -514,6 +554,7 @@ const ProductsPage = () => {
           image_url: data.imageUrl || null,
           min_price: data.minPrice,
           max_price: data.maxPrice,
+          is_have_topping: data.isHaveTopping ?? false,
           is_active: data.isActive,
         };
         await updateMutation.mutateAsync(
@@ -546,6 +587,7 @@ const ProductsPage = () => {
           image_url: data.imageUrl || null,
           min_price: data.minPrice,
           max_price: data.maxPrice,
+          is_have_topping: data.isHaveTopping ?? false,
           is_active: data.isActive,
         };
         await createMutation.mutateAsync(payload);
@@ -556,7 +598,7 @@ const ProductsPage = () => {
   // ── Handlers ──────────────────────────────────────────────────────────────
 
   const handleEdit = (product: Product) => {
-    const editData = {
+    const baseEditData = {
       ...product,
       franchiseProductId: (product as any).franchiseProductId,
       size: (product as any).size || "",
@@ -564,7 +606,19 @@ const ProductsPage = () => {
       inventoryId: (product as any).inventoryId,
       alertThreshold: (product as any).alertThreshold ?? 0,
     };
-    dialog.openEdit(editData);
+
+    if (isManagerView && baseEditData.isHaveTopping == null) {
+      void getProduct(String(baseEditData.id))
+        .then((full) => {
+          dialog.openEdit({ ...baseEditData, isHaveTopping: full.isHaveTopping ?? null });
+        })
+        .catch(() => {
+          dialog.openEdit(baseEditData);
+        });
+      return;
+    }
+
+    dialog.openEdit(baseEditData);
   };
 
   const handleView = (product: Product) => {
@@ -646,6 +700,9 @@ const ProductsPage = () => {
         ...dialog.data,
         // For manager edit, set maxPrice to pass validation
         maxPrice: isManagerView ? 999999 : dialog.data.maxPrice,
+        isHaveTopping:
+          (dialog.data as any).isHaveTopping ??
+          (isManagerView ? undefined : false),
       }
     : isManagerView 
       ? {
@@ -655,6 +712,7 @@ const ProductsPage = () => {
           size: "",
           minPrice: undefined,
           maxPrice: 999999,
+          isHaveTopping: undefined,
           isActive: true,
         }
       : undefined;
@@ -683,6 +741,18 @@ const ProductsPage = () => {
         <div className="flex-1 min-h-0 flex flex-col bg-white rounded-2xl shadow-lg border border-[#E8DFD6] p-6">
           <ProductTable
             products={products}
+            pagination={
+              !isManagerView
+                ? {
+                    pageNum: responsePageInfo?.pageNum ?? searchParams.pageInfo.pageNum,
+                    pageSize: responsePageInfo?.pageSize ?? searchParams.pageInfo.pageSize,
+                    totalItems: responsePageInfo?.totalItems ?? products.length,
+                    totalPages: responsePageInfo?.totalPages ?? 1,
+                    onPageChange: handlePageChange,
+                    onPageSizeChange: handlePageSizeChange,
+                  }
+                : undefined
+            }
             isLoading={isLoading}
             error={error instanceof Error ? error : null}
             onRetry={handleRetry}

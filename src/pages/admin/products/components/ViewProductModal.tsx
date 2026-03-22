@@ -117,18 +117,36 @@ export const ViewProductModal = ({ product, isOpen, onClose, isManagerView = fal
               </Badge>
             </div>
             <div>
-              <h3 className="text-sm font-medium text-[#5D4037] mb-1">Deleted</h3>
-              <Badge
-                variant={product.isDeleted ? "destructive" : "default"}
-                className={
-                  product.isDeleted
-                    ? "bg-red-600 hover:bg-red-700 rounded-full"
-                    : "bg-green-600 hover:bg-green-700 rounded-full"
-                }
-              >
-                {product.isDeleted ? "Yes" : "No"}
-              </Badge>
+              <h3 className="text-sm font-medium text-[#5D4037] mb-1">Has Topping</h3>
+              {product.isHaveTopping === null || product.isHaveTopping === undefined ? (
+                <span className="text-gray-400">—</span>
+              ) : (
+                <Badge
+                  variant={product.isHaveTopping ? "default" : "secondary"}
+                  className={
+                    product.isHaveTopping
+                      ? "bg-green-600 hover:bg-green-700 rounded-full"
+                      : "bg-gray-500 hover:bg-gray-600 rounded-full"
+                  }
+                >
+                  {product.isHaveTopping ? "Yes" : "No"}
+                </Badge>
+              )}
             </div>
+          </div>
+
+          <div>
+            <h3 className="text-sm font-medium text-[#5D4037] mb-1">Deleted</h3>
+            <Badge
+              variant={product.isDeleted ? "destructive" : "default"}
+              className={
+                product.isDeleted
+                  ? "bg-red-600 hover:bg-red-700 rounded-full"
+                  : "bg-green-600 hover:bg-green-700 rounded-full"
+              }
+            >
+              {product.isDeleted ? "Yes" : "No"}
+            </Badge>
           </div>
 
           <div className="grid grid-cols-2 gap-4">

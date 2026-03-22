@@ -16,6 +16,14 @@ import {
 
 interface ProductTableProps {
   products: (Product & { quantity?: number })[];
+  pagination?: {
+    pageNum: number;
+    pageSize: number;
+    totalItems: number;
+    totalPages: number;
+    onPageChange: (pageNum: number) => void;
+    onPageSizeChange: (pageSize: number) => void;
+  };
   isLoading?: boolean;
   error?: Error | null;
   onRetry?: () => void;
@@ -33,6 +41,7 @@ interface ProductTableProps {
 
 export const ProductTable = ({
   products,
+  pagination,
   isLoading = false,
   error = null,
   onRetry,
@@ -159,6 +168,7 @@ export const ProductTable = ({
         searchPlaceholder="Search by name or SKU..."
         emptyMessage="No products found matching your search."
         initialPageSize={10}
+        serverPagination={pagination}
         enableRowSelection={!!onBulkDelete}
         enableColumnVisibility
         columnFilters={columnFilters}
