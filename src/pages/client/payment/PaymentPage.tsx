@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useMemo, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { ROUTER_URL } from "@/router/route.const";
 import { useCart } from "@/pages/client/cart/useCart";
 import { useCheckoutCartMutation } from "@/hooks/cart/useCart.hook";
@@ -12,11 +12,120 @@ import secureLockIcon from "@/assets/icons/secure-lock.svg";
 import coffeeCupIcon from "@/assets/icons/coffee-cup.svg";
 import type { PaymentMethod, ShippingInfo } from "@/types/payment";
 
+type PaymentPageLocationState = {
+  selectedCartItemIds?: string[];
+};
+
 const PaymentPage = () => {
   const navigate = useNavigate();
-  const { cart, carts, subtotal, totalAmount, itemCount } = useCart();
+  const location = useLocation();
+  const { cart, carts } = useCart();
   const checkoutCartMutation = useCheckoutCartMutation();
   const { authUser } = useAuthStore();
+
+  const selectedCartItemIds = useMemo(() => {
+    const state = location.state as PaymentPageLocationState | null;
+
+    if (!Array.isArray(state?.selectedCartItemIds)) {
+      return [];
+    }
+
+    return state.selectedCartItemIds.filter(
+      (cartItemId): cartItemId is string =>
+        typeof cartItemId === "string" && cartItemId.length > 0,
+    );
+  }, [location.state]);
+
+  const selectedCartItemIdSet = useMemo(
+    () => new Set(selectedCartItemIds),
+    [selectedCartItemIds],
+  );
+
+  const checkoutCarts = useMemo(() => {
+    if (selectedCartItemIdSet.size === 0) {
+      return carts;
+    }
+
+    return carts
+      .map((singleCart) => ({
+        ...singleCart,
+        cartItems: singleCart.cartItems.filter((item) =>
+          selectedCartItemIdSet.has(item.cartItemId),
+        ),
+      }))
+      .filter((singleCart) => singleCart.cartItems.length > 0);
+  }, [carts, selectedCartItemIdSet]);
+
+  const checkoutItems = useMemo(() => {
+    if (selectedCartItemIdSet.size === 0) {
+      return cart.items;
+    }
+
+    return cart.items.filter((item) =>
+      selectedCartItemIdSet.has(item.cartItemId),
+    );
+  }, [cart.items, selectedCartItemIdSet]);
+
+  const checkoutItemCount = useMemo(
+    () =>
+      checkoutCarts.reduce(
+        (sum, singleCart) =>
+          sum +
+          singleCart.cartItems.reduce(
+            (cartSum, item) => cartSum + Number(item.quantity || 0),
+            0,
+          ),
+        0,
+      ),
+    [checkoutCarts],
+  );
+
+  const checkoutSubtotal = useMemo(
+    () =>
+      checkoutCarts.reduce((sum, singleCart) => {
+        if (singleCart.cartItems.length === 0) return sum;
+
+        const originalCart = carts.find((cartItem) => cartItem.id === singleCart.id);
+        if (!originalCart) return sum;
+
+        if (singleCart.cartItems.length === originalCart.cartItems.length) {
+          return sum + Number(originalCart.subtotalAmount || 0);
+        }
+
+        return (
+          sum +
+          singleCart.cartItems.reduce(
+            (cartSum, item) =>
+              cartSum + Number(item.lineTotal || item.finalLineTotal || 0),
+            0,
+          )
+        );
+      }, 0),
+    [carts, checkoutCarts],
+  );
+
+  const checkoutTotalAmount = useMemo(
+    () =>
+      checkoutCarts.reduce((sum, singleCart) => {
+        if (singleCart.cartItems.length === 0) return sum;
+
+        const originalCart = carts.find((cartItem) => cartItem.id === singleCart.id);
+        if (!originalCart) return sum;
+
+        if (singleCart.cartItems.length === originalCart.cartItems.length) {
+          return sum + Number(originalCart.finalAmount || 0);
+        }
+
+        return (
+          sum +
+          singleCart.cartItems.reduce(
+            (cartSum, item) => cartSum + Number(item.finalLineTotal || 0),
+            0,
+          )
+        );
+      }, 0),
+    [carts, checkoutCarts],
+  );
 
   const getUserEmail = (): string => {
     return authUser?.user?.email || "";
@@ -186,7 +295,7 @@ const PaymentPage = () => {
       return;
     }
 
-    if (cart.items.length === 0) {
+    if (checkoutItems.length === 0) {
       alert("Giỏ hàng trống!");
       navigate("/client/cart");
       return;
@@ -196,8 +305,8 @@ const PaymentPage = () => {
       navigate(ROUTER_URL.CLIENT_ROUTER.PAYMENT_QR, {
         state: {
           shippingInfo,
-          amount: totalAmount,
-          itemCount,
+          amount: checkoutTotalAmount,
+          itemCount: checkoutItemCount,
         },
       });
       return;
@@ -210,7 +319,7 @@ const PaymentPage = () => {
     };
 
     const targetCartIds = Array.from(
-      new Set(carts.map((singleCart) => singleCart.id).filter(Boolean)),
+      new Set(checkoutCarts.map((singleCart) => singleCart.id).filter(Boolean)),
     );
 
     try {
@@ -221,22 +330,22 @@ const PaymentPage = () => {
         });
       }
 
-      if (paymentMethod === "COD") {
-        alert(
-          `Đơn hàng của bạn đã được xác nhận!\n\n` +
-            `Phương thức thanh toán: Thanh toán khi nhận hàng\n` +
-            `Tổng tiền: ${totalAmount.toLocaleString("vi-VN")} VND\n\n` +
-            `Chúng tôi sẽ liên hệ với bạn sớm nhất!`,
-        );
-        navigate("/menu");
-      }
+      // if (paymentMethod === "COD") {
+      //   alert(
+      //     `Đơn hàng của bạn đã được xác nhận!\n\n` +
+      //       `Phương thức thanh toán: Thanh toán khi nhận hàng\n` +
+      //       `Tổng tiền: ${totalAmount.toLocaleString("vi-VN")} VND\n\n` +
+      //       `Chúng tôi sẽ liên hệ với bạn sớm nhất!`,
+      //   );
+      //   navigate("/menu");
+      // }
     } catch {
       // Error toast is handled in the mutation hook
     }
   };
 
   // Redirect if cart is empty
-  if (cart.items.length === 0) {
+  if (checkoutItems.length === 0) {
     return (
       <div className="min-h-screen bg-gray-50 py-8">
         <div className="max-w-6xl mx-auto px-4">
@@ -486,9 +595,9 @@ const PaymentPage = () => {
 
               {/* Order Items */}
               <div className="space-y-3 mb-4 max-h-64 overflow-y-auto">
-                {cart.items.map((item) => (
+                {checkoutItems.map((item) => (
                   <div
-                    key={item.productFranchiseId}
+                    key={item.cartItemId}
                     className="flex items-start gap-3 pb-3 border-b border-gray-100"
                   >
                     <div className="w-16 h-16 bg-amber-50 rounded-lg border border-gray-200 overflow-hidden shrink-0">
@@ -527,12 +636,12 @@ const PaymentPage = () => {
               <div className="space-y-2 py-4 border-t border-gray-200">
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-600">Tổng sản phẩm:</span>
-                  <span className="font-medium">{itemCount}</span>
+                  <span className="font-medium">{checkoutItemCount}</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-600">Tạm tính:</span>
                   <span className="font-medium">
-                    {subtotal.toLocaleString("vi-VN")} VND
+                    {checkoutSubtotal.toLocaleString("vi-VN")} VND
                   </span>
                 </div>
                 <div className="flex justify-between text-sm">
@@ -542,7 +651,7 @@ const PaymentPage = () => {
                 <div className="flex justify-between text-lg font-bold pt-2 border-t border-gray-200">
                   <span className="text-gray-900">Tổng cộng:</span>
                   <span className="text-[#B8860B]">
-                    {totalAmount.toLocaleString("vi-VN")} VND
+                    {checkoutTotalAmount.toLocaleString("vi-VN")} VND
                   </span>
                 </div>
               </div>
@@ -581,3 +690,7 @@ const PaymentPage = () => {
 };
 
 export default PaymentPage;
+
+
+
+

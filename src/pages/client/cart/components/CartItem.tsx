@@ -1,7 +1,11 @@
 import React from "react";
 import { useForm } from "react-hook-form";
-import { MessageSquareText, Trash2 } from "lucide-react";
-import type { CartItemResponse } from "@/types/cart";
+import { MessageSquareText, PencilLine, Trash2 } from "lucide-react";
+import type {
+  CartItemEditConfig,
+  CartItemOptionRequest,
+  CartItemResponse,
+} from "@/types/cart";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
@@ -22,15 +26,64 @@ interface CartItemProps {
   item: CartItemResponse;
   checked: boolean;
   isPending: boolean;
+  editConfig?: CartItemEditConfig;
   resolveProductImage: (
     productFranchiseId: string,
     imageUrl?: string | null,
   ) => string | undefined;
   resolveProductSize: (productFranchiseId: string) => string | undefined;
   onToggle: (checked: boolean) => void;
+  onSaveEdit: (
+    options: CartItemOptionRequest[],
+  ) => Promise<boolean> | void;
   onUpdateQuantity: (quantity: number) => void;
   onRemove: () => void;
   onSaveNote: (note: string) => Promise<boolean> | void;
+}
+
+function normalizeCartItemOptions(options?: CartItemOptionRequest[]) {
+  if (!Array.isArray(options)) return [];
+
+  return options
+    .filter((option) => !!option?.productFranchiseId && Number(option.quantity || 0) > 0)
+    .map((option) => ({
+      productFranchiseId: String(option.productFranchiseId),
+      quantity: Math.max(1, Number(option.quantity || 1)),
+    }))
+    .sort((left, right) => left.productFranchiseId.localeCompare(right.productFranchiseId));
+}
+
+function areCartItemOptionsEqual(
+  left: CartItemOptionRequest[],
+  right: CartItemOptionRequest[],
+) {
+  return JSON.stringify(normalizeCartItemOptions(left)) === JSON.stringify(normalizeCartItemOptions(right));
+}
+
+function buildInitialSelectedToppings(
+  item: CartItemResponse,
+  editConfig?: CartItemEditConfig,
+) {
+  const selectedToppings: Record<string, string> = {};
+
+  if (!editConfig) return selectedToppings;
+
+  editConfig.toppingOptions.forEach((topping) => {
+    const matchedOption = (item.options ?? []).find((option) =>
+      topping.sizes.some(
+        (size) =>
+          String(size.productFranchiseId) === String(option.productFranchiseId),
+      ),
+    );
+
+    if (matchedOption) {
+      selectedToppings[String(topping.productId)] = String(
+        matchedOption.productFranchiseId,
+      );
+    }
+  });
+
+  return selectedToppings;
 }
 
 const QuantityControl: React.FC<QuantityControlProps> = ({
@@ -125,14 +178,17 @@ const CartItem: React.FC<CartItemProps> = ({
   item,
   checked,
   isPending,
+  editConfig,
   resolveProductImage,
   resolveProductSize,
   onToggle,
+  onSaveEdit,
   onUpdateQuantity,
   onRemove,
   onSaveNote,
 }) => {
   const [isNoteEditorOpen, setIsNoteEditorOpen] = React.useState(false);
+  const [isEditEditorOpen, setIsEditEditorOpen] = React.useState(false);
   const originalLineTotal = Number(item.lineTotal || 0);
   const finalLineTotal = Number(item.finalLineTotal || 0);
   const currentQuantity = Math.max(1, Number(item.quantity || 1));
@@ -141,6 +197,16 @@ const CartItem: React.FC<CartItemProps> = ({
   const productImage =
     resolveProductImage(item.productFranchiseId, item.productImageUrl) ||
     coffeeCupIcon;
+  const canEdit = Boolean(editConfig && editConfig.toppingOptions.length > 0);
+
+  const createEditDraft = React.useCallback(
+    () => buildInitialSelectedToppings(item, editConfig),
+    [editConfig, item],
+  );
+
+  const [selectedEditToppings, setSelectedEditToppings] = React.useState<Record<string, string>>(
+    () => createEditDraft(),
+  );
 
   const noteForm = useForm<CartItemNoteForm>({
     defaultValues: {
@@ -154,16 +220,53 @@ const CartItem: React.FC<CartItemProps> = ({
     formState: { isDirty },
   } = noteForm;
 
+  const currentItemOptions = React.useMemo(
+    () =>
+      normalizeCartItemOptions(
+        (item.options ?? []).map((option) => ({
+          productFranchiseId: option.productFranchiseId,
+          quantity: Math.max(1, Number(option.quantity || 1)),
+        })),
+      ),
+    [item.options],
+  );
+
+  const selectedEditOptions = React.useMemo(
+    () =>
+      normalizeCartItemOptions(
+        Object.values(selectedEditToppings)
+          .filter(Boolean)
+          .map((productFranchiseId) => ({
+            productFranchiseId: String(productFranchiseId),
+            quantity: 1,
+          })),
+      ),
+    [selectedEditToppings],
+  );
+
+  const hasEditChanges = !areCartItemOptionsEqual(
+    selectedEditOptions,
+    currentItemOptions,
+  );
+
+  const resetEditDraft = React.useCallback(() => {
+    setSelectedEditToppings(createEditDraft());
+  }, [createEditDraft]);
+
   React.useEffect(() => {
     reset({
       note: item.note ?? "",
     });
   }, [item.cartItemId, item.note, reset]);
 
+  React.useEffect(() => {
+    resetEditDraft();
+  }, [resetEditDraft]);
+
   return (
     <article
       aria-busy={isPending}
-      className={`rounded-[1.55rem] border border-transparent bg-white/45 px-4 py-5 transition-all md:px-5 lg:grid lg:grid-cols-[52px_minmax(0,1fr)_140px_156px_150px_170px] lg:items-center lg:gap-4 ${
+      className={`rounded-[1.55rem] border border-transparent bg-white/45 px-4 py-5 transition-all md:px-5 lg:grid lg:grid-cols-[52px_minmax(0,1fr)_140px_156px_150px_220px] lg:items-center lg:gap-4 ${
         isPending ? "opacity-70" : "hover:border-[var(--cart-border-soft)]"
       }`}
     >
@@ -317,10 +420,39 @@ const CartItem: React.FC<CartItemProps> = ({
         </div>
 
         <div className="mt-4 flex items-center justify-between gap-3 lg:mt-0 lg:flex-wrap lg:justify-end">
+          {canEdit && (
+            <button
+              type="button"
+              disabled={isPending}
+              onClick={() => {
+                if (isEditEditorOpen) {
+                  resetEditDraft();
+                  setIsEditEditorOpen(false);
+                  return;
+                }
+
+                resetEditDraft();
+                setIsNoteEditorOpen(false);
+                setIsEditEditorOpen(true);
+              }}
+              className={`inline-flex items-center gap-2 rounded-full border px-3.5 py-2 text-sm transition-all disabled:cursor-not-allowed disabled:text-[#b7a59a] ${
+                isEditEditorOpen
+                  ? "border-[#ebc7b5] bg-[#fff3ea] text-[var(--cart-accent)]"
+                  : "border-[var(--cart-border)] bg-white/88 text-[var(--cart-muted)] hover:border-[#d7b7a4] hover:text-[var(--cart-accent)]"
+              }`}
+            >
+              <PencilLine className="h-4 w-4" />
+              {isEditEditorOpen ? "Close edit" : "Edit"}
+            </button>
+          )}
+
           <button
             type="button"
             disabled={isPending}
-            onClick={() => setIsNoteEditorOpen((current) => !current)}
+            onClick={() => {
+              setIsEditEditorOpen(false);
+              setIsNoteEditorOpen((current) => !current);
+            }}
             className={`inline-flex items-center gap-2 rounded-full border px-3.5 py-2 text-sm transition-all disabled:cursor-not-allowed disabled:text-[#b7a59a] ${
               isNoteEditorOpen
                 ? "border-[#ebc7b5] bg-[#fff3ea] text-[var(--cart-accent)]"
@@ -342,6 +474,181 @@ const CartItem: React.FC<CartItemProps> = ({
           </button>
         </div>
       </div>
+
+      {isEditEditorOpen && editConfig && (
+        <div className="mt-4 min-w-0 lg:col-start-2 lg:col-end-7 lg:mt-5">
+          <form
+            onSubmit={async (event) => {
+              event.preventDefault();
+              const wasSaved = await onSaveEdit(selectedEditOptions);
+              if (wasSaved !== false) {
+                setIsEditEditorOpen(false);
+              }
+            }}
+            className="rounded-[1.5rem] border border-[var(--cart-border)] bg-[linear-gradient(180deg,#fffdf9_0%,#fbf4ed_100%)] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]"
+          >
+            <div className="space-y-4">
+              <div>
+                <p className="text-sm font-medium text-[var(--cart-ink)]">
+                  Edit this item
+                </p>
+                <p className="mt-1 text-xs text-[var(--cart-muted)]">
+                  Update the toppings directly in your cart.
+                </p>
+              </div>
+
+
+              {!!editConfig.toppingOptions.length && (
+                <div className="space-y-3">
+                  <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--cart-muted)]">
+                    Toppings
+                  </p>
+
+                  <div className="grid gap-3 md:grid-cols-2">
+                    {editConfig.toppingOptions.map((topping) => {
+                      const selectedSizeProductFranchiseId =
+                        selectedEditToppings[String(topping.productId)] || "";
+                      const isSelected = !!selectedSizeProductFranchiseId;
+                      const defaultSizeProductFranchiseId = String(
+                        topping.sizes[0]?.productFranchiseId || "",
+                      );
+                      const selectedSize = topping.sizes.find(
+                        (size) =>
+                          String(size.productFranchiseId) ===
+                          String(selectedSizeProductFranchiseId),
+                      );
+
+                      return (
+                        <div
+                          key={topping.productId}
+                          className={`rounded-[1.15rem] border p-3 transition-all ${
+                            isSelected
+                              ? "border-[#e2b79d] bg-[#fff6ef]"
+                              : "border-[var(--cart-border-soft)] bg-white/85"
+                          }`}
+                        >
+                          <div className="flex items-start gap-3">
+                            <div className="h-12 w-12 flex-shrink-0 overflow-hidden rounded-[0.95rem] border border-[var(--cart-border)] bg-white">
+                              <img
+                                src={topping.imageUrl || coffeeCupIcon}
+                                alt={topping.name}
+                                className="h-full w-full object-cover"
+                                onError={(event) => {
+                                  const target = event.target as HTMLImageElement;
+                                  target.src = coffeeCupIcon;
+                                  target.style.objectFit = "contain";
+                                  target.style.padding = "8px";
+                                }}
+                              />
+                            </div>
+
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-start justify-between gap-3">
+                                <div>
+                                  <p className="text-sm font-medium text-[var(--cart-ink)]">
+                                    {topping.name}
+                                  </p>
+                                  <p className="mt-1 text-xs text-[var(--cart-muted)]">
+                                    {isSelected && selectedSize
+                                      ? `Selected: ${selectedSize.label} · ${formatCurrency(selectedSize.price)}`
+                                      : "Not selected"}
+                                  </p>
+                                </div>
+
+                                <button
+                                  type="button"
+                                  disabled={isPending}
+                                  onClick={() => {
+                                    setSelectedEditToppings((current) => {
+                                      const next = { ...current };
+
+                                      if (next[String(topping.productId)]) {
+                                        delete next[String(topping.productId)];
+                                      } else if (defaultSizeProductFranchiseId) {
+                                        next[String(topping.productId)] =
+                                          defaultSizeProductFranchiseId;
+                                      }
+
+                                      return next;
+                                    });
+                                  }}
+                                  className={`rounded-full border px-3 py-1.5 text-xs font-medium transition-all ${
+                                    isSelected
+                                      ? "border-[#ebc8b6] bg-[#fff4eb] text-[var(--cart-accent)]"
+                                      : "border-[var(--cart-border)] bg-white text-[var(--cart-ink)] hover:border-[#d7b7a4]"
+                                  }`}
+                                >
+                                  {isSelected ? "Remove" : "Add"}
+                                </button>
+                              </div>
+
+                              {isSelected && topping.sizes.length > 1 && (
+                                <div className="mt-3 flex flex-wrap gap-2">
+                                  {topping.sizes.map((size) => {
+                                    const sizeSelected =
+                                      String(size.productFranchiseId) ===
+                                      String(selectedSizeProductFranchiseId);
+
+                                    return (
+                                      <button
+                                        key={size.productFranchiseId}
+                                        type="button"
+                                        disabled={isPending}
+                                        onClick={() =>
+                                          setSelectedEditToppings((current) => ({
+                                            ...current,
+                                            [String(topping.productId)]: String(
+                                              size.productFranchiseId,
+                                            ),
+                                          }))
+                                        }
+                                        className={`rounded-full border px-3 py-1.5 text-xs transition-all ${
+                                          sizeSelected
+                                            ? "border-[#dfb29a] bg-[#fff1e7] text-[var(--cart-accent)]"
+                                            : "border-[var(--cart-border)] bg-white text-[var(--cart-ink)] hover:border-[#d7b7a4]"
+                                        }`}
+                                      >
+                                        {size.label} · {formatCurrency(size.price)}
+                                      </button>
+                                    );
+                                  })}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              <div className="flex items-center justify-end gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={isPending}
+                  onClick={() => {
+                    resetEditDraft();
+                    setIsEditEditorOpen(false);
+                  }}
+                  className="rounded-full border-[var(--cart-border)] bg-white/80 text-[var(--cart-ink)] hover:bg-white"
+                >
+                  Close
+                </Button>
+
+                <Button
+                  type="submit"
+                  disabled={isPending || !hasEditChanges}
+                  className="rounded-full bg-[linear-gradient(135deg,var(--cart-accent)_0%,var(--cart-accent-deep)_100%)] text-white shadow-[0_14px_28px_rgba(183,104,67,0.22)] hover:opacity-95"
+                >
+                  {isPending ? "Saving..." : "Save changes"}
+                </Button>
+              </div>
+            </div>
+          </form>
+        </div>
+      )}
 
       {isNoteEditorOpen && (
         <div className="mt-4 min-w-0 lg:col-start-2 lg:col-end-7 lg:mt-5">
@@ -410,3 +717,4 @@ const CartItem: React.FC<CartItemProps> = ({
 };
 
 export default CartItem;
+

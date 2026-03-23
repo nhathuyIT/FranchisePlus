@@ -11,6 +11,7 @@ import type {
   CountCartByCustomerParams,
   GetCartsByCustomerParams,
   RemoveCartOptionItemRequest,
+  UpdateCartItemOptionsRequest,
   UpdateCartOptionItemRequest,
   UpdateCartRequest,
 } from "@/types/cart";
@@ -348,9 +349,30 @@ export const useRemoveCartOptionItemMutation = () => {
   });
 };
 
+export const useUpdateCartItemOptionsMutation = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: UpdateCartItemOptionsRequest) =>
+      cartApi.updateCartItemOptions(data),
+    onSuccess: async (response) => {
+      await invalidateCartQueries(queryClient, {
+        cartId: response?.id,
+        customerId: response?.customerId,
+        status: response?.status,
+      });
+      toast.success("Cart item options updated successfully!");
+    },
+    onError: (error: Error) => {
+      toast.error("Failed to update cart item options", {
+        description: error.message,
+      });
+    },
+  });
+};
+
 /**
- * Apply a voucher code to a cart.
- *
+ * Apply a voucher code to a cart. *
  * Usage:
  * `const applyVoucher = useApplyVoucherInCartMutation();`
  * `applyVoucher.mutate({ cartId, data: { voucherCode } });`
