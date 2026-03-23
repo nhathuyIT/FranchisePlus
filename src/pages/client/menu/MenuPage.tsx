@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Coffee,
@@ -12,7 +12,7 @@ import {
 import {
   useGetAllFranchise,
   useGetCategoriesByFranchise,
-  useGetMenuByFranchise,
+  useGetProductsByFranchise,
   useGetMenuByFranchiseAndCategory,
   useGetProductsByFranchiseAndCategory,
 } from "@/hooks/client/useProduct.hook";
@@ -22,6 +22,15 @@ import { MenuProductCard } from "./components/MenuProductCard";
 import { ToppingCard } from "./components/ToppingCard.";
 import { SectionDivider } from "./components/SectionDivider";
 import { EmptyState } from "./components/EmptyState";
+
+type ProductsAllDerived = {
+  allProductsVisible: ProductListItem[];
+  categoryMenuCounts: Record<string, number>;
+  nonToppingMenuProductsForAll: MenuProduct[];
+  toppingFromProducts: ProductListItem[];
+  toppingCategoryId: string;
+  allCount: number;
+};
 
 // ─── Skeleton loaders ───────────────────────────────────────────────────────────
 const CardSkeleton = () => (
@@ -70,147 +79,165 @@ const MenuPage = () => {
     useGetAllFranchise();
 
   // Resolve the actual franchise ID (user-selected or first from API)
-  const activeFranchiseId = useMemo(() => {
-    if (selectedFranchiseId) return selectedFranchiseId;
-    if (franchises && franchises.length > 0) return franchises[0].id;
-    return "";
-  }, [selectedFranchiseId, franchises]);
+  const activeFranchiseId =
+    selectedFranchiseId ||
+    (franchises && franchises.length > 0 ? franchises[0].id : "");
 
   const { data: categories, isLoading: isLoadingCategories } =
     useGetCategoriesByFranchise(activeFranchiseId);
 
-  const { data: menuDataAll, isLoading: isLoadingMenuAll } =
-    useGetMenuByFranchise(activeFranchiseId);
-
-  const allMenuProducts: MenuProduct[] = useMemo(() => {
-    if (!menuDataAll) return [];
-    return menuDataAll.flatMap((mc) => mc.products);
-  }, [menuDataAll]);
-
-  const allMenuProductsVisible = useMemo(
-    () =>
-      allMenuProducts.filter((product) =>
+  const {
+    data: productsAllData,
+    isLoading: isLoadingProductsAll,
+    isFetching: isFetchingProductsAll,
+  } = useGetProductsByFranchise<ProductsAllDerived>(activeFranchiseId, {
+    staleTime: 60 * 1000,
+    select: (productsAll) => {
+      const allProductsVisible = productsAll.filter((product) =>
         product.sizes.some((s) => s.isAvailable),
-      ),
-    [allMenuProducts],
+      );
+
+      const categoryMenuCounts: Record<string, number> = {};
+      for (const product of allProductsVisible) {
+        const categoryId = String(product.categoryId);
+        categoryMenuCounts[categoryId] =
+          (categoryMenuCounts[categoryId] ?? 0) + 1;
+      }
+
+      const toppingFromProducts = productsAll.filter(
+        (product) => product.categoryName.trim().toLowerCase() === "topping",
+      );
+
+      const nonToppingMenuProductsForAll = allProductsVisible
+        .filter(
+          (product) => product.categoryName.trim().toLowerCase() !== "topping",
+        )
+        .map((product) => ({
+          productId: product.productId,
+          name: product.name,
+          description: product.description,
+          imageUrl: product.imageUrl,
+          isHaveTopping: product.isHaveTopping,
+          sizes: product.sizes,
+        }));
+
+      return {
+        allProductsVisible,
+        categoryMenuCounts,
+        nonToppingMenuProductsForAll,
+        toppingFromProducts,
+        toppingCategoryId: toppingFromProducts[0]
+          ? String(toppingFromProducts[0].categoryId)
+          : "",
+        allCount: nonToppingMenuProductsForAll.length,
+      };
+    },
+  });
+
+  const categoryMenuCounts = productsAllData?.categoryMenuCounts ?? {};
+  const nonToppingMenuProductsForAll =
+    productsAllData?.nonToppingMenuProductsForAll ?? [];
+  const toppingFromProducts = productsAllData?.toppingFromProducts ?? [];
+  const toppingCategoryId = productsAllData?.toppingCategoryId ?? "";
+
+  const categoriesVisible = (categories ?? []).filter(
+    (category) =>
+      (categoryMenuCounts[String(category.categoryId)] ?? 0) > 0 &&
+      category.categoryName.trim().toLowerCase() !== "topping",
   );
 
-  const categoryMenuCounts = useMemo(() => {
-    const counts = new Map<string, number>();
-    if (!menuDataAll) return counts;
-
-    menuDataAll.forEach((category) => {
-      const count = category.products.filter((product) =>
-        product.sizes.some((s) => s.isAvailable),
-      ).length;
-      counts.set(String(category.categoryId), count);
+  const categoryTabs: { id: string; name: string; count: number }[] = [];
+  if ((productsAllData?.allCount ?? 0) > 0) {
+    categoryTabs.push({
+      id: "ALL",
+      name: "All",
+      count: productsAllData?.allCount ?? 0,
     });
+  }
+  for (const category of categoriesVisible) {
+    categoryTabs.push({
+      id: String(category.categoryId),
+      name: category.categoryName,
+      count: categoryMenuCounts[String(category.categoryId)] ?? 0,
+    });
+  }
 
-    return counts;
-  }, [menuDataAll]);
-
-  const categoriesVisible = useMemo(() => {
-    if (!categories) return [];
-    return categories.filter(
-      (category) =>
-        (categoryMenuCounts.get(String(category.categoryId)) ?? 0) > 0,
-    );
-  }, [categories, categoryMenuCounts]);
-
-  const availableCategoryIds = useMemo(
-    () => categoriesVisible.map((category) => String(category.categoryId)),
-    [categoriesVisible],
-  );
+  const availableCategoryIds = categoryTabs.map((tab) => tab.id);
 
   // Resolve the actual category ID (user-selected or first from list)
-  const activeCategoryId = useMemo(() => {
-    if (selectedCategoryId === "ALL") return "ALL";
-    if (
-      selectedCategoryId &&
-      availableCategoryIds.includes(selectedCategoryId)
-    ) {
-      return selectedCategoryId;
-    }
-    if (allMenuProductsVisible.length > 0) return "ALL";
-    if (availableCategoryIds.length > 0) return availableCategoryIds[0];
-    return "";
-  }, [selectedCategoryId, availableCategoryIds, allMenuProductsVisible.length]);
+  let activeCategoryId = "";
+  if (selectedCategoryId && availableCategoryIds.includes(selectedCategoryId)) {
+    activeCategoryId = selectedCategoryId;
+  } else if (availableCategoryIds.includes("ALL")) {
+    activeCategoryId = "ALL";
+  } else if (availableCategoryIds.length > 0) {
+    activeCategoryId = availableCategoryIds[0];
+  }
 
-  const categoryIdForQuery = activeCategoryId === "ALL" ? "" : activeCategoryId;
+  const isToppingSelected =
+    !!activeCategoryId && activeCategoryId === toppingCategoryId;
+  const categoryIdForMenuQuery =
+    activeCategoryId && activeCategoryId !== "ALL" && !isToppingSelected
+      ? activeCategoryId
+      : "";
 
   const { data: menuDataByCategory, isLoading: isLoadingMenuByCategory } =
-    useGetMenuByFranchiseAndCategory(activeFranchiseId, categoryIdForQuery);
+    useGetMenuByFranchiseAndCategory<MenuProduct[]>(
+      activeFranchiseId,
+      categoryIdForMenuQuery,
+      {
+        select: (menuByCategory) =>
+          menuByCategory
+            .flatMap((category) => category.products)
+            .filter((product) => product.sizes.some((s) => s.isAvailable)),
+      },
+    );
 
   const {
     data: toppingDataByCategory,
     isLoading: isLoadingToppingsByCategory,
+    isFetching: isFetchingToppingsByCategory,
   } = useGetProductsByFranchiseAndCategory(
     activeFranchiseId,
-    categoryIdForQuery,
+    toppingCategoryId,
+    {
+      enabled: !!toppingCategoryId,
+      staleTime: 60 * 1000,
+    },
   );
 
   // ── Derived state ──────────────────────────────────────────────────────
-  const selectedFranchise = useMemo(
-    () => franchises?.find((f) => f.id === activeFranchiseId),
-    [franchises, activeFranchiseId],
-  );
+  const selectedFranchise = franchises?.find((f) => f.id === activeFranchiseId);
 
-  const selectedCategory = useMemo(() => {
-    if (activeCategoryId === "ALL") return null;
-    return categories?.find((c) => String(c.categoryId) === activeCategoryId);
-  }, [categories, activeCategoryId]);
+  const selectedCategory =
+    activeCategoryId === "ALL"
+      ? null
+      : (categories?.find((c) => String(c.categoryId) === activeCategoryId) ??
+        null);
 
-  const menuDataActive =
-    activeCategoryId === "ALL" ? menuDataAll : menuDataByCategory;
+  let menuProductsVisible: MenuProduct[] = [];
+  if (activeCategoryId === "ALL") {
+    menuProductsVisible = nonToppingMenuProductsForAll;
+  } else if (!isToppingSelected) {
+    menuProductsVisible = menuDataByCategory ?? [];
+  }
 
-  // Menu products from menuData
-  const menuProducts: MenuProduct[] = useMemo(() => {
-    if (!menuDataActive) return [];
-    return menuDataActive.flatMap((mc) => mc.products);
-  }, [menuDataActive]);
-
-  // Toppings from toppingData
-  const toppings: ProductListItem[] = useMemo(() => {
-    if (activeCategoryId === "ALL") return [];
-    return toppingDataByCategory ?? [];
-  }, [activeCategoryId, toppingDataByCategory]);
-
-  const categoryTabs = useMemo(() => {
-    const tabs: { id: string; name: string; count: number }[] = [];
-    if (allMenuProductsVisible.length > 0) {
-      tabs.push({
-        id: "ALL",
-        name: "All",
-        count: allMenuProductsVisible.length,
-      });
-    }
-    categoriesVisible.forEach((category) => {
-      tabs.push({
-        id: String(category.categoryId),
-        name: category.categoryName,
-        count: categoryMenuCounts.get(String(category.categoryId)) ?? 0,
-      });
-    });
-    return tabs;
-  }, [categoriesVisible, categoryMenuCounts, allMenuProductsVisible.length]);
-
-  const menuProductsVisible = useMemo(
-    () =>
-      menuProducts.filter((product) =>
-        product.sizes.some((s) => s.isAvailable),
-      ),
-    [menuProducts],
-  );
-
-  const toppingsVisible = useMemo(
-    () =>
-      toppings.filter((product) => product.sizes.some((s) => s.isAvailable)),
-    [toppings],
-  );
+  const toppingsVisible: ProductListItem[] =
+    (toppingDataByCategory ?? []).length > 0
+      ? (toppingDataByCategory ?? [])
+      : toppingFromProducts;
 
   const isLoadingMenu =
-    activeCategoryId === "ALL" ? isLoadingMenuAll : isLoadingMenuByCategory;
-  const isLoadingToppings = isLoadingToppingsByCategory;
+    activeCategoryId === "ALL"
+      ? isLoadingProductsAll || isFetchingProductsAll
+      : activeCategoryId && !isToppingSelected
+        ? isLoadingMenuByCategory
+        : false;
+  const isLoadingToppings =
+    !!toppingCategoryId &&
+    ((toppingDataByCategory ?? []).length === 0
+      ? isLoadingToppingsByCategory || isFetchingToppingsByCategory
+      : false);
   const isLoadingProducts = isLoadingMenu || isLoadingToppings;
 
   // ── Handlers ───────────────────────────────────────────────────────────
@@ -368,7 +395,7 @@ const MenuPage = () => {
       <div className="container mx-auto px-4 pb-20 -mt-2">
         {/* ── Category tabs ──────────────────────────────────────────── */}
         <div className="mb-10 mt-3">
-          {isLoadingCategories || isLoadingMenuAll ? (
+          {isLoadingCategories || isLoadingProductsAll ? (
             <CategorySkeleton />
           ) : categoryTabs.length > 0 ? (
             <div className="flex flex-wrap gap-2 justify-center">

@@ -37,13 +37,12 @@ export const getMenuByFranchise = async (
   franchiseID: string,
 ): Promise<MenuCategory[]> => {
   const response = await httpClient.get<MenuCategory[]>({
-    url: `/api/clients/menu?franchiseId=${franchiseID}`,
+    url: `/api/clients/menu?franchiseId=${franchiseID}&categoryId=`,
   });
 
   return response!;
 };
 
-// Get topping
 export const getProductByFranchiseFilterByCategory = async (
   franchiseID: string,
   categoryID: string,
@@ -55,11 +54,21 @@ export const getProductByFranchiseFilterByCategory = async (
   return response!;
 };
 
-export const getProductByFranchise = async (
+export const getProductsByFranchise = async (
   franchiseID: string,
 ): Promise<ProductListItem[]> => {
   const response = await httpClient.get<ProductListItem[]>({
-    url: `/api/clients/products?franchiseId=${franchiseID}`,
+    url: `/api/clients/products?franchiseId=${franchiseID}&categoryId=`,
+  });
+
+  return response!;
+};
+
+export const getToppingByFranchise = async (
+  franchiseID: string,
+): Promise<ProductListItem[]> => {
+  const response = await httpClient.get<ProductListItem[]>({
+    url: `/api/clients/products?franchiseId=${franchiseID}&categoryId=Topping`,
   });
 
   return response!;
