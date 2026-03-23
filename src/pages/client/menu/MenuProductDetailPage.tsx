@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import {
   ChevronRight,
@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import {
   useGetProductDetail,
+  useGetProductsByFranchise,
   useGetProductsByFranchiseAndCategory,
   useGetFranchiseDetail,
   useGetCategoriesByFranchise,
@@ -26,25 +27,27 @@ import { ROUTER_URL } from "@/router/route.const";
 import { Button } from "@/components/ui/button";
 import { FooterInfo } from "@/components/common/FooterInfo";
 
-const isToppingCategory = (categoryName: string) =>
-  categoryName.trim().toLowerCase() === "topping";
+type ProductsAllDerived = {
+  toppingFromProducts: ProductListItem[];
+  toppingCategoryId: string;
+};
 
-const getPreferredToppingSize = (
-  sizes: ProductListItem["sizes"],
-) => sizes.find((size) => size.isAvailable) ?? sizes[0];
+type MenuProductDetailPageContentProps = {
+  franchiseId: string;
+  productId: string;
+};
 
-const MenuProductDetailPage = () => {
-  const { franchiseId = "", productFranchiseId = "" } = useParams<{
-    franchiseId: string;
-    productFranchiseId: string;
-  }>();
+const MenuProductDetailPageContent = ({
+  franchiseId,
+  productId,
+}: MenuProductDetailPageContentProps) => {
   const navigate = useNavigate();
   const { addItem } = useCart();
   const { authUser } = useAuthStore();
 
   // ── State ──────────────────────────────────────────────────────
   const [selectedSizeProductFranchiseId, setSelectedSizeProductFranchiseId] =
-    useState(productFranchiseId);
+    useState("");
   const [selectedToppings, setSelectedToppings] = useState<
     Record<string, string>
   >({});
@@ -53,61 +56,69 @@ const MenuProductDetailPage = () => {
 
   // ── Queries ────────────────────────────────────────────────────
   const { data: productDetailData, isLoading: isLoadingProduct } =
-    useGetProductDetail(franchiseId, productFranchiseId);
+    useGetProductDetail(franchiseId, productId);
 
+  const { data: productsAllData } =
+    useGetProductsByFranchise<ProductsAllDerived>(franchiseId, {
+      staleTime: 60 * 1000,
+      select: (products) => {
+        const toppingFromProducts = products.filter(
+          (item) => item.categoryName.trim().toLowerCase() === "topping",
+        );
+
+        return {
+          toppingFromProducts,
+          toppingCategoryId: toppingFromProducts[0]
+            ? String(toppingFromProducts[0].categoryId)
+            : "",
+        };
+      },
+    });
   const { data: franchiseDetail } = useGetFranchiseDetail(franchiseId);
   const { data: categories } = useGetCategoriesByFranchise(franchiseId);
   const { data: menuDataAll } = useGetMenuByFranchise(franchiseId);
-
-  const toppingCategoryId = useMemo(
-    () =>
-      String(
-        categories?.find((category) => isToppingCategory(category.categoryName))
-          ?.categoryId ?? "",
-      ),
-    [categories],
+  const toppingFromProducts = productsAllData?.toppingFromProducts ?? [];
+  const toppingCategoryId = productsAllData?.toppingCategoryId ?? "";
+  const { data: toppingDataByCategory } = useGetProductsByFranchiseAndCategory(
+    franchiseId,
+    toppingCategoryId,
+    {
+      enabled: !!toppingCategoryId,
+      staleTime: 60 * 1000,
+    },
   );
 
-  const { data: toppingDataByCategory = [] } =
-    useGetProductsByFranchiseAndCategory(franchiseId, toppingCategoryId);
-
   // ── Derived state ──────────────────────────────────────────────
-  const categoryTabs = useMemo(() => {
-    const tabs: { id: string; name: string; count: number }[] = [];
-    if (!menuDataAll) return tabs;
+  const categoryTabs: { id: string; name: string; count: number }[] = [];
+  const availableCategories = (categories ?? []).filter(
+    (category) => category.categoryName.trim().toLowerCase() !== "topping",
+  );
 
-    // Calculate total count across all categories
-    const totalCount = menuDataAll.reduce(
-      (acc, cat) =>
-        acc +
-        cat.products.filter((p) => p.sizes.some((s) => s.isAvailable)).length,
-      0,
+  const allTabProducts = (menuDataAll ?? [])
+    .filter((category) => String(category.categoryId) !== toppingCategoryId)
+    .flatMap((category) => category.products)
+    .filter((product) => product.sizes.some((size) => size.isAvailable));
+
+  if (allTabProducts.length > 0) {
+    categoryTabs.push({ id: "ALL", name: "All", count: allTabProducts.length });
+  }
+
+  for (const category of availableCategories) {
+    const menuCategory = (menuDataAll ?? []).find(
+      (item) => String(item.categoryId) === String(category.categoryId),
     );
+    const count = (menuCategory?.products ?? []).filter((product) =>
+      product.sizes.some((size) => size.isAvailable),
+    ).length;
 
-    if (totalCount > 0) {
-      tabs.push({ id: "ALL", name: "All", count: totalCount });
+    if (count > 0) {
+      categoryTabs.push({
+        id: String(category.categoryId),
+        name: category.categoryName,
+        count,
+      });
     }
-
-    // Add valid categories
-    categories?.forEach((category) => {
-      const menuCategory = menuDataAll.find(
-        (m) => String(m.categoryId) === String(category.categoryId),
-      );
-      const count = menuCategory
-        ? menuCategory.products.filter((p) =>
-            p.sizes.some((s) => s.isAvailable),
-          ).length
-        : 0;
-      if (count > 0) {
-        tabs.push({
-          id: String(category.categoryId),
-          name: category.categoryName,
-          count,
-        });
-      }
-    });
-    return tabs;
-  }, [categories, menuDataAll]);
+  }
 
   const product: ProductDetailItem | undefined = productDetailData;
 
@@ -115,11 +126,8 @@ const MenuProductDetailPage = () => {
   const detailDescription = product?.description ?? "";
   const detailContent = product?.content ?? "";
   const detailImageUrl = product?.imageUrl ?? "/placeholder-coffee.jpg";
-  const detailImagesUrl = useMemo(
-    () => product?.imagesUrl ?? [],
-    [product?.imagesUrl],
-  );
-  const detailHasTopping = product?.isHaveTopping === true;
+  const detailImagesUrl = product?.imagesUrl ?? [];
+  const detailHasTopping = product?.isHaveTopping;
   const detailSizes = product?.sizes ?? [];
   const availableDetailSizes = detailSizes.filter((size) => size.isAvailable);
 
@@ -138,29 +146,27 @@ const MenuProductDetailPage = () => {
 
   // Image gallery: main image + additional images
   const [selectedImage, setSelectedImage] = useState("");
-  const galleryImages = useMemo(() => {
-    const images: string[] = [];
-    if (detailImageUrl && detailImageUrl !== "/placeholder-coffee.jpg") {
-      images.push(detailImageUrl);
+  const galleryImages: string[] = [];
+  if (detailImageUrl && detailImageUrl !== "/placeholder-coffee.jpg") {
+    galleryImages.push(detailImageUrl);
+  }
+  if (detailImagesUrl.length > 0) {
+    for (const imageUrl of detailImagesUrl) {
+      if (imageUrl && !galleryImages.includes(imageUrl)) {
+        galleryImages.push(imageUrl);
+      }
     }
-    if (detailImagesUrl.length > 0) {
-      images.push(
-        ...detailImagesUrl.filter((url) => url && !images.includes(url)),
-      );
-    }
-    return images.length > 0 ? images : ["/placeholder-coffee.jpg"];
-  }, [detailImageUrl, detailImagesUrl]);
+  }
+  const normalizedGalleryImages =
+    galleryImages.length > 0 ? galleryImages : ["/placeholder-coffee.jpg"];
 
   const activeImage =
-    selectedImage || galleryImages[0] || "/placeholder-coffee.jpg";
+    selectedImage || normalizedGalleryImages[0] || "/placeholder-coffee.jpg";
 
-  const toppingsByFranchiseVisible = useMemo(
-    () =>
-      toppingDataByCategory.filter((product: ProductListItem) =>
-        product.sizes.length > 0,
-      ),
-    [toppingDataByCategory],
-  );
+  const toppingsByFranchiseVisible: ProductListItem[] =
+    (toppingDataByCategory ?? []).length > 0
+      ? (toppingDataByCategory ?? [])
+      : toppingFromProducts;
 
   // ── Handlers ───────────────────────────────────────────────────
   const handleToggleTopping = (product: ProductListItem, checked: boolean) => {
@@ -174,12 +180,12 @@ const MenuProductDetailPage = () => {
       return;
     }
 
-    const preferredSize = getPreferredToppingSize(product.sizes);
-    if (!preferredSize) return;
+    const firstAvailableSize = product.sizes.find((size) => size.isAvailable);
+    if (!firstAvailableSize) return;
 
     setSelectedToppings((prev) => ({
       ...prev,
-      [productIdKey]: String(preferredSize.productFranchiseId),
+      [productIdKey]: String(firstAvailableSize.productFranchiseId),
     }));
   };
 
@@ -205,15 +211,17 @@ const MenuProductDetailPage = () => {
         const selectedToppingSize = topping.sizes.find(
           (size) => String(size.productFranchiseId) === franchiseProductId,
         );
-        if (!selectedToppingSize) return null;
+        if (!selectedToppingSize || !selectedToppingSize.isAvailable)
+          return null;
 
         return {
           productFranchiseId: String(selectedToppingSize.productFranchiseId),
           quantity: 1,
         };
       })
-      .filter((option): option is { productFranchiseId: string; quantity: number } =>
-        !!option,
+      .filter(
+        (option): option is { productFranchiseId: string; quantity: number } =>
+          !!option,
       );
 
     addItem(
@@ -248,22 +256,20 @@ const MenuProductDetailPage = () => {
       ? availableDetailSizes[0].price
       : 0;
 
-  const toppingPrice = useMemo(() => {
-    return Object.entries(selectedToppings).reduce(
-      (total, [productId, franchiseProductId]) => {
-        const topping = toppingsByFranchiseVisible.find(
-          (t: ProductListItem) => String(t.productId) === productId,
-        );
-        if (!topping) return total;
-        const size = topping.sizes.find(
-          (s) => String(s.productFranchiseId) === franchiseProductId,
-        );
-        if (!size) return total;
-        return total + size.price;
-      },
-      0,
-    );
-  }, [selectedToppings, toppingsByFranchiseVisible]);
+  const toppingPrice = Object.entries(selectedToppings).reduce(
+    (total, [productId, franchiseProductId]) => {
+      const topping = toppingsByFranchiseVisible.find(
+        (item: ProductListItem) => String(item.productId) === productId,
+      );
+      if (!topping) return total;
+      const size = topping.sizes.find(
+        (item) => String(item.productFranchiseId) === franchiseProductId,
+      );
+      if (!size || !size.isAvailable) return total;
+      return total + size.price;
+    },
+    0,
+  );
 
   const totalPrice = basePrice + toppingPrice;
 
@@ -322,7 +328,11 @@ const MenuProductDetailPage = () => {
                 // Get products for this specific tab
                 const tabProducts = menuDataAll
                   ? (tab.id === "ALL"
-                      ? menuDataAll.flatMap((m) => m.products)
+                      ? menuDataAll
+                          .filter(
+                            (m) => String(m.categoryId) !== toppingCategoryId,
+                          )
+                          .flatMap((m) => m.products)
                       : menuDataAll.find((m) => String(m.categoryId) === tab.id)
                           ?.products || []
                     ).filter((p) => p.sizes.some((s) => s.isAvailable))
@@ -420,9 +430,9 @@ const MenuProductDetailPage = () => {
                     </div>
 
                     {/* Thumbnail Gallery */}
-                    {galleryImages.length > 1 && (
+                    {normalizedGalleryImages.length > 1 && (
                       <div className="flex gap-2 p-4 overflow-x-auto">
-                        {galleryImages.map((img, index) => (
+                        {normalizedGalleryImages.map((img, index) => (
                           <button
                             key={index}
                             type="button"
@@ -581,10 +591,13 @@ const MenuProductDetailPage = () => {
                                 const toppingId = String(topping.productId);
                                 const selectedToppingSizeId =
                                   selectedToppings[toppingId];
-                                const preferredSize = getPreferredToppingSize(
-                                  topping.sizes,
-                                );
-                                if (!preferredSize) return null;
+                                const availableToppingSizes =
+                                  topping.sizes.filter(
+                                    (size) => size.isAvailable,
+                                  );
+                                const firstAvailableSize =
+                                  availableToppingSizes[0];
+                                if (!firstAvailableSize) return null;
 
                                 const isChecked = Boolean(
                                   selectedToppingSizeId,
@@ -622,7 +635,8 @@ const MenuProductDetailPage = () => {
                                         {topping.name}
                                       </p>
                                       <p className="text-xs font-bold text-amber-700 mt-1">
-                                        + {formatPrice(preferredSize.price)}
+                                        +{" "}
+                                        {formatPrice(firstAvailableSize.price)}
                                       </p>
                                     </div>
                                   </button>
@@ -734,6 +748,21 @@ const MenuProductDetailPage = () => {
       </div>
       <FooterInfo />
     </>
+  );
+};
+
+const MenuProductDetailPage = () => {
+  const { franchiseId = "", productId = "" } = useParams<{
+    franchiseId: string;
+    productId: string;
+  }>();
+
+  return (
+    <MenuProductDetailPageContent
+      key={`${franchiseId}:${productId}`}
+      franchiseId={franchiseId}
+      productId={productId}
+    />
   );
 };
 
