@@ -1,8 +1,10 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { Loader2 } from "lucide-react";
 import { ROUTER_URL } from "@/router/route.const";
 import { useCart } from "@/pages/client/cart/useCart";
 import { useCheckoutCartMutation } from "@/hooks/cart/useCart.hook";
+import { usePaymentsByCustomerId } from "@/hooks/payment";
 import { PRODUCTS_CLIENT } from "@/const/product-client.const";
 import { useAuthStore } from "@/stores/auth-store";
 import cashPaymentIcon from "@/assets/icons/cash-payment.svg";
@@ -10,13 +12,70 @@ import qrPaymentIcon from "@/assets/icons/qr-payment.svg";
 import emptyCartIcon from "@/assets/icons/empty-cart.svg";
 import secureLockIcon from "@/assets/icons/secure-lock.svg";
 import coffeeCupIcon from "@/assets/icons/coffee-cup.svg";
-import type { PaymentMethod, ShippingInfo } from "@/types/payment";
+import type { PaymentMethod, PaymentStatus, ShippingInfo } from "@/types/payment";
+import type { AdminPayment } from "@/types/admin-payment.type";
+
+const formatCurrency = (amount: number): string => {
+  if (!Number.isFinite(amount)) return "0 VND";
+  return `${amount.toLocaleString("vi-VN")} VND`;
+};
+
+const formatDateTime = (dateLike: string): string => {
+  if (!dateLike) return "-";
+
+  const date = new Date(dateLike);
+  if (Number.isNaN(date.getTime())) {
+    return dateLike;
+  }
+
+  return date.toLocaleString("vi-VN", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+};
+
+const PAYMENT_STATUS_LABEL: Record<PaymentStatus, string> = {
+  PENDING: "Đang chờ thanh toán",
+  PAID: "Đã thanh toán",
+  REFUNDED: "Đã hoàn tiền",
+};
+
+const PAYMENT_STATUS_CLASS: Record<PaymentStatus, string> = {
+  PENDING: "bg-amber-100 text-amber-700 border-amber-200",
+  PAID: "bg-emerald-100 text-emerald-700 border-emerald-200",
+  REFUNDED: "bg-violet-100 text-violet-700 border-violet-200",
+};
+
+const toPaymentStatus = (status: string): PaymentStatus => {
+  if (status === "PAID" || status === "REFUNDED") {
+    return status;
+  }
+
+  return "PENDING";
+};
+
+const toTimeValue = (payment: AdminPayment): number => {
+  const value = new Date(payment.createdAt).getTime();
+  return Number.isNaN(value) ? 0 : value;
+};
 
 const PaymentPage = () => {
   const navigate = useNavigate();
   const { cart, carts, subtotal, totalAmount, itemCount } = useCart();
   const checkoutCartMutation = useCheckoutCartMutation();
   const { authUser } = useAuthStore();
+  const customerId = authUser?.user?.id ?? "";
+
+  const paymentsByCustomerQuery = usePaymentsByCustomerId(customerId, !!customerId);
+
+  const recentPayments = useMemo(() => {
+    const payments = paymentsByCustomerQuery.data ?? [];
+
+    return [...payments].sort((a, b) => toTimeValue(b) - toTimeValue(a)).slice(0, 3);
+  }, [paymentsByCustomerQuery.data]);
 
   const getUserEmail = (): string => {
     return authUser?.user?.email || "";
@@ -571,6 +630,64 @@ const PaymentPage = () => {
               <div className="flex items-center justify-center gap-2 text-xs text-gray-500 mt-4">
                 <img src={secureLockIcon} alt="Secure" className="w-4 h-4" />
                 <span>Thông tin của bạn được bảo mật an toàn</span>
+              </div>
+
+              <div className="mt-4 rounded-lg border border-[#E8DFD6] bg-[#FFFCF5] p-4">
+                <div className="mb-3 flex items-center justify-between">
+                  <h3 className="text-sm font-semibold text-[#5B4037]">
+                    Thanh toán gần đây
+                  </h3>
+                  <button
+                    type="button"
+                    onClick={() => void paymentsByCustomerQuery.refetch()}
+                    className="text-xs font-medium text-[#6D4C41] hover:text-[#4E342E]"
+                  >
+                    Làm mới
+                  </button>
+                </div>
+
+                {paymentsByCustomerQuery.isLoading ? (
+                  <div className="flex items-center gap-2 text-xs text-gray-600">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <span>Đang tải trạng thái thanh toán...</span>
+                  </div>
+                ) : paymentsByCustomerQuery.error ? (
+                  <p className="text-xs text-red-600">
+                    Không thể tải lịch sử thanh toán. Vui lòng thử lại.
+                  </p>
+                ) : recentPayments.length === 0 ? (
+                  <p className="text-xs text-gray-600">
+                    Bạn chưa có giao dịch thanh toán nào.
+                  </p>
+                ) : (
+                  <div className="space-y-2">
+                    {recentPayments.map((payment) => {
+                      const status = toPaymentStatus(payment.status);
+
+                      return (
+                        <div
+                          key={payment.id}
+                          className="rounded-md border border-[#EFE3D8] bg-white p-3"
+                        >
+                          <div className="mb-1 flex items-center justify-between gap-3">
+                            <span className="truncate text-xs font-semibold text-[#5B4037]">
+                              {payment.code}
+                            </span>
+                            <span
+                              className={`rounded-full border px-2 py-0.5 text-[11px] font-medium ${PAYMENT_STATUS_CLASS[status]}`}
+                            >
+                              {PAYMENT_STATUS_LABEL[status]}
+                            </span>
+                          </div>
+                          <div className="flex items-center justify-between text-xs text-gray-600">
+                            <span>{formatCurrency(payment.amount)}</span>
+                            <span>{formatDateTime(payment.createdAt)}</span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             </div>
           </div>

@@ -3,6 +3,14 @@ import { ROUTER_URL } from "../route.const";
 import { CLIENT_MENU } from "./client.menu";
 import ClientLayout from "@/layouts/client-layout/client.layout";
 import ClientGuard from "../guard/client-guard.route";
+import React from "react";
+
+const PaymentPage = React.lazy(() => import("@/pages/client/payment/PaymentPage"));
+const QRTransactionPage = React.lazy(() =>
+  import("@/pages/client/payment").then((module) => ({
+    default: module.QRTransactionPage,
+  })),
+);
 
 export const ClientRoute = (
   <Route element={<ClientGuard />}>
@@ -20,6 +28,15 @@ export const ClientRoute = (
             element={<item.component />}
           />
         ))}
+
+        <Route
+          path={ROUTER_URL.CLIENT_ROUTER.PAYMENT}
+          element={<PaymentPage />}
+        />
+        <Route
+          path={ROUTER_URL.CLIENT_ROUTER.PAYMENT_QR}
+          element={<QRTransactionPage />}
+        />
       </Route>
     </Route>
   </Route>
