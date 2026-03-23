@@ -126,6 +126,14 @@ export const ADMIN_MENU: AdminMenuItem[] = [
     permissions: [PermissionEnum.VIEW_CART],
   },
   {
+    label: "Orders",
+    path: ROUTER_URL.ADMIN_ROUTER.ORDERS,
+    icon: "orders",
+    component: React.lazy(() => import("@/pages/admin/orders/index")),
+    isEnd: true,
+    permissions: [PermissionEnum.VIEW_ORDERS],
+  },
+  {
     label: "Promotions",
     path: ROUTER_URL.ADMIN_ROUTER.PROMOTIONS,
     icon: "promotion",
