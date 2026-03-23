@@ -22,6 +22,8 @@ interface DeleteDialogProps<TEntity> {
   onConfirm: () => void | Promise<void>;
   /** Whether delete is in progress */
   isDeleting?: boolean;
+  confirmLabel?: string;
+  pendingLabel?: string;
   /** Custom message function or static string */
   deleteMessage?: string | ((entity: TEntity) => string);
   /** Get display name from entity (defaults to entity.name) */
@@ -39,6 +41,8 @@ export function DeleteDialog<TEntity>({
   entityName,
   onConfirm,
   isDeleting = false,
+  confirmLabel = "Delete",
+  pendingLabel = "Deleting...",
   deleteMessage,
   getDisplayName,
 }: DeleteDialogProps<TEntity>) {
@@ -104,10 +108,10 @@ export function DeleteDialog<TEntity>({
             {isDeleting ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Deleting...
+                {pendingLabel}
               </>
             ) : (
-              "Delete"
+              confirmLabel
             )}
           </Button>
         </DialogFooter>

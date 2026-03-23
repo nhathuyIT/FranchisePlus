@@ -4,6 +4,7 @@ import type { CartResponse } from "@/types/cart";
 import {
   formatCartDateTime,
   formatCartMoney,
+  formatVoucherValue,
   getCartStatusClassName,
 } from "../utils/cartDisplay";
 import { CartDetailField } from "./CartDetailField";
@@ -28,6 +29,10 @@ export const CartDetailContent = ({
       : selectedCart?.promotionType
         ? formatCartMoney(selectedCart.promotionValue)
         : "N/A";
+  const voucherValue = formatVoucherValue(
+    selectedCart?.voucherType,
+    selectedCart?.voucherValue,
+  );
 
   return (
     <section
@@ -65,7 +70,7 @@ export const CartDetailContent = ({
 
       {selectedCart ? (
         <>
-          <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-6">
             <CartDetailField
               label="Items"
               value={`${selectedCart.cartItems.length} item(s)`}
@@ -82,9 +87,17 @@ export const CartDetailContent = ({
               label="Promotion Value"
               value={promotionValue || "No promotion"}
             />
+            <CartDetailField
+              label="Voucher Code"
+              value={selectedCart.voucherCode || "No voucher"}
+            />
+            <CartDetailField
+              label="Voucher Value"
+              value={voucherValue || "No voucher"}
+            />
           </div>
 
-          <div className="mt-5 grid gap-3 lg:grid-cols-3 xl:grid-cols-5">
+          <div className="mt-5 grid gap-3 lg:grid-cols-3 xl:grid-cols-6">
             <CartDetailField
               label="Customer"
               value={selectedCart.customerName}
@@ -100,6 +113,10 @@ export const CartDetailContent = ({
             <CartDetailField
               label="Address"
               value={selectedCart.address || "N/A"}
+            />
+            <CartDetailField
+              label="Voucher Discount"
+              value={formatCartMoney(selectedCart.voucherDiscount)}
             />
             <CartDetailField
               label="Final Amount"

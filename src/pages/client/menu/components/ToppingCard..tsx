@@ -12,9 +12,12 @@ export const ToppingCard = ({
     productFranchiseId: string | number,
   ) => void;
 }) => {
-  const minPrice = getMinPrice(product.sizes);
-  const availableSizes = product.sizes.filter((s) => s.isAvailable);
-  const defaultProductFranchiseId = availableSizes[0]?.productFranchiseId;
+  const fallbackSize = product.sizes.find((s) => s.isAvailable) ?? product.sizes[0];
+  const minPrice =
+    product.sizes.length > 0
+      ? Math.min(...product.sizes.map((size) => size.price))
+      : getMinPrice(product.sizes);
+  const defaultProductFranchiseId = fallbackSize?.productFranchiseId;
 
   return (
     <div
@@ -48,11 +51,9 @@ export const ToppingCard = ({
           </p>
         )}
         <div className="mt-1.5 flex flex-wrap gap-1">
-          {product.sizes
-            .filter((s) => s.isAvailable)
-            .map((s) => (
+          {product.sizes.map((s) => (
               <span
-                key={s.size}
+                key={String(s.productFranchiseId)}
                 className="text-[11px] px-2 py-0.5 bg-orange-50 text-orange-700 
                            rounded-full border border-orange-200/60 font-medium"
               >

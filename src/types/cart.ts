@@ -104,7 +104,7 @@ export interface CartItemResponse {
 
 export interface CartResponse
   extends BaseTimestamp, SoftDeletable, Activatable {
-  id: string;
+  id: string; // Trong JSON là _id, giả định bạn đã map sang id
   customerId: string;
   franchiseId: string;
   staffId: string;
@@ -113,20 +113,35 @@ export interface CartResponse
   phone: string;
   note?: string;
   message: string;
+
+  // Promotion
   promotionDiscount: number;
   promotionType: string;
   promotionValue: number;
+  promotionId: string;
+
+  // Voucher
   voucherDiscount: number;
+  voucherId?: string;
+  voucherType?: string; // Thêm mới
+  voucherValue?: number; // Thêm mới
+  voucherCode?: string; // Thêm mới
+
+  // Loyalty
   loyaltyPointsUsed: number;
   loyaltyDiscount: number;
+
+  // Amounts
   subtotalAmount: number;
   finalAmount: number;
-  promotionId: string;
-  voucherId?: string;
+
+  // Info
   franchiseName: string;
   customerName: string;
   staffName: string;
   staffEmail: string;
+
+  // Items
   cartItems: CartItemResponse[];
 }
 
@@ -172,8 +187,8 @@ export type UpdateCartResponse = CartResponse;
 export type DeleteCartItemResponse = CartResponse;
 export type UpdateCartOptionItemResponse = CartResponse | null;
 export type RemoveCartOptionItemResponse = CartResponse | null;
-export type ApplyVoucherInCartResponse = CartResponse;
-export type RemoveVoucherInCartResponse = CartResponse;
+export type ApplyVoucherInCartResponse = void;
+export type RemoveVoucherInCartResponse = void;
 export type CheckoutCartResponse = CartResponse;
 export type CancelCartResponse = CartResponse;
 export type CreateCartByStaffResponse = CartResponse;
