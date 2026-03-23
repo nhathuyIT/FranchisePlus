@@ -46,12 +46,17 @@ export interface AddProductToCartByStaffRequest {
   franchiseId: string;
   productFranchiseId: string;
   quantity: number;
-  address: string;
-  phone: string;
   note?: string;
-  message?: string;
   options?: CartItemOptionRequest[];
 }
+
+export interface CreateCartByStaffRequest {
+  customerId: string;
+  franchiseId: string;
+  items: StaffCartItemRequest[];
+}
+
+export type AddProductToCartByStaffRequest = CreateCartByStaffRequest;
 
 export interface AddProductToCartRequest {
   franchiseId: string;
@@ -140,7 +145,7 @@ export interface CartItemResponse {
 
 export interface CartResponse
   extends BaseTimestamp, SoftDeletable, Activatable {
-  id: string;
+  id: string; // Trong JSON là _id, giả định bạn đã map sang id
   customerId: string;
   franchiseId: string;
   staffId: string;
@@ -149,21 +154,72 @@ export interface CartResponse
   phone: string;
   note?: string;
   message: string;
+
+  // Promotion
   promotionDiscount: number;
   promotionType: string;
   promotionValue: number;
+  promotionId: string;
+
+  // Voucher
   voucherDiscount: number;
+  voucherId?: string;
+  voucherType?: string; // Thêm mới
+  voucherValue?: number; // Thêm mới
+  voucherCode?: string; // Thêm mới
+
+  // Loyalty
   loyaltyPointsUsed: number;
   loyaltyDiscount: number;
+
+  // Amounts
   subtotalAmount: number;
   finalAmount: number;
-  promotionId: string;
-  voucherId?: string;
+
+  // Info
   franchiseName: string;
   customerName: string;
   staffName: string;
   staffEmail: string;
+
+  // Items
   cartItems: CartItemResponse[];
+}
+
+export interface StaffBulkCartOptionRequest {
+  productFranchiseId: string;
+  quantity: number;
+}
+
+export interface StaffBulkCartItemRequest {
+  productFranchiseId: string;
+  quantity: number;
+  note?: string;
+  options?: StaffBulkCartOptionRequest[];
+}
+
+export interface CreateCartByStaffBulkRequest {
+  customerId: string;
+  franchiseId: string;
+  items: StaffBulkCartItemRequest[];
+}
+
+export interface StaffBulkCartOptionPayload {
+  product_franchise_id: string;
+  quantity: number;
+}
+
+export interface StaffBulkCartItemPayload {
+  product_franchise_id: string;
+  quantity: number;
+  note?: string;
+  options?: StaffBulkCartOptionPayload[];
+}
+
+export interface StaffBulkAddCartPayload {
+  customer_id: string;
+  franchise_id: string;
+  items: StaffBulkCartItemPayload[];
 }
 
 export type GetCartsByCustomerResponse = CartResponse[];
@@ -177,8 +233,11 @@ export type ApplyVoucherInCartResponse = CartResponse | null;
 export type RemoveVoucherInCartResponse = CartResponse | null;
 export type CheckoutCartResponse = CartResponse;
 export type CancelCartResponse = CartResponse;
-export type AddProductToCartByStaffResponse = CartResponse;
+export type CreateCartByStaffResponse = CartResponse;
+export type CreateCartByStaffBulkResponse = CartResponse;
+export type AddProductToCartByStaffResponse = CreateCartByStaffResponse;
 export type AddProductToCartResponse = CartResponse;
+export type StaffBulkAddCartResponse = CreateCartByStaffBulkResponse;
 
 export type CountCartByCustomerResponse = number;
 export type CountCartItemByCartResponse = number;

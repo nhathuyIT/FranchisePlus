@@ -9,9 +9,9 @@ import type { FieldConfig } from "@/lib/form/field-config";
 import { PageHeader } from "@/components/common/PageHeader";
 import { ProductTable } from "./components/ProductTable";
 import { ViewProductModal } from "./components/ViewProductModal";
-import type { Product } from "@/types/product.type";
+import type { AdminProductRow } from "./columns/product.columns";
 import type { ProductSearchRequest } from "@/api/product/product.api";
-import { searchProducts } from "@/api/product/product.api";
+import { getProduct, searchProducts } from "@/api/product/product.api";
 import {
   useProductsQuery,
   useCreateProductMutation,
@@ -33,6 +33,7 @@ import {
   useInventorySearch,
 } from "@/hooks/inventory/useInventory.hooks";
 import type { InventorySearchItem } from "@/api/inventory/inventory.type";
+import { uploadFileToCloudinary } from "@/config/cloudinary";
 
 // ── Form schema ─────────────────────────────────────────────────────────────
 
@@ -52,6 +53,7 @@ const productSchema = z
     minPrice: z.number().min(0, "Min price must be positive"),
     maxPrice: z.number().min(0, "Max price must be positive"),
     quantity: z.number().min(0, "Quantity must be 0 or greater").optional(),
+    isHaveTopping: z.boolean().optional(),
     isActive: z.boolean(),
   })
   .refine((data) => data.maxPrice >= data.minPrice, {
@@ -61,13 +63,23 @@ const productSchema = z
 
 type ProductFormData = z.infer<typeof productSchema>;
 
-type ProductRow = Product & {
-  franchiseProductId?: string;
-  size?: string;
-  quantity?: number;
-  inventoryId?: string;
-  alertThreshold?: number;
-};
+const toProductFormValues = (
+  row: AdminProductRow,
+  isManagerView: boolean,
+): ProductFormData => ({
+  productId: undefined,
+  sku: row.sku ?? "",
+  name: row.name ?? "",
+  size: row.size ?? "",
+  description: row.description ?? "",
+  content: row.content ?? "",
+  imageUrl: row.imageUrl ?? "",
+  minPrice: row.minPrice,
+  maxPrice: isManagerView ? 999999 : row.maxPrice,
+  quantity: row.quantity,
+  isHaveTopping: row.isHaveTopping ?? undefined,
+  isActive: row.isActive,
+});
 
 // ── Field configurations ────────────────────────────────────────────────────
 
@@ -85,6 +97,11 @@ const getProductFields = (
         type: "text",
         label: "Product Name",
         disabled: true,
+      },
+      {
+        name: "isHaveTopping",
+        type: "switch",
+        label: "Has Topping",
       },
       {
         name: "size",
@@ -251,6 +268,12 @@ const getProductFields = (
       colSpan: 2,
     },
     {
+      name: "isHaveTopping",
+      type: "switch",
+      label: "Has Topping",
+      colSpan: 2,
+    },
+    {
       name: "isActive",
       type: "switch",
       label: "Active",
@@ -288,15 +311,15 @@ const ProductsPage = () => {
     useState<ProductSearchRequest>(DEFAULT_SEARCH_PARAMS);
 
   // Dialog state
-  const dialog = useFormDialog<ProductRow>();
+  const dialog = useFormDialog<AdminProductRow>();
   
   // View modal state (separate from form dialog)
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
-  const [viewingProduct, setViewingProduct] = useState<Product | null>(null);
+  const [viewingProduct, setViewingProduct] = useState<AdminProductRow | null>(null);
 
   // Delete dialog state
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [deletingProduct, setDeletingProduct] = useState<Product | null>(null);
+  const [deletingProduct, setDeletingProduct] = useState<AdminProductRow | null>(null);
 
   // Product dropdown cache for managers
   const [productDropdownCache, setProductDropdownCache] = useState<{ label: string; value: string }[]>([]);
@@ -337,11 +360,13 @@ const ProductsPage = () => {
   // ── TanStack Query hooks ──────────────────────────────────────────────────
   // Use different queries based on user role
   const {
-    data: globalProducts,
+    data: globalProductsResponse,
     isLoading: isLoadingGlobal,
     error: globalError,
     refetch: refetchGlobal,
   } = useProductsQuery(searchParams);
+
+  const responsePageInfo = globalProductsResponse?.pageInfo;
 
   const {  data: franchiseProducts,
     isLoading: isLoadingFranchise,
@@ -389,7 +414,7 @@ const ProductsPage = () => {
   const createInventoryMutation = useCreateInventory();
 
   // Select appropriate data based on context
-  const products = isManagerView
+  const products: AdminProductRow[] = isManagerView
     ? (franchiseProducts?.map((pf) => ({
         ...(inventoryByProductFranchiseId.get(String(pf.id))
           ? {
@@ -412,12 +437,13 @@ const ProductsPage = () => {
         imageUrl: pf.productImageUrl || null,
         minPrice: pf.priceBase,
         maxPrice: pf.priceBase,
+        isHaveTopping: null,
         isActive: pf.isActive,
         isDeleted: pf.isDeleted,
         createdAt: pf.createdAt,
         updatedAt: pf.updatedAt,
-      })) as ProductRow[] ?? [])
-    : (globalProducts ?? []);
+      })) as AdminProductRow[] ?? [])
+    : (globalProductsResponse?.data ?? []).map((p) => ({ ...p }));
 
   const isLoading = isManagerView ? (isLoadingFranchise || isLoadingInventory) : isLoadingGlobal;
   const error = isManagerView ? franchiseError : globalError;
@@ -436,6 +462,20 @@ const ProductsPage = () => {
       searchCondition: { ...prev.searchCondition, keyword },
       pageInfo: { ...prev.pageInfo, pageNum: 1 },
     }));  
+  }, []);
+
+  const handlePageChange = useCallback((pageNum: number) => {
+    setSearchParams((prev) => ({
+      ...prev,
+      pageInfo: { ...prev.pageInfo, pageNum },
+    }));
+  }, []);
+
+  const handlePageSizeChange = useCallback((pageSize: number) => {
+    setSearchParams((prev) => ({
+      ...prev,
+      pageInfo: { pageNum: 1, pageSize },
+    }));
   }, []);
 
   // ── Form submission handler ──────────────────────────────────────────────
@@ -504,6 +544,17 @@ const ProductsPage = () => {
             }
           }
         }
+
+        // Optional: allow managers to update global "has topping" flag
+        if (
+          typeof data.isHaveTopping === "boolean" &&
+          data.isHaveTopping !== (editingProduct.isHaveTopping ?? null)
+        ) {
+          await updateMutation.mutateAsync({
+            id: editingProduct.id,
+            data: { is_have_topping: data.isHaveTopping },
+          });
+        }
       } else {
         // Admin editing global product
         const payload = {
@@ -514,6 +565,7 @@ const ProductsPage = () => {
           image_url: data.imageUrl || null,
           min_price: data.minPrice,
           max_price: data.maxPrice,
+          is_have_topping: data.isHaveTopping ?? (editingProduct.isHaveTopping ?? false),
           is_active: data.isActive,
         };
         await updateMutation.mutateAsync(
@@ -546,6 +598,7 @@ const ProductsPage = () => {
           image_url: data.imageUrl || null,
           min_price: data.minPrice,
           max_price: data.maxPrice,
+          is_have_topping: data.isHaveTopping ?? false,
           is_active: data.isActive,
         };
         await createMutation.mutateAsync(payload);
@@ -555,24 +608,36 @@ const ProductsPage = () => {
 
   // ── Handlers ──────────────────────────────────────────────────────────────
 
-  const handleEdit = (product: Product) => {
-    const editData = {
+  const handleEdit = (product: AdminProductRow) => {
+    const baseEditData = {
       ...product,
-      franchiseProductId: (product as any).franchiseProductId,
-      size: (product as any).size || "",
-      quantity: (product as any).quantity ?? 0,
-      inventoryId: (product as any).inventoryId,
-      alertThreshold: (product as any).alertThreshold ?? 0,
+      franchiseProductId: product.franchiseProductId,
+      size: product.size || "",
+      quantity: product.quantity ?? 0,
+      inventoryId: product.inventoryId,
+      alertThreshold: product.alertThreshold ?? 0,
     };
-    dialog.openEdit(editData);
+
+    if (isManagerView && baseEditData.isHaveTopping == null) {
+      void getProduct(String(baseEditData.id))
+        .then((full) => {
+          dialog.openEdit({ ...baseEditData, isHaveTopping: full.isHaveTopping ?? null });
+        })
+        .catch(() => {
+          dialog.openEdit(baseEditData);
+        });
+      return;
+    }
+
+    dialog.openEdit(baseEditData);
   };
 
-  const handleView = (product: Product) => {
+  const handleView = (product: AdminProductRow) => {
     setViewingProduct(product);
     setIsViewModalOpen(true);
   };
 
-  const handleDelete = (product: Product) => {
+  const handleDelete = (product: AdminProductRow) => {
     setDeletingProduct(product);
     setDeleteDialogOpen(true);
   };
@@ -580,8 +645,8 @@ const ProductsPage = () => {
   const confirmDelete = async () => {
     if (!deletingProduct) return;
     
-    if (isManagerView && (deletingProduct as any).franchiseProductId) {
-      await deleteProductFranchiseMutation.mutateAsync((deletingProduct as any).franchiseProductId);
+    if (isManagerView && deletingProduct.franchiseProductId) {
+      await deleteProductFranchiseMutation.mutateAsync(deletingProduct.franchiseProductId);
     } else {
       await deleteMutation.mutateAsync(deletingProduct.id);
     }
@@ -590,15 +655,15 @@ const ProductsPage = () => {
     setDeletingProduct(null);
   };
 
-  const handleBulkDelete = async (selectedProducts: Product[]) => {
+  const handleBulkDelete = async (selectedProducts: AdminProductRow[]) => {
     const confirmDelete = window.confirm(
       `Are you sure you want to delete ${selectedProducts.length} product${selectedProducts.length > 1 ? "s" : ""}? This action cannot be undone.`,
     );
     if (confirmDelete) {
       if (isManagerView) {
         for (const p of selectedProducts) {
-          if ((p as any).franchiseProductId) {
-            await deleteProductFranchiseMutation.mutateAsync((p as any).franchiseProductId);
+          if (p.franchiseProductId) {
+            await deleteProductFranchiseMutation.mutateAsync(p.franchiseProductId);
           }
         }
       } else {
@@ -618,10 +683,10 @@ const ProductsPage = () => {
   const productFields = getProductFields(isManagerView, formMode, productDropdownCache);
 
   // ── Status toggle handler ───────────────────────────────────────────────
-  const handleStatusToggle = (product: ProductRow, isActive: boolean) => {
-    if (isManagerView && (product as any).franchiseProductId) {
+  const handleStatusToggle = (product: AdminProductRow, isActive: boolean) => {
+    if (isManagerView && product.franchiseProductId) {
       changeStatusProductFranchiseMutation.mutate({
-        id: (product as any).franchiseProductId,
+        id: product.franchiseProductId,
         data: { is_active: isActive },
       });
     } else {
@@ -634,27 +699,29 @@ const ProductsPage = () => {
     if (changeStatusProductFranchiseMutation.isPending) {
       // Find the product id from the franchise product id
       const fpId = String(changeStatusProductFranchiseMutation.variables?.id);
-      const found = products.find((p) => (p as any).franchiseProductId === fpId);
+      const found = products.find((p) => p.franchiseProductId === fpId);
       return found ? String(found.id) : null;
     }
     return null;
   })();
 
   // Prepare form values - need to set hidden fields for manager create mode validation
-  const formValues = dialog.data 
-    ? {
-        ...dialog.data,
-        // For manager edit, set maxPrice to pass validation
-        maxPrice: isManagerView ? 999999 : dialog.data.maxPrice,
-      }
-    : isManagerView 
+  const formValues: ProductFormData | undefined = dialog.data
+    ? toProductFormValues(dialog.data, isManagerView)
+    : isManagerView
       ? {
-          // Manager create defaults
-          name: "temp",
+          // Manager create defaults (schema requires name/maxPrice even if fields are hidden)
           productId: "",
+          sku: "",
+          name: "temp",
           size: "",
-          minPrice: undefined,
+          description: "",
+          content: "",
+          imageUrl: "",
+          minPrice: 0,
           maxPrice: 999999,
+          quantity: 0,
+          isHaveTopping: undefined,
           isActive: true,
         }
       : undefined;
@@ -683,6 +750,18 @@ const ProductsPage = () => {
         <div className="flex-1 min-h-0 flex flex-col bg-white rounded-2xl shadow-lg border border-[#E8DFD6] p-6">
           <ProductTable
             products={products}
+            pagination={
+              !isManagerView
+                ? {
+                    pageNum: responsePageInfo?.pageNum ?? searchParams.pageInfo.pageNum,
+                    pageSize: responsePageInfo?.pageSize ?? searchParams.pageInfo.pageSize,
+                    totalItems: responsePageInfo?.totalItems ?? products.length,
+                    totalPages: responsePageInfo?.totalPages ?? 1,
+                    onPageChange: handlePageChange,
+                    onPageSizeChange: handlePageSizeChange,
+                  }
+                : undefined
+            }
             isLoading={isLoading}
             error={error instanceof Error ? error : null}
             onRetry={handleRetry}
@@ -720,7 +799,8 @@ const ProductsPage = () => {
         }
         schema={productSchema}
         fields={productFields}
-        values={formValues as any}
+        onImageUpload={isManagerView ? undefined : uploadFileToCloudinary}
+        values={formValues}
         mode={dialog.mode}
         onSubmit={handleSubmit}
         onSuccess={dialog.close}

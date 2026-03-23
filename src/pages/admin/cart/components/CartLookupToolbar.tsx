@@ -62,7 +62,7 @@ export const CartLookupToolbar = ({
         emptyText="No users found"
         loadingText="Searching users..."
         isLoading={isUserSearchLoading}
-        minChars={0}
+        minChars={3}
         triggerClassName="border-[#E8DFD6] bg-white"
         contentClassName="w-[min(42rem,calc(100vw-2rem))]"
       />

@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import {
   useGetProductDetail,
-  useGetProductsByFranchise,
+  useGetProductsByFranchiseAndCategory,
   useGetFranchiseDetail,
   useGetCategoriesByFranchise,
   useGetMenuByFranchise,
@@ -25,6 +25,13 @@ import { useAuthStore } from "@/stores/auth-store";
 import { ROUTER_URL } from "@/router/route.const";
 import { Button } from "@/components/ui/button";
 import { FooterInfo } from "@/components/common/FooterInfo";
+
+const isToppingCategory = (categoryName: string) =>
+  categoryName.trim().toLowerCase() === "topping";
+
+const getPreferredToppingSize = (
+  sizes: ProductListItem["sizes"],
+) => sizes.find((size) => size.isAvailable) ?? sizes[0];
 
 const MenuProductDetailPage = () => {
   const { franchiseId = "", productFranchiseId = "" } = useParams<{
@@ -49,10 +56,21 @@ const MenuProductDetailPage = () => {
   const { data: productDetailData, isLoading: isLoadingProduct } =
     useGetProductDetail(franchiseId, productFranchiseId);
 
-  const { data: toppingDataAll } = useGetProductsByFranchise(franchiseId);
   const { data: franchiseDetail } = useGetFranchiseDetail(franchiseId);
   const { data: categories } = useGetCategoriesByFranchise(franchiseId);
   const { data: menuDataAll } = useGetMenuByFranchise(franchiseId);
+
+  const toppingCategoryId = useMemo(
+    () =>
+      String(
+        categories?.find((category) => isToppingCategory(category.categoryName))
+          ?.categoryId ?? "",
+      ),
+    [categories],
+  );
+
+  const { data: toppingDataByCategory = [] } =
+    useGetProductsByFranchiseAndCategory(franchiseId, toppingCategoryId);
 
   // ── Derived state ──────────────────────────────────────────────
   const categoryTabs = useMemo(() => {
@@ -102,7 +120,7 @@ const MenuProductDetailPage = () => {
     () => product?.imagesUrl ?? [],
     [product?.imagesUrl],
   );
-  const detailHasTopping = product?.isHaveTopping;
+  const detailHasTopping = product?.isHaveTopping === true;
   const detailSizes = product?.sizes ?? [];
   const availableDetailSizes = detailSizes.filter((size) => size.isAvailable);
 
@@ -139,10 +157,10 @@ const MenuProductDetailPage = () => {
 
   const toppingsByFranchiseVisible = useMemo(
     () =>
-      (toppingDataAll ?? []).filter((product: ProductListItem) =>
-        product.sizes.some((s) => s.isAvailable),
+      toppingDataByCategory.filter((product: ProductListItem) =>
+        product.sizes.length > 0,
       ),
-    [toppingDataAll],
+    [toppingDataByCategory],
   );
 
   // ── Handlers ───────────────────────────────────────────────────
@@ -157,12 +175,12 @@ const MenuProductDetailPage = () => {
       return;
     }
 
-    const firstAvailableSize = product.sizes.find((size) => size.isAvailable);
-    if (!firstAvailableSize) return;
+    const preferredSize = getPreferredToppingSize(product.sizes);
+    if (!preferredSize) return;
 
     setSelectedToppings((prev) => ({
       ...prev,
-      [productIdKey]: String(firstAvailableSize.productFranchiseId),
+      [productIdKey]: String(preferredSize.productFranchiseId),
     }));
   };
 
@@ -188,7 +206,7 @@ const MenuProductDetailPage = () => {
         const selectedToppingSize = topping.sizes.find(
           (size) => String(size.productFranchiseId) === franchiseProductId,
         );
-        if (!selectedToppingSize || !selectedToppingSize.isAvailable) return null;
+        if (!selectedToppingSize) return null;
 
         return {
           productFranchiseId: String(selectedToppingSize.productFranchiseId),
@@ -255,7 +273,7 @@ const MenuProductDetailPage = () => {
         const size = topping.sizes.find(
           (s) => String(s.productFranchiseId) === franchiseProductId,
         );
-        if (!size || !size.isAvailable) return total;
+        if (!size) return total;
         return total + size.price;
       },
       0,
@@ -578,13 +596,10 @@ const MenuProductDetailPage = () => {
                                 const toppingId = String(topping.productId);
                                 const selectedToppingSizeId =
                                   selectedToppings[toppingId];
-                                const availableToppingSizes =
-                                  topping.sizes.filter(
-                                    (size) => size.isAvailable,
-                                  );
-                                const firstAvailableSize =
-                                  availableToppingSizes[0];
-                                if (!firstAvailableSize) return null;
+                                const preferredSize = getPreferredToppingSize(
+                                  topping.sizes,
+                                );
+                                if (!preferredSize) return null;
 
                                 const isChecked = Boolean(
                                   selectedToppingSizeId,
@@ -622,8 +637,7 @@ const MenuProductDetailPage = () => {
                                         {topping.name}
                                       </p>
                                       <p className="text-xs font-bold text-amber-700 mt-1">
-                                        +{" "}
-                                        {formatPrice(firstAvailableSize.price)}
+                                        + {formatPrice(preferredSize.price)}
                                       </p>
                                     </div>
                                   </button>

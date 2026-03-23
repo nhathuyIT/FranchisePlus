@@ -1,5 +1,9 @@
 import { httpClient } from "../httpClient.api";
 import type {
+  CreateCartByStaffRequest,
+  CreateCartByStaffResponse,
+  CreateCartByStaffBulkRequest,
+  CreateCartByStaffBulkResponse,
   AddProductToCartByStaffRequest,
   AddProductToCartByStaffResponse,
   AddProductToCartRequest,
@@ -28,6 +32,7 @@ import type {
   CartOptionResponse,
   CartItemResponse,
   CartResponse,
+  StaffBulkAddCartPayload,
 } from "@/types/cart";
 
 export type UpdateCartItemRequest = {
@@ -114,7 +119,7 @@ const normalizeCartItem = (item: RawCartItemResponse): CartItemResponse => ({
 });
 
 const normalizeCart = (cart: RawCartResponse): CartResponse => ({
-  id: cart.id,
+  id: cart.id, // Nếu JSON trả về _id, đảm bảo bạn đã map (ví dụ: cart.id ?? cart._id ?? "")
   customerId: cart.customerId ?? "",
   franchiseId: cart.franchiseId ?? "",
   staffId: cart.staffId ?? "",
@@ -123,33 +128,66 @@ const normalizeCart = (cart: RawCartResponse): CartResponse => ({
   phone: cart.phone ?? "",
   note: cart.note,
   message: cart.message ?? "",
+
+  // Promotion
   promotionDiscount: cart.promotionDiscount ?? 0,
   promotionType: cart.promotionType ?? "",
   promotionValue: cart.promotionValue ?? 0,
+  promotionId: cart.promotionId ?? "",
+
+  // Voucher (Các trường mới được thêm vào ở đây)
   voucherDiscount: cart.voucherDiscount ?? 0,
+  voucherId: cart.voucherId,
+  voucherType: cart.voucherType, // Thêm mới
+  voucherValue: cart.voucherValue, // Thêm mới
+  voucherCode: cart.voucherCode, // Thêm mới
+
+  // Loyalty
   loyaltyPointsUsed: cart.loyaltyPointsUsed ?? 0,
   loyaltyDiscount: cart.loyaltyDiscount ?? 0,
+
+  // Amounts
   subtotalAmount: cart.subtotalAmount ?? 0,
   finalAmount: cart.finalAmount ?? 0,
-  promotionId: cart.promotionId ?? "",
-  voucherId: cart.voucherId,
+
+  // Info
   franchiseName: cart.franchiseName ?? "",
   customerName: cart.customerName ?? "",
   staffName: cart.staffName ?? "",
   staffEmail: cart.staffEmail ?? "",
+
+  // Items
   cartItems: (cart.cartItems ?? []).map(normalizeCartItem),
+
+  // BaseTimestamp, SoftDeletable, Activatable
   createdAt: cart.createdAt ?? "",
   updatedAt: cart.updatedAt ?? "",
   isDeleted: cart.isDeleted ?? false,
   isActive: cart.isActive ?? true,
 });
 
-export const addProductToCartByStaff = async (
-  data: AddProductToCartByStaffRequest,
-): Promise<AddProductToCartByStaffResponse> => {
+const toStaffBulkAddCartPayload = (
+  data: CreateCartByStaffBulkRequest,
+): StaffBulkAddCartPayload => ({
+  customer_id: data.customerId,
+  franchise_id: data.franchiseId,
+  items: data.items.map((item) => ({
+    product_franchise_id: item.productFranchiseId,
+    quantity: item.quantity,
+    note: item.note,
+    options: item.options?.map((option) => ({
+      product_franchise_id: option.productFranchiseId,
+      quantity: option.quantity,
+    })),
+  })),
+});
+
+export const createCartByStaff = async (
+  data: CreateCartByStaffRequest,
+): Promise<CreateCartByStaffResponse> => {
   const response = await httpClient.post<
     RawCartResponse,
-    AddProductToCartByStaffRequest
+    CreateCartByStaffRequest
   >({
     url: "/api/carts/items/staff",
     data,
@@ -157,6 +195,22 @@ export const addProductToCartByStaff = async (
 
   return normalizeCart(response!);
 };
+export const createCartByStaffBulk = async (
+  data: CreateCartByStaffBulkRequest,
+): Promise<CreateCartByStaffBulkResponse> => {
+  const response = await httpClient.post<
+    RawCartResponse,
+    StaffBulkAddCartPayload
+  >({
+    url: "/api/carts/items/staff-bulk",
+    data: toStaffBulkAddCartPayload(data),
+  });
+
+  return normalizeCart(response!);
+};
+export const addProductToCartByStaff = async (
+  data: AddProductToCartByStaffRequest,
+): Promise<AddProductToCartByStaffResponse> => createCartByStaff(data);
 
 export const addProductToCart = async (
   data: AddProductToCartRequest,
@@ -280,7 +334,11 @@ export const updateOptionItemQuantity = async (
     data,
   });
 
-  return normalizeCart(response!);
+  if (!response) {
+    return null;
+  }
+
+  return normalizeCart(response);
 };
 
 export const updateCartItemOptions = async (
@@ -311,17 +369,18 @@ export const removeOptionItem = async (
     data,
   });
 
-  return normalizeCart(response!);
+  if (!response) {
+    return null;
+  }
+
+  return normalizeCart(response);
 };
 
 export const applyVoucherInCart = async (
   cartId: string,
   data: ApplyVoucherInCartRequest,
 ): Promise<ApplyVoucherInCartResponse> => {
-  const response = await httpClient.put<
-    RawCartResponse,
-    ApplyVoucherInCartRequest
-  >({
+  await httpClient.put<null, ApplyVoucherInCartRequest>({
     url: `/api/carts/${cartId}/apply-voucher`,
     data,
   });
@@ -336,7 +395,7 @@ export const applyVoucherInCart = async (
 export const removeVoucherInCart = async (
   cartId: string,
 ): Promise<RemoveVoucherInCartResponse> => {
-  const response = await httpClient.delete<RawCartResponse>({
+  await httpClient.delete<null>({
     url: `/api/carts/${cartId}/remove-voucher`,
   });
 

@@ -1,20 +1,33 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Plus } from "lucide-react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { PageHeader } from "@/components/common/PageHeader";
 import { DataTable } from "@/components/common/DataTable";
+import { DeleteDialog } from "@/components/form-dialog/DeleteDialog";
 import { Button } from "@/components/ui/button";
 import { useFormDialog } from "@/components/form-dialog";
 import { useDebounce } from "@/hooks/common/useDebounce";
-import { useCartsByCustomerQuery } from "@/hooks/cart/useCart.hook";
-import { useCustomerSearch } from "@/hooks/customer";
+import {
+  useCancelCartMutation,
+  useCartsByCustomerQuery,
+} from "@/hooks/cart/useCart.hook";
+import { useCustomerByKeyword } from "@/hooks/customer";
 import { Permission } from "@/config/permission";
+import { ROUTER_URL } from "@/router/route.const";
 import { useAuthStore } from "@/stores/auth-store";
+import type { CartResponse } from "@/types/cart";
 import { createCartColumns } from "./columns/CartColumns";
 import { AddCartDialog } from "./components/AddCartDialog";
+import { CartActionButtons } from "./components/CartActionButtons";
+import { CartDetailDialog } from "./components/CartDetailDialog";
 import { CartLookupToolbar } from "./components/CartLookupToolbar";
 import { CartSelectedUserSummary } from "./components/CartSelectedUserSummary";
-import { SelectedCartPanel } from "./components/SelectedCartPanel";
-import type { CartLookupUser, CustomerStatusFilter } from "./types";
+import { EditCartDialog } from "./components/EditCartDialog";
+import type {
+  AdminCartNavigationState,
+  CartLookupUser,
+  CustomerStatusFilter,
+} from "./types";
 import { getCartLookupHint, isNoCartError } from "./utils/cartDisplay";
 
 const toUserOptionLabel = (user: CartLookupUser) => (
@@ -29,11 +42,17 @@ const toUserOptionLabel = (user: CartLookupUser) => (
 );
 
 const CartManagement = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
   const { getCurrentPermissions } = useAuthStore();
   const userPermissions = getCurrentPermissions();
   const canViewCart = userPermissions.includes(Permission.VIEW_CART);
   const canManageCart = userPermissions.includes(Permission.MANAGE_CART);
   const addCartDialog = useFormDialog<void>();
+  const cancelCartMutation = useCancelCartMutation();
+  const hasAppliedNavigationState = useRef(false);
+  const navigationState =
+    (location.state as AdminCartNavigationState | null) ?? null;
 
   const [userSearchOpen, setUserSearchOpen] = useState(false);
   const [userSearchValue, setUserSearchValue] = useState("");
@@ -44,29 +63,21 @@ const CartManagement = () => {
   const [shouldRefetchAfterCreate, setShouldRefetchAfterCreate] =
     useState(false);
   const [isRefreshingAfterCreate, setIsRefreshingAfterCreate] = useState(false);
+  const [detailCartId, setDetailCartId] = useState<string | null>(null);
+  const [editCartId, setEditCartId] = useState<string | null>(null);
+  const [cartToCancel, setCartToCancel] = useState<CartResponse | null>(null);
+  const normalizedUserSearch = userSearchValue.trim();
+  const canSearchUsers = normalizedUserSearch.length >= 3;
 
   const debouncedUserSearch = useDebounce(
-    userSearchValue.trim(),
-    300,
+    canSearchUsers ? normalizedUserSearch : "",
+    450,
     userSearchValue,
   );
 
-  const userSearchQuery = useCustomerSearch(
-    {
-      searchCondition: {
-        keyword: debouncedUserSearch || undefined,
-        isActive: true,
-        isDeleted: false,
-      },
-      pageInfo: {
-        pageNum: 1,
-        pageSize: 20,
-      },
-    },
-    {
-      enabled: canViewCart && userSearchOpen,
-    },
-  );
+  const userSearchQuery = useCustomerByKeyword(debouncedUserSearch, {
+    enabled: canViewCart && userSearchOpen && debouncedUserSearch.length >= 3,
+  });
 
   const customerLookupQuery = useCartsByCustomerQuery(
     {
@@ -77,8 +88,11 @@ const CartManagement = () => {
   );
 
   const userSearchResults = useMemo(
-    () => userSearchQuery.data?.pageData ?? [],
-    [userSearchQuery.data],
+    () =>
+      canSearchUsers && debouncedUserSearch.length >= 3
+        ? (userSearchQuery.data ?? [])
+        : [],
+    [canSearchUsers, debouncedUserSearch, userSearchQuery.data],
   );
 
   const userOptions = useMemo(
@@ -133,6 +147,8 @@ const CartManagement = () => {
       setSelectedCartId(null);
       setShouldRefetchAfterCreate(false);
       setIsRefreshingAfterCreate(false);
+      setDetailCartId(null);
+      setEditCartId(null);
       setUserSearchOpen(false);
     },
     [selectedUser, userSearchResults],
@@ -143,12 +159,20 @@ const CartManagement = () => {
     setSelectedCartId(null);
     setShouldRefetchAfterCreate(false);
     setIsRefreshingAfterCreate(false);
+    setDetailCartId(null);
+    setEditCartId(null);
     setUserSearchValue("");
     setUserSearchOpen(false);
   }, []);
 
-  const handleSelectCart = useCallback((cartId: string) => {
+  const handleOpenCartDetail = useCallback((cartId: string) => {
     setSelectedCartId(cartId);
+    setDetailCartId(cartId);
+  }, []);
+
+  const handleOpenEditCart = useCallback((cartId: string) => {
+    setSelectedCartId(cartId);
+    setEditCartId(cartId);
   }, []);
 
   const handleCartCreated = useCallback((cartId: string) => {
@@ -157,7 +181,36 @@ const CartManagement = () => {
     setShouldRefetchAfterCreate(true);
   }, []);
 
+  const handleConfirmCancelCart = useCallback(async () => {
+    if (!cartToCancel) return;
+
+    try {
+      await cancelCartMutation.mutateAsync(cartToCancel.id);
+
+      if (editCartId === cartToCancel.id) {
+        setEditCartId(null);
+      }
+
+      setCartToCancel(null);
+    } catch {
+      // Error toast is handled in the mutation hook.
+    }
+  }, [cancelCartMutation, cartToCancel, editCartId]);
+
   const refetchCustomerCarts = customerLookupQuery.refetch;
+
+  useEffect(() => {
+    if (hasAppliedNavigationState.current || !navigationState?.selectedUser) {
+      return;
+    }
+
+    setSelectedUser(navigationState.selectedUser);
+    setSelectedCartId(navigationState.selectedCartId ?? null);
+    setCustomerStatus(navigationState.customerStatus ?? "ACTIVE");
+    setDetailCartId(null);
+    setEditCartId(null);
+    hasAppliedNavigationState.current = true;
+  }, [navigationState]);
 
   useEffect(() => {
     if (!shouldRefetchAfterCreate || !selectedUser?.id) return;
@@ -222,12 +275,29 @@ const CartManagement = () => {
       customerLookupQuery.isFetching ||
       isRefreshingAfterCreate);
 
+  const handleCheckoutCart = useCallback(
+    (cartId: string) => {
+      setSelectedCartId(cartId);
+      navigate(
+        `/admin/${ROUTER_URL.ADMIN_ROUTER.CART_CHECKOUT.replace(":cartId", cartId)}`,
+        {
+          state: {
+            selectedUser,
+            selectedCartId: cartId,
+            customerStatus,
+          } satisfies AdminCartNavigationState,
+        },
+      );
+    },
+    [customerStatus, navigate, selectedUser],
+  );
+
   return (
-    <div className="flex h-full flex-col">
+    <div className="flex h-full flex-col scroll-hide">
       <div className="mx-auto flex min-h-0 w-full max-w-7xl flex-1 flex-col">
         <PageHeader
           title="Cart Management"
-          description="Search an active user with the shared async search, then inspect that user's carts."
+          description="Search a user by keyword, then inspect and manage that user's carts."
           action={
             canManageCart ? (
               <Button
@@ -252,7 +322,8 @@ const CartManagement = () => {
             onUserSearchValueChange={setUserSearchValue}
             onUserChange={handleUserChange}
             isUserSearchLoading={
-              userSearchQuery.isLoading || userSearchQuery.isFetching
+              canSearchUsers &&
+              (userSearchQuery.isLoading || userSearchQuery.isFetching)
             }
             customerStatus={customerStatus}
             onCustomerStatusChange={setCustomerStatus}
@@ -271,35 +342,58 @@ const CartManagement = () => {
             />
           )}
 
-          <div className="flex min-h-0 flex-1 flex-col gap-4">
-            <div className="h-[420px] shrink-0">
-              <DataTable
-                columns={customerColumns}
-                data={canViewCart ? customerRows : []}
-                emptyMessage={customerEmptyMessage}
-                isLoading={isCustomerTableLoading}
-                error={suppressNoCartError ? null : userCartError}
-                onRetry={
-                  selectedUser && !suppressNoCartError
-                    ? () => {
-                        void customerLookupQuery.refetch();
-                      }
-                    : undefined
-                }
-                onRowClick={(cart) => handleSelectCart(cart.id)}
-                enableColumnVisibility
-                initialPageSize={10}
-                getRowClassName={(cart) =>
-                  cart.id === selectedCart?.id
-                    ? "bg-[#FFF8F1] hover:bg-[#FFF3E0]"
-                    : ""
-                }
-              />
-            </div>
-
-            <SelectedCartPanel
-              selectedUser={selectedUser}
-              selectedCart={selectedCart}
+          <div className="min-h-0 flex-1">
+            <DataTable
+              columns={customerColumns}
+              data={canViewCart ? customerRows : []}
+              emptyMessage={customerEmptyMessage}
+              isLoading={isCustomerTableLoading}
+              error={suppressNoCartError ? null : userCartError}
+              onRetry={
+                selectedUser && !suppressNoCartError
+                  ? () => {
+                      void customerLookupQuery.refetch();
+                    }
+                  : undefined
+              }
+              onRowClick={(cart) => handleOpenCartDetail(cart.id)}
+              enableColumnVisibility
+              initialPageSize={10}
+              renderActions={
+                canManageCart
+                  ? (cart) => (
+                      <div
+                        onClick={(event) => {
+                          event.stopPropagation();
+                        }}
+                      >
+                        <CartActionButtons
+                          compact
+                          onEditCart={() => handleOpenEditCart(cart.id)}
+                          onCheckoutCart={() => handleCheckoutCart(cart.id)}
+                          onCancelCart={() => setCartToCancel(cart)}
+                          canEditCart={cart.status?.toUpperCase() === "ACTIVE"}
+                          canCheckoutCart={
+                            cart.status?.toUpperCase() === "ACTIVE" &&
+                            cart.cartItems.length > 0
+                          }
+                          canCancelCart={
+                            cart.status?.toUpperCase() === "ACTIVE"
+                          }
+                          isCancellingCart={
+                            cancelCartMutation.isPending &&
+                            cartToCancel?.id === cart.id
+                          }
+                        />
+                      </div>
+                    )
+                  : undefined
+              }
+              getRowClassName={(cart) =>
+                cart.id === selectedCart?.id
+                  ? "bg-[#FFF8F1] hover:bg-[#FFF3E0]"
+                  : ""
+              }
             />
           </div>
         </div>
@@ -314,6 +408,47 @@ const CartManagement = () => {
         }}
         selectedUser={selectedUser}
         onCreated={handleCartCreated}
+      />
+
+      <CartDetailDialog
+        open={!!detailCartId}
+        onOpenChange={(open) => {
+          if (!open) {
+            setDetailCartId(null);
+          }
+        }}
+        cartId={detailCartId}
+      />
+
+      <EditCartDialog
+        open={!!editCartId}
+        onOpenChange={(open) => {
+          if (!open) {
+            setEditCartId(null);
+          }
+        }}
+        cartId={editCartId}
+      />
+
+      <DeleteDialog<CartResponse>
+        open={!!cartToCancel}
+        onOpenChange={(open) => {
+          if (!open) {
+            setCartToCancel(null);
+          }
+        }}
+        entity={cartToCancel}
+        entityName="cart"
+        onConfirm={() => {
+          void handleConfirmCancelCart();
+        }}
+        isDeleting={cancelCartMutation.isPending}
+        confirmLabel="Cancel cart"
+        pendingLabel="Canceling..."
+        deleteMessage={() =>
+          `Change cart to CANCELED? This keeps the record, but it will no longer stay in ACTIVE carts.`
+        }
+        getDisplayName={(cart) => cart.id}
       />
     </div>
   );

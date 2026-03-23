@@ -68,7 +68,7 @@ export const useFranchiseProductAssignData = (franchiseId: string | undefined) =
     useProductCategoryFranchisesQuery(allAssignmentsParams, enabled);
 
   // Images aren't returned by the /franchise/:id endpoint, so we need this.
-  const { data: allProducts = EMPTY_PRODUCTS } = useProductsQuery({
+  const { data: allProductsResponse } = useProductsQuery({
     searchCondition: {
       keyword: "",
       min_price: "",
@@ -78,6 +78,8 @@ export const useFranchiseProductAssignData = (franchiseId: string | undefined) =
     },
     pageInfo: { pageNum: 1, pageSize: 1000 },
   });
+
+  const allProducts = allProductsResponse?.data ?? EMPTY_PRODUCTS;
 
   const { data: allCategories = EMPTY_CATEGORIES } = useCategoriesQuery({
     searchCondition: { keyword: "", is_active: true, is_deleted: false },

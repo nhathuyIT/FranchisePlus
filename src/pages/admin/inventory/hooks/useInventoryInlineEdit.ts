@@ -11,10 +11,10 @@ const rowSchema = z.object({
   productName: z.string(),
   productFranchiseId: z.string(),
   quantity: z
-    .number({ error: (issue) => (issue.input === undefined || Number.isNaN(issue.input) ? "Quantity must be a valid number" : "Quantity must be a number") })
+    .number({ error: "Quantity must be a number" })
     .min(0, "Quantity must be ≥ 0"),
   alertThreshold: z
-    .number({ error: (issue) => (issue.input === undefined || Number.isNaN(issue.input) ? "Alert threshold must be a valid number" : "Alert threshold must be a number") })
+    .number({ error: "Alert threshold must be a number" })
     .min(0, "Alert threshold must be ≥ 0"),
 });
 
@@ -117,46 +117,32 @@ export function useInventoryInlineEdit({
 
   const collectErrors = useCallback((): RowValidationError[] => {
     const formErrors = methods.formState.errors.rows;
-
-    // @hookform/resolvers v5 + Zod v4 may return a sparse array-like object
-    // (not a true JS array), so we can't rely on Array.isArray() alone.
-    if (!formErrors) return [];
+    if (!Array.isArray(formErrors) || formErrors.length === 0) return [];
 
     const result: RowValidationError[] = [];
 
-    // Iterate over all possible indices (covers sparse arrays and object shapes)
-    const indices = Array.isArray(formErrors)
-      ? formErrors.map((_, i) => i)
-      : (Object.keys(formErrors) as string[])
-          .filter((k) => !isNaN(Number(k)))
-          .map(Number);
-
-    for (const idx of indices) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const rowErr = (formErrors as any)[idx];
-      if (!rowErr) continue;
+    Array.from(formErrors).forEach((rowErr, idx) => {
+      if (!rowErr) return;
       const productName = items[idx]?.productName ?? `Row ${idx + 1}`;
 
       // quantity FIRST (left column), then alertThreshold (right column)
-      const qMsg = rowErr.quantity?.message;
-      if (qMsg) {
+      if (rowErr.quantity?.message) {
         result.push({
           rowIndex: idx + 1,
           productName,
           field: "quantity",
-          message: qMsg,
+          message: rowErr.quantity.message,
         });
       }
-      const tMsg = rowErr.alertThreshold?.message;
-      if (tMsg) {
+      if (rowErr.alertThreshold?.message) {
         result.push({
           rowIndex: idx + 1,
           productName,
           field: "alertThreshold",
-          message: tMsg,
+          message: rowErr.alertThreshold.message,
         });
       }
-    }
+    });
 
     return result;
   }, [methods.formState.errors.rows, items]);

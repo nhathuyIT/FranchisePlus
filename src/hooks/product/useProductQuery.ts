@@ -27,7 +27,7 @@ export const useProductsQuery = (searchParams: ProductSearchRequest) => {
     queryKey: PRODUCT_KEYS.search(searchParams),
     queryFn: async () => {
       console.log("[Product API] Searching products...", searchParams);
-      const result = await productApi.searchProducts(searchParams);
+      const result = await productApi.searchProductsPaged(searchParams);
       console.log("[Product API] Search response:", result);
       return result;
     },

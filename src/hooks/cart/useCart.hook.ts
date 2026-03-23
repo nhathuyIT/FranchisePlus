@@ -2,7 +2,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import * as cartApi from "@/api/cart/cart.api";
 import type {
-  AddProductToCartByStaffRequest,
+  CreateCartByStaffRequest,
+  CreateCartByStaffBulkRequest,
   AddProductToCartRequest,
   ApplyVoucherInCartRequest,
   CartStatus,
@@ -143,32 +144,35 @@ export const useCountCartItemByCartQuery = (cartId: string, enabled = true) => {
 };
 
 /**
- * Add a product to cart on staff/admin flow.
+ * Create a cart on staff/admin flow using nested items payload.
  *
  * Usage:
- * `const addByStaff = useAddProductToCartByStaffMutation();`
- * `addByStaff.mutate({ customerId, franchiseId, productFranchiseId, quantity, address, phone, options });`
+ * `const createCart = useCreateCartByStaffMutation();`
+ * `createCart.mutate({ customerId, franchiseId, items: [...] });`
  */
-export const useAddProductToCartByStaffMutation = () => {
+export const useCreateCartByStaffMutation = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (data: AddProductToCartByStaffRequest) =>
-      cartApi.addProductToCartByStaff(data),
+    mutationFn: (data: CreateCartByStaffRequest) =>
+      cartApi.createCartByStaff(data),
     onSuccess: async (_response, variables) => {
       await invalidateCartQueries(queryClient, {
         customerId: variables.customerId,
         status: "ACTIVE",
       });
-      toast.success("Product added to cart successfully!");
+      toast.success("Cart created successfully!");
     },
     onError: (error: Error) => {
-      toast.error("Failed to add product to cart", {
+      toast.error("Failed to create cart", {
         description: error.message,
       });
     },
   });
 };
+
+export const useAddProductToCartByStaffMutation = () =>
+  useCreateCartByStaffMutation();
 
 /**
  * Add a product to cart on customer flow.
@@ -384,11 +388,9 @@ export const useApplyVoucherInCartMutation = () => {
       cartId: string;
       data: ApplyVoucherInCartRequest;
     }) => cartApi.applyVoucherInCart(cartId, data),
-    onSuccess: async (response, variables) => {
+    onSuccess: async (_response, variables) => {
       await invalidateCartQueries(queryClient, {
         cartId: variables.cartId,
-        customerId: response?.customerId,
-        status: response?.status,
       });
       toast.success("Voucher applied successfully!");
     },
@@ -412,11 +414,9 @@ export const useRemoveVoucherInCartMutation = () => {
 
   return useMutation({
     mutationFn: (cartId: string) => cartApi.removeVoucherInCart(cartId),
-    onSuccess: async (response, cartId) => {
+    onSuccess: async (_response, cartId) => {
       await invalidateCartQueries(queryClient, {
         cartId,
-        customerId: response?.customerId,
-        status: response?.status,
       });
       toast.success("Voucher removed successfully!");
     },
@@ -489,4 +489,23 @@ export const useCancelCartMutation = () => {
     },
   });
 };
+export const useCreateCartByStaffBulkMutation = () => {
+  const queryClient = useQueryClient();
 
+  return useMutation({
+    mutationFn: (data: CreateCartByStaffBulkRequest) =>
+      cartApi.createCartByStaffBulk(data),
+    onSuccess: async (_response, variables) => {
+      await invalidateCartQueries(queryClient, {
+        customerId: variables.customerId,
+        status: "ACTIVE",
+      });
+      toast.success("Bulk cart created successfully!");
+    },
+    onError: (error: Error) => {
+      toast.error("Failed to create bulk cart", {
+        description: error.message,
+      });
+    },
+  });
+};
