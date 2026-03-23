@@ -2,7 +2,7 @@ import type { ID } from "./common";
 
 export interface ProductSize {
   productFranchiseId: ID;
-  size: "DEFAULT" | "SMALL" | "MEDIUM" | "LARGE";
+  size: string | null;
   price: number;
   isAvailable: boolean;
 }
