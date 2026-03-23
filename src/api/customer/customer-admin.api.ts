@@ -2,6 +2,8 @@ import { httpClient } from "../httpClient.api";
 import { axiosClient } from "../axios.config";
 import type { CustomerProfile } from "@/types/customer";
 import type {
+  CustomerKeywordLookupApiItem,
+  CustomerKeywordLookupItem,
   CustomerSearchRequest,
   CustomerSearchResponse,
   CustomerUpdateRequest,
@@ -109,4 +111,21 @@ export const updateStatus = async (
     url: `${BASE_URL}/${encodeId(id)}/status`,
     data,
   });
+};
+
+export const getCustomerByKeyword = async (
+  keyword: string,
+): Promise<CustomerKeywordLookupItem[]> => {
+  const response = await httpClient.get<CustomerKeywordLookupApiItem[], never>({
+    url: `/api/customers/find?keyword=${keyword}`,
+  });
+
+  return (response ?? []).map((customer) => ({
+    id: customer.value,
+    code: customer.code,
+    name: customer.name,
+    email: customer.email,
+    phone: customer.phone,
+    imageUrl: customer.image,
+  }));
 };

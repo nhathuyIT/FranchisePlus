@@ -37,6 +37,24 @@ export interface CustomerSearchResponse {
   pageInfo: PageInfoResponse;
 }
 
+export interface CustomerKeywordLookupItem {
+  id: string;
+  code: string;
+  name: string;
+  email: string;
+  phone: string;
+  imageUrl: string | null;
+}
+
+export interface CustomerKeywordLookupApiItem {
+  value: string;
+  code: string;
+  name: string;
+  email: string;
+  phone: string;
+  image: string | null;
+}
+
 // =============================================================================
 // CRUD Request Types
 // =============================================================================

@@ -61,7 +61,7 @@ const SaveBar = ({ hasDirtyRows, isSaving, onSave, onReset }: SaveBarProps) => {
   if (!hasDirtyRows && !isSaving) return null;
 
   return (
-    <div className="flex items-center justify-between gap-3 mb-4 rounded-xl border-2 border-amber-200 bg-linear-to-r from-amber-50 to-yellow-50 px-4 py-3 shadow-sm animate-in slide-in-from-top-2 duration-200">
+    <div className="flex items-center justify-between gap-3 mb-4 rounded-xl border-2 border-amber-200 bg-gradient-to-r from-amber-50 to-yellow-50 px-4 py-3 shadow-sm animate-in slide-in-from-top-2 duration-200">
       <div className="flex items-center gap-2">
         <div className="h-2 w-2 rounded-full bg-amber-400 animate-pulse" />
         <p className="text-sm font-medium text-amber-800">
@@ -250,78 +250,65 @@ export const InventoryTable = ({
           isEditable: canEdit && !!onSaveBulk,
         }}
       >
-        {/* Outer column: h-full so DataTable's internal "h-full" has a reference.
-            Banner + SaveBar are shrink-0; DataTable is wrapped in flex-1 min-h-0
-            so it absorbs only the remaining space after the banners. */}
-        <div className="h-full flex flex-col">
-          {/* Error banner — shrink-0 so it is never squeezed out */}
-          <div className="shrink-0">
-            <InventoryErrorBanner errors={validationErrors} />
-          </div>
+        {/* Error banner */}
+        <InventoryErrorBanner errors={validationErrors} />
 
-          {/* Save / Discard bar — shrink-0 */}
-          <div className="shrink-0">
-            <SaveBar
-              hasDirtyRows={hasDirtyRows}
-              isSaving={isSaving}
-              onSave={handleSave}
-              onReset={handleDiscard}
-            />
-          </div>
+        {/* Save / Discard bar — visible when there are pending changes */}
+        <SaveBar
+          hasDirtyRows={hasDirtyRows}
+          isSaving={isSaving}
+          onSave={handleSave}
+          onReset={handleDiscard}
+        />
 
-          {/* flex-1 min-h-0: gives DataTable a bounded height so its internal
-              scroll container works correctly regardless of banner/savebar height. */}
-          <div className="flex-1 min-h-0">
-            <DataTable
-              columns={inventoryColumns}
-              data={items}
-              isLoading={isLoading || isSaving}
-              error={error}
-              onRetry={onRetry}
-              emptyMessage="No inventory items found matching your criteria."
-              initialPageSize={10}
-              enableRowSelection={!!onBulkExport}
-              enableColumnVisibility
-              columnFilters={columnFilters}
-              bulkActions={bulkActions}
-              getRowStyle={getRowStyle}
-              onImport={onImport}
-              isImporting={isImporting}
-              onExport={handleExport}
-              isExporting={isExporting}
-              importLabel="Import Excel"
-              exportLabel="Export Excel"
-              renderActions={
-                onEdit || onDelete
-                  ? (item) => (
-                      <div className="flex gap-2">
-                        {onEdit && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="border-2 border-[#6D4C41] text-[#6D4C41] hover:bg-[#6D4C41] hover:text-white rounded-lg transition-all duration-200"
-                            onClick={() => onEdit(item)}
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                        )}
-                        {onDelete && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="border-2 border-red-500 text-red-500 hover:bg-red-500 hover:text-white rounded-lg transition-all duration-200"
-                            onClick={() => onDelete(item)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        )}
-                      </div>
-                    )
-                  : undefined
-              }
-            />
-          </div>
-        </div>
+        <DataTable
+          columns={inventoryColumns}
+          data={items}
+          isLoading={isLoading || isSaving}
+          error={error}
+          onRetry={onRetry}
+          emptyMessage="No inventory items found matching your criteria."
+          initialPageSize={10}
+          enableRowSelection={!!onBulkExport}
+          enableColumnVisibility
+          columnFilters={columnFilters}
+          bulkActions={bulkActions}
+          getRowStyle={getRowStyle}
+          onImport={onImport}
+          isImporting={isImporting}
+          onExport={handleExport}
+          isExporting={isExporting}
+          importLabel="Import Excel"
+          exportLabel="Export Excel"
+          renderActions={
+            onEdit || onDelete
+              ? (item) => (
+                  <div className="flex gap-2">
+                    {onEdit && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="border-2 border-[#6D4C41] text-[#6D4C41] hover:bg-[#6D4C41] hover:text-white rounded-lg transition-all duration-200"
+                        onClick={() => onEdit(item)}
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                    )}
+                    {onDelete && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="border-2 border-red-500 text-red-500 hover:bg-red-500 hover:text-white rounded-lg transition-all duration-200"
+                        onClick={() => onDelete(item)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    )}
+                  </div>
+                )
+              : undefined
+          }
+        />
       </InventoryInlineEditContext.Provider>
     </FormProvider>
   );

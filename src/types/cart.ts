@@ -7,17 +7,20 @@ export interface CartItemOptionRequest {
   quantity: number;
 }
 
-export interface AddProductToCartByStaffRequest {
-  customerId: string;
-  franchiseId: string;
+export interface StaffCartItemRequest {
   productFranchiseId: string;
   quantity: number;
-  address: string;
-  phone: string;
   note?: string;
-  message?: string;
   options?: CartItemOptionRequest[];
 }
+
+export interface CreateCartByStaffRequest {
+  customerId: string;
+  franchiseId: string;
+  items: StaffCartItemRequest[];
+}
+
+export type AddProductToCartByStaffRequest = CreateCartByStaffRequest;
 
 export interface AddProductToCartRequest {
   franchiseId: string;
@@ -44,12 +47,6 @@ export interface UpdateCartRequest {
   address?: string;
   phone?: string;
   note?: string;
-  message?: string;
-}
-
-export interface CheckoutCartRequest {
-  address: string;
-  phone: string;
   message?: string;
 }
 
@@ -127,18 +124,57 @@ export interface CartResponse
   cartItems: CartItemResponse[];
 }
 
+export interface StaffBulkCartOptionRequest {
+  productFranchiseId: string;
+  quantity: number;
+}
+
+export interface StaffBulkCartItemRequest {
+  productFranchiseId: string;
+  quantity: number;
+  note?: string;
+  options?: StaffBulkCartOptionRequest[];
+}
+
+export interface CreateCartByStaffBulkRequest {
+  customerId: string;
+  franchiseId: string;
+  items: StaffBulkCartItemRequest[];
+}
+
+export interface StaffBulkCartOptionPayload {
+  product_franchise_id: string;
+  quantity: number;
+}
+
+export interface StaffBulkCartItemPayload {
+  product_franchise_id: string;
+  quantity: number;
+  note?: string;
+  options?: StaffBulkCartOptionPayload[];
+}
+
+export interface StaffBulkAddCartPayload {
+  customer_id: string;
+  franchise_id: string;
+  items: StaffBulkCartItemPayload[];
+}
+
 export type GetCartsByCustomerResponse = CartResponse[];
 export type GetCartDetailResponse = CartResponse;
 export type UpdateCartResponse = CartResponse;
 export type DeleteCartItemResponse = CartResponse;
-export type UpdateCartOptionItemResponse = CartResponse;
-export type RemoveCartOptionItemResponse = CartResponse;
+export type UpdateCartOptionItemResponse = CartResponse | null;
+export type RemoveCartOptionItemResponse = CartResponse | null;
 export type ApplyVoucherInCartResponse = CartResponse;
 export type RemoveVoucherInCartResponse = CartResponse;
 export type CheckoutCartResponse = CartResponse;
 export type CancelCartResponse = CartResponse;
-export type AddProductToCartByStaffResponse = CartResponse;
+export type CreateCartByStaffResponse = CartResponse;
+export type CreateCartByStaffBulkResponse = CartResponse;
+export type AddProductToCartByStaffResponse = CreateCartByStaffResponse;
 export type AddProductToCartResponse = CartResponse;
+export type StaffBulkAddCartResponse = CreateCartByStaffBulkResponse;
 
 export type CountCartByCustomerResponse = number;
 export type CountCartItemByCartResponse = number;

@@ -1,13 +1,6 @@
 import type { ID, BaseTimestamp, SoftDeletable, Activatable } from "./common";
 
-export type ProductSizeCode =
-  | "DEFAULT"
-  | "SMALL"
-  | "MEDIUM"
-  | "LARGE"
-  | "S"
-  | "M"
-  | "L";
+export type ProductSizeCode = string | null;
 
 /**
  * Product entity - global product definition
@@ -117,5 +110,3 @@ export interface ProductDetailResponse {
   success: boolean;
   data: ProductDetailItem;
 }
-
-
