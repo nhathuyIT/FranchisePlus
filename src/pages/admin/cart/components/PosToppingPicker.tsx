@@ -35,6 +35,10 @@ const getSizeLabel = (size?: string | null) => {
   }
 };
 
+const getPreferredToppingSize = (
+  sizes: ProductListItem["sizes"],
+) => sizes.find((size) => size.isAvailable) ?? sizes[0];
+
 export const PosToppingPicker = ({
   selectedItem,
   toppings,
@@ -43,6 +47,10 @@ export const PosToppingPicker = ({
   onIncrementTopping,
   onDecrementTopping,
 }: PosToppingPickerProps) => {
+  const displayableToppings = toppings.filter((topping) =>
+    Boolean(getPreferredToppingSize(topping.sizes)),
+  );
+
   if (!selectedItem) {
     return (
       <div className="rounded-2xl border border-dashed border-[#D7CCC8] bg-[#FAF8F5] px-4 py-6 text-sm text-[#8D6E63]">
@@ -101,7 +109,7 @@ export const PosToppingPicker = ({
             </div>
           ))}
         </div>
-      ) : !toppings.length ? (
+      ) : !displayableToppings.length ? (
         <div className="rounded-2xl border border-dashed border-[#D7CCC8] bg-[#FAF8F5] px-4 py-6 text-sm text-[#8D6E63]">
           No toppings found for this franchise.
         </div>
@@ -110,12 +118,10 @@ export const PosToppingPicker = ({
           <p className="text-sm font-medium text-[#5D4037]">Toppings</p>
 
           <div className="grid gap-3">
-            {toppings.map((topping) => {
-              const firstAvailableSize = topping.sizes.find(
-                (size) => size.isAvailable,
-              );
+            {displayableToppings.map((topping) => {
+              const preferredSize = getPreferredToppingSize(topping.sizes);
 
-              if (!firstAvailableSize) {
+              if (!preferredSize) {
                 return null;
               }
 
@@ -142,9 +148,9 @@ export const PosToppingPicker = ({
                       </p>
                       <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-[#8D6E63]">
                         <span className="rounded-full bg-[#FAF4EE] px-2 py-1 font-medium text-[#6D4C41]">
-                          {getSizeLabel(firstAvailableSize.size)}
+                          {getSizeLabel(preferredSize.size)}
                         </span>
-                        <span>{formatCartMoney(firstAvailableSize.price)}</span>
+                        <span>{formatCartMoney(preferredSize.price)}</span>
                       </div>
                     </div>
                   </div>
