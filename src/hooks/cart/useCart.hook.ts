@@ -366,11 +366,9 @@ export const useApplyVoucherInCartMutation = () => {
       cartId: string;
       data: ApplyVoucherInCartRequest;
     }) => cartApi.applyVoucherInCart(cartId, data),
-    onSuccess: async (response, variables) => {
+    onSuccess: async (_response, variables) => {
       await invalidateCartQueries(queryClient, {
         cartId: variables.cartId,
-        customerId: response?.customerId,
-        status: response?.status,
       });
       toast.success("Voucher applied successfully!");
     },
@@ -394,11 +392,9 @@ export const useRemoveVoucherInCartMutation = () => {
 
   return useMutation({
     mutationFn: (cartId: string) => cartApi.removeVoucherInCart(cartId),
-    onSuccess: async (response, cartId) => {
+    onSuccess: async (_response, cartId) => {
       await invalidateCartQueries(queryClient, {
         cartId,
-        customerId: response?.customerId,
-        status: response?.status,
       });
       toast.success("Voucher removed successfully!");
     },

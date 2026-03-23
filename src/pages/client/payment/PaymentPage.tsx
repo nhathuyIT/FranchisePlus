@@ -31,7 +31,6 @@ const PaymentPage = () => {
   };
 
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("COD");
-  const [isSubmittingOrder, setIsSubmittingOrder] = useState(false);
   const [shippingInfo, setShippingInfo] = useState<ShippingInfo>({
     fullName: getUserName(),
     phone: getUserPhone(),
@@ -159,10 +158,6 @@ const PaymentPage = () => {
   const handleSubmitOrder = async (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
 
-    if (isSubmittingOrder) {
-      return;
-    }
-
     // Validate all fields
     const newErrors: { [key: string]: string } = {};
 
@@ -193,7 +188,7 @@ const PaymentPage = () => {
 
     if (cart.items.length === 0) {
       alert("Giỏ hàng trống!");
-      navigate("/menu");
+      navigate("/client/cart");
       return;
     }
 
@@ -219,8 +214,6 @@ const PaymentPage = () => {
     );
 
     try {
-      setIsSubmittingOrder(true);
-
       for (const cartId of targetCartIds) {
         await checkoutCartMutation.mutateAsync({
           cartId,
@@ -228,13 +221,17 @@ const PaymentPage = () => {
         });
       }
 
-      if (paymentMethod === "COD") {
-        navigate("/menu");
-      }
+      // if (paymentMethod === "COD") {
+      //   alert(
+      //     `Đơn hàng của bạn đã được xác nhận!\n\n` +
+      //       `Phương thức thanh toán: Thanh toán khi nhận hàng\n` +
+      //       `Tổng tiền: ${totalAmount.toLocaleString("vi-VN")} VND\n\n` +
+      //       `Chúng tôi sẽ liên hệ với bạn sớm nhất!`,
+      //   );
+      //   navigate("/menu");
+      // }
     } catch {
       // Error toast is handled in the mutation hook
-    } finally {
-      setIsSubmittingOrder(false);
     }
   };
 
@@ -554,20 +551,20 @@ const PaymentPage = () => {
               <div className="space-y-3 pt-4 border-t border-gray-200">
                 <button
                   onClick={handleSubmitOrder}
-                  disabled={isSubmittingOrder || checkoutCartMutation.isPending}
+                  disabled={checkoutCartMutation.isPending}
                   className="w-full bg-[#B8860B] text-white font-bold py-3 px-6 rounded-lg hover:bg-amber-700 transition-colors"
                 >
-                  {isSubmittingOrder || checkoutCartMutation.isPending
+                  {checkoutCartMutation.isPending
                     ? "Đang xử lý..."
                     : paymentMethod === "COD"
                       ? "Đặt hàng"
                       : "Thanh toán ngay"}
                 </button>
                 <button
-                  onClick={() => navigate("/menu")}
+                  onClick={() => navigate("/client/cart")}
                   className="w-full bg-gray-100 text-gray-700 font-semibold py-3 px-6 rounded-lg hover:bg-gray-200 transition-colors"
                 >
-                  Quay lại menu
+                  Quay lại giỏ hàng
                 </button>
               </div>
 

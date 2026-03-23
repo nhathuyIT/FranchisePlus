@@ -204,7 +204,7 @@ const MenuPage = () => {
 
   const toppingsVisible = useMemo(
     () =>
-      toppings.filter((product) => product.sizes.some((s) => s.isAvailable)),
+      toppings.filter((product) => product.sizes.length > 0),
     [toppings],
   );
 

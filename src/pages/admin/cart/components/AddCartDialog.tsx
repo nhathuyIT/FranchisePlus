@@ -22,10 +22,12 @@ import {
 } from "@/components/ui/select";
 import { toast } from "sonner";
 import { useFranchiseSelect } from "@/hooks/franchise";
-import { useCreateCartByStaffBulkMutation } from "@/hooks/cart/useCart.hook";
+import {
+  useCreateCartByStaffBulkMutation,
+} from "@/hooks/cart/useCart.hook";
 import {
   useGetMenuByFranchise,
-  useGetToppingProductsByFranchise,
+  useGetProductsByFranchiseAndCategory,
 } from "@/hooks/product/useMenu.hook";
 import type {
   CartLookupUser,
@@ -48,7 +50,7 @@ interface AddCartDialogProps {
 }
 
 const isToppingCategory = (categoryName: string) =>
-  /topping/i.test(categoryName.trim());
+  categoryName.trim().toLowerCase() === "topping";
 
 const createDraftId = () =>
   `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
@@ -73,6 +75,10 @@ const getSizeLabel = (size?: string | null) => {
       return normalizedSize;
   }
 };
+
+const getPreferredToppingSize = (
+  sizes: ProductListItem["sizes"],
+) => sizes.find((size) => size.isAvailable) ?? sizes[0];
 
 export const AddCartDialog = ({
   open,
@@ -127,29 +133,23 @@ export const AddCartDialog = ({
   const { data: menuData = [], isLoading: isMenuLoading } =
     useGetMenuByFranchise(selectedFranchiseId);
 
-  const sortedMenuCategories = useMemo(
+  const toppingCategoryId = useMemo(
     () =>
-      [...menuData].sort(
-        (left, right) =>
-          Number(left.categoryDisplayOrder ?? 0) -
-          Number(right.categoryDisplayOrder ?? 0),
+      String(
+        menuData.find((category) => isToppingCategory(category.categoryName))
+          ?.categoryId ?? "",
       ),
     [menuData],
   );
 
-  const toppingCategoryIds = useMemo(
-    () =>
-      sortedMenuCategories
-        .filter((category) => isToppingCategory(category.categoryName))
-        .map((category) => String(category.categoryId)),
-    [sortedMenuCategories],
-  );
-
   const { data: toppingProducts = [], isLoading: isToppingLoading } =
-    useGetToppingProductsByFranchise(selectedFranchiseId, toppingCategoryIds);
+    useGetProductsByFranchiseAndCategory(
+      selectedFranchiseId,
+      toppingCategoryId,
+    );
 
   const categoryTabs = useMemo<PosCategoryTab[]>(() => {
-    return sortedMenuCategories.reduce<PosCategoryTab[]>((tabs, category) => {
+    return menuData.reduce<PosCategoryTab[]>((tabs, category) => {
       if (isToppingCategory(category.categoryName)) {
         return tabs;
       }
@@ -169,19 +169,19 @@ export const AddCartDialog = ({
 
       return tabs;
     }, []);
-  }, [sortedMenuCategories]);
+  }, [menuData]);
 
   const activeProducts = useMemo(() => {
     if (!activeCategoryId) return [];
 
-    const matchedCategory = sortedMenuCategories.find(
+    const matchedCategory = menuData.find(
       (menuCategory) => String(menuCategory.categoryId) === activeCategoryId,
     );
 
     return (matchedCategory?.products ?? []).filter((product) =>
       product.sizes.some((size) => size.isAvailable),
     );
-  }, [activeCategoryId, sortedMenuCategories]);
+  }, [activeCategoryId, menuData]);
 
   const selectedDraftItem = useMemo(
     () => draftItems.find((item) => item.id === selectedDraftItemId) ?? null,
@@ -306,14 +306,15 @@ export const AddCartDialog = ({
   };
 
   const handleIncrementTopping = (itemId: string, topping: ProductListItem) => {
-    const firstAvailableSize = topping.sizes.find((size) => size.isAvailable);
-    if (!firstAvailableSize) {
+    const preferredSize = getPreferredToppingSize(topping.sizes);
+    if (!preferredSize) {
       return;
     }
 
     setDraftItems((current) =>
       current.map((item) => {
         if (item.id !== itemId) return item;
+        if (!item.isHaveTopping) return item;
 
         const existingOptionIndex = item.options.findIndex(
           (option) => option.productId === String(topping.productId),
@@ -323,10 +324,10 @@ export const AddCartDialog = ({
           const nextOption: PosDraftCartOption = {
             id: createDraftId(),
             productId: String(topping.productId),
-            productFranchiseId: String(firstAvailableSize.productFranchiseId),
+            productFranchiseId: String(preferredSize.productFranchiseId),
             productName: topping.name,
-            sizeLabel: getSizeLabel(firstAvailableSize.size),
-            price: firstAvailableSize.price,
+            sizeLabel: getSizeLabel(preferredSize.size),
+            price: preferredSize.price,
             quantity: 1,
             imageUrl: topping.imageUrl || undefined,
           };
@@ -405,9 +406,13 @@ export const AddCartDialog = ({
       })),
     };
 
-    const response = await createCartMutation.mutateAsync(payload);
-    onCreated?.(response.id);
-    onOpenChange(false);
+    try {
+      const response = await createCartMutation.mutateAsync(payload);
+      onCreated?.(response.id);
+      onOpenChange(false);
+    } catch {
+      // Error toast is handled in the mutation hook.
+    }
   };
 
   return (

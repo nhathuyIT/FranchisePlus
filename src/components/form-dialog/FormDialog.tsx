@@ -63,6 +63,7 @@ export function FormDialog<TFormData extends FieldValues>({
   // Form props (passed through to FormContent)
   schema,
   fields,
+  onImageUpload,
   defaultValues,
   values,
   mode = "create",
@@ -130,6 +131,7 @@ export function FormDialog<TFormData extends FieldValues>({
           key={resetKey}
           schema={schema}
           fields={fields}
+          onImageUpload={onImageUpload}
           defaultValues={defaultValues}
           values={values}
           mode={mode}

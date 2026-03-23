@@ -10,9 +10,9 @@ import {
 } from "@/hooks/product-franchise/useProductFranchiseQuery";
 import { useInventorySearch } from "@/hooks/inventory/useInventory.hooks";
 import type { InventorySearchItem } from "@/api/inventory/inventory.type";
-import { AddFranchiseProductModal } from "./AddFranchiseProductModal";
-import { EditFranchiseProductModal } from "./EditFranchiseProductModal";
-import { ViewFranchiseProductModal } from "./ViewFranchiseProductModal";
+import { AddFranchiseProductModal } from "./inventory/AddFranchiseProductModal";
+import { EditFranchiseProductModal } from "./inventory/EditFranchiseProductModal";
+import { ViewFranchiseProductModal } from "./inventory/ViewFranchiseProductModal";
 
 interface FranchiseInventoryTabProps {
   franchiseId: string;
