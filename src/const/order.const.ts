@@ -18,6 +18,7 @@ export interface OrderItemData {
 
 export interface Order {
   id: number;
+  rawId?: string;
   code: string;
   franchiseId: number;
   franchiseName: string;

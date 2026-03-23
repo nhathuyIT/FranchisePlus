@@ -7,3 +7,5 @@ export interface ShippingInfo {
 }
 
 export type PaymentMethod = "COD" | "QR";
+
+export type PaymentStatus = "PENDING" | "PAID" | "REFUNDED";
