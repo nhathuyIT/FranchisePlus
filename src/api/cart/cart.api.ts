@@ -70,7 +70,11 @@ const normalizeCartProduct = (
     imageUrl?: string;
   },
 ) => ({
-  productName: product?.name || product?.productName || fallback?.name || "Unnamed product",
+  productName:
+    product?.name ||
+    product?.productName ||
+    fallback?.name ||
+    "Unnamed product",
   productImageUrl:
     product?.imageUrl || product?.productImageUrl || fallback?.imageUrl || "",
 });
@@ -169,15 +173,14 @@ export const getCartsByCustomerId = async ({
   customerId,
   status,
 }: GetCartsByCustomerParams): Promise<GetCartsByCustomerResponse> => {
-  const response = await httpClient.get<
-    RawCartResponse[],
-    { status?: string }
-  >({
-    url: `/api/carts/customer/${customerId}`,
-    params: {
-      status,
+  const response = await httpClient.get<RawCartResponse[], { status?: string }>(
+    {
+      url: `/api/carts/customer/${customerId}`,
+      params: {
+        status,
+      },
     },
-  });
+  );
 
   return (response ?? []).map(normalizeCart);
 };
@@ -239,11 +242,6 @@ export const deleteCartItem = async (
   });
 
   return normalizeCart(response!);
-  if (!response) {
-    return null;
-  }
-
-  return normalizeCart(response);
 };
 
 export const updateCartItem = async (
