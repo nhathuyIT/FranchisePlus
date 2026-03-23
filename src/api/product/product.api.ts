@@ -104,7 +104,7 @@ export interface UpdateProductRequest {
 // ── Mapper: snake_case API → camelCase Product ──────────────────────────────
 
 export const mapApiProduct = (raw: ApiProduct): Product => ({
-  id: raw.id as any, // MongoDB ObjectId as string, cast to ID type
+  id: raw.id as unknown as Product["id"],
   sku: raw.SKU,
   name: raw.name,
   description: raw.description,

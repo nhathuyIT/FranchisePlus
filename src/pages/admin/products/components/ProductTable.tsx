@@ -4,7 +4,7 @@ import { DataTable, type ColumnFilter, type BulkAction } from "@/components/comm
 import { createProductColumns } from "../columns/product.columns";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import type { Product } from "@/types/product.type";
+import type { AdminProductRow } from "../columns/product.columns";
 import { toast } from "sonner";
 import {
   useExcelExport,
@@ -15,7 +15,7 @@ import {
 } from "@/lib/excel";
 
 interface ProductTableProps {
-  products: (Product & { quantity?: number })[];
+  products: AdminProductRow[];
   pagination?: {
     pageNum: number;
     pageSize: number;
@@ -27,13 +27,13 @@ interface ProductTableProps {
   isLoading?: boolean;
   error?: Error | null;
   onRetry?: () => void;
-  onView?: (product: Product) => void;
-  onEdit?: (product: Product) => void;
-  onDelete?: (product: Product) => void;
-  onBulkDelete?: (products: Product[]) => void;
+  onView?: (product: AdminProductRow) => void;
+  onEdit?: (product: AdminProductRow) => void;
+  onDelete?: (product: AdminProductRow) => void;
+  onBulkDelete?: (products: AdminProductRow[]) => void;
   // Server-side search
   onSearch?: (keyword: string) => void;
-  onStatusToggle?: (row: Product & { quantity?: number }, isActive: boolean) => void;
+  onStatusToggle?: (row: AdminProductRow, isActive: boolean) => void;
   statusPendingId?: string | null;
   canEdit?: boolean;
   isManagerView?: boolean;
@@ -123,7 +123,7 @@ export const ProductTable = ({
   ];
 
   // Bulk Actions Configuration
-  const bulkActions: BulkAction<Product>[] = [];
+  const bulkActions: BulkAction<AdminProductRow>[] = [];
 
   if (onBulkDelete) {
     bulkActions.push({

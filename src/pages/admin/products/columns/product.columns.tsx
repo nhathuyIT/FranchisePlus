@@ -3,17 +3,23 @@ import { Badge } from "@/components/ui/badge";
 import { StatusToggleCell } from "@/components/common/StatusToggleCell";
 import type { Product } from "@/types/product.type";
 
-type ProductRow = Product & { quantity?: number };
+export type AdminProductRow = Product & {
+  franchiseProductId?: string;
+  size?: string;
+  quantity?: number;
+  inventoryId?: string;
+  alertThreshold?: number;
+};
 
 interface ColumnOptions {
-  onStatusToggle?: (row: ProductRow, isActive: boolean) => void;
+  onStatusToggle?: (row: AdminProductRow, isActive: boolean) => void;
   statusPendingId?: string | null;
   canEdit?: boolean;
   isManagerView?: boolean;
 }
 
-export const createProductColumns = (options?: ColumnOptions): ColumnDef<ProductRow>[] => {
-  const columns: ColumnDef<ProductRow>[] = [];
+export const createProductColumns = (options?: ColumnOptions): ColumnDef<AdminProductRow>[] => {
+  const columns: ColumnDef<AdminProductRow>[] = [];
 
   if (!options?.isManagerView) {
     columns.push(
@@ -111,7 +117,7 @@ export const createProductColumns = (options?: ColumnOptions): ColumnDef<Product
             </span>
           ),
         },
-      ] as ColumnDef<ProductRow>[]) 
+      ] as ColumnDef<AdminProductRow>[]) 
     : []),
   {
     accessorKey: "isActive",
