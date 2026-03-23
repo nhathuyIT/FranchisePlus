@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Search, Loader2, CreditCard, CheckCircle2 } from "lucide-react";
+import { Search, CreditCard, CheckCircle2 } from "lucide-react";
 import type { OrderStatus, Order } from "@/const/order.const";
 import type { ApiOrderStatus } from "@/api/order/order.api";
 import { useGetMyOrders } from "@/hooks/client/useOrder.hook";
