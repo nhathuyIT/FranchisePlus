@@ -61,6 +61,5 @@ export const ROUTER_URL = {
     CUSTOMERS: "customers",
     CART: "cart",
     CART_CHECKOUT: "cart/:cartId/checkout",
-    ORDERS: "orders",
   },
 };
