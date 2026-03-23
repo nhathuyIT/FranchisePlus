@@ -50,6 +50,12 @@ export interface UpdateCartRequest {
   message?: string;
 }
 
+export interface CheckoutCartRequest {
+  address: string;
+  phone: string;
+  message?: string;
+}
+
 export interface UpdateCartOptionItemRequest {
   cartItemId: string;
   optionProductFranchiseId: string;
