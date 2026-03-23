@@ -32,18 +32,22 @@ type ProductsAllDerived = {
   toppingCategoryId: string;
 };
 
-const MenuProductDetailPage = () => {
-  const { franchiseId = "", productFranchiseId = "" } = useParams<{
-    franchiseId: string;
-    productFranchiseId: string;
-  }>();
+type MenuProductDetailPageContentProps = {
+  franchiseId: string;
+  productId: string;
+};
+
+const MenuProductDetailPageContent = ({
+  franchiseId,
+  productId,
+}: MenuProductDetailPageContentProps) => {
   const navigate = useNavigate();
   const { addItem } = useCart();
   const { authUser } = useAuthStore();
 
   // ── State ──────────────────────────────────────────────────────
   const [selectedSizeProductFranchiseId, setSelectedSizeProductFranchiseId] =
-    useState(productFranchiseId);
+    useState("");
   const [selectedToppings, setSelectedToppings] = useState<
     Record<string, string>
   >({});
@@ -52,7 +56,7 @@ const MenuProductDetailPage = () => {
 
   // ── Queries ────────────────────────────────────────────────────
   const { data: productDetailData, isLoading: isLoadingProduct } =
-    useGetProductDetail(franchiseId, productFranchiseId);
+    useGetProductDetail(franchiseId, productId);
 
   const { data: productsAllData } =
     useGetProductsByFranchise<ProductsAllDerived>(franchiseId, {
@@ -744,6 +748,21 @@ const MenuProductDetailPage = () => {
       </div>
       <FooterInfo />
     </>
+  );
+};
+
+const MenuProductDetailPage = () => {
+  const { franchiseId = "", productId = "" } = useParams<{
+    franchiseId: string;
+    productId: string;
+  }>();
+
+  return (
+    <MenuProductDetailPageContent
+      key={`${franchiseId}:${productId}`}
+      franchiseId={franchiseId}
+      productId={productId}
+    />
   );
 };
 

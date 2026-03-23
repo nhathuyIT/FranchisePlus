@@ -4,7 +4,7 @@ export const ROUTER_URL = {
   CONTACT: "/contact",
   LOCATIONS: "/locations",
   MENU: "menu",
-  MENU_PRODUCT_DETAIL: "menu/product/:franchiseId/:productFranchiseId",
+  MENU_PRODUCT_DETAIL: "menu/product/:franchiseId/:productId",
 
   PRODUCTS: "/products",
   CLIENT: "/client",

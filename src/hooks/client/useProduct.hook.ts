@@ -26,8 +26,8 @@ const PRODUCT_KEYS = {
     ["products", franchiseId, "all"] as const,
   productsByFranchiseAndCategory: (franchiseId: string, categoryId: string) =>
     ["client", "products", franchiseId, categoryId] as const,
-  productDetail: (franchiseId: string, productFranchiseId: string) =>
-    ["client", "product", franchiseId, productFranchiseId, "detail"] as const,
+  productDetail: (franchiseId: string, productId: string) =>
+    ["client", "product", franchiseId, productId, "detail"] as const,
 };
 
 const getErrorMessage = (error: unknown) => {
@@ -207,12 +207,12 @@ export const useGetToppingByFranchise = (franchiseId: string) => {
 
 export const useGetProductDetail = (
   franchiseId: string,
-  productFranchiseId: string,
+  productId: string,
 ) => {
   const query = useQuery<ProductDetailItem>({
-    queryKey: PRODUCT_KEYS.productDetail(franchiseId, productFranchiseId),
-    queryFn: () => productApi.getProductDetail(franchiseId, productFranchiseId),
-    enabled: !!franchiseId && !!productFranchiseId,
+    queryKey: PRODUCT_KEYS.productDetail(franchiseId, productId),
+    queryFn: () => productApi.getProductDetail(franchiseId, productId),
+    enabled: !!franchiseId && !!productId,
   });
 
   useQueryErrorToast(
