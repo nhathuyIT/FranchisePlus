@@ -36,12 +36,6 @@ export interface HttpClient {
 
   put<T, D = unknown>(config: HttpRequestConfig<D>): Promise<T | null>;
 
-  /**
-   * PUT request that bypasses the automatic camelCase → snake_case interceptor.
-   * Use this when the backend expects exact key naming from the payload.
-   */
-  putRaw<T, D = unknown>(config: HttpRequestConfig<D>): Promise<T | null>;
-
   patch<T, D = unknown>(config: HttpRequestConfig<D>): Promise<T | null>;
 
   delete<T, P extends Record<string, unknown> = Record<string, unknown>>(

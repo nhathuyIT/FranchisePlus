@@ -23,7 +23,7 @@ productAxios.interceptors.response.use(
       });
     }
     return Promise.reject(error);
-  }
+  },
 );
 
 // ── Raw API types (snake_case – matches backend) ────────────────────────────
@@ -117,7 +117,7 @@ export const searchProducts = async (
       message: string;
       data: ApiProduct[];
     }>("/api/products/search", payload);
-    
+
     return (response.data.data ?? []).map(mapApiProduct);
   } catch (error) {
     console.error("[Product API] Search error:", error);
