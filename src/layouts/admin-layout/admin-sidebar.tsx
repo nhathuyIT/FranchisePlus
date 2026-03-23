@@ -180,7 +180,7 @@ const AdminSideBar = ({ collapsed = false }: AdminSidebarProps) => {
       )}
 
       {/* Navigation */}
-      <nav className="flex-1 overflow-y-auto py-4 px-2">
+      <nav className="flex-1 overflow-y-auto scrollbar-hide py-4 px-2">
         <ul className="space-y-1">
           {visibleMenuItems.map((item) => {
             const Icon = iconMap[item.icon];
