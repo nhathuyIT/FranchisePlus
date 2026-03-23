@@ -1,26 +1,88 @@
 import { useEffect, useMemo, useState } from "react";
 import type { CartResponse } from "@/types/cart";
 
+const CART_SELECTION_STORAGE_KEY = "client-cart-selected-item-ids";
+
+const readStoredSelection = () => {
+  if (typeof window === "undefined") {
+    return { ids: [] as string[], hasStoredSelection: false };
+  }
+
+  try {
+    const raw = window.sessionStorage.getItem(CART_SELECTION_STORAGE_KEY);
+
+    if (!raw) {
+      return { ids: [] as string[], hasStoredSelection: false };
+    }
+
+    const parsed = JSON.parse(raw);
+    const ids = Array.isArray(parsed)
+      ? parsed.filter(
+          (cartItemId): cartItemId is string =>
+            typeof cartItemId === "string" && cartItemId.length > 0,
+        )
+      : [];
+
+    return {
+      ids,
+      hasStoredSelection: true,
+    };
+  } catch {
+    return { ids: [] as string[], hasStoredSelection: false };
+  }
+};
+
 export function useCartSelection(carts: CartResponse[]) {
-  const [selectedItemIds, setSelectedItemIds] = useState<string[]>([]);
+  const initialSelection = useMemo(() => readStoredSelection(), []);
+  const [selectedItemIdsState, setSelectedItemIdsState] = useState<string[]>(
+    initialSelection.ids,
+  );
+  const [hasStoredSelection, setHasStoredSelection] = useState<boolean>(
+    initialSelection.hasStoredSelection,
+  );
 
   const allCartItemIds = useMemo(
     () => carts.flatMap((cart) => cart.cartItems.map((item) => item.cartItemId)),
     [carts],
   );
 
+  const selectedItemIds = useMemo(() => {
+    const validSelection = selectedItemIdsState.filter((cartItemId) =>
+      allCartItemIds.includes(cartItemId),
+    );
+
+    if (hasStoredSelection) {
+      return validSelection;
+    }
+
+    return allCartItemIds;
+  }, [allCartItemIds, hasStoredSelection, selectedItemIdsState]);
+
   useEffect(() => {
-    setSelectedItemIds(allCartItemIds);
-  }, [allCartItemIds]);
+    if (typeof window === "undefined") return;
+
+    window.sessionStorage.setItem(
+      CART_SELECTION_STORAGE_KEY,
+      JSON.stringify(selectedItemIds),
+    );
+  }, [selectedItemIds]);
+
+  const commitSelection = (nextSelectedItemIds: string[]) => {
+    setHasStoredSelection(true);
+    setSelectedItemIdsState(nextSelectedItemIds);
+  };
 
   const toggleItem = (cartItemId: string, checked: boolean) => {
-    setSelectedItemIds((current) => {
-      if (checked) {
-        return current.includes(cartItemId) ? current : [...current, cartItemId];
-      }
+    if (checked) {
+      commitSelection(
+        selectedItemIds.includes(cartItemId)
+          ? selectedItemIds
+          : [...selectedItemIds, cartItemId],
+      );
+      return;
+    }
 
-      return current.filter((id) => id !== cartItemId);
-    });
+    commitSelection(selectedItemIds.filter((id) => id !== cartItemId));
   };
 
   const toggleCart = (cartId: string, checked: boolean) => {
@@ -29,21 +91,20 @@ export function useCartSelection(carts: CartResponse[]) {
 
     const cartItemIds = cart.cartItems.map((item) => item.cartItemId);
 
-    setSelectedItemIds((current) => {
-      if (checked) {
-        return Array.from(new Set([...current, ...cartItemIds]));
-      }
+    if (checked) {
+      commitSelection(Array.from(new Set([...selectedItemIds, ...cartItemIds])));
+      return;
+    }
 
-      return current.filter((id) => !cartItemIds.includes(id));
-    });
+    commitSelection(selectedItemIds.filter((id) => !cartItemIds.includes(id)));
   };
 
   const toggleAll = (checked: boolean) => {
-    setSelectedItemIds(checked ? allCartItemIds : []);
+    commitSelection(checked ? allCartItemIds : []);
   };
 
   const removeSelection = (cartItemId: string) => {
-    setSelectedItemIds((current) => current.filter((id) => id !== cartItemId));
+    commitSelection(selectedItemIds.filter((id) => id !== cartItemId));
   };
 
   const isCartChecked = (cartId: string) => {

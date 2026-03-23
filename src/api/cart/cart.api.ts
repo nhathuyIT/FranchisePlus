@@ -23,6 +23,8 @@ import type {
   RemoveCartOptionItemRequest,
   RemoveCartOptionItemResponse,
   RemoveVoucherInCartResponse,
+  UpdateCartItemOptionsRequest,
+  UpdateCartItemOptionsResponse,
   UpdateCartOptionItemRequest,
   UpdateCartOptionItemResponse,
   UpdateCartRequest,
@@ -208,7 +210,19 @@ export const createCartByStaffBulk = async (
 };
 export const addProductToCartByStaff = async (
   data: AddProductToCartByStaffRequest,
-): Promise<AddProductToCartByStaffResponse> => createCartByStaff(data);
+): Promise<AddProductToCartByStaffResponse> =>
+  createCartByStaff({
+    customerId: data.customerId,
+    franchiseId: data.franchiseId,
+    items: [
+      {
+        productFranchiseId: data.productFranchiseId,
+        quantity: data.quantity,
+        note: data.note,
+        options: data.options,
+      },
+    ],
+  });
 
 export const addProductToCart = async (
   data: AddProductToCartRequest,
@@ -339,6 +353,23 @@ export const updateOptionItemQuantity = async (
   return normalizeCart(response);
 };
 
+export const updateCartItemOptions = async (
+  data: UpdateCartItemOptionsRequest,
+): Promise<UpdateCartItemOptionsResponse> => {
+  const response = await httpClient.put<
+    RawCartResponse,
+    UpdateCartItemOptionsRequest
+  >({
+    url: "/api/carts/items/update-options-cart-item",
+    data,
+  });
+
+  if (!response) {
+    return null;
+  }
+
+  return normalizeCart(response);
+};
 export const removeOptionItem = async (
   data: RemoveCartOptionItemRequest,
 ): Promise<RemoveCartOptionItemResponse> => {
@@ -361,18 +392,30 @@ export const applyVoucherInCart = async (
   cartId: string,
   data: ApplyVoucherInCartRequest,
 ): Promise<ApplyVoucherInCartResponse> => {
-  await httpClient.put<null, ApplyVoucherInCartRequest>({
+  const response = await httpClient.put<RawCartResponse, ApplyVoucherInCartRequest>({
     url: `/api/carts/${cartId}/apply-voucher`,
     data,
   });
+
+  if (!response) {
+    return null;
+  }
+
+  return normalizeCart(response);
 };
 
 export const removeVoucherInCart = async (
   cartId: string,
 ): Promise<RemoveVoucherInCartResponse> => {
-  await httpClient.delete<null>({
+  const response = await httpClient.delete<RawCartResponse>({
     url: `/api/carts/${cartId}/remove-voucher`,
   });
+
+  if (!response) {
+    return null;
+  }
+
+  return normalizeCart(response);
 };
 
 export const checkoutCart = async (
@@ -396,3 +439,6 @@ export const cancelCart = async (
 
   return normalizeCart(response!);
 };
+
+
+
