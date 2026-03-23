@@ -20,6 +20,7 @@ import {
   CalendarDays,
   Wallet,
   TicketPercent,
+  ReceiptText,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -45,6 +46,7 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   calendar: CalendarDays,
   cart: ShoppingCart,
   wallet: Wallet,
+  order: ReceiptText,
 };
 
 const sidebarMenuItems = ADMIN_MENU.filter((item) => {

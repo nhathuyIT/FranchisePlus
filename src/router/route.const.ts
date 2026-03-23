@@ -54,6 +54,7 @@ export const ROUTER_URL = {
     PRODUCTS_CREATE: "products/create",
     PRODUCTS_EDIT: "products/:id/edit",
     PRODUCTS_DETAIL: "products/:id",
+    ORDERS: "orders",
     PROMOTIONS: "promotions",
     VOUCHERS: "vouchers",
     LOYALTY_RULES: "loyalty-rules",
