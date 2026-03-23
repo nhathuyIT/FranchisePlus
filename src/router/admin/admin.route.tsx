@@ -18,6 +18,10 @@ const RoleSelectorPage = React.lazy(
   () => import("@/pages/admin/role-selector/role-selector-page"),
 );
 
+const AdminCartCheckoutPage = React.lazy(
+  () => import("@/pages/admin/cart/checkout"),
+);
+
 export const AdminRoutes = (
   <>
     <Route path={ROUTER_URL.ADMIN}>
@@ -55,6 +59,14 @@ export const AdminRoutes = (
             }
           />
         ))}
+        <Route
+          path={ROUTER_URL.ADMIN_ROUTER.CART_CHECKOUT}
+          element={
+            <PermissionGuard requiredPermissions={[Permission.MANAGE_CART]}>
+              <AdminCartCheckoutPage />
+            </PermissionGuard>
+          }
+        />
         <Route
           path={ROUTER_URL.ADMIN_ROUTER.MY_PROFILE}
           element={<AdminMyProfilePage />}

@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -10,9 +10,11 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
+  useApplyVoucherInCartMutation,
   useCartDetailQuery,
   useDeleteCartItemMutation,
   useRemoveCartOptionItemMutation,
+  useRemoveVoucherInCartMutation,
   useUpdateCartItemMutation,
   useUpdateCartMutation,
   useUpdateCartOptionItemMutation,
@@ -20,6 +22,11 @@ import {
 import { useGetMenuByFranchise } from "@/hooks/product/useMenu.hook";
 import { getSizeLabel } from "@/pages/client/menu/lib/helpers";
 import type { UpdateCartRequest } from "@/types/cart";
+import {
+  formatCartMoney,
+  formatVoucherValue,
+} from "../utils/cartDisplay";
+import { AdminCartVoucherCard } from "./AdminCartVoucherCard";
 import { EditCartCartForm } from "./EditCartCartForm";
 import { EditCartItemCard } from "./EditCartItemCard";
 
@@ -40,15 +47,18 @@ export const EditCartDialog = ({
   const cartDetailQuery = useCartDetailQuery(cartId ?? "", open && !!cartId);
   const cart = cartDetailQuery.data ?? null;
 
+  const applyVoucherMutation = useApplyVoucherInCartMutation();
   const updateCartMutation = useUpdateCartMutation();
   const updateCartItemMutation = useUpdateCartItemMutation();
   const deleteCartItemMutation = useDeleteCartItemMutation();
   const updateOptionMutation = useUpdateCartOptionItemMutation();
   const removeOptionMutation = useRemoveCartOptionItemMutation();
+  const removeVoucherMutation = useRemoveVoucherInCartMutation();
 
   const [isSavingCartInfo, setIsSavingCartInfo] = useState(false);
   const [pendingItemIds, setPendingItemIds] = useState<string[]>([]);
   const [pendingOptionKeys, setPendingOptionKeys] = useState<string[]>([]);
+  const [voucherCode, setVoucherCode] = useState("");
 
   const { data: menuData = [] } = useGetMenuByFranchise(cart?.franchiseId ?? "");
 
@@ -107,6 +117,15 @@ export const EditCartDialog = ({
 
   const resolveSizeLabel = (productFranchiseId: string) =>
     sizeLabelByProductFranchiseId.get(String(productFranchiseId));
+
+  useEffect(() => {
+    if (!open) {
+      setVoucherCode("");
+      return;
+    }
+
+    setVoucherCode(cart?.voucherCode ?? "");
+  }, [cart?.id, cart?.voucherCode, open]);
 
   const handleSaveCartInfo = async (data: UpdateCartRequest) => {
     if (!cartId || isSavingCartInfo) return false;
@@ -229,6 +248,67 @@ export const EditCartDialog = ({
     }
   };
 
+  const canManageVoucher =
+    !!cartId &&
+    !!cart &&
+    cart.status === "ACTIVE" &&
+    cart.cartItems.length > 0;
+  const hasAppliedVoucher =
+    !!cart &&
+    (Boolean(cart.voucherId) ||
+      Boolean(cart.voucherCode?.trim()) ||
+      Number(cart.voucherDiscount || 0) > 0);
+  const totalDiscount = cart
+    ? cart.promotionDiscount + cart.voucherDiscount + cart.loyaltyDiscount
+    : 0;
+  const voucherValueLabel = formatVoucherValue(
+    cart?.voucherType,
+    cart?.voucherValue,
+  );
+
+  const handleApplyVoucher = async () => {
+    if (
+      !cartId ||
+      !canManageVoucher ||
+      !voucherCode.trim() ||
+      applyVoucherMutation.isPending
+    ) {
+      return false;
+    }
+
+    try {
+      await applyVoucherMutation.mutateAsync({
+        cartId,
+        data: {
+          voucherCode: voucherCode.trim(),
+        },
+      });
+      await cartDetailQuery.refetch();
+      return true;
+    } catch {
+      return false;
+    }
+  };
+
+  const handleRemoveVoucher = async () => {
+    if (
+      !cartId ||
+      !canManageVoucher ||
+      !hasAppliedVoucher ||
+      removeVoucherMutation.isPending
+    ) {
+      return false;
+    }
+
+    try {
+      await removeVoucherMutation.mutateAsync(cartId);
+      await cartDetailQuery.refetch();
+      return true;
+    } catch {
+      return false;
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-[calc(100vw-2rem)] overflow-hidden p-0 sm:max-w-[1280px]">
@@ -236,7 +316,7 @@ export const EditCartDialog = ({
           <DialogHeader className="border-b border-[#E8DFD6] px-6 py-5">
             <DialogTitle className="text-[#3E2723]">Edit Cart</DialogTitle>
             <DialogDescription className="text-[#8D6E63]">
-              Update cart info, item quantities, notes, and existing option rows.
+              Update cart info, voucher, item quantities, notes, and existing option rows.
             </DialogDescription>
           </DialogHeader>
 
@@ -272,6 +352,95 @@ export const EditCartDialog = ({
                   isSaving={isSavingCartInfo}
                   onSave={handleSaveCartInfo}
                 />
+
+                <AdminCartVoucherCard
+                  mode="cart"
+                  voucherCode={voucherCode}
+                  currentVoucherCode={cart.voucherCode}
+                  hasAppliedVoucher={hasAppliedVoucher}
+                  voucherDiscount={cart.voucherDiscount}
+                  voucherType={cart.voucherType}
+                  voucherValue={cart.voucherValue}
+                  disabled={!canManageVoucher}
+                  isApplying={applyVoucherMutation.isPending}
+                  isRemoving={removeVoucherMutation.isPending}
+                  onVoucherCodeChange={setVoucherCode}
+                  onApply={() => {
+                    void handleApplyVoucher();
+                  }}
+                  onRemove={() => {
+                    void handleRemoveVoucher();
+                  }}
+                />
+
+                <section className="rounded-2xl border border-[#E8DFD6] bg-[#FFFDFC] p-5 shadow-sm">
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                      <p className="text-sm font-semibold text-[#3E2723]">
+                        Cart Summary
+                      </p>
+                      <p className="mt-1 text-sm text-[#8D6E63]">
+                        Current totals update after each cart or voucher change.
+                      </p>
+                    </div>
+
+                    <div className="rounded-full bg-[#FAF1E8] px-3 py-1.5 text-sm font-medium text-[#6D4C41]">
+                      Final: {formatCartMoney(cart.finalAmount)}
+                    </div>
+                  </div>
+
+                  <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+                    <div className="rounded-2xl border border-[#E8DFD6] bg-white px-4 py-3">
+                      <p className="text-xs uppercase tracking-wide text-[#8D6E63]">
+                        Subtotal
+                      </p>
+                      <p className="mt-2 font-semibold text-[#3E2723]">
+                        {formatCartMoney(cart.subtotalAmount)}
+                      </p>
+                    </div>
+
+                    <div className="rounded-2xl border border-[#E8DFD6] bg-white px-4 py-3">
+                      <p className="text-xs uppercase tracking-wide text-[#8D6E63]">
+                        Promotion
+                      </p>
+                      <p className="mt-2 font-semibold text-[#3E2723]">
+                        {formatCartMoney(cart.promotionDiscount)}
+                      </p>
+                    </div>
+
+                    <div className="rounded-2xl border border-[#E8DFD6] bg-white px-4 py-3">
+                      <p className="text-xs uppercase tracking-wide text-[#8D6E63]">
+                        Voucher
+                      </p>
+                      <p className="mt-2 font-semibold text-[#3E2723]">
+                        {formatCartMoney(cart.voucherDiscount)}
+                      </p>
+                      <p className="mt-1 text-xs text-[#8D6E63]">
+                        {cart.voucherCode?.trim()
+                          ? cart.voucherCode
+                          : voucherValueLabel || "No voucher"}
+                      </p>
+                    </div>
+
+                    <div className="rounded-2xl border border-[#E8DFD6] bg-white px-4 py-3">
+                      <p className="text-xs uppercase tracking-wide text-[#8D6E63]">
+                        Total Discount
+                      </p>
+                      <p className="mt-2 font-semibold text-[#3E2723]">
+                        {formatCartMoney(totalDiscount)}
+                      </p>
+                    </div>
+
+                    <div className="rounded-2xl border border-[#D9CBBF] bg-[#FFF8F1] px-4 py-3">
+                      <p className="text-xs uppercase tracking-wide text-[#8D6E63]">
+                        Final Amount
+                      </p>
+                      <p className="mt-2 text-lg font-semibold text-[#5D4037]">
+                        {formatCartMoney(cart.finalAmount)}
+                      </p>
+                    </div>
+                  </div>
+                </section>
 
                 <section className="rounded-2xl border border-[#E8DFD6] bg-[#FFFDFC] p-5 shadow-sm">
                   <div className="flex flex-wrap items-start justify-between gap-3">

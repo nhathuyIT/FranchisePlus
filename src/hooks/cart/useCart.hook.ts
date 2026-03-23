@@ -7,6 +7,7 @@ import type {
   AddProductToCartRequest,
   ApplyVoucherInCartRequest,
   CartStatus,
+  CheckoutCartRequest,
   CountCartByCustomerParams,
   GetCartsByCustomerParams,
   RemoveCartOptionItemRequest,
@@ -365,11 +366,9 @@ export const useApplyVoucherInCartMutation = () => {
       cartId: string;
       data: ApplyVoucherInCartRequest;
     }) => cartApi.applyVoucherInCart(cartId, data),
-    onSuccess: async (response, variables) => {
+    onSuccess: async (_response, variables) => {
       await invalidateCartQueries(queryClient, {
         cartId: variables.cartId,
-        customerId: response?.customerId,
-        status: response?.status,
       });
       toast.success("Voucher applied successfully!");
     },
@@ -393,11 +392,9 @@ export const useRemoveVoucherInCartMutation = () => {
 
   return useMutation({
     mutationFn: (cartId: string) => cartApi.removeVoucherInCart(cartId),
-    onSuccess: async (response, cartId) => {
+    onSuccess: async (_response, cartId) => {
       await invalidateCartQueries(queryClient, {
         cartId,
-        customerId: response?.customerId,
-        status: response?.status,
       });
       toast.success("Voucher removed successfully!");
     },
@@ -414,16 +411,22 @@ export const useRemoveVoucherInCartMutation = () => {
  *
  * Usage:
  * `const checkoutCart = useCheckoutCartMutation();`
- * `checkoutCart.mutate(cartId);`
+ * `checkoutCart.mutate({ cartId, data: { address, phone, message } });`
  */
 export const useCheckoutCartMutation = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (cartId: string) => cartApi.checkoutCart(cartId),
-    onSuccess: async (response, cartId) => {
+    mutationFn: ({
+      cartId,
+      data,
+    }: {
+      cartId: string;
+      data: CheckoutCartRequest;
+    }) => cartApi.checkoutCart(cartId, data),
+    onSuccess: async (response, variables) => {
       await invalidateCartQueries(queryClient, {
-        cartId,
+        cartId: variables.cartId,
         customerId: response?.customerId,
         status: response?.status,
       });

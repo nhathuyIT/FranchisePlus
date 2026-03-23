@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { ROUTER_URL } from "@/router/route.const";
 import { useCart } from "@/pages/client/cart/useCart";
+import { useCheckoutCartMutation } from "@/hooks/cart/useCart.hook";
 import { PRODUCTS_CLIENT } from "@/const/product-client.const";
 import { useAuthStore } from "@/stores/auth-store";
 import cashPaymentIcon from "@/assets/icons/cash-payment.svg";
@@ -12,7 +14,8 @@ import type { PaymentMethod, ShippingInfo } from "@/types/payment";
 
 const PaymentPage = () => {
   const navigate = useNavigate();
-  const { cart, clearCart, subtotal, totalAmount, itemCount } = useCart();
+  const { cart, carts, subtotal, totalAmount, itemCount } = useCart();
+  const checkoutCartMutation = useCheckoutCartMutation();
   const { authUser } = useAuthStore();
 
   const getUserEmail = (): string => {
@@ -152,7 +155,7 @@ const PaymentPage = () => {
     }
   };
 
-  const handleSubmitOrder = (e: React.FormEvent) => {
+  const handleSubmitOrder = async (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
 
     // Validate all fields
@@ -189,25 +192,46 @@ const PaymentPage = () => {
       return;
     }
 
-    // Process order based on payment method
-    if (paymentMethod === "COD") {
-      // COD payment
-      alert(
-        `Đơn hàng của bạn đã được xác nhận!\n\n` +
-          `Phương thức thanh toán: Thanh toán khi nhận hàng\n` +
-          `Tổng tiền: ${totalAmount.toLocaleString("vi-VN")} VND\n\n` +
-          `Chúng tôi sẽ liên hệ với bạn sớm nhất!`,
-      );
-      clearCart();
-      navigate("/client/menu");
-    } else {
-      // QR payment - will integrate PayOS later
-      alert(
-        `Đang chuyển đến trang thanh toán QR...\n\n` +
-          `Tổng tiền: ${totalAmount.toLocaleString("vi-VN")} VND\n\n` +
-          `(Tính năng thanh toán QR sẽ được tích hợp PayOS sau)`,
-      );
-      // TODO: Integrate PayOS for QR payment
+    if (paymentMethod === "QR") {
+      navigate(ROUTER_URL.CLIENT_ROUTER.PAYMENT_QR, {
+        state: {
+          shippingInfo,
+          amount: totalAmount,
+          itemCount,
+        },
+      });
+      return;
+    }
+
+    const checkoutPayload = {
+      address: shippingInfo.address.trim(),
+      phone: shippingInfo.phone.trim(),
+      message: shippingInfo.notes.trim(),
+    };
+
+    const targetCartIds = Array.from(
+      new Set(carts.map((singleCart) => singleCart.id).filter(Boolean)),
+    );
+
+    try {
+      for (const cartId of targetCartIds) {
+        await checkoutCartMutation.mutateAsync({
+          cartId,
+          data: checkoutPayload,
+        });
+      }
+
+      // if (paymentMethod === "COD") {
+      //   alert(
+      //     `Đơn hàng của bạn đã được xác nhận!\n\n` +
+      //       `Phương thức thanh toán: Thanh toán khi nhận hàng\n` +
+      //       `Tổng tiền: ${totalAmount.toLocaleString("vi-VN")} VND\n\n` +
+      //       `Chúng tôi sẽ liên hệ với bạn sớm nhất!`,
+      //   );
+      //   navigate("/menu");
+      // }
+    } catch {
+      // Error toast is handled in the mutation hook
     }
   };
 
@@ -227,7 +251,7 @@ const PaymentPage = () => {
               Vui lòng thêm sản phẩm vào giỏ hàng trước khi thanh toán.
             </p>
             <button
-              onClick={() => navigate("/client/menu")}
+              onClick={() => navigate("/menu")}
               className="bg-[#B8860B] text-white px-8 py-3 rounded font-semibold hover:bg-amber-700 transition-colors"
             >
               Xem Menu
@@ -258,31 +282,6 @@ const PaymentPage = () => {
                 Thông tin giao hàng
               </h2>
               <form className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Họ và tên <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    name="fullName"
-                    value={shippingInfo.fullName}
-                    onChange={handleInputChange}
-                    onBlur={handleBlur}
-                    className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:border-transparent outline-none transition-all ${
-                      errors.fullName
-                        ? "border-red-500 focus:ring-red-200"
-                        : "border-gray-300 focus:ring-[#B8860B]"
-                    }`}
-                    placeholder="Nhập họ và tên"
-                    required
-                  />
-                  {errors.fullName && (
-                    <p className="mt-1 text-sm text-red-600">
-                      {errors.fullName}
-                    </p>
-                  )}
-                </div>
-
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -494,7 +493,10 @@ const PaymentPage = () => {
                   >
                     <div className="w-16 h-16 bg-amber-50 rounded-lg border border-gray-200 overflow-hidden shrink-0">
                       <img
-                        src={item.imageUrl || getProductImage(Number(item.productFranchiseId))}
+                        src={
+                          item.imageUrl ||
+                          getProductImage(Number(item.productFranchiseId))
+                        }
                         alt="coffee"
                         className="w-full h-full object-cover"
                         onError={(e) => {
@@ -549,9 +551,14 @@ const PaymentPage = () => {
               <div className="space-y-3 pt-4 border-t border-gray-200">
                 <button
                   onClick={handleSubmitOrder}
+                  disabled={checkoutCartMutation.isPending}
                   className="w-full bg-[#B8860B] text-white font-bold py-3 px-6 rounded-lg hover:bg-amber-700 transition-colors"
                 >
-                  {paymentMethod === "COD" ? "Đặt hàng" : "Thanh toán ngay"}
+                  {checkoutCartMutation.isPending
+                    ? "Đang xử lý..."
+                    : paymentMethod === "COD"
+                      ? "Đặt hàng"
+                      : "Thanh toán ngay"}
                 </button>
                 <button
                   onClick={() => navigate("/client/cart")}

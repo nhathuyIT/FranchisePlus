@@ -60,6 +60,16 @@ export interface PageInfo {
   pageSize: number;
 }
 
+export interface PageInfoResponse extends PageInfo {
+  totalItems: number;
+  totalPages: number;
+}
+
+export interface ProductSearchResponse {
+  data: Product[];
+  pageInfo: PageInfoResponse;
+}
+
 export interface ProductSearchRequest {
   searchCondition: ProductSearchCondition;
   pageInfo: PageInfo;
@@ -74,6 +84,7 @@ export interface CreateProductRequest {
   images_url?: string[];
   min_price: number;
   max_price: number;
+  is_have_topping?: boolean;
   is_active?: boolean;
 }
 
@@ -86,13 +97,14 @@ export interface UpdateProductRequest {
   images_url?: string[];
   min_price?: number;
   max_price?: number;
+  is_have_topping?: boolean;
   is_active?: boolean;
 }
 
 // ── Mapper: snake_case API → camelCase Product ──────────────────────────────
 
 export const mapApiProduct = (raw: ApiProduct): Product => ({
-  id: raw.id as any, // MongoDB ObjectId as string, cast to ID type
+  id: raw.id as unknown as Product["id"],
   sku: raw.SKU,
   name: raw.name,
   description: raw.description,
@@ -102,27 +114,96 @@ export const mapApiProduct = (raw: ApiProduct): Product => ({
   maxPrice: raw.max_price,
   isActive: raw.is_active,
   isDeleted: raw.is_deleted,
+  isHaveTopping: raw.is_have_topping,
   createdAt: raw.created_at,
   updatedAt: raw.updated_at,
 });
 
 // ── API Functions ───────────────────────────────────────────────────────────
 
-export const searchProducts = async (
+const defaultPageInfo: PageInfoResponse = {
+  pageNum: 1,
+  pageSize: 10,
+  totalItems: 0,
+  totalPages: 1,
+};
+
+const normalizeSearchResponse = (raw: unknown): ProductSearchResponse => {
+  if (!raw || typeof raw !== "object") {
+    return { data: [], pageInfo: defaultPageInfo };
+  }
+
+  const obj = raw as {
+    data?: unknown;
+    pageData?: unknown;
+    pageInfo?: Partial<PageInfoResponse>;
+  };
+
+  // Backend responses in this project vary; support:
+  // - { data: ApiProduct[], pageInfo }
+  // - { data: { pageData: ApiProduct[], pageInfo } }
+  // - { pageData: ApiProduct[], pageInfo }
+  const container =
+    obj.data && typeof obj.data === "object" && !Array.isArray(obj.data)
+      ? (obj.data as { pageData?: unknown; pageInfo?: Partial<PageInfoResponse>; data?: unknown })
+      : undefined;
+
+  const rowsRaw = Array.isArray(obj.data)
+    ? obj.data
+    : Array.isArray(obj.pageData)
+      ? obj.pageData
+      : Array.isArray(container?.pageData)
+        ? container?.pageData
+        : Array.isArray(container?.data)
+          ? container?.data
+          : [];
+
+  const rows = rowsRaw as ApiProduct[];
+  const pageInfoRaw = container?.pageInfo ?? obj.pageInfo;
+  const pageSize = pageInfoRaw?.pageSize ?? defaultPageInfo.pageSize;
+  const totalItems = pageInfoRaw?.totalItems ?? rows.length;
+
+  const pageInfo: PageInfoResponse = {
+    pageNum: pageInfoRaw?.pageNum ?? defaultPageInfo.pageNum,
+    pageSize,
+    totalItems,
+    totalPages:
+      pageInfoRaw?.totalPages ??
+      Math.max(1, Math.ceil(totalItems / Math.max(1, pageSize))),
+  };
+
+  return {
+    data: rows.map(mapApiProduct),
+    pageInfo,
+  };
+};
+
+export const searchProductsPaged = async (
   payload: ProductSearchRequest,
-): Promise<Product[]> => {
+): Promise<ProductSearchResponse> => {
   try {
     const response = await productAxios.post<{
-      code: number;
-      message: string;
-      data: ApiProduct[];
+      code?: number;
+      message?: string;
+      data?: unknown;
+      pageInfo?: Partial<PageInfoResponse>;
     }>("/api/products/search", payload);
 
-    return (response.data.data ?? []).map(mapApiProduct);
+    return normalizeSearchResponse({
+      data: response.data.data,
+      pageInfo: response.data.pageInfo,
+    });
   } catch (error) {
     console.error("[Product API] Search error:", error);
     throw error;
   }
+};
+
+export const searchProducts = async (
+  payload: ProductSearchRequest,
+): Promise<Product[]> => {
+  const res = await searchProductsPaged(payload);
+  return res.data;
 };
 
 export const createProduct = async (

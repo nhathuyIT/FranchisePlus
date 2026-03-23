@@ -6,17 +6,25 @@ import { CartDetailContent } from "./CartDetailContent";
 interface SelectedCartPanelProps {
   selectedUser: CartLookupUser | null;
   selectedCart: CartResponse | null;
-  onViewDetail?: () => void;
   onEditCart?: () => void;
+  onCheckoutCart?: () => void;
+  onCancelCart?: () => void;
   canEditCart?: boolean;
+  canCheckoutCart?: boolean;
+  canCancelCart?: boolean;
+  isCancellingCart?: boolean;
 }
 
 export const SelectedCartPanel = ({
   selectedUser,
   selectedCart,
-  onViewDetail,
   onEditCart,
+  onCheckoutCart,
+  onCancelCart,
   canEditCart = false,
+  canCheckoutCart = false,
+  canCancelCart = false,
+  isCancellingCart = false,
 }: SelectedCartPanelProps) => {
   const emptyMessage = !selectedUser
     ? "Select a user to inspect cart details."
@@ -29,11 +37,15 @@ export const SelectedCartPanel = ({
       selectedCart={selectedCart}
       emptyMessage={emptyMessage}
       actions={
-        selectedCart && onViewDetail ? (
+        selectedCart ? (
           <CartActionButtons
-            onViewDetail={onViewDetail}
             onEditCart={onEditCart}
+            onCheckoutCart={onCheckoutCart}
+            onCancelCart={onCancelCart}
             canEditCart={canEditCart}
+            canCheckoutCart={canCheckoutCart}
+            canCancelCart={canCancelCart}
+            isCancellingCart={isCancellingCart}
           />
         ) : undefined
       }

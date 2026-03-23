@@ -15,8 +15,26 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PopoverSearchSelect } from "@/components/form-dialog";
 import { searchProducts } from "@/api/product/product.api";
-import { createProductFranchise } from "@/api/product-franchise/product-franchise.api";
+import {
+  createProductFranchise,
+  getProductsByFranchise,
+  restoreProductFranchise,
+  searchProductFranchises,
+  updateProductFranchise,
+} from "@/api/product-franchise/product-franchise.api";
 import { Loader2 } from "lucide-react";
+import axios from "axios";
+import {
+  getFirstErrorMessage,
+  isApiError,
+  parseError,
+  type ApiErrorResponse,
+} from "@/lib/form/error-mapping";
+
+const normalizeSize = (value?: string | null) => {
+  const normalized = (value ?? "").trim().toUpperCase();
+  return normalized.length > 0 ? normalized : "DEFAULT";
+};
 
 const createSchema = z.object({
   productId: z.string().min(1, "Product is required").transform((val) => val),
@@ -80,6 +98,15 @@ export const AddFranchiseProductModal = ({
     enabled: open,
   });
 
+  // Fetch already-assigned product-franchise rows to prevent duplicates.
+  // Use the dedicated endpoint instead of search to avoid backend validation quirks.
+  const { data: assigned = [] } = useQuery({
+    queryKey: ["product-franchises", "franchise", franchiseId, "all"],
+    queryFn: () => getProductsByFranchise(franchiseId, false),
+    enabled: open && Boolean(franchiseId),
+    retry: false,
+  });
+
   const productOptions = products.map((product) => ({
     value: String(product.id),
     label: `${product.name} - ${product.sku} (${product.minPrice.toLocaleString()}₫ - ${product.maxPrice.toLocaleString()}₫)`,
@@ -103,20 +130,106 @@ export const AddFranchiseProductModal = ({
 
     setIsSubmitting(true);
     try {
-      await createProductFranchise({
+      const normalizedSize = normalizeSize(formData.size);
+      const payload = {
         franchise_id: franchiseId,
         product_id: formData.productId,
-        size: formData.size || undefined,
+        size: normalizedSize,
         price_base: formData.priceBase,
         is_active: formData.isActive ?? true,
-      });
+      };
+
+      // Upsert behavior: backend uniqueness is effectively (productId, franchiseId, size).
+      // Only treat an entry as "existing" if both product and size match.
+      // Also, do NOT attempt to change `size` of an existing row; create a new row instead.
+      const existingSameVariant = assigned.find(
+        (pf) =>
+          String(pf.productId) === String(formData.productId) &&
+          normalizeSize(pf.size) === normalizedSize,
+      );
+
+      if (existingSameVariant) {
+        await updateProductFranchise(String(existingSameVariant.id), {
+          size: existingSameVariant.size ?? payload.size ?? "",
+          price_base: payload.price_base,
+          is_active: payload.is_active,
+        });
+      } else {
+        const deletedRows = await searchProductFranchises({
+          searchCondition: {
+            keyword: "",
+            franchise_id: franchiseId,
+            product_id: formData.productId,
+            min_price: "",
+            max_price: "",
+            is_active: "",
+            is_deleted: true,
+          },
+          pageInfo: { pageNum: 1, pageSize: 100 },
+        });
+
+        const deletedSameVariant = deletedRows.find(
+          (pf) =>
+            String(pf.productId) === String(formData.productId) &&
+            normalizeSize(pf.size) === normalizedSize,
+        );
+
+        if (deletedSameVariant) {
+          await restoreProductFranchise(String(deletedSameVariant.id));
+          await updateProductFranchise(String(deletedSameVariant.id), {
+            size: deletedSameVariant.size ?? payload.size ?? "",
+            price_base: payload.price_base,
+            is_active: payload.is_active,
+          });
+        } else {
+          await createProductFranchise(payload);
+        }
+      }
 
       toast.success("Product added to franchise inventory");
       void queryClient.invalidateQueries({ queryKey: ["product-franchises"] });
       onSuccess();
     } catch (error) {
       console.error("Failed to add product:", error);
-      toast.error("Failed to add product. Please try again.");
+      // Backend uses `{ success:false, message:null, errors:[{field,message}] }`.
+      // Show the first validation error message if present.
+      if (axios.isAxiosError(error)) {
+        const responseData: unknown = error.response?.data;
+
+        const unwrapApiError = (data: unknown): ApiErrorResponse | null => {
+          if (isApiError(data)) return data;
+          if (
+            data &&
+            typeof data === "object" &&
+            "data" in data &&
+            isApiError((data as { data?: unknown }).data)
+          ) {
+            return (data as { data: ApiErrorResponse }).data;
+          }
+          return null;
+        };
+
+        const apiError = unwrapApiError(responseData) ?? parseError(error);
+
+        if (apiError.errors.length > 0) {
+          const fieldMap: Record<string, keyof CreateForm> = {
+            product_id: "productId",
+            price_base: "priceBase",
+            size: "size",
+          };
+
+          const nextErrors: Record<string, string> = {};
+          apiError.errors.forEach((err) => {
+            const field = fieldMap[err.field] ?? (err.field as keyof CreateForm);
+            nextErrors[String(field)] = err.message;
+          });
+          setErrors((prev) => ({ ...prev, ...nextErrors }));
+        }
+
+        toast.error(getFirstErrorMessage(apiError));
+      } else {
+        toast.error(error instanceof Error ? error.message : "Failed to add product. Please try again.");
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -133,7 +246,6 @@ export const AddFranchiseProductModal = ({
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Product Selection */}
           <div className="space-y-2">
             <Label htmlFor="product">
               Product <span className="text-red-500">*</span>
@@ -151,18 +263,21 @@ export const AddFranchiseProductModal = ({
               options={productOptions}
               placeholder={isLoadingProducts ? "Loading products..." : "Select a product"}
               searchPlaceholder="Search products..."
-              emptyText="No product found."
+              emptyText={
+                isLoadingProducts
+                  ? "Loading products..."
+                  : productOptions.length === 0
+                    ? "All products are already assigned to this franchise."
+                    : "No product found."
+              }
               isLoading={isLoadingProducts}
               disabled={isLoadingProducts}
               minChars={0}
               resetSearchOnClose
             />
-            {errors.productId && (
-              <p className="text-sm text-red-500">{errors.productId}</p>
-            )}
+            {errors.productId && <p className="text-sm text-red-500">{errors.productId}</p>}
           </div>
 
-          {/* Size */}
           <div className="space-y-2">
             <Label htmlFor="size">Size</Label>
             <Input
@@ -170,13 +285,10 @@ export const AddFranchiseProductModal = ({
               type="text"
               placeholder="e.g., S, M, L, XL"
               value={formData.size}
-              onChange={(e) =>
-                setFormData({ ...formData, size: e.target.value })
-              }
+              onChange={(e) => setFormData({ ...formData, size: e.target.value })}
             />
           </div>
 
-          {/* Price */}
           <div className="space-y-2">
             <Label htmlFor="price">
               Price <span className="text-red-500">*</span>
@@ -196,18 +308,11 @@ export const AddFranchiseProductModal = ({
                 setErrors({ ...errors, priceBase: "" });
               }}
             />
-            {errors.priceBase && (
-              <p className="text-sm text-red-500">{errors.priceBase}</p>
-            )}
+            {errors.priceBase && <p className="text-sm text-red-500">{errors.priceBase}</p>}
           </div>
 
           <DialogFooter>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={onClose}
-              disabled={isSubmitting}
-            >
+            <Button type="button" variant="outline" onClick={onClose} disabled={isSubmitting}>
               Cancel
             </Button>
             <Button type="submit" disabled={isSubmitting || isLoadingProducts}>
