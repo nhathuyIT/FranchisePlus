@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { LOCATION_THEME } from "@/const/location.const";
-import { Search, MapPin, Phone, Clock, Coffee, Loader2 } from "lucide-react";
+import { Search, MapPin, Phone, Clock, Coffee } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   useGetAllFranchise,
   useGetFranchiseDetail,
@@ -58,8 +59,19 @@ const LocationPage = () => {
         {/* Left List */}
         <div className="w-85 bg-white border-r overflow-y-auto shrink-0">
           {isLoading ? (
-            <div className="flex items-center justify-center gap-2 h-32 text-stone-400 text-sm">
-              <Loader2 size={16} className="animate-spin" /> Đang tải...
+            <div className="p-4 space-y-3">
+              {Array.from({ length: 6 }).map((_, index) => (
+                <div
+                  key={index}
+                  className="flex items-center gap-3.5 px-1 py-2 border-b border-stone-100"
+                >
+                  <Skeleton className="w-8 h-8 rounded-lg" />
+                  <div className="flex-1 space-y-2">
+                    <Skeleton className="h-4 w-3/4" />
+                    <Skeleton className="h-3 w-1/3" />
+                  </div>
+                </div>
+              ))}
             </div>
           ) : filteredStores.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-32 gap-2 text-stone-400">
@@ -110,9 +122,19 @@ const LocationPage = () => {
         {/* Right: Map + Detail */}
         <div className="flex-1 flex flex-col overflow-hidden">
           {isLoadingDetail ? (
-            <div className="flex-1 flex items-center justify-center gap-2 text-stone-400 bg-stone-50">
-              <Loader2 size={20} className="animate-spin" />
-              <span className="text-sm">Đang tải thông tin cửa hàng…</span>
+            <div className="flex-1 bg-stone-50 p-6 space-y-4">
+              <div className="bg-white border rounded-xl px-6 py-4 flex items-center gap-5">
+                <Skeleton className="w-12 h-12 rounded-xl" />
+                <div className="flex-1 space-y-2">
+                  <Skeleton className="h-5 w-60" />
+                  <Skeleton className="h-4 w-80" />
+                </div>
+                <div className="space-y-2">
+                  <Skeleton className="h-4 w-36" />
+                  <Skeleton className="h-4 w-28" />
+                </div>
+              </div>
+              <Skeleton className="h-[calc(100vh-250px)] w-full rounded-xl" />
             </div>
           ) : selectedStore ? (
             <>
