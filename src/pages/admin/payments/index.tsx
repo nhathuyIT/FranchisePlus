@@ -2,11 +2,21 @@ import { useMemo, useState } from "react";
 import { z } from "zod";
 import { PageHeader } from "@/components/common/PageHeader";
 import { FormDialog, useFormDialog } from "@/components/form-dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import type { FieldConfig } from "@/lib/form/field-config";
 import type { AdminPayment } from "@/types/admin-payment.type";
 import {
   useConfirmPaymentMutation,
+  usePaymentById,
   usePaymentByCode,
+  usePaymentByOrderId,
+  usePaymentsByCustomerId,
   useRefundPaymentMutation,
 } from "@/hooks/payment";
 import { useDebounce } from "@/hooks/common/useDebounce";
@@ -50,6 +60,35 @@ const PaymentViewSchema = z.object({
 
 type PaymentViewFormData = z.infer<typeof PaymentViewSchema>;
 
+type PaymentLookupType = "code" | "orderId" | "paymentId" | "customerId";
+
+const PAYMENT_LOOKUP_OPTIONS: {
+  value: PaymentLookupType;
+  label: string;
+  placeholder: string;
+}[] = [
+  {
+    value: "code",
+    label: "Payment Code",
+    placeholder: "Search by payment code...",
+  },
+  {
+    value: "orderId",
+    label: "Order ID",
+    placeholder: "Search by order id...",
+  },
+  {
+    value: "paymentId",
+    label: "Payment ID",
+    placeholder: "Search by payment id...",
+  },
+  {
+    value: "customerId",
+    label: "Customer ID",
+    placeholder: "Search by customer id...",
+  },
+];
+
 const formatCurrency = (value: number): string => {
   if (!Number.isFinite(value)) return "0₫";
   return `${value.toLocaleString("vi-VN")}₫`;
@@ -79,39 +118,84 @@ const PaymentsPage = () => {
   const canViewPayments = userPermissions.includes(Permission.VIEW_ORDERS);
   const canManagePayments = userPermissions.includes(Permission.MANAGE_ORDERS);
 
+  const [lookupType, setLookupType] = useState<PaymentLookupType>("code");
   const [searchInput, setSearchInput] = useState("");
-  const debouncedSearchCode = useDebounce(searchInput.trim(), 350, searchInput);
+  const debouncedSearchValue = useDebounce(searchInput.trim(), 350, searchInput);
 
   const viewDialog = useFormDialog<AdminPayment>();
   const confirmDialog = useFormDialog<AdminPayment>();
   const refundDialog = useFormDialog<AdminPayment>();
 
-  const {
-    data: paymentByCode,
-    isLoading,
-    isFetching,
-    error,
-    refetch,
-  } = usePaymentByCode(
-    debouncedSearchCode,
-    !!debouncedSearchCode && canViewPayments,
+  const paymentByCodeQuery = usePaymentByCode(
+    debouncedSearchValue,
+    canViewPayments && lookupType === "code" && !!debouncedSearchValue,
   );
 
-  const tableError = error instanceof Error ? error : null;
+  const paymentByOrderIdQuery = usePaymentByOrderId(
+    debouncedSearchValue,
+    canViewPayments && lookupType === "orderId" && !!debouncedSearchValue,
+  );
+
+  const paymentByIdQuery = usePaymentById(
+    debouncedSearchValue,
+    canViewPayments && lookupType === "paymentId" && !!debouncedSearchValue,
+  );
+
+  const paymentsByCustomerIdQuery = usePaymentsByCustomerId(
+    debouncedSearchValue,
+    canViewPayments && lookupType === "customerId" && !!debouncedSearchValue,
+  );
+
+  const activeQuery =
+    lookupType === "code"
+      ? paymentByCodeQuery
+      : lookupType === "orderId"
+        ? paymentByOrderIdQuery
+        : lookupType === "paymentId"
+          ? paymentByIdQuery
+          : paymentsByCustomerIdQuery;
+
+  const tableError = activeQuery.error instanceof Error ? activeQuery.error : null;
 
   const confirmMutation = useConfirmPaymentMutation();
   const refundMutation = useRefundPaymentMutation();
 
   const payments = useMemo<AdminPayment[]>(() => {
-    if (!canViewPayments || !paymentByCode) return [];
-    return [paymentByCode];
-  }, [canViewPayments, paymentByCode]);
+    if (!canViewPayments || !debouncedSearchValue) {
+      return [];
+    }
+
+    if (lookupType === "customerId") {
+      return paymentsByCustomerIdQuery.data ?? [];
+    }
+
+    const singlePayment =
+      lookupType === "code"
+        ? paymentByCodeQuery.data
+        : lookupType === "orderId"
+          ? paymentByOrderIdQuery.data
+          : paymentByIdQuery.data;
+
+    return singlePayment ? [singlePayment] : [];
+  }, [
+    canViewPayments,
+    debouncedSearchValue,
+    lookupType,
+    paymentByCodeQuery.data,
+    paymentByOrderIdQuery.data,
+    paymentByIdQuery.data,
+    paymentsByCustomerIdQuery.data,
+  ]);
 
   const isTableLoading =
-    isLoading ||
-    isFetching ||
+    activeQuery.isLoading ||
+    activeQuery.isFetching ||
     confirmMutation.isPending ||
     refundMutation.isPending;
+
+  const activeSearchPlaceholder =
+    PAYMENT_LOOKUP_OPTIONS.find((option) => option.value === lookupType)
+      ?.placeholder ?? "Search payment...";
 
   const confirmFields = useMemo<FieldConfig<ConfirmPaymentFormData>[]>(
     () => [
@@ -210,8 +294,8 @@ const PaymentsPage = () => {
   );
 
   const handleRetry = () => {
-    if (!debouncedSearchCode) return;
-    void refetch();
+    if (!debouncedSearchValue) return;
+    void activeQuery.refetch();
   };
 
   const handleView = (payment: AdminPayment) => {
@@ -256,10 +340,31 @@ const PaymentsPage = () => {
       <div className="flex-1 flex flex-col min-h-0 max-w-7xl mx-auto w-full">
         <PageHeader
           title="Payment Management"
-          description="Search payment by code and process confirm/refund actions"
+          description="Lookup payment by code/order/customer/id and process confirm/refund actions"
         />
 
         <div className="flex-1 min-h-0 flex flex-col bg-white rounded-2xl shadow-lg border border-[#E8DFD6] p-6">
+          <div className="mb-4 flex shrink-0 flex-wrap items-center gap-3">
+            <Select
+              value={lookupType}
+              onValueChange={(value) => {
+                setLookupType(value as PaymentLookupType);
+                setSearchInput("");
+              }}
+            >
+              <SelectTrigger className="w-52 border-[#E8DFD6] focus:border-[#6D4C41]">
+                <SelectValue placeholder="Lookup Type" />
+              </SelectTrigger>
+              <SelectContent>
+                {PAYMENT_LOOKUP_OPTIONS.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
           <PaymentTable
             payments={payments}
             isLoading={isTableLoading}
@@ -270,6 +375,7 @@ const PaymentsPage = () => {
             onRefund={canManagePayments ? handleOpenRefund : undefined}
             searchValue={searchInput}
             onSearchChange={setSearchInput}
+            searchPlaceholder={activeSearchPlaceholder}
           />
         </div>
       </div>
