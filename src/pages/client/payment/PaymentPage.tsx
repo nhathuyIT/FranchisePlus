@@ -330,15 +330,15 @@ const PaymentPage = () => {
         });
       }
 
-      if (paymentMethod === "COD") {
-        alert(
-          `Đơn hàng của bạn đã được xác nhận!\n\n` +
-            `Phương thức thanh toán: Thanh toán khi nhận hàng\n` +
-            `Tổng tiền: ${checkoutTotalAmount.toLocaleString("vi-VN")} VND\n\n` +
-            `Chúng tôi sẽ liên hệ với bạn sớm nhất!`,
-        );
-        navigate("/menu");
-      }
+      // if (paymentMethod === "COD") {
+      //   alert(
+      //     `Đơn hàng của bạn đã được xác nhận!\n\n` +
+      //       `Phương thức thanh toán: Thanh toán khi nhận hàng\n` +
+      //       `Tổng tiền: ${totalAmount.toLocaleString("vi-VN")} VND\n\n` +
+      //       `Chúng tôi sẽ liên hệ với bạn sớm nhất!`,
+      //   );
+      //   navigate("/menu");
+      // }
     } catch {
       // Error toast is handled in the mutation hook
     }
