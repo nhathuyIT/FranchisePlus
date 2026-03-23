@@ -36,7 +36,7 @@ export const InventoryErrorBanner = ({ errors }: InventoryErrorBannerProps) => {
     <div
       role="alert"
       aria-live="polite"
-      className="mb-4 rounded-xl border-2 border-red-200 bg-gradient-to-r from-red-50 to-rose-50 shadow-sm overflow-hidden"
+      className="mb-4 rounded-xl border-2 border-red-200 bg-linear-to-r from-red-50 to-rose-50 shadow-sm overflow-hidden"
     >
       {/* Header row */}
       <div className="flex items-center gap-3 px-4 py-3">

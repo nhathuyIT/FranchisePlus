@@ -18,6 +18,7 @@ import {
   ShieldCheck,
   UserCheck,
   CalendarDays,
+  Wallet,
   TicketPercent,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -43,6 +44,7 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   customers: UserCheck,
   calendar: CalendarDays,
   cart: ShoppingCart,
+  wallet: Wallet,
 };
 
 const sidebarMenuItems = ADMIN_MENU.filter((item) => {
@@ -178,7 +180,7 @@ const AdminSideBar = ({ collapsed = false }: AdminSidebarProps) => {
       )}
 
       {/* Navigation */}
-      <nav className="flex-1 overflow-y-auto py-4 px-2">
+      <nav className="flex-1 overflow-y-auto scrollbar-hide py-4 px-2">
         <ul className="space-y-1">
           {visibleMenuItems.map((item) => {
             const Icon = iconMap[item.icon];

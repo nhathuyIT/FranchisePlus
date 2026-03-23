@@ -18,6 +18,7 @@ export const ROUTER_URL = {
     PRODUCTS: "products",
     PRODUCT_DETAIL: "products/:slug",
     PAYMENT: "payment",
+    PAYMENT_QR: "payment/qr",
   },
   VERIFY_EMAIL: "verify-customer-email/:id",
   ACCOUNT: "/account",
@@ -58,6 +59,7 @@ export const ROUTER_URL = {
     LOYALTY_RULES: "loyalty-rules",
     USER_FRANCHISE_ROLES: "user-franchise-roles",
     CUSTOMERS: "customers",
+    PAYMENTS: "payments",
     CART: "cart",
   },
 };

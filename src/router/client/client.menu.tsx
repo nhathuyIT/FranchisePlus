@@ -15,7 +15,7 @@ export const CLIENT_MENU: ClientMenuItem[] = [
     component: React.lazy(() => import("@/pages/client/cart")),
     isEnd: true,
   },
-  
+
   {
     label: "Product Detail",
     path: ROUTER_URL.CLIENT_ROUTER.PRODUCT_DETAIL,
@@ -27,6 +27,16 @@ export const CLIENT_MENU: ClientMenuItem[] = [
     label: "Payment",
     path: ROUTER_URL.CLIENT_ROUTER.PAYMENT,
     component: React.lazy(() => import("@/pages/client/payment/PaymentPage")),
+    isEnd: true,
+  },
+  {
+    label: "Payment QR",
+    path: ROUTER_URL.CLIENT_ROUTER.PAYMENT_QR,
+    component: React.lazy(() =>
+      import("@/pages/client/payment").then((module) => ({
+        default: module.QRTransactionPage,
+      })),
+    ),
     isEnd: true,
   },
 ];
