@@ -23,6 +23,7 @@ const CartPage: React.FC = () => {
     updateItemQuantity,
     removeItem,
     saveItemNote,
+    saveEditedItem,
     itemCount,
     isLoading,
     isItemPending,
@@ -115,7 +116,23 @@ const CartPage: React.FC = () => {
     });
   };
 
-  const handleCheckout = () => navigate("/client/payment");
+  const handleCheckout = () => {
+    const checkoutItemIds = selectedItemIds.filter((cartItemId) =>
+      carts.some((singleCart) =>
+        singleCart.cartItems.some((item) => item.cartItemId === cartItemId),
+      ),
+    );
+
+    if (!checkoutItemIds.length) {
+      return;
+    }
+
+    navigate("/client/payment", {
+      state: {
+        selectedCartItemIds: checkoutItemIds,
+      },
+    });
+  };
 
   const openVoucherDialog = (cartId: string) => {
     setVoucherDialogCartId(cartId);
@@ -272,6 +289,9 @@ const CartPage: React.FC = () => {
                 indeterminate={isCartIndeterminate(singleCart.id)}
                 onToggleCart={(checked) => toggleCart(singleCart.id, checked)}
                 onToggleItem={toggleItem}
+                onSaveEditedItem={(item, options) =>
+                  saveEditedItem(item.cartItemId, options)
+                }
                 onUpdateQuantity={(cartItemId, quantity) =>
                   void updateItemQuantity(cartItemId, quantity)
                 }
@@ -332,3 +352,5 @@ const CartPage: React.FC = () => {
 };
 
 export default CartPage;
+
+

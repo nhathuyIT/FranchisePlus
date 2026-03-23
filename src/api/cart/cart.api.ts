@@ -19,6 +19,8 @@ import type {
   RemoveCartOptionItemRequest,
   RemoveCartOptionItemResponse,
   RemoveVoucherInCartResponse,
+  UpdateCartItemOptionsRequest,
+  UpdateCartItemOptionsResponse,
   UpdateCartOptionItemRequest,
   UpdateCartOptionItemResponse,
   UpdateCartRequest,
@@ -281,6 +283,23 @@ export const updateOptionItemQuantity = async (
   return normalizeCart(response!);
 };
 
+export const updateCartItemOptions = async (
+  data: UpdateCartItemOptionsRequest,
+): Promise<UpdateCartItemOptionsResponse> => {
+  const response = await httpClient.put<
+    RawCartResponse,
+    UpdateCartItemOptionsRequest
+  >({
+    url: "/api/carts/items/update-options-cart-item",
+    data,
+  });
+
+  if (!response) {
+    return null;
+  }
+
+  return normalizeCart(response);
+};
 export const removeOptionItem = async (
   data: RemoveCartOptionItemRequest,
 ): Promise<RemoveCartOptionItemResponse> => {
@@ -307,7 +326,11 @@ export const applyVoucherInCart = async (
     data,
   });
 
-  return normalizeCart(response!);
+  if (!response) {
+    return null;
+  }
+
+  return normalizeCart(response);
 };
 
 export const removeVoucherInCart = async (
@@ -317,7 +340,11 @@ export const removeVoucherInCart = async (
     url: `/api/carts/${cartId}/remove-voucher`,
   });
 
-  return normalizeCart(response!);
+  if (!response) {
+    return null;
+  }
+
+  return normalizeCart(response);
 };
 
 export const checkoutCart = async (
@@ -341,3 +368,6 @@ export const cancelCart = async (
 
   return normalizeCart(response!);
 };
+
+
+

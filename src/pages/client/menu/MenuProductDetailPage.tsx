@@ -32,7 +32,7 @@ const MenuProductDetailPage = () => {
     productFranchiseId: string;
   }>();
   const navigate = useNavigate();
-  const { addItem } = useCart();
+  const { addItemAsync } = useCart();
   const { authUser } = useAuthStore();
 
   // ── State ──────────────────────────────────────────────────────
@@ -42,6 +42,7 @@ const MenuProductDetailPage = () => {
     Record<string, string>
   >({});
   const [quantity, setQuantity] = useState(1);
+  const [isBuyingNow, setIsBuyingNow] = useState(false);
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>("ALL");
 
   // ── Queries ────────────────────────────────────────────────────
@@ -165,18 +166,18 @@ const MenuProductDetailPage = () => {
     }));
   };
 
-  const handleAddToCart = () => {
+  const handleAddToCart = async (showSuccessToast = true): Promise<boolean> => {
     if (!authUser) {
       navigate(ROUTER_URL.CLIENT_ROUTER.LOGIN);
       toast.error("Vui lòng đăng nhập để thực hiện");
-      return;
+      return false;
     }
 
     if (!selectedSizeData) {
       toast.error("Vui lòng chọn size");
-      return;
+      return false;
     }
-
+  
     const options = Object.entries(selectedToppings)
       .map(([productId, franchiseProductId]) => {
         const topping = toppingsByFranchiseVisible.find(
@@ -198,7 +199,7 @@ const MenuProductDetailPage = () => {
         !!option,
       );
 
-    addItem(
+    const added = await addItemAsync(
       selectedSizeData.productFranchiseId,
       detailName,
       selectedSizeData.price,
@@ -210,20 +211,34 @@ const MenuProductDetailPage = () => {
       },
     );
 
-    toast.success(`Đã thêm "${detailName}" vào giỏ hàng`);
+    if (!added) {
+      return false;
+    }
+
+    if (showSuccessToast) {
+      toast.success(`Đã thêm "${detailName}" vào giỏ hàng`);
+    }
+
+    return true;
   };
 
-  const handleBuyNow = () => {
-    handleAddToCart();
-    if (authUser) {
-      navigate("/client/cart");
+  const handleBuyNow = async () => {
+    if (isBuyingNow) return;
+
+    setIsBuyingNow(true);
+    try {
+      const added = await handleAddToCart(false);
+      if (added) {
+        navigate("/client/cart");
+      }
+    } finally {
+      setIsBuyingNow(false);
     }
   };
 
   const handleDecrease = () => setQuantity((prev) => (prev > 1 ? prev - 1 : 1));
   const handleIncrease = () => setQuantity((prev) => prev + 1);
 
-  // ── Pricing ────────────────────────────────────────────────────
   const basePrice = selectedSizeData
     ? selectedSizeData.price
     : availableDetailSizes.length > 0
@@ -661,7 +676,9 @@ const MenuProductDetailPage = () => {
                     <Button
                       type="button"
                       variant="outline"
-                      onClick={handleAddToCart}
+                      onClick={() => {
+                        void handleAddToCart();
+                      }}
                       className="flex-1 sm:flex-none px-8 py-6 rounded-xl border-2 border-amber-700 
                              text-amber-700 hover:bg-amber-50 
                              text-sm font-semibold transition-all duration-200
@@ -673,18 +690,18 @@ const MenuProductDetailPage = () => {
                     <Button
                       type="button"
                       onClick={handleBuyNow}
+                      disabled={isBuyingNow}
                       className="flex-1 sm:flex-none px-8 py-6 rounded-xl
                              bg-amber-700 text-white hover:bg-amber-800 
                              text-sm font-semibold transition-all duration-200
                              shadow-lg shadow-amber-700/25 hover:shadow-xl hover:shadow-amber-700/30"
                     >
-                      Mua Ngay
+                      {isBuyingNow ? "Đang xử lý..." : "Mua Ngay"}
                     </Button>
                   </div>
                 </div>
               </div>
             </div>
-
             {/* ── Product Description Section ─────────────────────────── */}
             {(detailDescription || detailContent) && (
               <div className="bg-white rounded-2xl shadow-sm border border-stone-100 overflow-hidden">

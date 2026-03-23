@@ -7,6 +7,40 @@ export interface CartItemOptionRequest {
   quantity: number;
 }
 
+export interface CartEditDraft {
+  cartId: string;
+  cartItemId: string;
+  franchiseId: string;
+  productFranchiseId: string;
+  quantity: number;
+  note?: string;
+  message?: string;
+  address?: string;
+  phone?: string;
+  options: CartItemOptionRequest[];
+}
+
+export interface CartEditNavigationState {
+  cartEdit: CartEditDraft;
+}
+
+export interface CartItemEditSizeOption {
+  productFranchiseId: string;
+  label: string;
+  price: number;
+}
+
+export interface CartItemEditToppingOption {
+  productId: string;
+  name: string;
+  imageUrl?: string;
+  sizes: CartItemEditSizeOption[];
+}
+
+export interface CartItemEditConfig {
+  sizeOptions: CartItemEditSizeOption[];
+  toppingOptions: CartItemEditToppingOption[];
+}
 export interface AddProductToCartByStaffRequest {
   customerId: string;
   franchiseId: string;
@@ -62,6 +96,11 @@ export interface UpdateCartOptionItemRequest {
 export interface RemoveCartOptionItemRequest {
   cartItemId: string;
   optionProductFranchiseId: string;
+}
+
+export interface UpdateCartItemOptionsRequest {
+  cartItemId: string;
+  options: CartItemOptionRequest[];
 }
 
 export interface ApplyVoucherInCartRequest {
@@ -133,8 +172,9 @@ export type UpdateCartResponse = CartResponse;
 export type DeleteCartItemResponse = CartResponse;
 export type UpdateCartOptionItemResponse = CartResponse;
 export type RemoveCartOptionItemResponse = CartResponse;
-export type ApplyVoucherInCartResponse = CartResponse;
-export type RemoveVoucherInCartResponse = CartResponse;
+export type UpdateCartItemOptionsResponse = CartResponse | null;
+export type ApplyVoucherInCartResponse = CartResponse | null;
+export type RemoveVoucherInCartResponse = CartResponse | null;
 export type CheckoutCartResponse = CartResponse;
 export type CancelCartResponse = CartResponse;
 export type AddProductToCartByStaffResponse = CartResponse;
@@ -142,3 +182,7 @@ export type AddProductToCartResponse = CartResponse;
 
 export type CountCartByCustomerResponse = number;
 export type CountCartItemByCartResponse = number;
+
+
+
+
