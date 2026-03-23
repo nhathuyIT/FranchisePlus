@@ -31,7 +31,10 @@ import {
   type ApiErrorResponse,
 } from "@/lib/form/error-mapping";
 
-const normalizeSize = (value?: string | null) => (value ?? "").trim().toUpperCase();
+const normalizeSize = (value?: string | null) => {
+  const normalized = (value ?? "").trim().toUpperCase();
+  return normalized.length > 0 ? normalized : "DEFAULT";
+};
 
 const createSchema = z.object({
   productId: z.string().min(1, "Product is required").transform((val) => val),
@@ -131,7 +134,7 @@ export const AddFranchiseProductModal = ({
       const payload = {
         franchise_id: franchiseId,
         product_id: formData.productId,
-        size: normalizedSize ? normalizedSize : undefined,
+        size: normalizedSize,
         price_base: formData.priceBase,
         is_active: formData.isActive ?? true,
       };

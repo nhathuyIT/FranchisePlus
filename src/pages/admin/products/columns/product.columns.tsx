@@ -64,6 +64,19 @@ export const createProductColumns = (options?: ColumnOptions): ColumnDef<AdminPr
     ),
   });
 
+  if (options?.isManagerView) {
+    columns.push({
+      accessorKey: "size",
+      header: "Size",
+      enableSorting: false,
+      cell: ({ row }) => (
+        <span className="text-[#5D4037]">
+          {row.original.size ? row.original.size : "—"}
+        </span>
+      ),
+    });
+  }
+
   if (!options?.isManagerView) {
     columns.push({
       accessorKey: "isHaveTopping",

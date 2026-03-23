@@ -238,7 +238,7 @@ export const FranchiseInventoryTab = ({
             searchable
             searchPlaceholder="Search products..."
             emptyMessage="No inventory items found for this franchise."
-            initialPageSize={5}
+            initialPageSize={10}
             isLoading={isLoading || isLoadingInventory}
             error={
               error

@@ -33,6 +33,7 @@ import {
   useInventorySearch,
 } from "@/hooks/inventory/useInventory.hooks";
 import type { InventorySearchItem } from "@/api/inventory/inventory.type";
+import { uploadFileToCloudinary } from "@/config/cloudinary";
 
 // ── Form schema ─────────────────────────────────────────────────────────────
 
@@ -798,6 +799,7 @@ const ProductsPage = () => {
         }
         schema={productSchema}
         fields={productFields}
+        onImageUpload={isManagerView ? undefined : uploadFileToCloudinary}
         values={formValues}
         mode={dialog.mode}
         onSubmit={handleSubmit}

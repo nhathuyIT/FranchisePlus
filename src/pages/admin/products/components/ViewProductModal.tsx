@@ -6,10 +6,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import type { Product } from "@/types/product.type";
+import type { AdminProductRow } from "../columns/product.columns";
 
 interface ViewProductModalProps {
-  product: Product | null;
+  product: AdminProductRow | null;
   isOpen: boolean;
   onClose: () => void;
   isManagerView?: boolean;
@@ -59,6 +59,15 @@ export const ViewProductModal = ({ product, isOpen, onClose, isManagerView = fal
             <h3 className="text-sm font-medium text-[#5D4037] mb-1">Name</h3>
             <p className="text-lg font-semibold text-[#3E2723]">{product.name}</p>
           </div>
+
+          {isManagerView && (
+            <div>
+              <h3 className="text-sm font-medium text-[#5D4037] mb-1">Size</h3>
+              <p className="text-base text-[#3E2723]">
+                {product.size ? product.size : <span className="text-gray-400">—</span>}
+              </p>
+            </div>
+          )}
 
           {product.description !== null && (
             <div>
