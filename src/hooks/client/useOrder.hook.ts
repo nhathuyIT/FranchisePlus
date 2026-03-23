@@ -82,6 +82,7 @@ const mapOrder = (order: ApiOrder, index: number): Order => {
 
 	return {
 		id: toNumber(order.id) || index + 1,
+		rawId: String((order as any)._id || order.id || ""),
 		code: order.code || "N/A",
 		franchiseId: toNumber(order.franchiseId),
 		franchiseName: order.franchiseName || order.franchise?.name || "Unknown franchise",

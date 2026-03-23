@@ -23,7 +23,6 @@ interface PaymentTableProps {
   onRefund?: (payment: AdminPayment) => void;
   searchValue?: string;
   onSearchChange?: (value: string) => void;
-  searchPlaceholder?: string;
 }
 
 const PAYMENT_STATUS_OPTIONS = [
@@ -51,7 +50,6 @@ export const PaymentTable = ({
   onRefund,
   searchValue,
   onSearchChange,
-  searchPlaceholder = "Search payment by code...",
 }: PaymentTableProps) => {
   const columns = useMemo(() => createPaymentColumns(), []);
 
@@ -72,7 +70,7 @@ export const PaymentTable = ({
       error={error}
       onRetry={onRetry}
       searchable
-      searchPlaceholder={searchPlaceholder}
+      searchPlaceholder="Search payment by code..."
       searchValue={searchValue}
       onSearchChange={onSearchChange}
       emptyMessage="No payments found matching your search."
