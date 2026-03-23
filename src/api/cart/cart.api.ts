@@ -210,7 +210,19 @@ export const createCartByStaffBulk = async (
 };
 export const addProductToCartByStaff = async (
   data: AddProductToCartByStaffRequest,
-): Promise<AddProductToCartByStaffResponse> => createCartByStaff(data);
+): Promise<AddProductToCartByStaffResponse> =>
+  createCartByStaff({
+    customerId: data.customerId,
+    franchiseId: data.franchiseId,
+    items: [
+      {
+        productFranchiseId: data.productFranchiseId,
+        quantity: data.quantity,
+        note: data.note,
+        options: data.options,
+      },
+    ],
+  });
 
 export const addProductToCart = async (
   data: AddProductToCartRequest,
@@ -380,7 +392,7 @@ export const applyVoucherInCart = async (
   cartId: string,
   data: ApplyVoucherInCartRequest,
 ): Promise<ApplyVoucherInCartResponse> => {
-  await httpClient.put<null, ApplyVoucherInCartRequest>({
+  const response = await httpClient.put<RawCartResponse, ApplyVoucherInCartRequest>({
     url: `/api/carts/${cartId}/apply-voucher`,
     data,
   });
@@ -395,7 +407,7 @@ export const applyVoucherInCart = async (
 export const removeVoucherInCart = async (
   cartId: string,
 ): Promise<RemoveVoucherInCartResponse> => {
-  await httpClient.delete<null>({
+  const response = await httpClient.delete<RawCartResponse>({
     url: `/api/carts/${cartId}/remove-voucher`,
   });
 

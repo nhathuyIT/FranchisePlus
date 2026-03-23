@@ -50,13 +50,18 @@ export interface AddProductToCartByStaffRequest {
   options?: CartItemOptionRequest[];
 }
 
+export interface StaffCartItemRequest {
+  productFranchiseId: string;
+  quantity: number;
+  note?: string;
+  options?: CartItemOptionRequest[];
+}
+
 export interface CreateCartByStaffRequest {
   customerId: string;
   franchiseId: string;
   items: StaffCartItemRequest[];
 }
-
-export type AddProductToCartByStaffRequest = CreateCartByStaffRequest;
 
 export interface AddProductToCartRequest {
   franchiseId: string;
@@ -226,8 +231,8 @@ export type GetCartsByCustomerResponse = CartResponse[];
 export type GetCartDetailResponse = CartResponse;
 export type UpdateCartResponse = CartResponse;
 export type DeleteCartItemResponse = CartResponse;
-export type UpdateCartOptionItemResponse = CartResponse;
-export type RemoveCartOptionItemResponse = CartResponse;
+export type UpdateCartOptionItemResponse = CartResponse | null;
+export type RemoveCartOptionItemResponse = CartResponse | null;
 export type UpdateCartItemOptionsResponse = CartResponse | null;
 export type ApplyVoucherInCartResponse = CartResponse | null;
 export type RemoveVoucherInCartResponse = CartResponse | null;
