@@ -1,23 +1,40 @@
-import { useState, useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Search } from "lucide-react";
-import {
-  ORDERS,
-  ORDER_STATUS_TABS,
-  ORDER_STATUS_STYLES,
-  type OrderStatus,
-  type Order,
-} from "@/const/order.const";
+import type { OrderStatus, Order } from "@/const/order.const";
+import type { ApiOrderStatus } from "@/api/order/order.api";
+import { useGetMyOrders } from "@/hooks/client/useOrder.hook";
+import { useAuthStore } from "@/stores/auth-store";
+
+const ORDER_STATUS_TABS: { key: ApiOrderStatus | "ALL"; label: string }[] = [
+  { key: "ALL", label: "Tất cả" },
+  { key: "DRAFT", label: "Chờ thanh toán" },
+  { key: "CONFIRMED", label: "Đã xác nhận" },
+  { key: "PREPARING", label: "Đang chuẩn bị" },
+  { key: "READY_FOR_PICKUP", label: "Sẵn sàng lấy hàng" },
+  { key: "OUT_FOR_DELIVERY", label: "Đang giao hàng" },
+  { key: "COMPLETED", label: "Hoàn thành" },
+  { key: "CANCELED", label: "Đã hủy" },
+];
+
+const ORDER_STATUS_STYLES: Record<OrderStatus, { label: string; color: string }> = {
+  PENDING: { label: "Chờ thanh toán", color: "text-yellow-600" },
+  CONFIRMED: { label: "Đã xác nhận", color: "text-blue-600" },
+  SHIPPING: { label: "Đang giao hàng", color: "text-orange-500" },
+  COMPLETED: { label: "Hoàn thành", color: "text-green-600" },
+  CANCELLED: { label: "Đã hủy", color: "text-red-500" },
+  REFUNDED: { label: "Trả hàng/Hoàn tiền", color: "text-gray-500" },
+};
 
 const MyOrderPage = () => {
-  const [activeTab, setActiveTab] = useState<OrderStatus | "ALL">("ALL");
+  const customerId = useAuthStore((state) => state.authUser?.user?.id);
+  const [activeTab, setActiveTab] = useState<ApiOrderStatus | "ALL">("ALL");
   const [searchQuery, setSearchQuery] = useState("");
+  const { data: orders = [], isLoading, isError } = useGetMyOrders(
+    activeTab === "ALL" ? undefined : activeTab
+  );
 
   const filteredOrders = useMemo(() => {
-    let filtered = ORDERS;
-
-    if (activeTab !== "ALL") {
-      filtered = filtered.filter((order) => order.status === activeTab);
-    }
+    let filtered = orders;
 
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
@@ -30,7 +47,7 @@ const MyOrderPage = () => {
     }
 
     return filtered;
-  }, [activeTab, searchQuery]);
+  }, [searchQuery, orders]);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("vi-VN").format(amount) + "đ";
@@ -65,8 +82,12 @@ const MyOrderPage = () => {
             const isActive = activeTab === tab.key;
             const count =
               tab.key === "ALL"
-                ? ORDERS.length
-                : ORDERS.filter((o) => o.status === tab.key).length;
+                ? activeTab === "ALL"
+                  ? orders.length
+                  : 0
+                : activeTab === tab.key
+                  ? orders.length
+                  : 0;
 
             return (
               <button
@@ -107,7 +128,15 @@ const MyOrderPage = () => {
       </div>
 
       {/* ═══ Order List ═══ */}
-      {filteredOrders.length === 0 ? (
+      {!customerId && !isLoading ? (
+        <div className="rounded-xl border border-[#E8E0D8] bg-white p-4 text-sm text-[#8D6E63]">
+          Vui lòng đăng nhập để xem đơn hàng của bạn.
+        </div>
+      ) : isLoading ? (
+        <LoadingState />
+      ) : isError ? (
+        <ErrorState />
+      ) : filteredOrders.length === 0 ? (
         <EmptyState activeTab={activeTab} />
       ) : (
         <div className="space-y-4">
@@ -125,8 +154,25 @@ const MyOrderPage = () => {
   );
 };
 
+const LoadingState = () => (
+  <div className="space-y-3">
+    {Array.from({ length: 3 }).map((_, idx) => (
+      <div
+        key={`order-loading-${idx}`}
+        className="h-28 rounded-xl border border-[#E8E0D8] bg-[#FAF8F5] animate-pulse"
+      />
+    ))}
+  </div>
+);
+
+const ErrorState = () => (
+  <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+    Không thể tải danh sách đơn hàng. Vui lòng thử lại sau.
+  </div>
+);
+
 /* ─── Empty State ─── */
-const EmptyState = ({ activeTab }: { activeTab: string }) => (
+const EmptyState = ({ activeTab }: { activeTab: ApiOrderStatus | "ALL" }) => (
   <div className="flex flex-col items-center justify-center py-20 text-center">
     <div className="w-20 h-20 rounded-full bg-[#EFEBE9] flex items-center justify-center mb-4">
       <img

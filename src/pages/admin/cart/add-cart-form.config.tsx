@@ -1,7 +1,7 @@
 import { z } from "zod";
 import type { FieldConfig, SelectOption } from "@/lib/form/field-config";
 import * as productFranchiseApi from "@/api/product-franchise/product-franchise.api";
-import type { AddProductToCartByStaffRequest } from "@/types/cart";
+import type { CartItemOptionRequest } from "@/types/cart";
 import { CartOptionArrayField } from "./components/CartOptionArrayField";
 
 const cartItemOptionSchema = z.object({
@@ -122,7 +122,7 @@ export const buildAddCartFields = (
       <CartOptionArrayField
         value={
           Array.isArray(field.value)
-            ? (field.value as AddProductToCartByStaffRequest["options"]) ?? []
+            ? (field.value as CartItemOptionRequest[]) ?? []
             : []
         }
         onChange={(value) => field.onChange(value)}

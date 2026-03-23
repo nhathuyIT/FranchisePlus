@@ -6,14 +6,16 @@ import { Button } from "@/components/ui/button";
 import { useFormDialog } from "@/components/form-dialog";
 import { useDebounce } from "@/hooks/common/useDebounce";
 import { useCartsByCustomerQuery } from "@/hooks/cart/useCart.hook";
-import { useCustomerSearch } from "@/hooks/customer";
+import { useCustomerByKeyword } from "@/hooks/customer";
 import { Permission } from "@/config/permission";
 import { useAuthStore } from "@/stores/auth-store";
 import { createCartColumns } from "./columns/CartColumns";
 import { AddCartDialog } from "./components/AddCartDialog";
+import { CartActionButtons } from "./components/CartActionButtons";
+import { CartDetailDialog } from "./components/CartDetailDialog";
 import { CartLookupToolbar } from "./components/CartLookupToolbar";
 import { CartSelectedUserSummary } from "./components/CartSelectedUserSummary";
-import { SelectedCartPanel } from "./components/SelectedCartPanel";
+import { EditCartDialog } from "./components/EditCartDialog";
 import type { CartLookupUser, CustomerStatusFilter } from "./types";
 import { getCartLookupHint, isNoCartError } from "./utils/cartDisplay";
 
@@ -44,29 +46,23 @@ const CartManagement = () => {
   const [shouldRefetchAfterCreate, setShouldRefetchAfterCreate] =
     useState(false);
   const [isRefreshingAfterCreate, setIsRefreshingAfterCreate] = useState(false);
+  const [detailCartId, setDetailCartId] = useState<string | null>(null);
+  const [editCartId, setEditCartId] = useState<string | null>(null);
+  const normalizedUserSearch = userSearchValue.trim();
+  const canSearchUsers = normalizedUserSearch.length >= 3;
 
   const debouncedUserSearch = useDebounce(
-    userSearchValue.trim(),
-    300,
+    canSearchUsers ? normalizedUserSearch : "",
+    450,
     userSearchValue,
   );
 
-  const userSearchQuery = useCustomerSearch(
-    {
-      searchCondition: {
-        keyword: debouncedUserSearch || undefined,
-        isActive: true,
-        isDeleted: false,
-      },
-      pageInfo: {
-        pageNum: 1,
-        pageSize: 20,
-      },
-    },
-    {
-      enabled: canViewCart && userSearchOpen,
-    },
-  );
+  const userSearchQuery = useCustomerByKeyword(debouncedUserSearch, {
+    enabled:
+      canViewCart &&
+      userSearchOpen &&
+      debouncedUserSearch.length >= 3,
+  });
 
   const customerLookupQuery = useCartsByCustomerQuery(
     {
@@ -77,8 +73,11 @@ const CartManagement = () => {
   );
 
   const userSearchResults = useMemo(
-    () => userSearchQuery.data?.pageData ?? [],
-    [userSearchQuery.data],
+    () =>
+      canSearchUsers && debouncedUserSearch.length >= 3
+        ? (userSearchQuery.data ?? [])
+        : [],
+    [canSearchUsers, debouncedUserSearch, userSearchQuery.data],
   );
 
   const userOptions = useMemo(
@@ -133,6 +132,8 @@ const CartManagement = () => {
       setSelectedCartId(null);
       setShouldRefetchAfterCreate(false);
       setIsRefreshingAfterCreate(false);
+      setDetailCartId(null);
+      setEditCartId(null);
       setUserSearchOpen(false);
     },
     [selectedUser, userSearchResults],
@@ -143,12 +144,24 @@ const CartManagement = () => {
     setSelectedCartId(null);
     setShouldRefetchAfterCreate(false);
     setIsRefreshingAfterCreate(false);
+    setDetailCartId(null);
+    setEditCartId(null);
     setUserSearchValue("");
     setUserSearchOpen(false);
   }, []);
 
   const handleSelectCart = useCallback((cartId: string) => {
     setSelectedCartId(cartId);
+  }, []);
+
+  const handleOpenCartDetail = useCallback((cartId: string) => {
+    setSelectedCartId(cartId);
+    setDetailCartId(cartId);
+  }, []);
+
+  const handleOpenEditCart = useCallback((cartId: string) => {
+    setSelectedCartId(cartId);
+    setEditCartId(cartId);
   }, []);
 
   const handleCartCreated = useCallback((cartId: string) => {
@@ -223,11 +236,11 @@ const CartManagement = () => {
       isRefreshingAfterCreate);
 
   return (
-    <div className="flex h-full flex-col">
+    <div className="flex h-full flex-col scroll-hide">
       <div className="mx-auto flex min-h-0 w-full max-w-7xl flex-1 flex-col">
         <PageHeader
           title="Cart Management"
-          description="Search an active user with the shared async search, then inspect that user's carts."
+          description="Search a user by keyword, then inspect and manage that user's carts."
           action={
             canManageCart ? (
               <Button
@@ -252,7 +265,8 @@ const CartManagement = () => {
             onUserSearchValueChange={setUserSearchValue}
             onUserChange={handleUserChange}
             isUserSearchLoading={
-              userSearchQuery.isLoading || userSearchQuery.isFetching
+              canSearchUsers &&
+              (userSearchQuery.isLoading || userSearchQuery.isFetching)
             }
             customerStatus={customerStatus}
             onCustomerStatusChange={setCustomerStatus}
@@ -271,35 +285,44 @@ const CartManagement = () => {
             />
           )}
 
-          <div className="flex min-h-0 flex-1 flex-col gap-4">
-            <div className="h-[420px] shrink-0">
-              <DataTable
-                columns={customerColumns}
-                data={canViewCart ? customerRows : []}
-                emptyMessage={customerEmptyMessage}
-                isLoading={isCustomerTableLoading}
-                error={suppressNoCartError ? null : userCartError}
-                onRetry={
-                  selectedUser && !suppressNoCartError
-                    ? () => {
-                        void customerLookupQuery.refetch();
-                      }
-                    : undefined
-                }
-                onRowClick={(cart) => handleSelectCart(cart.id)}
-                enableColumnVisibility
-                initialPageSize={10}
-                getRowClassName={(cart) =>
-                  cart.id === selectedCart?.id
-                    ? "bg-[#FFF8F1] hover:bg-[#FFF3E0]"
-                    : ""
-                }
-              />
-            </div>
-
-            <SelectedCartPanel
-              selectedUser={selectedUser}
-              selectedCart={selectedCart}
+          <div className="min-h-0 flex-1">
+            <DataTable
+              columns={customerColumns}
+              data={canViewCart ? customerRows : []}
+              emptyMessage={customerEmptyMessage}
+              isLoading={isCustomerTableLoading}
+              error={suppressNoCartError ? null : userCartError}
+              onRetry={
+                selectedUser && !suppressNoCartError
+                  ? () => {
+                      void customerLookupQuery.refetch();
+                    }
+                  : undefined
+              }
+              onRowClick={(cart) => handleSelectCart(cart.id)}
+              enableColumnVisibility
+              initialPageSize={10}
+              renderActions={(cart) => (
+                <div
+                  onClick={(event) => {
+                    event.stopPropagation();
+                  }}
+                >
+                  <CartActionButtons
+                    compact
+                    onViewDetail={() => handleOpenCartDetail(cart.id)}
+                    onEditCart={() => handleOpenEditCart(cart.id)}
+                    canEditCart={
+                      canManageCart && cart.status?.toUpperCase() === "ACTIVE"
+                    }
+                  />
+                </div>
+              )}
+              getRowClassName={(cart) =>
+                cart.id === selectedCart?.id
+                  ? "bg-[#FFF8F1] hover:bg-[#FFF3E0]"
+                  : ""
+              }
             />
           </div>
         </div>
@@ -314,6 +337,26 @@ const CartManagement = () => {
         }}
         selectedUser={selectedUser}
         onCreated={handleCartCreated}
+      />
+
+      <CartDetailDialog
+        open={!!detailCartId}
+        onOpenChange={(open) => {
+          if (!open) {
+            setDetailCartId(null);
+          }
+        }}
+        cartId={detailCartId}
+      />
+
+      <EditCartDialog
+        open={!!editCartId}
+        onOpenChange={(open) => {
+          if (!open) {
+            setEditCartId(null);
+          }
+        }}
+        cartId={editCartId}
       />
     </div>
   );
