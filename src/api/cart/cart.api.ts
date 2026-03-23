@@ -8,6 +8,7 @@ import type {
   ApplyVoucherInCartResponse,
   CancelCartResponse,
   CheckoutCartResponse,
+  CheckoutCartRequest,
   CountCartByCustomerParams,
   CountCartByCustomerResponse,
   CountCartItemByCartResponse,
@@ -70,7 +71,11 @@ const normalizeCartProduct = (
     imageUrl?: string;
   },
 ) => ({
-  productName: product?.name || product?.productName || fallback?.name || "Unnamed product",
+  productName:
+    product?.name ||
+    product?.productName ||
+    fallback?.name ||
+    "Unnamed product",
   productImageUrl:
     product?.imageUrl || product?.productImageUrl || fallback?.imageUrl || "",
 });
@@ -169,15 +174,14 @@ export const getCartsByCustomerId = async ({
   customerId,
   status,
 }: GetCartsByCustomerParams): Promise<GetCartsByCustomerResponse> => {
-  const response = await httpClient.get<
-    RawCartResponse[],
-    { status?: string }
-  >({
-    url: `/api/carts/customer/${customerId}`,
-    params: {
-      status,
+  const response = await httpClient.get<RawCartResponse[], { status?: string }>(
+    {
+      url: `/api/carts/customer/${customerId}`,
+      params: {
+        status,
+      },
     },
-  });
+  );
 
   return (response ?? []).map(normalizeCart);
 };
@@ -233,7 +237,7 @@ export const updateCart = async (
 
 export const deleteCartItem = async (
   cartItemId: string,
-): Promise<DeleteCartItemResponse> => {
+): Promise<DeleteCartItemResponse | null> => {
   const response = await httpClient.delete<RawCartResponse>({
     url: `/api/carts/items/${cartItemId}`,
   });
@@ -314,9 +318,11 @@ export const removeVoucherInCart = async (
 
 export const checkoutCart = async (
   cartId: string,
+  data: CheckoutCartRequest,
 ): Promise<CheckoutCartResponse> => {
-  const response = await httpClient.put<RawCartResponse>({
+  const response = await httpClient.put<RawCartResponse, CheckoutCartRequest>({
     url: `/api/carts/${cartId}/checkout`,
+    data,
   });
 
   return normalizeCart(response!);
