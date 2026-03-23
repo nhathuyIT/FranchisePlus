@@ -58,6 +58,7 @@ export const ROUTER_URL = {
     LOYALTY_RULES: "loyalty-rules",
     USER_FRANCHISE_ROLES: "user-franchise-roles",
     CUSTOMERS: "customers",
+    PAYMENTS: "payments",
     CART: "cart",
   },
 };
