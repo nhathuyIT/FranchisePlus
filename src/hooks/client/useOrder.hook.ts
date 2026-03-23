@@ -6,8 +6,18 @@ import type {
 	OrderStatus,
 	OrderType,
 } from "@/const/order.const";
-import type { ApiOrder, ApiOrderItem } from "@/api/client/order.api";
-import { getOrdersByCustomerId } from "@/api/client/order.api";
+import type {
+	ApiOrder,
+	ApiOrderItem,
+	ApiOrderStatus,
+} from "@/api/order/order.api";
+import {
+	getOrderByCartId,
+	getOrderByCode,
+	getOrderById,
+	getOrdersByCustomerId,
+	getOrdersByFranchiseId,
+} from "@/api/order/order.api";
 
 const FALLBACK_IMAGE =
 	"https://images.unsplash.com/photo-1509042239860-f550ce710b93?w=160&q=80";
@@ -40,10 +50,10 @@ const mapStatus = (status?: string): OrderStatus => {
 	const value = (status || "").toUpperCase();
 
 	if (value.includes("REFUND")) return "REFUNDED";
-	if (value.includes("CANCEL")) return "CANCELLED";
+	if (value.includes("CANCELED") || value.includes("CANCELLED") || value.includes("CANCEL")) return "CANCELLED";
+	if (value.includes("OUT_FOR_DELIVERY") || value.includes("DELIVER") || value.includes("SHIP")) return "SHIPPING";
+	if (value.includes("READY_FOR_PICKUP") || value.includes("PREPARING") || value.includes("CONFIRM")) return "CONFIRMED";
 	if (value.includes("COMPLETE")) return "COMPLETED";
-	if (value.includes("SHIP") || value.includes("DELIVER")) return "SHIPPING";
-	if (value.includes("CONFIRM")) return "CONFIRMED";
 
 	// PREPARING/DRAFT/PENDING -> PENDING tab in UI.
 	return "PENDING";
@@ -90,17 +100,81 @@ const mapOrder = (order: ApiOrder, index: number): Order => {
 	};
 };
 
-export const useGetMyOrders = () => {
+const mapOrders = (orders: ApiOrder[]): Order[] => orders.map(mapOrder);
+
+const mapSingleOrder = (order: ApiOrder | null): Order | null => {
+	if (!order) return null;
+	return mapOrder(order, 0);
+};
+
+export const useGetMyOrders = (status?: ApiOrderStatus) => {
 	const customerId = useAuthStore((state) => state.authUser?.user?.id);
 
 	return useQuery({
-		queryKey: ["client-my-orders", customerId],
+		queryKey: ["client-my-orders", customerId, status],
 		queryFn: async () => {
 			if (!customerId) return [] as Order[];
 
-			const orders = await getOrdersByCustomerId(customerId);
-			return orders.map(mapOrder);
+			const orders = await getOrdersByCustomerId(customerId, status);
+			return mapOrders(orders);
 		},
 		enabled: !!customerId,
+	});
+};
+
+export const useGetOrderByCartId = (cartId?: string | number) => {
+	return useQuery({
+		queryKey: ["client-order-by-cart", cartId],
+		queryFn: async () => {
+			if (!cartId) return null;
+
+			const order = await getOrderByCartId(cartId);
+			return mapSingleOrder(order);
+		},
+		enabled: !!cartId,
+	});
+};
+
+export const useGetOrderByCode = (code?: string) => {
+	const normalizedCode = code?.trim();
+
+	return useQuery({
+		queryKey: ["client-order-by-code", normalizedCode],
+		queryFn: async () => {
+			if (!normalizedCode) return null;
+
+			const order = await getOrderByCode(normalizedCode);
+			return mapSingleOrder(order);
+		},
+		enabled: !!normalizedCode,
+	});
+};
+
+export const useGetOrderById = (orderId?: string | number) => {
+	return useQuery({
+		queryKey: ["client-order-by-id", orderId],
+		queryFn: async () => {
+			if (!orderId) return null;
+
+			const order = await getOrderById(orderId);
+			return mapSingleOrder(order);
+		},
+		enabled: !!orderId,
+	});
+};
+
+export const useGetOrdersByFranchiseId = (
+	franchiseId?: string | number,
+	status?: ApiOrderStatus,
+) => {
+	return useQuery({
+		queryKey: ["client-orders-by-franchise", franchiseId, status],
+		queryFn: async () => {
+			if (!franchiseId) return [] as Order[];
+
+			const orders = await getOrdersByFranchiseId(franchiseId, status);
+			return mapOrders(orders);
+		},
+		enabled: !!franchiseId,
 	});
 };
