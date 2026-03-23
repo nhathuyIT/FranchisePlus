@@ -8,6 +8,7 @@ import type {
   ApplyVoucherInCartResponse,
   CancelCartResponse,
   CheckoutCartResponse,
+  CheckoutCartRequest,
   CountCartByCustomerParams,
   CountCartByCustomerResponse,
   CountCartItemByCartResponse,
@@ -317,9 +318,11 @@ export const removeVoucherInCart = async (
 
 export const checkoutCart = async (
   cartId: string,
+  data: CheckoutCartRequest,
 ): Promise<CheckoutCartResponse> => {
-  const response = await httpClient.put<RawCartResponse>({
+  const response = await httpClient.put<RawCartResponse, CheckoutCartRequest>({
     url: `/api/carts/${cartId}/checkout`,
+    data,
   });
 
   return normalizeCart(response!);

@@ -18,6 +18,7 @@ export const ROUTER_URL = {
     PRODUCTS: "products",
     PRODUCT_DETAIL: "products/:slug",
     PAYMENT: "payment",
+    PAYMENT_QR: "payment/qr",
   },
   VERIFY_EMAIL: "verify-customer-email/:id",
   ACCOUNT: "/account",

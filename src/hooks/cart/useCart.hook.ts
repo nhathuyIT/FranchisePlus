@@ -6,6 +6,7 @@ import type {
   AddProductToCartRequest,
   ApplyVoucherInCartRequest,
   CartStatus,
+  CheckoutCartRequest,
   CountCartByCustomerParams,
   GetCartsByCustomerParams,
   RemoveCartOptionItemRequest,
@@ -264,8 +265,11 @@ export const useUpdateCartItemMutation = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (data: { cartItemId: string; quantity: number; note?: string }) =>
-      cartApi.updateCartItem(data),
+    mutationFn: (data: {
+      cartItemId: string;
+      quantity: number;
+      note?: string;
+    }) => cartApi.updateCartItem(data),
     onSuccess: async (response) => {
       await invalidateCartQueries(queryClient, {
         cartId: response?.id,
@@ -407,16 +411,22 @@ export const useRemoveVoucherInCartMutation = () => {
  *
  * Usage:
  * `const checkoutCart = useCheckoutCartMutation();`
- * `checkoutCart.mutate(cartId);`
+ * `checkoutCart.mutate({ cartId, data: { address, phone, message } });`
  */
 export const useCheckoutCartMutation = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (cartId: string) => cartApi.checkoutCart(cartId),
-    onSuccess: async (response, cartId) => {
+    mutationFn: ({
+      cartId,
+      data,
+    }: {
+      cartId: string;
+      data: CheckoutCartRequest;
+    }) => cartApi.checkoutCart(cartId, data),
+    onSuccess: async (response, variables) => {
       await invalidateCartQueries(queryClient, {
-        cartId,
+        cartId: variables.cartId,
         customerId: response?.customerId,
         status: response?.status,
       });
