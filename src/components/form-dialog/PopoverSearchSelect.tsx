@@ -40,6 +40,7 @@ export interface PopoverSearchSelectProps {
 
   triggerClassName?: string;
   contentClassName?: string;
+  portalled?: boolean;
 }
 
 function normalizeForSearch(value: string) {
@@ -67,6 +68,7 @@ export function PopoverSearchSelect({
   resetSearchOnClose = true,
   triggerClassName,
   contentClassName,
+  portalled = false,
 }: PopoverSearchSelectProps) {
   const [internalOpen, setInternalOpen] = React.useState(false);
   const [internalSearch, setInternalSearch] = React.useState("");
@@ -148,7 +150,7 @@ export function PopoverSearchSelect({
       <PopoverContent
         align="start"
         sideOffset={4}
-        portalled
+        portalled={portalled}
         className={cn(
           "w-[--radix-popover-trigger-width] min-w-[29rem] max-w-[calc(100vw-2rem)] p-0",
           contentClassName
