@@ -66,6 +66,9 @@ export interface FormDialogProps<TFormData extends FieldValues> {
   /** Field configurations */
   fields: FieldConfig<TFormData>[];
 
+  /** Upload handler for image-upload fields */
+  onImageUpload?: (file: File) => Promise<string>;
+
   /** Initial/default values */
   defaultValues?: DefaultValues<TFormData>;
   /** Values to reset to (for edit mode) */
@@ -113,6 +116,9 @@ export interface FormContentProps<TFormData extends FieldValues> {
   schema: z.ZodType<TFormData>;
   /** Field configurations */
   fields: FieldConfig<TFormData>[];
+
+  /** Upload handler for image-upload fields */
+  onImageUpload?: (file: File) => Promise<string>;
   /** Initial/default values */
   defaultValues?: DefaultValues<TFormData>;
   /** Values for edit mode */

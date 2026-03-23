@@ -96,9 +96,9 @@ export const mapApiProductFranchise = (raw: ApiProductFranchise): ProductFranchi
   productContent?: string;
   productImageUrl?: string;
 } => ({
-  id: raw.id as any, // MongoDB ObjectId as string
-  franchiseId: raw.franchise_id as any,
-  productId: raw.product_id as any,
+  id: raw.id as unknown as ProductFranchise["id"],
+  franchiseId: raw.franchise_id as unknown as ProductFranchise["franchiseId"],
+  productId: raw.product_id as unknown as ProductFranchise["productId"],
   size: raw.size,
   priceBase: raw.price_base,
   isActive: raw.is_active,
@@ -203,6 +203,11 @@ export const restoreProductFranchise = async (id: number | string): Promise<Prod
       message: string;
       data: ApiProductFranchise;
     }>(`/api/product-franchises/${String(id)}/restore`, {});
+    // Some backends return `data: null` on restore even when successful.
+    // Avoid mapping (which would crash) and let callers re-fetch/invalidate.
+    if (!response.data.data) {
+      return getProductFranchise(id);
+    }
     return mapApiProductFranchise(response.data.data);
   } catch (error) {
     console.error("[Product Franchise API] Restore error:", error);

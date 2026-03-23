@@ -9,6 +9,12 @@ export interface CartLookupUser {
   phone?: string | null;
 }
 
+export interface AdminCartNavigationState {
+  selectedUser?: CartLookupUser | null;
+  selectedCartId?: string | null;
+  customerStatus?: CustomerStatusFilter;
+}
+
 export interface PosCategoryTab {
   id: string;
   name: string;

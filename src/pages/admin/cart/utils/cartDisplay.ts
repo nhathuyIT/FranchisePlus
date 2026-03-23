@@ -1,6 +1,18 @@
 export const formatCartMoney = (value: number) =>
   `${value.toLocaleString("vi-VN")} VND`;
 
+export const formatVoucherValue = (type?: string, value?: number) => {
+  if (value === undefined || value === null) {
+    return null;
+  }
+
+  if (type?.toUpperCase() === "PERCENT") {
+    return `${value}%`;
+  }
+
+  return formatCartMoney(value);
+};
+
 export const formatCartDateTime = (value?: string) =>
   value ? new Date(value).toLocaleString("vi-VN") : "N/A";
 
