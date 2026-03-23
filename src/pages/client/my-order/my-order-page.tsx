@@ -263,12 +263,15 @@ const OrderRow = ({
             </div>
           )}
 
-          <span className="text-gray-300">|</span>
-
-          {/* Badge trạng thái Order */}
-          <span className={`text-xs font-semibold uppercase tracking-wide ${statusInfo.color}`}>
-            {statusInfo.label}
-          </span>
+          {/* Ẩn text "Chờ thanh toán" của Order nếu trạng thái là PENDING/DRAFT để tránh lặp chữ với Payment Status */}
+          {order.status !== "PENDING" && order.status !== ("DRAFT" as any) && (
+            <>
+              <span className="text-gray-300">|</span>
+              <span className={`text-xs font-semibold uppercase tracking-wide ${statusInfo.color}`}>
+                {statusInfo.label}
+              </span>
+            </>
+          )}
         </div>
       </div>
 
