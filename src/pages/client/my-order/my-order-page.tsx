@@ -1,26 +1,40 @@
 import { useMemo, useState } from "react";
 import { Search } from "lucide-react";
-import {
-  ORDER_STATUS_TABS,
-  ORDER_STATUS_STYLES,
-  type OrderStatus,
-  type Order,
-} from "@/const/order.const";
+import type { OrderStatus, Order } from "@/const/order.const";
+import type { ApiOrderStatus } from "@/api/order/order.api";
 import { useGetMyOrders } from "@/hooks/client/useOrder.hook";
 import { useAuthStore } from "@/stores/auth-store";
 
+const ORDER_STATUS_TABS: { key: ApiOrderStatus | "ALL"; label: string }[] = [
+  { key: "ALL", label: "Tất cả" },
+  { key: "DRAFT", label: "Chờ thanh toán" },
+  { key: "CONFIRMED", label: "Đã xác nhận" },
+  { key: "PREPARING", label: "Đang chuẩn bị" },
+  { key: "READY_FOR_PICKUP", label: "Sẵn sàng lấy hàng" },
+  { key: "OUT_FOR_DELIVERY", label: "Đang giao hàng" },
+  { key: "COMPLETED", label: "Hoàn thành" },
+  { key: "CANCELED", label: "Đã hủy" },
+];
+
+const ORDER_STATUS_STYLES: Record<OrderStatus, { label: string; color: string }> = {
+  PENDING: { label: "Chờ thanh toán", color: "text-yellow-600" },
+  CONFIRMED: { label: "Đã xác nhận", color: "text-blue-600" },
+  SHIPPING: { label: "Đang giao hàng", color: "text-orange-500" },
+  COMPLETED: { label: "Hoàn thành", color: "text-green-600" },
+  CANCELLED: { label: "Đã hủy", color: "text-red-500" },
+  REFUNDED: { label: "Trả hàng/Hoàn tiền", color: "text-gray-500" },
+};
+
 const MyOrderPage = () => {
   const customerId = useAuthStore((state) => state.authUser?.user?.id);
-  const [activeTab, setActiveTab] = useState<OrderStatus | "ALL">("ALL");
+  const [activeTab, setActiveTab] = useState<ApiOrderStatus | "ALL">("ALL");
   const [searchQuery, setSearchQuery] = useState("");
-  const { data: orders = [], isLoading, isError } = useGetMyOrders();
+  const { data: orders = [], isLoading, isError } = useGetMyOrders(
+    activeTab === "ALL" ? undefined : activeTab
+  );
 
   const filteredOrders = useMemo(() => {
     let filtered = orders;
-
-    if (activeTab !== "ALL") {
-      filtered = filtered.filter((order) => order.status === activeTab);
-    }
 
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
@@ -33,7 +47,7 @@ const MyOrderPage = () => {
     }
 
     return filtered;
-  }, [activeTab, searchQuery, orders]);
+  }, [searchQuery, orders]);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("vi-VN").format(amount) + "đ";
@@ -68,8 +82,12 @@ const MyOrderPage = () => {
             const isActive = activeTab === tab.key;
             const count =
               tab.key === "ALL"
-                ? orders.length
-                : orders.filter((o) => o.status === tab.key).length;
+                ? activeTab === "ALL"
+                  ? orders.length
+                  : 0
+                : activeTab === tab.key
+                  ? orders.length
+                  : 0;
 
             return (
               <button
@@ -154,7 +172,7 @@ const ErrorState = () => (
 );
 
 /* ─── Empty State ─── */
-const EmptyState = ({ activeTab }: { activeTab: string }) => (
+const EmptyState = ({ activeTab }: { activeTab: ApiOrderStatus | "ALL" }) => (
   <div className="flex flex-col items-center justify-center py-20 text-center">
     <div className="w-20 h-20 rounded-full bg-[#EFEBE9] flex items-center justify-center mb-4">
       <img
