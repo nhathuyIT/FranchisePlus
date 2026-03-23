@@ -1,5 +1,9 @@
 import { httpClient } from "../httpClient.api";
 import type {
+  CreateCartByStaffRequest,
+  CreateCartByStaffResponse,
+  CreateCartByStaffBulkRequest,
+  CreateCartByStaffBulkResponse,
   AddProductToCartByStaffRequest,
   AddProductToCartByStaffResponse,
   AddProductToCartRequest,
@@ -25,6 +29,7 @@ import type {
   CartOptionResponse,
   CartItemResponse,
   CartResponse,
+  StaffBulkAddCartPayload,
 } from "@/types/cart";
 
 export type UpdateCartItemRequest = {
@@ -70,7 +75,11 @@ const normalizeCartProduct = (
     imageUrl?: string;
   },
 ) => ({
-  productName: product?.name || product?.productName || fallback?.name || "Unnamed product",
+  productName:
+    product?.name ||
+    product?.productName ||
+    fallback?.name ||
+    "Unnamed product",
   productImageUrl:
     product?.imageUrl || product?.productImageUrl || fallback?.imageUrl || "",
 });
@@ -137,12 +146,28 @@ const normalizeCart = (cart: RawCartResponse): CartResponse => ({
   isActive: cart.isActive ?? true,
 });
 
-export const addProductToCartByStaff = async (
-  data: AddProductToCartByStaffRequest,
-): Promise<AddProductToCartByStaffResponse> => {
+const toStaffBulkAddCartPayload = (
+  data: CreateCartByStaffBulkRequest,
+): StaffBulkAddCartPayload => ({
+  customer_id: data.customerId,
+  franchise_id: data.franchiseId,
+  items: data.items.map((item) => ({
+    product_franchise_id: item.productFranchiseId,
+    quantity: item.quantity,
+    note: item.note,
+    options: item.options?.map((option) => ({
+      product_franchise_id: option.productFranchiseId,
+      quantity: option.quantity,
+    })),
+  })),
+});
+
+export const createCartByStaff = async (
+  data: CreateCartByStaffRequest,
+): Promise<CreateCartByStaffResponse> => {
   const response = await httpClient.post<
     RawCartResponse,
-    AddProductToCartByStaffRequest
+    CreateCartByStaffRequest
   >({
     url: "/api/carts/items/staff",
     data,
@@ -150,6 +175,22 @@ export const addProductToCartByStaff = async (
 
   return normalizeCart(response!);
 };
+export const createCartByStaffBulk = async (
+  data: CreateCartByStaffBulkRequest,
+): Promise<CreateCartByStaffBulkResponse> => {
+  const response = await httpClient.post<
+    RawCartResponse,
+    StaffBulkAddCartPayload
+  >({
+    url: "/api/carts/items/staff-bulk",
+    data: toStaffBulkAddCartPayload(data),
+  });
+
+  return normalizeCart(response!);
+};
+export const addProductToCartByStaff = async (
+  data: AddProductToCartByStaffRequest,
+): Promise<AddProductToCartByStaffResponse> => createCartByStaff(data);
 
 export const addProductToCart = async (
   data: AddProductToCartRequest,
@@ -169,15 +210,14 @@ export const getCartsByCustomerId = async ({
   customerId,
   status,
 }: GetCartsByCustomerParams): Promise<GetCartsByCustomerResponse> => {
-  const response = await httpClient.get<
-    RawCartResponse[],
-    { status?: string }
-  >({
-    url: `/api/carts/customer/${customerId}`,
-    params: {
-      status,
+  const response = await httpClient.get<RawCartResponse[], { status?: string }>(
+    {
+      url: `/api/carts/customer/${customerId}`,
+      params: {
+        status,
+      },
     },
-  });
+  );
 
   return (response ?? []).map(normalizeCart);
 };
@@ -274,7 +314,11 @@ export const updateOptionItemQuantity = async (
     data,
   });
 
-  return normalizeCart(response!);
+  if (!response) {
+    return null;
+  }
+
+  return normalizeCart(response);
 };
 
 export const removeOptionItem = async (
@@ -288,7 +332,11 @@ export const removeOptionItem = async (
     data,
   });
 
-  return normalizeCart(response!);
+  if (!response) {
+    return null;
+  }
+
+  return normalizeCart(response);
 };
 
 export const applyVoucherInCart = async (

@@ -23,7 +23,7 @@ productAxios.interceptors.response.use(
       });
     }
     return Promise.reject(error);
-  }
+  },
 );
 
 // ── Raw API types (snake_case – matches backend) ────────────────────────────

@@ -9,12 +9,18 @@ export const getMinPrice = (
 export const formatPrice = (price: number) =>
   price.toLocaleString("vi-VN") + "₫";
 
-export const getSizeLabel = (size: string) => {
+export const getSizeLabel = (size?: string | null) => {
+  const normalizedSize = size?.trim();
+
+  if (!normalizedSize) {
+    return "Default";
+  }
+
   const map: Record<string, string> = {
     DEFAULT: "Default",
     SMALL: "Small",
     MEDIUM: "Medium",
     LARGE: "Large",
   };
-  return map[size] || size;
+  return map[normalizedSize.toUpperCase()] || normalizedSize;
 };
