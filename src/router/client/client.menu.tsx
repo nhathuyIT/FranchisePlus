@@ -23,4 +23,20 @@ export const CLIENT_MENU: ClientMenuItem[] = [
       () => import("@/pages/client/products/components/ProductDetail"),
     ),
   },
+  {
+    label: "Payment",
+    path: ROUTER_URL.CLIENT_ROUTER.PAYMENT,
+    component: React.lazy(() => import("@/pages/client/payment/PaymentPage")),
+    isEnd: true,
+  },
+  {
+    label: "Payment QR",
+    path: ROUTER_URL.CLIENT_ROUTER.PAYMENT_QR,
+    component: React.lazy(() =>
+      import("@/pages/client/payment").then((module) => ({
+        default: module.QRTransactionPage,
+      })),
+    ),
+    isEnd: true,
+  },
 ];
