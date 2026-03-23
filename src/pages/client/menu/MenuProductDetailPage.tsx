@@ -177,38 +177,36 @@ const MenuProductDetailPage = () => {
       return;
     }
 
-    for (let i = 0; i < quantity; i++) {
-      addItem(
-        selectedSizeData.productFranchiseId,
-        detailName,
-        selectedSizeData.price,
-        1,
-        detailImageUrl,
-      );
-    }
-
-    // Add toppings
-    Object.entries(selectedToppings).forEach(
-      ([productId, franchiseProductId]) => {
+    const options = Object.entries(selectedToppings)
+      .map(([productId, franchiseProductId]) => {
         const topping = toppingsByFranchiseVisible.find(
           (item: ProductListItem) => String(item.productId) === productId,
         );
-        if (!topping) return;
+        if (!topping) return null;
 
         const selectedToppingSize = topping.sizes.find(
           (size) => String(size.productFranchiseId) === franchiseProductId,
         );
-        if (!selectedToppingSize || !selectedToppingSize.isAvailable) return;
+        if (!selectedToppingSize || !selectedToppingSize.isAvailable) return null;
 
-        for (let i = 0; i < quantity; i++) {
-          addItem(
-            selectedToppingSize.productFranchiseId,
-            `${topping.name} (${getSizeLabel(selectedToppingSize.size)})`,
-            selectedToppingSize.price,
-            1,
-            topping.imageUrl,
-          );
-        }
+        return {
+          productFranchiseId: String(selectedToppingSize.productFranchiseId),
+          quantity: 1,
+        };
+      })
+      .filter((option): option is { productFranchiseId: string; quantity: number } =>
+        !!option,
+      );
+
+    addItem(
+      selectedSizeData.productFranchiseId,
+      detailName,
+      selectedSizeData.price,
+      quantity,
+      detailImageUrl,
+      {
+        franchiseId,
+        options,
       },
     );
 
