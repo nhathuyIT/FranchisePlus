@@ -5,6 +5,7 @@ import { useCart } from "@/pages/client/cart/useCart";
 import { useCheckoutCartMutation } from "@/hooks/cart/useCart.hook";
 import { PRODUCTS_CLIENT } from "@/const/product-client.const";
 import { useAuthStore } from "@/stores/auth-store";
+import { useLoadingStore } from "@/stores/loading.store";
 import cashPaymentIcon from "@/assets/icons/cash-payment.svg";
 import qrPaymentIcon from "@/assets/icons/qr-payment.svg";
 import emptyCartIcon from "@/assets/icons/empty-cart.svg";
@@ -22,6 +23,7 @@ const PaymentPage = () => {
   const { cart, carts } = useCart();
   const checkoutCartMutation = useCheckoutCartMutation();
   const { authUser } = useAuthStore();
+  const setLoading = useLoadingStore((state) => state.setLoading);
 
   const selectedCartItemIds = useMemo(() => {
     const state = location.state as PaymentPageLocationState | null;
@@ -85,7 +87,9 @@ const PaymentPage = () => {
       checkoutCarts.reduce((sum, singleCart) => {
         if (singleCart.cartItems.length === 0) return sum;
 
-        const originalCart = carts.find((cartItem) => cartItem.id === singleCart.id);
+        const originalCart = carts.find(
+          (cartItem) => cartItem.id === singleCart.id,
+        );
         if (!originalCart) return sum;
 
         if (singleCart.cartItems.length === originalCart.cartItems.length) {
@@ -109,7 +113,9 @@ const PaymentPage = () => {
       checkoutCarts.reduce((sum, singleCart) => {
         if (singleCart.cartItems.length === 0) return sum;
 
-        const originalCart = carts.find((cartItem) => cartItem.id === singleCart.id);
+        const originalCart = carts.find(
+          (cartItem) => cartItem.id === singleCart.id,
+        );
         if (!originalCart) return sum;
 
         if (singleCart.cartItems.length === originalCart.cartItems.length) {
@@ -323,12 +329,16 @@ const PaymentPage = () => {
     );
 
     try {
+      setLoading(true);
+
       for (const cartId of targetCartIds) {
         await checkoutCartMutation.mutateAsync({
           cartId,
           data: checkoutPayload,
         });
       }
+
+      navigate(`${ROUTER_URL.ACCOUNT}/${ROUTER_URL.ACCOUNT_ROUTER.MY_ORDER}`);
 
       // if (paymentMethod === "COD") {
       //   alert(
@@ -341,6 +351,8 @@ const PaymentPage = () => {
       // }
     } catch {
       // Error toast is handled in the mutation hook
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -670,10 +682,14 @@ const PaymentPage = () => {
                       : "Thanh toán ngay"}
                 </button>
                 <button
-                  onClick={() => navigate("/client/cart")}
+                  onClick={() =>
+                    navigate(
+                      `${ROUTER_URL.ACCOUNT}/${ROUTER_URL.ACCOUNT_ROUTER.MY_ORDER}`,
+                    )
+                  }
                   className="w-full bg-gray-100 text-gray-700 font-semibold py-3 px-6 rounded-lg hover:bg-gray-200 transition-colors"
                 >
-                  Quay lại giỏ hàng
+                  My order
                 </button>
               </div>
 
@@ -690,7 +706,3 @@ const PaymentPage = () => {
 };
 
 export default PaymentPage;
-
-
-
-
