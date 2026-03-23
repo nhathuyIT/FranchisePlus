@@ -60,5 +60,6 @@ export const ROUTER_URL = {
     USER_FRANCHISE_ROLES: "user-franchise-roles",
     CUSTOMERS: "customers",
     CART: "cart",
+    ORDERS: "orders",
   },
 };
