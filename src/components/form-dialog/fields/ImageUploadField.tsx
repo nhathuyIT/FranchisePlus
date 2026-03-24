@@ -18,10 +18,28 @@ export interface ImageUploadFieldProps<TFormData extends FieldValues> {
   onUpload?: (file: File) => Promise<string>;
 }
 
-// Default upload handler that uses URL.createObjectURL for preview
-// In production, this should be replaced with actual upload to cloud storage
+// Default upload handler that returns a data URL preview.
+// Avoid blob URLs here because they can become invalid after page reloads.
 const defaultUploadHandler = async (file: File): Promise<string> => {
-  return URL.createObjectURL(file);
+  return await new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+
+    reader.onload = () => {
+      const result = reader.result;
+      if (typeof result !== "string") {
+        reject(new Error("Failed to read image file"));
+        return;
+      }
+
+      resolve(result);
+    };
+
+    reader.onerror = () => {
+      reject(new Error("Failed to read image file"));
+    };
+
+    reader.readAsDataURL(file);
+  });
 };
 
 function ImageUploadFieldComponent<TFormData extends FieldValues>({
