@@ -11,6 +11,7 @@ export type OrderStatus =
 export interface OrderItemData {
   id: number;
   name: string;
+  variant?: string;
   quantity: number;
   price: number;
   imageUrl: string;
@@ -51,6 +52,7 @@ export const ORDER_STATUS_STYLES: Record<
   OrderStatus,
   { label: string; color: string }
 > = {
+  DRAFT: { label: "Nhap", color: "text-slate-500" },
   PENDING: { label: "Chờ thanh toán", color: "text-yellow-600" },
   CONFIRMED: { label: "Đã xác nhận", color: "text-blue-600" },
   SHIPPING: { label: "Đang giao hàng", color: "text-orange-500" },
