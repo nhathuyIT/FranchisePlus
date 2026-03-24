@@ -6,6 +6,7 @@ import {
   UserRound,
   ShoppingCart,
   BadgePercent,
+  ReceiptText,
 } from "lucide-react";
 import {
   LayoutDashboard,
@@ -43,6 +44,7 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   customers: UserCheck,
   calendar: CalendarDays,
   cart: ShoppingCart,
+  receipt: ReceiptText,
 };
 
 const sidebarMenuItems = ADMIN_MENU.filter((item) => {
