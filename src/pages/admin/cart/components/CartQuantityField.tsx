@@ -1,4 +1,3 @@
-import { Loader2 } from "lucide-react";
 import { DeleteDialog } from "@/components/form-dialog/DeleteDialog";
 import type { CartQuantityController } from "../hooks/useCartQuantityController";
 
@@ -35,29 +34,21 @@ export const CartQuantityField = ({
           -
         </button>
 
-        <div className="relative">
-          <input
-            type="text"
-            inputMode="numeric"
-            pattern="[0-9]*"
-            disabled={isDisabled}
-            value={controller.draftQuantity}
-            onChange={(event) =>
-              controller.handleInputChange(event.target.value)
-            }
-            onBlur={controller.handleInputBlur}
-            onFocus={(event) => event.currentTarget.select()}
-            onKeyDown={controller.handleInputKeyDown}
-            className={`${inputClassName} border-x border-[#E8DFD6] bg-transparent text-center text-sm font-semibold text-[#3E2723] outline-none disabled:cursor-not-allowed disabled:opacity-60`}
-            aria-label={`Quantity for ${entityLabel}`}
-          />
-
-          {controller.isSubmitting ? (
-            <span className="pointer-events-none absolute inset-y-0 right-2 flex items-center text-[#8D6E63]">
-              <Loader2 className="h-3.5 w-3.5 animate-spin" />
-            </span>
-          ) : null}
-        </div>
+        <input
+          type="text"
+          inputMode="numeric"
+          pattern="[0-9]*"
+          disabled={isDisabled}
+          value={controller.draftQuantity}
+          onChange={(event) =>
+            controller.handleInputChange(event.target.value)
+          }
+          onBlur={controller.handleInputBlur}
+          onFocus={(event) => event.currentTarget.select()}
+          onKeyDown={controller.handleInputKeyDown}
+          className={`${inputClassName} border-x border-[#E8DFD6] bg-transparent text-center text-sm font-semibold text-[#3E2723] outline-none disabled:cursor-not-allowed disabled:opacity-60`}
+          aria-label={`Quantity for ${entityLabel}`}
+        />
 
         <button
           type="button"
@@ -87,6 +78,7 @@ export const CartQuantityField = ({
           `Do you want to remove "${entityLabel}" from this cart?`
         }
         isDeleting={controller.isSubmitting}
+        useLoadingOverlay
         onConfirm={controller.handleConfirmDelete}
       />
     </>

@@ -1,4 +1,4 @@
-import { Loader2, Trash2 } from "lucide-react";
+import { Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { CartItemResponse } from "@/types/cart";
 import { formatCartMoney } from "../utils/cartDisplay";
@@ -53,17 +53,8 @@ export const AdminCheckoutItemCard = ({
         disabled={isDeleting}
         className="rounded-full border-[#E8DFD6] text-[#A65A00] hover:bg-[#FFF3E0]"
       >
-        {isDeleting ? (
-          <>
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            Removing...
-          </>
-        ) : (
-          <>
-            <Trash2 className="mr-2 h-4 w-4" />
-            Delete item
-          </>
-        )}
+        <Trash2 className="mr-2 h-4 w-4" />
+        {isDeleting ? "Removing..." : "Delete item"}
       </Button>
     </div>
 
