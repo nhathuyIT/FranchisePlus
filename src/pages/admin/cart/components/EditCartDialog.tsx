@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import NormalLoadingLayout from "@/layouts/NormalLoadingLayout";
 import {
   Dialog,
   DialogContent,
@@ -265,6 +266,12 @@ export const EditCartDialog = ({
     cart?.voucherType,
     cart?.voucherValue,
   );
+  const isActionLoading =
+    isSavingCartInfo ||
+    pendingItemIds.length > 0 ||
+    pendingOptionKeys.length > 0 ||
+    applyVoucherMutation.isPending ||
+    removeVoucherMutation.isPending;
 
   const handleApplyVoucher = async () => {
     if (
@@ -312,6 +319,8 @@ export const EditCartDialog = ({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-[calc(100vw-2rem)] overflow-hidden p-0 sm:max-w-[1280px]">
+        <NormalLoadingLayout forceShow={isActionLoading} />
+
         <div className="flex max-h-[90vh] flex-col">
           <DialogHeader className="border-b border-[#E8DFD6] px-6 py-5">
             <DialogTitle className="text-[#3E2723]">Edit Cart</DialogTitle>

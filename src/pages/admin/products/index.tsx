@@ -728,7 +728,7 @@ const ProductsPage = () => {
 
   return (
     <div className="h-full flex flex-col">
-      <div className="flex-1 flex flex-col min-h-0 max-w-7xl mx-auto w-full">
+      <div className="flex-1 flex flex-col min-h-0 max-w-screen-2xl mx-auto w-full">
         <PageHeader
           title={isManagerView ? "My Products" : "Product Management"}
           description={

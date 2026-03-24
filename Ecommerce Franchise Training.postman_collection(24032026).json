@@ -104,7 +104,7 @@
             "header": [],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"loinguyenlamthanh@gmail.com\",\n  \"password\": \"12345678\"\n}\n",
+              "raw": "{\n  \"email\": \"loi.nguyenlamthanh@gmail.com\",\n  \"password\": \"12345678\"\n}\n",
               "options": {
                 "raw": {
                   "language": "json"
@@ -180,7 +180,7 @@
             "header": [],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"searchCondition\": {\n        \"user_id\": \"\",\n        \"franchise_id\": \"\",\n        \"role_id\": \"\",\n        \"is_deleted\": false\n    },\n    \"pageInfo\": {\n        \"pageNum\": 1,\n        \"pageSize\": 10\n    }\n}"
+              "raw": ""
             },
             "url": {
               "raw": "{{host_main}}/api/auth/refresh-token",
@@ -278,7 +278,7 @@
             "header": [],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"token\": \"a9c881d5904783a12e79cb160f15b16f\"\n}",
+              "raw": "{\n  \"token\": \"7b66a61cd7e38477de332eedf795e900\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -306,7 +306,7 @@
             "header": [],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"user@gmail.com\"\n}",
+              "raw": "{\n  \"email\": \"hcm.toan2004@gmail.com\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -392,7 +392,7 @@
             "header": [],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"loinguyen.lamthanh@gmail.com\",\n  \"password\": \"12345678\",\n  \"name\": \"Super Amin\",\n  \"phone\": \"0938947221\",\n  \"avatar_url\": \"https://picsum.photos/id/237/200/300\"\n}",
+              "raw": "{\n  \"email\": \"loi.nguyenlamthanh@gmail.com\",\n  \"password\": \"12345678\",\n  \"name\": \"Super Amin\",\n  \"phone\": \"0938947221\",\n  \"avatar_url\": \"https://picsum.photos/id/237/200/300\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -446,14 +446,14 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{host_main}}/api/users/69a547e3fcc3e0bafd23846a",
+              "raw": "{{host_main}}/api/users/69c148175caeb2cd701a1b9d",
               "host": [
                 "{{host_main}}"
               ],
               "path": [
                 "api",
                 "users",
-                "69a547e3fcc3e0bafd23846a"
+                "69c148175caeb2cd701a1b9d"
               ]
             }
           },
@@ -794,7 +794,7 @@
             "header": [],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"user_id\": \"699ea2e9b832de14f86765ee\",\n    \"role_id\": \"698eab0726ca2b18eb353372\",\n    \"franchise_id\": \"\",\n    \"note\": \"\"\n}",
+              "raw": "{\n    \"user_id\": \"69c148175caeb2cd701a1b9d\",\n    \"role_id\": \"698eab0726ca2b18eb353372\",\n    \"franchise_id\": \"698eab0826ca2b18eb353384\",\n    \"note\": \"Staff\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -821,7 +821,7 @@
             "header": [],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"searchCondition\": {\n        \"user_id\": \"\",\n        \"franchise_id\": \"698eab0826ca2b18eb35337e\",\n        \"role_id\": \"698eab0726ca2b18eb353372\",\n        \"is_deleted\": false\n    },\n    \"pageInfo\": {\n        \"pageNum\": 1,\n        \"pageSize\": 10\n    }\n}",
+              "raw": "{\n    \"searchCondition\": {\n        \"user_id\": \"69c148175caeb2cd701a1b9d\",\n        \"franchise_id\": \"\",\n        \"role_id\": \"\",\n        \"is_deleted\": false\n    },\n    \"pageInfo\": {\n        \"pageNum\": 1,\n        \"pageSize\": 10\n    }\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -949,7 +949,7 @@
               "raw": "{\n  \"franchise_id\": \"697dc8294a449704df41fb2d\"\n}\n"
             },
             "url": {
-              "raw": "{{host_main}}/api/user-franchise-roles/user/699ea2e9b832de14f86765ee",
+              "raw": "{{host_main}}/api/user-franchise-roles/user/69c148175caeb2cd701a1b9d",
               "host": [
                 "{{host_main}}"
               ],
@@ -957,7 +957,7 @@
                 "api",
                 "user-franchise-roles",
                 "user",
-                "699ea2e9b832de14f86765ee"
+                "69c148175caeb2cd701a1b9d"
               ]
             }
           },
@@ -2343,7 +2343,7 @@
             "header": [],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"searchCondition\": {\n        \"code\": \"\",\n        \"franchise_id\": \"\",\n        \"product_franchise_id\": \"\",\n        \"type\": \"\",\n        \"value\": \"\",\n        \"start_date\": \"\",\n        \"end_date\": \"\",\n        \"is_active\": \"\",\n        \"is_deleted\": false\n    },\n    \"pageInfo\": {\n        \"pageNum\": 1,\n        \"pageSize\": 10\n    }\n}",
+              "raw": "{\n    \"searchCondition\": {\n        \"code\": \"VOUCHER_UMAHSYEDBC\",\n        \"franchise_id\": \"\",\n        \"product_franchise_id\": \"\",\n        \"type\": \"\",\n        \"value\": \"\",\n        \"start_date\": \"\",\n        \"end_date\": \"\",\n        \"is_active\": \"\",\n        \"is_deleted\": false\n    },\n    \"pageInfo\": {\n        \"pageNum\": 1,\n        \"pageSize\": 10\n    }\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -3664,6 +3664,27 @@
             }
           },
           "response": []
+        },
+        {
+          "name": "Get Customer Royalty Info by Franchise",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{host_main}}/api/clients/franchises/698eab0826ca2b18eb35337e/customer-loyalty",
+              "host": [
+                "{{host_main}}"
+              ],
+              "path": [
+                "api",
+                "clients",
+                "franchises",
+                "698eab0826ca2b18eb35337e",
+                "customer-loyalty"
+              ]
+            }
+          },
+          "response": []
         }
       ]
     },
@@ -3788,14 +3809,14 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{host_main}}/api/carts/69b7ac5abbd14c0b1fa077ed",
+              "raw": "{{host_main}}/api/carts/69bd2ddb9ab3832a5288839d",
               "host": [
                 "{{host_main}}"
               ],
               "path": [
                 "api",
                 "carts",
-                "69b7ac5abbd14c0b1fa077ed"
+                "69bd2ddb9ab3832a5288839d"
               ]
             }
           },
@@ -4019,7 +4040,7 @@
             "header": [],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"voucher_code\": \"VOUCHER_SOMFGUYH0V\"\n}",
+              "raw": "{\n    \"voucher_code\": \"VOUCHER_UMAHSYEDBC\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -4027,14 +4048,14 @@
               }
             },
             "url": {
-              "raw": "{{host_main}}/api/carts/69b37f9d9a5098d2c1b64426/apply-voucher",
+              "raw": "{{host_main}}/api/carts/69bd2ddb9ab3832a5288839d/apply-voucher",
               "host": [
                 "{{host_main}}"
               ],
               "path": [
                 "api",
                 "carts",
-                "69b37f9d9a5098d2c1b64426",
+                "69bd2ddb9ab3832a5288839d",
                 "apply-voucher"
               ]
             }
@@ -4047,14 +4068,14 @@
             "method": "DELETE",
             "header": [],
             "url": {
-              "raw": "{{host_main}}/api/carts/69b37f9d9a5098d2c1b64426/remove-voucher",
+              "raw": "{{host_main}}/api/carts/69bd2ddb9ab3832a5288839d/remove-voucher",
               "host": [
                 "{{host_main}}"
               ],
               "path": [
                 "api",
                 "carts",
-                "69b37f9d9a5098d2c1b64426",
+                "69bd2ddb9ab3832a5288839d",
                 "remove-voucher"
               ]
             }
@@ -4192,14 +4213,14 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{host_main}}/api/orders/69b908b496df2c6c678cf547",
+              "raw": "{{host_main}}/api/orders/69ba0e8e9a9f23857ae2f69e",
               "host": [
                 "{{host_main}}"
               ],
               "path": [
                 "api",
                 "orders",
-                "69b908b496df2c6c678cf547"
+                "69ba0e8e9a9f23857ae2f69e"
               ]
             }
           },
@@ -4211,7 +4232,7 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{host_main}}/api/orders/franchise/698eab0826ca2b18eb353384",
+              "raw": "{{host_main}}/api/orders/franchise/698eab0826ca2b18eb353384?status=CANCELED",
               "host": [
                 "{{host_main}}"
               ],
@@ -4220,6 +4241,12 @@
                 "orders",
                 "franchise",
                 "698eab0826ca2b18eb353384"
+              ],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "CANCELED"
+                }
               ]
             }
           },
@@ -4305,7 +4332,7 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{host_main}}/api/payments/customer/699e5b64558e4453d3fce2e3",
+              "raw": "{{host_main}}/api/payments/customer/699e5b64558e4453d3fce2e3?status=",
               "host": [
                 "{{host_main}}"
               ],
@@ -4314,6 +4341,38 @@
                 "payments",
                 "customer",
                 "699e5b64558e4453d3fce2e3"
+              ],
+              "query": [
+                {
+                  "key": "status",
+                  "value": ""
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Payments by FranchiseId",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{host_main}}/api/payments/franchise/698eab0826ca2b18eb35337e?status=",
+              "host": [
+                "{{host_main}}"
+              ],
+              "path": [
+                "api",
+                "payments",
+                "franchise",
+                "698eab0826ca2b18eb35337e"
+              ],
+              "query": [
+                {
+                  "key": "status",
+                  "value": ""
+                }
               ]
             }
           },

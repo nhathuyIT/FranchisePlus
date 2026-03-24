@@ -84,12 +84,13 @@ const toUpdateRequest = (data: Partial<Franchise>): FranchiseUpdateRequest => {
 /**
  * Fetch franchise options for select/dropdown
  */
-export const useFranchiseSelect = () => {
+export const useFranchiseSelect = (enabled = true) => {
   const scopeKey = useFranchiseScopeKey();
 
   return useQuery({
     queryKey: [...franchiseKeys.select(), scopeKey],
     queryFn: () => franchiseApi.getSelect(),
+    enabled,
     staleTime: 10 * 60 * 1000, // 10 minutes
   });
 };
