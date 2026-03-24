@@ -1,4 +1,4 @@
-import { AlertCircle, Store } from "lucide-react";
+import { Store } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -78,16 +78,6 @@ export function OrderFranchiseGate({
           </div>
         )}
       </div>
-
-      {!activeFranchiseId && (
-        <div className="mt-4 flex items-start gap-3 rounded-2xl border border-[#F2D6C9] bg-[#FFF7F2] px-4 py-3 text-sm text-[#7A271A]">
-          <AlertCircle className="mt-0.5 h-4 w-4 text-[#C2410C]" />
-          <p>
-            Select a franchise first. The order list API stays disabled until
-            the page has a valid franchise context.
-          </p>
-        </div>
-      )}
     </div>
   );
 }

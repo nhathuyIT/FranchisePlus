@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { useFranchiseSelect } from "@/hooks/franchise";
 import { useAuthStore } from "@/stores/auth-store";
 
@@ -20,67 +20,59 @@ const normalizeRoleCode = (value?: string | null) => {
 export const useOrderFranchiseContext = () => {
   const { authUser, getCurrentRole, isAdmin } = useAuthStore();
   const currentRole = getCurrentRole();
-  const currentRoleCode = normalizeRoleCode(currentRole?.code || currentRole?.name);
+  const currentRoleCode = normalizeRoleCode(
+    currentRole?.code || currentRole?.name,
+  );
   const canSelectFranchise = isAdmin();
   const { data: franchiseOptions = [], isLoading: isLoadingFranchises } =
     useFranchiseSelect(canSelectFranchise);
   const isManager = currentRoleCode === "MANAGER";
   const isStaff = !canSelectFranchise && !isManager;
+  const currentRoleId = authUser?.currentRoleId;
+  const franchiseRoles = authUser?.franchiseRoles ?? [];
   const currentFranchiseId = authUser?.currentFranchiseId
     ? String(authUser.currentFranchiseId)
     : "";
   const currentStaffId = authUser?.user?.id ? String(authUser.user.id) : "";
 
-  const [selectedFranchiseId, setSelectedFranchiseId] = useState(currentFranchiseId);
+  const [selectedFranchiseId, setSelectedFranchiseId] =
+    useState(currentFranchiseId);
 
   const activeFranchiseId = canSelectFranchise
     ? selectedFranchiseId
     : currentFranchiseId;
 
-  const fallbackFranchiseName = useMemo(() => {
-    const currentRoleId = authUser?.currentRoleId;
-    if (!authUser?.franchiseRoles?.length) {
-      return undefined;
+  const fallbackFranchiseName = franchiseRoles.find((assignment) => {
+    const franchiseId = assignment.franchiseId
+      ? String(assignment.franchiseId)
+      : "";
+
+    if (franchiseId !== activeFranchiseId) {
+      return false;
     }
 
-    return authUser.franchiseRoles.find((assignment) => {
-      const franchiseId = assignment.franchiseId
-        ? String(assignment.franchiseId)
-        : "";
-
-      if (franchiseId !== activeFranchiseId) {
-        return false;
-      }
-
-      if (!currentRoleId) {
-        return true;
-      }
-
-      return assignment.roleId === currentRoleId;
-    })?.franchiseName;
-  }, [activeFranchiseId, authUser?.currentRoleId, authUser?.franchiseRoles]);
-
-  const activeFranchise = useMemo(() => {
-    const matchedOption = franchiseOptions.find(
-      (option) => option.value === activeFranchiseId,
-    );
-
-    if (matchedOption) {
-      return matchedOption;
+    if (!currentRoleId) {
+      return true;
     }
 
-    if (!activeFranchiseId && !fallbackFranchiseName) {
-      return undefined;
-    }
+    return assignment.roleId === currentRoleId;
+  })?.franchiseName;
 
-    return {
-      value: activeFranchiseId,
-      name: fallbackFranchiseName || activeFranchiseId,
-      code: "",
-    };
-  }, [activeFranchiseId, fallbackFranchiseName, franchiseOptions]);
+  const activeFranchise =
+    franchiseOptions.find((option) => option.value === activeFranchiseId) ??
+    (!activeFranchiseId && !fallbackFranchiseName
+      ? undefined
+      : {
+          value: activeFranchiseId,
+          name: fallbackFranchiseName || activeFranchiseId,
+          code: "",
+        });
 
-  const listScope = canSelectFranchise ? "admin" : isManager ? "manager" : "staff";
+  const listScope = canSelectFranchise
+    ? "admin"
+    : isManager
+      ? "manager"
+      : "staff";
   const hasListContext =
     listScope === "staff" ? Boolean(currentStaffId) : Boolean(activeFranchiseId);
 
