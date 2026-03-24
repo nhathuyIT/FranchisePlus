@@ -307,17 +307,6 @@ const PaymentPage = () => {
       return;
     }
 
-    if (paymentMethod === "QR") {
-      navigate(ROUTER_URL.CLIENT_ROUTER.PAYMENT_QR, {
-        state: {
-          shippingInfo,
-          amount: checkoutTotalAmount,
-          itemCount: checkoutItemCount,
-        },
-      });
-      return;
-    }
-
     const checkoutPayload = {
       address: shippingInfo.address.trim(),
       phone: shippingInfo.phone.trim(),
@@ -338,7 +327,15 @@ const PaymentPage = () => {
         });
       }
 
-      navigate(`${ROUTER_URL.ACCOUNT}/${ROUTER_URL.ACCOUNT_ROUTER.MY_ORDER}`);
+      navigate(`${ROUTER_URL.CLIENT}/${ROUTER_URL.CLIENT_ROUTER.PAYMENT_NEW}`, {
+        state: {
+          cartId: targetCartIds[0] || "",
+          amount: checkoutTotalAmount,
+          itemCount: checkoutItemCount,
+          shippingInfo,
+          preferredPaymentMethod: paymentMethod,
+        },
+      });
 
       // if (paymentMethod === "COD") {
       //   alert(
