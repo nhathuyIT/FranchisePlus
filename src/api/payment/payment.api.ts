@@ -52,12 +52,26 @@ export const confirmPayment = async (
   });
 };
 
+export const getPaymentsByFranchiseId = async (
+  franchiseId: string,
+  status?: string,
+): Promise<AdminPayment[]> => {
+  const response = await httpClient.get<AdminPayment[], { status?: string }>({
+    url: `${BASE_URL}/franchise/${encodeId(franchiseId)}`,
+    params: { status },
+  });
+
+  return response || [];
+};
+
 export const refundPayment = async (
   paymentId: string,
   data: RefundPaymentRequest,
 ): Promise<PaymentDetailResponse | null> => {
-  return httpClient.put<PaymentDetailResponse, RefundPaymentRequest>({
+  return httpClient.put<PaymentDetailResponse, { refund_reason: string }>({
     url: `${BASE_URL}/${encodeId(paymentId)}/refund`,
-    data,
+    data: {
+      refund_reason: data.refundReason,
+    },
   });
 };
