@@ -30,6 +30,12 @@ export const CLIENT_MENU: ClientMenuItem[] = [
     isEnd: true,
   },
   {
+    label: "Checkout",
+    path: ROUTER_URL.CLIENT_ROUTER.CHECKOUT,
+    component: React.lazy(() => import("@/pages/client/checkout")),
+    isEnd: true,
+  },
+  {
     label: "Payment New",
     path: ROUTER_URL.CLIENT_ROUTER.PAYMENT_NEW,
     component: React.lazy(() => import("@/pages/client/payment-new")),

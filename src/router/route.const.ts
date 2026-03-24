@@ -15,6 +15,7 @@ export const ROUTER_URL = {
     REGISTER: "/client/register",
     CHANGE_PASSWORD: "/client/change-password",
     CART: "cart",
+    CHECKOUT: "checkout",
     PRODUCTS: "products",
     PRODUCT_DETAIL: "products/:slug",
     PAYMENT: "payment",
