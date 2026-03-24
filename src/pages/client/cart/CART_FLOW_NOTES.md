@@ -11,7 +11,7 @@
 
 ## API calls used by cart screen
 
-- Cart screen currently calls `7` cart APIs and `1` menu API.
+- Cart screen currently calls `7` cart APIs and `2` non-cart product APIs.
 
 ### Cart APIs actively called on cart screen
 
@@ -49,18 +49,23 @@
   - Purpose: remove voucher from one shop cart.
   - Defined in `src/api/cart/cart.api.ts` via `removeVoucherInCart`.
   - Called through `useRemoveVoucherInCartMutation` in `src/pages/client/cart/CartPage.tsx`.
-  
+
 - `PUT /api/carts/:cartId/cancel`
   - Purpose: cancel one whole shop cart.
   - Defined in `src/api/cart/cart.api.ts` via `cancelCart`.
   - Called through `useCancelCartMutation` in `src/pages/client/cart/CartPage.tsx`.
 
-### Non-cart API still used inside cart UI
+### Non-cart APIs still used inside cart UI
 
 - `GET menu by franchise`
-  - Purpose: resolve fallback product image and size label by `productFranchiseId`.
+  - Purpose: resolve size label and editable size choices by `productFranchiseId`.
   - Defined in `src/api/client/product.api.ts` via `getMenuByFranchise`.
   - Called through `useGetMenuByFranchise` in `src/pages/client/cart/components/CartStoreSection.tsx`.
+
+- `GET products by franchise`
+  - Purpose: build topping choices for inline cart edit.
+  - Defined in `src/api/client/product.api.ts` via `getProductByFranchise`.
+  - Called through `useGetProductsByFranchise` in `src/pages/client/cart/components/CartStoreSection.tsx`.
 
 ### Cart APIs defined but not called by cart screen right now
 
@@ -107,7 +112,27 @@
 - Remove voucher uses `DELETE /api/carts/:cartId/remove-voucher`.
 - Voucher selection on cart screen is manual code entry only.
 
+## Cart item edit
+
+- Cart item edit happens inline inside the cart item row.
+- There is no separate cart edit page.
+- Inline edit reuses current cart APIs: delete old item first, then add the edited configuration back through the normal add-to-cart API.
+- If the edited add-back fails after delete succeeds, frontend attempts to restore the original item configuration.
+- Item edit can change size and toppings only; quantity stays on the normal quantity control.
+- If an existing item has option quantities beyond what inline edit can represent, hide `Edit` for that item.
+- If current selected toppings cannot be represented by the available product data, hide `Edit` for that item.
+
+## Product edit rules
+
+- Cart edit must check product data before showing the edit action.
+- Only products with editable size or topping capability should show `Edit` in cart.
+- Only products marked as topping-capable should expose topping controls.
+- Do not show topping add/edit controls for products that normally do not have toppings.
+- Example: drinks may support topping edit, but bakery/snack/candy products should not expose topping edit.
+- Topping eligibility should come from product/category data, not from a blanket cart rule that assumes every product can have toppings.
+
 ## Not in scope in this state
 
 - No option item quantity update/remove in cart UI.
 - No voucher search inside cart screen.
+

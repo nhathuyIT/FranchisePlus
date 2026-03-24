@@ -6,6 +6,7 @@ import {
   useCartsByCustomerQuery,
   useDeleteCartItemMutation,
   useUpdateCartItemMutation,
+  useUpdateCartItemOptionsMutation,
 } from "@/hooks/cart/useCart.hook";
 import type {
   AddProductToCartRequest,
@@ -80,8 +81,15 @@ function normalizeOptions(options?: CartItemOptionRequest[]) {
     .filter((option) => !!option?.productFranchiseId && option.quantity > 0)
     .map((option) => ({
       productFranchiseId: String(option.productFranchiseId),
-      quantity: option.quantity,
-    }));
+      quantity: Math.max(1, Number(option.quantity || 1)),
+    }))
+    .sort((left, right) => {
+      if (left.productFranchiseId === right.productFranchiseId) {
+        return left.quantity - right.quantity;
+      }
+
+      return left.productFranchiseId.localeCompare(right.productFranchiseId);
+    });
 }
 
 // Flatten grouped cart responses into the legacy item shape still used by header/payment screens.
@@ -127,6 +135,7 @@ export function useCart() {
   const addProductMutation = useAddProductToCartMutation();
   const deleteItemMutation = useDeleteCartItemMutation();
   const updateCartItemMutation = useUpdateCartItemMutation();
+  const updateCartItemOptionsMutation = useUpdateCartItemOptionsMutation();
 
   const carts = useMemo(() => cartsQuery.data ?? [], [cartsQuery.data]);
   const items = useMemo(() => mapCartItems(carts), [carts]);
@@ -253,25 +262,48 @@ export function useCart() {
     };
   };
 
-  const addItem = (
+  const addItemAsync = async (
     productId: string | number,
     _productName: string,
     _price: number,
     quantity = 1,
     _imageUrl?: string,
     meta?: AddItemMeta,
-  ) => {
+  ): Promise<boolean> => {
     if (!customerId) {
       toast.error("Please sign in to use your cart");
-      return;
+      return false;
     }
 
     const productFranchiseId = String(productId || "");
     const payload = createAddProductPayload(productFranchiseId, quantity, meta);
 
-    if (!payload) return;
+    if (!payload) return false;
 
-    addProductMutation.mutate(payload);
+    try {
+      await addProductMutation.mutateAsync(payload);
+      return true;
+    } catch {
+      return false;
+    }
+  };
+
+  const addItem = (
+    productId: string | number,
+    productName: string,
+    price: number,
+    quantity = 1,
+    imageUrl?: string,
+    meta?: AddItemMeta,
+  ) => {
+    void addItemAsync(
+      productId,
+      productName,
+      price,
+      quantity,
+      imageUrl,
+      meta,
+    );
   };
 
   const removeItem = async (cartItemId: string): Promise<boolean> => {
@@ -355,6 +387,43 @@ export function useCart() {
     }
   };
 
+  const saveEditedItem = async (
+    cartItemId: string,
+    options: CartItemOptionRequest[],
+  ): Promise<boolean> => {
+    if (!cartItemId || isItemPending(cartItemId)) {
+      return false;
+    }
+
+    const targetItem = findItemByCartItemId(cartItemId);
+    if (!targetItem) return false;
+
+    const normalizedCurrentOptions = normalizeOptions(targetItem.options);
+    const normalizedNextOptions = normalizeOptions(options);
+
+    const isSameOptions =
+      JSON.stringify(normalizedCurrentOptions) ===
+      JSON.stringify(normalizedNextOptions);
+
+    if (isSameOptions) {
+      return true;
+    }
+
+    setItemPendingState(cartItemId, true);
+
+    try {
+      await updateCartItemOptionsMutation.mutateAsync({
+        cartItemId: targetItem.cartItemId,
+        options: normalizedNextOptions,
+      });
+      return true;
+    } catch {
+      return false;
+    } finally {
+      setItemPendingState(cartItemId, false);
+    }
+  };
+
   const clearCart = () => {
     const uniqueCartItemIds = Array.from(
       new Set(items.map((item) => item.cartItemId)),
@@ -369,8 +438,10 @@ export function useCart() {
     cart,
     carts,
     addItem,
+    addItemAsync,
     updateItemQuantity,
     saveItemNote,
+    saveEditedItem,
     removeItem,
     clearCart,
     subtotal,
@@ -380,3 +451,4 @@ export function useCart() {
     isLoading: cartsQuery.isLoading,
   };
 }
+

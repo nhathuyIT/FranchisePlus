@@ -1,7 +1,12 @@
 import React from "react";
 import { useForm } from "react-hook-form";
 import { MapPin, Store, TicketPercent } from "lucide-react";
-import type { CartResponse } from "@/types/cart";
+import type {
+  CartItemEditConfig,
+  CartItemOptionRequest,
+  CartItemResponse,
+  CartResponse,
+} from "@/types/cart";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
@@ -12,6 +17,16 @@ import { formatCurrency } from "../cart.utils";
 
 type CartStoreMessageForm = {
   message: string;
+};
+
+const resolveProductSizeLabel = (productFranchiseId: string) => {
+  const normalized = String(productFranchiseId || "").toLowerCase();
+
+  if (normalized.includes("small") || normalized.endsWith("-s")) return "S";
+  if (normalized.includes("medium") || normalized.endsWith("-m")) return "M";
+  if (normalized.includes("large") || normalized.endsWith("-l")) return "L";
+
+  return "Option";
 };
 
 interface CartStoreSectionProps {
@@ -26,6 +41,10 @@ interface CartStoreSectionProps {
   indeterminate: boolean;
   onToggleCart: (checked: boolean) => void;
   onToggleItem: (cartItemId: string, checked: boolean) => void;
+  onSaveEditedItem: (
+    item: CartItemResponse,
+    options: CartItemOptionRequest[],
+  ) => Promise<boolean> | void;
   onUpdateQuantity: (cartItemId: string, quantity: number) => void;
   onRemove: (cartItemId: string) => void;
   onSaveItemNote: (cartItemId: string, note: string) => void;
@@ -48,6 +67,7 @@ const CartStoreSection: React.FC<CartStoreSectionProps> = ({
   indeterminate,
   onToggleCart,
   onToggleItem,
+  onSaveEditedItem,
   onUpdateQuantity,
   onRemove,
   onSaveItemNote,
@@ -72,24 +92,128 @@ const CartStoreSection: React.FC<CartStoreSectionProps> = ({
     formState: { isDirty },
   } = messageForm;
 
-  const { sizeLabelByProductFranchiseId } = React.useMemo(() => {
+  const { sizeLabelByProductFranchiseId, editConfigByProductFranchiseId } = React.useMemo(() => {
     const sizeMap = new Map<string, string>();
+    const editMap = new Map<string, CartItemEditConfig>();
+
+    const baseToppingOptions: CartItemEditConfig["toppingOptions"] = [];
+
+    (menuQuery.data ?? []).forEach((category) => {
+      const isToppingCategory = String(category.categoryName || "")
+        .trim()
+        .toLowerCase()
+        .includes("topping");
+
+      category.products.forEach((product) => {
+        const availableSizes = product.sizes.filter((size) => size.isAvailable);
+        const sizeOptions = availableSizes.map((size) => ({
+          productFranchiseId: String(size.productFranchiseId),
+          label: getSizeLabel(String(size.size)),
+          price: Number(size.price || 0),
+        }));
+
+        sizeOptions.forEach((sizeOption) => {
+          sizeMap.set(sizeOption.productFranchiseId, sizeOption.label);
+        });
+
+        if (!isToppingCategory || sizeOptions.length === 0) {
+          return;
+        }
+
+        baseToppingOptions.push({
+          productId: String(product.productId),
+          name: product.name,
+          imageUrl: product.imageUrl || undefined,
+          sizes: sizeOptions,
+        });
+      });
+    });
+
+    const knownToppingSizeIds = new Set(
+      baseToppingOptions.flatMap((option) =>
+        option.sizes.map((size) => String(size.productFranchiseId)),
+      ),
+    );
+    const fallbackToppingOptions: CartItemEditConfig["toppingOptions"] = [];
+
+    (cart.cartItems ?? []).forEach((cartItem) => {
+      (cartItem.options ?? []).forEach((option) => {
+        const optionProductFranchiseId = String(option.productFranchiseId);
+
+        if (knownToppingSizeIds.has(optionProductFranchiseId)) {
+          return;
+        }
+
+        knownToppingSizeIds.add(optionProductFranchiseId);
+        fallbackToppingOptions.push({
+          productId: optionProductFranchiseId,
+          name: option.productName || optionProductFranchiseId,
+          imageUrl: option.productImageUrl || undefined,
+          sizes: [
+            {
+              productFranchiseId: optionProductFranchiseId,
+              label:
+                sizeMap.get(optionProductFranchiseId) ||
+                resolveProductSizeLabel(optionProductFranchiseId),
+              price: Number(option.finalPrice || option.priceSnapshot || 0),
+            },
+          ],
+        });
+      });
+    });
+
+    const toppingOptions = [...baseToppingOptions, ...fallbackToppingOptions];
+    const productFranchiseIdsWithCurrentOptions = new Set(
+      (cart.cartItems ?? [])
+        .filter((cartItem) => (cartItem.options ?? []).length > 0)
+        .map((cartItem) => String(cartItem.productFranchiseId)),
+    );
 
     (menuQuery.data ?? []).forEach((category) => {
       category.products.forEach((product) => {
-        product.sizes.forEach((size) => {
+        const availableSizes = product.sizes.filter((size) => size.isAvailable);
+        const sizeOptions = availableSizes.map((size) => ({
+          productFranchiseId: String(size.productFranchiseId),
+          label: getSizeLabel(String(size.size)),
+          price: Number(size.price || 0),
+        }));
+
+        availableSizes.forEach((size) => {
           sizeMap.set(
             String(size.productFranchiseId),
             getSizeLabel(String(size.size)),
           );
+        });
+
+        const hasCurrentOptions = sizeOptions.some((sizeOption) =>
+          productFranchiseIdsWithCurrentOptions.has(
+            String(sizeOption.productFranchiseId),
+          ),
+        );
+        const canEditProduct =
+          toppingOptions.length > 0 &&
+          (product.isHaveTopping === true || hasCurrentOptions);
+
+        if (!canEditProduct) {
+          return;
+        }
+
+        const editConfig: CartItemEditConfig = {
+          sizeOptions,
+          toppingOptions,
+        };
+
+        sizeOptions.forEach((sizeOption) => {
+          editMap.set(sizeOption.productFranchiseId, editConfig);
         });
       });
     });
 
     return {
       sizeLabelByProductFranchiseId: sizeMap,
+      editConfigByProductFranchiseId: editMap,
     };
-  }, [menuQuery.data]);
+  }, [cart.cartItems, menuQuery.data]);
 
   const resolveProductImage = (
     _productFranchiseId: string,
@@ -183,22 +307,45 @@ const CartStoreSection: React.FC<CartStoreSectionProps> = ({
       </div>
 
       <div className="divide-y divide-[var(--cart-border-soft)]">
-        {cart.cartItems.map((item) => (
-          <CartItem
-            key={item.cartItemId}
-            item={item}
-            checked={selectedItemIds.includes(item.cartItemId)}
-            isPending={isCancellingCart || isItemPending(item.cartItemId)}
-            resolveProductImage={resolveProductImage}
-            resolveProductSize={resolveProductSize}
-            onToggle={(next) => onToggleItem(item.cartItemId, next)}
-            onUpdateQuantity={(quantity) =>
-              onUpdateQuantity(item.cartItemId, quantity)
-            }
-            onRemove={() => onRemove(item.cartItemId)}
-            onSaveNote={(note) => onSaveItemNote(item.cartItemId, note)}
-          />
-        ))}
+        {cart.cartItems.map((item) => {
+          const hasUnsupportedOptionQuantity = (item.options ?? []).some(
+            (option) => Math.max(1, Number(option.quantity || 1)) > 1,
+          );
+          const editConfig = !hasUnsupportedOptionQuantity
+            ? editConfigByProductFranchiseId.get(String(item.productFranchiseId))
+            : undefined;
+          const canRepresentCurrentOptions = (item.options ?? []).every((option) =>
+            (editConfig?.toppingOptions ?? []).some((topping) =>
+              topping.sizes.some(
+                (size) =>
+                  String(size.productFranchiseId) ===
+                  String(option.productFranchiseId),
+              ),
+            ),
+          );
+          const canEditItem =
+            !!editConfig &&
+            (!item.options?.length || canRepresentCurrentOptions);
+
+          return (
+            <CartItem
+              key={item.cartItemId}
+              item={item}
+              checked={selectedItemIds.includes(item.cartItemId)}
+              isPending={isCancellingCart || isItemPending(item.cartItemId)}
+              editConfig={canEditItem ? editConfig : undefined}
+              resolveProductImage={resolveProductImage}
+              resolveProductSize={resolveProductSize}
+              onToggle={(next) => onToggleItem(item.cartItemId, next)}
+              onSaveEdit={(options) => onSaveEditedItem(item, options)}
+              onUpdateQuantity={(quantity) =>
+                onUpdateQuantity(item.cartItemId, quantity)
+              }
+              onRemove={() => onRemove(item.cartItemId)}
+              onSaveNote={(note) => onSaveItemNote(item.cartItemId, note)}
+            />
+          );
+        })}
       </div>
 
       <div className="border-t border-[var(--cart-border-soft)] px-5 py-5 md:px-6">
@@ -296,23 +443,17 @@ const CartStoreSection: React.FC<CartStoreSectionProps> = ({
                 </strong>
               </div>
 
-              <div className="flex items-center justify-between gap-4 pt-2">
-                <span className="text-[var(--cart-ink)]">Total payment</span>
+              <div className="flex items-center justify-between gap-4">
+                <span>Total payable</span>
                 <div className="text-right">
                   {hasCartDiscount && (
-                    <p className="text-xs text-[#aa8f80] line-through">
+                    <p className="text-xs text-[#a78c7e] line-through">
                       {formatCurrency(cart.subtotalAmount)}
                     </p>
                   )}
-                  <p
-                    className={`text-xl font-semibold ${
-                      hasCartDiscount
-                        ? "text-[var(--cart-accent)]"
-                        : "text-[var(--cart-ink)]"
-                    }`}
-                  >
+                  <strong className="text-base text-[var(--cart-accent)]">
                     {formatCurrency(cart.finalAmount)}
-                  </p>
+                  </strong>
                 </div>
               </div>
             </div>
@@ -324,3 +465,9 @@ const CartStoreSection: React.FC<CartStoreSectionProps> = ({
 };
 
 export default CartStoreSection;
+
+
+
+
+
+

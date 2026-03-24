@@ -1,37 +1,53 @@
 import { useMemo, useState } from "react";
-import { Search } from "lucide-react";
+import { Search, CreditCard, CheckCircle2 } from "lucide-react";
 import type { OrderStatus, Order } from "@/const/order.const";
 import type { ApiOrderStatus } from "@/api/order/order.api";
 import { useGetMyOrders } from "@/hooks/client/useOrder.hook";
 import { useAuthStore } from "@/stores/auth-store";
+import { usePaymentsByCustomerId } from "@/hooks/payment";
+import type { AdminPayment } from "@/types/admin-payment.type";
 
 const ORDER_STATUS_TABS: { key: ApiOrderStatus | "ALL"; label: string }[] = [
-  { key: "ALL", label: "Tất cả" },
-  { key: "DRAFT", label: "Chờ thanh toán" },
-  { key: "CONFIRMED", label: "Đã xác nhận" },
-  { key: "PREPARING", label: "Đang chuẩn bị" },
-  { key: "READY_FOR_PICKUP", label: "Sẵn sàng lấy hàng" },
-  { key: "OUT_FOR_DELIVERY", label: "Đang giao hàng" },
-  { key: "COMPLETED", label: "Hoàn thành" },
-  { key: "CANCELED", label: "Đã hủy" },
+  { key: "ALL", label: "All" },
+  { key: "DRAFT", label: "Draft" },
+  { key: "CONFIRMED", label: "Confirmed" },
+  { key: "PREPARING", label: "Preparing" },
+  { key: "READY_FOR_PICKUP", label: "Ready for checkout" },
+  { key: "OUT_FOR_DELIVERY", label: "Out for delivery" },
+  { key: "COMPLETED", label: "Completed " },
+  { key: "CANCELED", label: "Cancelled " },
 ];
 
-const ORDER_STATUS_STYLES: Record<OrderStatus, { label: string; color: string }> = {
-  PENDING: { label: "Chờ thanh toán", color: "text-yellow-600" },
-  CONFIRMED: { label: "Đã xác nhận", color: "text-blue-600" },
-  SHIPPING: { label: "Đang giao hàng", color: "text-orange-500" },
-  COMPLETED: { label: "Hoàn thành", color: "text-green-600" },
-  CANCELLED: { label: "Đã hủy", color: "text-red-500" },
-  REFUNDED: { label: "Trả hàng/Hoàn tiền", color: "text-gray-500" },
+const ORDER_STATUS_STYLES: Record<
+  OrderStatus,
+  { label: string; color: string }
+> = {
+  DRAFT: { label: "Draft", color: "text-gray-600" },
+  PENDING: { label: "Pending", color: "text-yellow-600" },
+  CONFIRMED: { label: "Confirmed", color: "text-blue-600" },
+  SHIPPING: { label: "Shipping", color: "text-orange-500" },
+  COMPLETED: { label: "Completed", color: "text-green-600" },
+  CANCELLED: { label: "Cancelled", color: "text-red-500" },
+  REFUNDED: { label: "Refunded", color: "text-gray-500" },
 };
 
 const MyOrderPage = () => {
   const customerId = useAuthStore((state) => state.authUser?.user?.id);
+  const stringCustomerId = String(customerId || "");
+
   const [activeTab, setActiveTab] = useState<ApiOrderStatus | "ALL">("ALL");
   const [searchQuery, setSearchQuery] = useState("");
-  const { data: orders = [], isLoading, isError } = useGetMyOrders(
-    activeTab === "ALL" ? undefined : activeTab
-  );
+
+  // 1. Lấy danh sách Order
+  const {
+    data: orders = [],
+    isLoading: isOrdersLoading,
+    isError,
+  } = useGetMyOrders(activeTab === "ALL" ? undefined : activeTab);
+
+  // 2. Lấy TẤT CẢ Payment của khách hàng này (Chỉ tốn 1 Request duy nhất)
+  const { data: customerPayments = [], isLoading: isPaymentsLoading } =
+    usePaymentsByCustomerId(stringCustomerId, !!customerId);
 
   const filteredOrders = useMemo(() => {
     let filtered = orders;
@@ -42,7 +58,7 @@ const MyOrderPage = () => {
         (order) =>
           order.code.toLowerCase().includes(q) ||
           order.franchiseName.toLowerCase().includes(q) ||
-          order.items.some((item) => item.name.toLowerCase().includes(q))
+          order.items.some((item) => item.name.toLowerCase().includes(q)),
       );
     }
 
@@ -53,15 +69,7 @@ const MyOrderPage = () => {
     return new Intl.NumberFormat("vi-VN").format(amount) + "đ";
   };
 
-  const formatDate = (dateStr: string) => {
-    return new Date(dateStr).toLocaleDateString("vi-VN", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  };
+  const isLoading = isOrdersLoading || isPaymentsLoading;
 
   return (
     <div>
@@ -140,14 +148,23 @@ const MyOrderPage = () => {
         <EmptyState activeTab={activeTab} />
       ) : (
         <div className="space-y-4">
-          {filteredOrders.map((order) => (
-            <OrderRow
-              key={order.id}
-              order={order}
-              formatCurrency={formatCurrency}
-              formatDate={formatDate}
-            />
-          ))}
+          {filteredOrders.map((order) => {
+            // Tìm payment tương ứng với Order (dựa trên rawId hoặc id fallback)
+            const orderIdMatcher = order.rawId || String(order.id);
+            // Axios interceptor đã convert `order_id` thành `orderId`, nên ta map theo orderId
+            const matchedPayment = customerPayments.find(
+              (p) => String(p.orderId) === orderIdMatcher,
+            );
+
+            return (
+              <OrderRow
+                key={order.id}
+                order={order}
+                payment={matchedPayment}
+                formatCurrency={formatCurrency}
+              />
+            );
+          })}
         </div>
       )}
     </div>
@@ -167,7 +184,7 @@ const LoadingState = () => (
 
 const ErrorState = () => (
   <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
-    Không thể tải danh sách đơn hàng. Vui lòng thử lại sau.
+    Cant get the orders. Please try again later.
   </div>
 );
 
@@ -192,29 +209,76 @@ const EmptyState = ({ activeTab }: { activeTab: ApiOrderStatus | "ALL" }) => (
 /* ─── Single Order Row ─── */
 const OrderRow = ({
   order,
+  payment,
   formatCurrency,
-  formatDate,
 }: {
   order: Order;
+  payment?: AdminPayment;
   formatCurrency: (n: number) => string;
-  formatDate: (s: string) => string;
 }) => {
   const statusInfo = ORDER_STATUS_STYLES[order.status];
+
+  const paymentStatus = payment?.status || "PENDING";
+  const isPaid = paymentStatus === "PAID";
+  const isCanceled = order.status === "CANCELLED";
+
+  const handlePayNow = () => {
+    // Luồng thanh toán tương lai: redirect to VNPAY/MOMO with order.code
+    console.log(
+      "Redirect to payment page or open modal for order:",
+      order.code,
+    );
+    alert("Chuyển hướng đến cổng thanh toán cho đơn hàng: " + order.code);
+  };
 
   return (
     <div className="bg-white border border-[#E8E0D8] rounded-xl overflow-hidden hover:shadow-sm transition-shadow">
       {/* Header row: Shop name + Status */}
-      <div className="flex items-center justify-between px-5 py-3 border-b border-[#F5F0EB]">
+      <div className="flex flex-col md:flex-row md:items-center justify-between px-5 py-3 border-b border-[#F5F0EB] gap-2">
         <div className="flex items-center gap-2">
           <span className="text-sm font-semibold text-[#3E2723]">
             {order.franchiseName}
           </span>
           <span className="text-xs text-[#BCAAA4]">|</span>
-          <span className="text-xs text-[#A1887F]">{order.code}</span>
+          <span className="text-xs text-[#A1887F] font-mono">{order.code}</span>
         </div>
-        <span className={`text-xs font-semibold uppercase tracking-wide ${statusInfo.color}`}>
-          {statusInfo.label}
-        </span>
+
+        <div className="flex items-center gap-3">
+          {/* Badge trạng thái Payment */}
+          {isPaid ? (
+            <div className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-green-50 border border-green-200">
+              <CheckCircle2 className="w-3.5 h-3.5 text-green-600" />
+              <span className="text-[11px] font-bold text-green-700 uppercase tracking-wide">
+                Đã Thanh Toán
+              </span>
+            </div>
+          ) : (
+            <div
+              className={`flex items-center gap-1 px-2.5 py-1 rounded-full border ${isCanceled ? "bg-gray-50 border-gray-200" : "bg-yellow-50 border-yellow-200"}`}
+            >
+              <CreditCard
+                className={`w-3.5 h-3.5 ${isCanceled ? "text-gray-500" : "text-yellow-600"}`}
+              />
+              <span
+                className={`text-[11px] font-bold uppercase tracking-wide ${isCanceled ? "text-gray-600" : "text-yellow-700"}`}
+              >
+                {isCanceled ? "Cancelled" : "Unpaid"}
+              </span>
+            </div>
+          )}
+
+          {/* Ẩn text "Chờ thanh toán" của Order nếu trạng thái là PENDING/DRAFT để tránh lặp chữ với Payment Status */}
+          {order.status !== "PENDING" && order.status !== "DRAFT" && (
+            <>
+              <span className="text-gray-300">|</span>
+              <span
+                className={`text-xs font-semibold uppercase tracking-wide ${statusInfo.color}`}
+              >
+                {statusInfo.label}
+              </span>
+            </>
+          )}
+        </div>
       </div>
 
       {/* Items */}
@@ -235,9 +299,7 @@ const OrderRow = ({
               <p className="text-sm font-medium text-[#3E2723] truncate">
                 {item.name}
               </p>
-              <p className="text-xs text-[#A1887F] mt-0.5">
-                Phân loại: {item.variant}
-              </p>
+
               <p className="text-xs text-[#A1887F]">x{item.quantity}</p>
             </div>
             <div className="text-right shrink-0">
@@ -251,24 +313,27 @@ const OrderRow = ({
 
       {/* Footer: Total + Date + Actions */}
       <div className="flex items-center justify-between px-5 py-3 border-t border-[#F5F0EB] bg-[#FDFCFB]">
-        <span className="text-xs text-[#A1887F]">
-          {formatDate(order.createdAt)}
-        </span>
+        <span className="text-xs text-[#A1887F]"></span>
         <div className="flex items-center gap-4">
           <span className="text-sm text-[#5D4037]">
-            Thành tiền:{" "}
+            Total Amount:{" "}
             <span className="font-bold text-[#C97B3D] text-base">
               {formatCurrency(order.totalAmount)}
             </span>
           </span>
           {order.status === "COMPLETED" && (
-            <button className="px-4 py-1.5 text-xs font-medium rounded-lg bg-[#C97B3D] text-white hover:bg-[#B5692F] transition-colors cursor-pointer">
+            <button className="px-4 py-1.5 text-xs font-medium rounded-lg bg-[#5D4037] text-white hover:bg-[#3E2723] transition-colors cursor-pointer">
               Mua Lại
             </button>
           )}
-          {order.status === "PENDING" && (
-            <button className="px-4 py-1.5 text-xs font-medium rounded-lg border border-[#C97B3D] text-[#C97B3D] hover:bg-[#C97B3D]/5 transition-colors cursor-pointer">
-              Thanh Toán
+
+          {/* CTA Dựa vào trạng thái thanh toán thật */}
+          {!isPaid && !isCanceled && (
+            <button
+              onClick={handlePayNow}
+              className="flex items-center gap-1.5 px-4 py-1.5 text-xs font-semibold rounded-lg bg-[#C97B3D] text-white hover:bg-[#B5692F] shadow-sm transition-all cursor-pointer"
+            >
+              <CreditCard className="w-3.5 h-3.5" /> Paying
             </button>
           )}
         </div>
