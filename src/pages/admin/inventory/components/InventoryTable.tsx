@@ -256,7 +256,10 @@ export const InventoryTable = ({
         }}
       >
         {/* Error banner */}
-        <InventoryErrorBanner errors={validationErrors} importErrors={importErrors} />
+        <InventoryErrorBanner
+          errors={validationErrors}
+          importErrors={importErrors}
+        />
 
         {/* Save / Discard bar — visible when there are pending changes */}
         <SaveBar
