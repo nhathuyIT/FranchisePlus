@@ -7,6 +7,7 @@ import {
   ShoppingCart,
   BadgePercent,
   ReceiptText,
+  CreditCard,
 } from "lucide-react";
 import {
   LayoutDashboard,
@@ -45,6 +46,7 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   calendar: CalendarDays,
   cart: ShoppingCart,
   receipt: ReceiptText,
+  "credit-card": CreditCard,
 };
 
 const sidebarMenuItems = ADMIN_MENU.filter((item) => {
