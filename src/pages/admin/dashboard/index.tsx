@@ -35,7 +35,6 @@ import {
 import {
   formatCount,
   formatSummaryValue,
-  getOperationalHealthScore,
   sumCounts,
   toDeliveryStatusData,
   toOrderStatusData,
@@ -111,7 +110,7 @@ const DashboardPage = () => {
       (role) => role.franchiseId === effectiveFranchiseId,
     )?.franchiseName ?? currentFranchiseName;
   const scopeLabel = effectiveFranchiseId
-    ? selectedFranchise?.name ?? selectedScopeFranchiseName
+    ? (selectedFranchise?.name ?? selectedScopeFranchiseName)
     : "All Franchises";
   const franchiseScopeDisplay = selectedFranchise
     ? selectedFranchise.code === "CURRENT"
@@ -147,7 +146,6 @@ const DashboardPage = () => {
   const activeDeliveries = dashboard
     ? dashboard.countDeliveries.ASSIGNED + dashboard.countDeliveries.PICKING_UP
     : 0;
-  const healthScore = dashboard ? getOperationalHealthScore(dashboard) : 0;
 
   const summaryCards: DashboardSummaryCardItem[] = dashboard
     ? [
@@ -169,7 +167,8 @@ const DashboardPage = () => {
         {
           title: "Total Customers",
           value: formatSummaryValue(dashboard.countCustomers),
-          subtitle: "Customer records visible inside the current dashboard view.",
+          subtitle:
+            "Customer records visible inside the current dashboard view.",
           badge: "Reach",
           icon: UserRound,
           badgeClassName: "bg-[#FBE8D7] text-[#A7541E]",
@@ -213,44 +212,6 @@ const DashboardPage = () => {
     });
   };
 
-  const handleDownloadReport = () => {
-    if (!dashboard) {
-      return;
-    }
-
-    const snapshot = {
-      generatedAt: new Date().toISOString(),
-      scope: {
-        franchiseId: effectiveFranchiseId || null,
-        label: scopeLabel,
-      },
-      summary: {
-        totalOrders,
-        totalPayments,
-        totalDeliveries,
-        healthScore,
-      },
-      data: dashboard,
-    };
-
-    const fileNameScope = scopeLabel
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, "-")
-      .replace(/^-|-$/g, "");
-    const blob = new Blob([JSON.stringify(snapshot, null, 2)], {
-      type: "application/json",
-    });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-
-    link.href = url;
-    link.download = `dashboard-${fileNameScope || "snapshot"}.json`;
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    window.setTimeout(() => URL.revokeObjectURL(url), 0);
-  };
-
   return (
     <div className="flex h-full min-h-0 flex-col overflow-auto pr-1 scroll-y-auto scrollbar-hide">
       <div className="mb-6 flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
@@ -274,7 +235,7 @@ const DashboardPage = () => {
           ) : null}
         </div>
 
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center mt-10">
           {isAdmin ? (
             <Select
               value={effectiveFranchiseId || "all"}
@@ -310,15 +271,6 @@ const DashboardPage = () => {
               </div>
             </div>
           )}
-
-          <Button
-            onClick={handleDownloadReport}
-            className="h-12 rounded-full bg-[#4A2C23] px-5 text-sm font-semibold text-white hover:bg-[#362019]"
-            disabled={!dashboard}
-          >
-            <Download className="h-4 w-4" />
-            Download Report
-          </Button>
         </div>
       </div>
 
@@ -443,7 +395,6 @@ const DashboardPage = () => {
               />
             </div>
           </div>
-          
         </div>
       ) : null}
     </div>
