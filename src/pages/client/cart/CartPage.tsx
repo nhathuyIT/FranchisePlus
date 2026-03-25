@@ -1,294 +1,356 @@
-import React from "react";
-import { useCart } from "./useCart";
+import React, { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import emptyCartIcon from "@/assets/icons/empty-cart.svg";
-import coffeeCupIcon from "@/assets/icons/coffee-cup.svg";
-import { ShoppingCart, Star, Trash2, ChevronLeft, CreditCard, Coffee } from "lucide-react";
+import { ChevronLeft } from "lucide-react";
+import { useCart } from "./useCart";
+import { useCartSelection } from "./useCartSelection";
+import {
+  useApplyVoucherInCartMutation,
+  useCancelCartMutation,
+  useRemoveVoucherInCartMutation,
+  useUpdateCartMutation,
+} from "@/hooks/cart/useCart.hook";
+import { useLoadingStore } from "@/stores/loading.store";
+import CartEmpty from "./components/CartEmpty";
+import CartPageHeader from "./components/CartPageHeader";
+import CartSummary from "./components/CartSummary";
+import CartTableHeader from "./components/CartTableHeader";
+import CartStoreSection from "./components/CartStoreSection";
+import CartVoucherDialog from "./components/CartVoucherDialog";
 
 const CartPage: React.FC = () => {
-  const { cart, updateQuantity, removeItem, totalAmount, itemCount } =
-    useCart();
-
+  const {
+    carts,
+    updateItemQuantity,
+    removeItem,
+    saveItemNote,
+    saveEditedItem,
+    itemCount,
+    isLoading,
+    isItemPending,
+  } = useCart();
   const navigate = useNavigate();
+  const applyVoucherMutation = useApplyVoucherInCartMutation();
+  const cancelCartMutation = useCancelCartMutation();
+  const removeVoucherMutation = useRemoveVoucherInCartMutation();
+  const updateCartMutation = useUpdateCartMutation();
+  const setLoading = useLoadingStore((state) => state.setLoading);
 
-  const handleIncrease = (productId: string | number) => {
-    const item = cart.items.find((i) => i.productFranchiseId === productId);
-    if (item) updateQuantity(productId, item.quantity + 1);
+  const [voucherDialogCartId, setVoucherDialogCartId] = useState<string | null>(
+    null,
+  );
+  const [voucherInputs, setVoucherInputs] = useState<Record<string, string>>({});
+  const [cancellingCartIds, setCancellingCartIds] = useState<string[]>([]);
+  const [voucherPendingCartIds, setVoucherPendingCartIds] = useState<string[]>(
+    [],
+  );
+  const [savingMessageCartId, setSavingMessageCartId] = useState<string | null>(
+    null,
+  );
+
+  const {
+    selectedItemIds,
+    toggleItem,
+    toggleCart,
+    toggleAll,
+    removeSelection,
+    isCartChecked,
+    isCartIndeterminate,
+    selectedItemCount,
+    selectedTotalBeforeDiscount,
+    selectedPayable,
+    selectedSavings,
+    allChecked,
+    someChecked,
+  } = useCartSelection(carts);
+
+  const voucherDialogCart = useMemo(
+    () => carts.find((cart) => cart.id === voucherDialogCartId) ?? null,
+    [carts, voucherDialogCartId],
+  );
+
+  const handleRemove = (cartItemId: string) => {
+    void removeItem(cartItemId).then((wasRemoved) => {
+      if (wasRemoved) {
+        removeSelection(cartItemId);
+      }
+    });
   };
 
-  const handleDecrease = (productId: string | number) => {
-    const item = cart.items.find((i) => i.productFranchiseId === productId);
-    if (item && item.quantity > 1) updateQuantity(productId, item.quantity - 1);
+  // Voucher/cancel/save-message run per shop cart, so pending state is tracked by cartId.
+  const setCancellingCartState = (cartId: string, pending: boolean) => {
+    setCancellingCartIds((current) => {
+      if (pending) {
+        return current.includes(cartId) ? current : [...current, cartId];
+      }
+
+      return current.filter((id) => id !== cartId);
+    });
   };
 
-  const handleRemove = (productId: string | number) => removeItem(productId);
+  const setVoucherPendingState = (cartId: string, pending: boolean) => {
+    setVoucherPendingCartIds((current) => {
+      if (pending) {
+        return current.includes(cartId) ? current : [...current, cartId];
+      }
 
-  const handleCheckout = () => navigate("/client/payment");
-
-  /* ── Decorative SVG pattern (reused from menu/home) ───────────────────── */
-  const vintageBgStyle = {
-    backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.4'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+      return current.filter((id) => id !== cartId);
+    });
   };
 
-  /* ─────────────────────────── EMPTY STATE ──────────────────────────────── */
-  if (cart.items.length === 0) {
-    return (
-      <div className="min-h-screen bg-[#FAF7F2]">
-        {/* Hero banner */}
-        <section className="relative bg-linear-to-br from-stone-900 via-stone-800 to-amber-900 pt-28 pb-16">
-          <div className="absolute inset-0 opacity-[0.04]" style={vintageBgStyle} />
-          <div className="container mx-auto px-4 text-center relative z-10">
-            <div className="flex items-center justify-center gap-4 mb-5">
-              <div className="h-px w-16 bg-linear-to-r from-transparent to-amber-400/60" />
-              <Star className="h-4 w-4 text-amber-400 fill-amber-400" />
-              <div className="h-px w-16 bg-linear-to-l from-transparent to-amber-400/60" />
-            </div>
-            <h1 className="font-serif text-4xl md:text-5xl font-bold text-white tracking-wide drop-shadow-lg">
-              Your Cart
-            </h1>
-            <p className="mt-3 text-amber-200/80 text-base font-light tracking-wider">
-              The finest selections, curated just for you
-            </p>
+  const isCancellingCart = (cartId: string) => cancellingCartIds.includes(cartId);
+  const isVoucherPending = (cartId: string) =>
+    voucherPendingCartIds.includes(cartId);
+
+  const handleCancelCart = (cartId: string) => {
+    if (!cartId || isCancellingCart(cartId)) return;
+
+    setCancellingCartState(cartId, true);
+
+    cancelCartMutation.mutate(cartId, {
+      onSuccess: () => {
+        setVoucherDialogCartId((current) => (current === cartId ? null : current));
+      },
+      onSettled: () => {
+        setCancellingCartState(cartId, false);
+      },
+    });
+  };
+
+  const handleCheckout = () => {
+    const checkoutItemIds = selectedItemIds.filter((cartItemId) =>
+      carts.some((singleCart) =>
+        singleCart.cartItems.some((item) => item.cartItemId === cartItemId),
+      ),
+    );
+
+    if (!checkoutItemIds.length) {
+      return;
+    }
+
+    navigate("/client/payment", {
+      state: {
+        selectedCartItemIds: checkoutItemIds,
+      },
+    });
+  };
+
+  const openVoucherDialog = (cartId: string) => {
+    setVoucherDialogCartId(cartId);
+    setVoucherInputs((current) => ({
+      ...current,
+      [cartId]: current[cartId] ?? "",
+    }));
+  };
+
+  const handleVoucherInputChange = (cartId: string, value: string) => {
+    setVoucherInputs((current) => ({
+      ...current,
+      [cartId]: value,
+    }));
+  };
+
+  const handleApplyVoucher = () => {
+    if (!voucherDialogCart || isVoucherPending(voucherDialogCart.id)) return;
+
+    const code = (voucherInputs[voucherDialogCart.id] ?? "").trim();
+    if (!code) return;
+
+    setVoucherPendingState(voucherDialogCart.id, true);
+
+    applyVoucherMutation.mutate(
+      {
+        cartId: voucherDialogCart.id,
+        data: { voucherCode: code },
+      },
+      {
+        onSuccess: () => {
+          setVoucherDialogCartId(null);
+        },
+        onSettled: () => {
+          setVoucherPendingState(voucherDialogCart.id, false);
+        },
+      },
+    );
+  };
+
+  const handleRemoveVoucher = (cartId: string) => {
+    if (!cartId || isVoucherPending(cartId)) return;
+
+    setVoucherPendingState(cartId, true);
+
+    removeVoucherMutation.mutate(cartId, {
+      onSuccess: () => {
+        setVoucherInputs((current) => ({
+          ...current,
+          [cartId]: "",
+        }));
+        setVoucherDialogCartId((current) => (current === cartId ? null : current));
+      },
+      onSettled: () => {
+        setVoucherPendingState(cartId, false);
+      },
+    });
+  };
+
+  const handleSaveCartMessage = (cartId: string, message: string) => {
+    setSavingMessageCartId(cartId);
+
+    updateCartMutation.mutate(
+      {
+        cartId,
+        data: {
+          message: message.trim(),
+        },
+      },
+      {
+        onSettled: () => {
+          setSavingMessageCartId((current) =>
+            current === cartId ? null : current,
+          );
+        },
+      },
+    );
+  };
+
+  const handleSaveItemNote = (cartItemId: string, note: string) =>
+    saveItemNote(cartItemId, note);
+
+  useEffect(() => {
+    setLoading(isLoading);
+
+    return () => {
+      setLoading(false);
+    };
+  }, [isLoading, setLoading]);
+
+  if (isLoading) {
+    return null;
+  }
+
+  if (itemCount === 0) {
+    return <CartEmpty />;
+  }
+
+  return (
+    <div
+      className="relative min-h-screen overflow-x-hidden bg-[var(--cart-page)] pb-48"
+      style={
+        {
+          "--cart-page": "#f6efe7",
+          "--cart-surface": "rgba(255,252,247,0.82)",
+          "--cart-panel": "#fffaf5",
+          "--cart-panel-strong": "#fffdf9",
+          "--cart-border": "#e9d9cb",
+          "--cart-border-soft": "#f2e7dc",
+          "--cart-ink": "#3f2921",
+          "--cart-muted": "#8b7163",
+          "--cart-accent": "#b76843",
+          "--cart-accent-deep": "#8f4a2e",
+          "--cart-warm": "#f5e6d8",
+        } as React.CSSProperties
+      }
+    >
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-[28rem] overflow-hidden">
+        <div className="absolute -left-20 top-10 h-72 w-72 rounded-full bg-[#f0d4bb]/55 blur-3xl" />
+        <div className="absolute right-[-5rem] top-0 h-80 w-80 rounded-full bg-[#edd8c9]/70 blur-3xl" />
+        <div className="absolute left-1/2 top-36 h-56 w-56 -translate-x-1/2 rounded-full bg-[#fff5ed]/90 blur-3xl" />
+      </div>
+
+      <CartPageHeader selectedItemCount={selectedItemCount} />
+
+      <div className="relative mx-auto max-w-7xl px-4 pb-8">
+        <section className="overflow-hidden rounded-[2rem] border border-[var(--cart-border)] bg-[var(--cart-surface)] shadow-[0_24px_70px_rgba(63,41,33,0.08)] backdrop-blur-md">
+          <div className="border-b border-[var(--cart-border-soft)] bg-[linear-gradient(180deg,rgba(255,255,255,0.72)_0%,rgba(255,249,242,0.88)_100%)]">
+            <CartTableHeader
+              allChecked={allChecked}
+              someChecked={someChecked}
+              onToggleAll={toggleAll}
+            />
+          </div>
+
+          <div className="space-y-5 p-4 md:p-5">
+            {carts.map((singleCart) => (
+              <CartStoreSection
+                key={singleCart.id}
+                cart={singleCart}
+                hasAppliedVoucher={
+                  Boolean(singleCart.voucherId) ||
+                  Number(singleCart.voucherDiscount || 0) > 0
+                }
+                isVoucherPending={isVoucherPending(singleCart.id)}
+                isCancellingCart={isCancellingCart(singleCart.id)}
+                initialMessage={singleCart.message}
+                isSavingMessage={
+                  savingMessageCartId === singleCart.id &&
+                  updateCartMutation.isPending
+                }
+                selectedItemIds={selectedItemIds}
+                checked={isCartChecked(singleCart.id)}
+                indeterminate={isCartIndeterminate(singleCart.id)}
+                onToggleCart={(checked) => toggleCart(singleCart.id, checked)}
+                onToggleItem={toggleItem}
+                onSaveEditedItem={(item, options) =>
+                  saveEditedItem(item.cartItemId, options)
+                }
+                onUpdateQuantity={(cartItemId, quantity) =>
+                  void updateItemQuantity(cartItemId, quantity)
+                }
+                onRemove={handleRemove}
+                onSaveItemNote={handleSaveItemNote}
+                isItemPending={isItemPending}
+                onSaveMessage={(message) =>
+                  handleSaveCartMessage(singleCart.id, message)
+                }
+                onCancelCart={() => handleCancelCart(singleCart.id)}
+                onOpenVoucherDialog={() => openVoucherDialog(singleCart.id)}
+                onRemoveVoucher={() => handleRemoveVoucher(singleCart.id)}
+              />
+            ))}
           </div>
         </section>
 
-        <div className="container mx-auto px-4 py-24 text-center">
-          {/* Decorative corner accents */}
-          <div className="relative inline-block">
-            <div className="absolute -top-4 -left-4 w-8 h-8 border-l-2 border-t-2 border-[#C4A77D]/50" />
-            <div className="absolute -top-4 -right-4 w-8 h-8 border-r-2 border-t-2 border-[#C4A77D]/50" />
-            <div className="absolute -bottom-4 -left-4 w-8 h-8 border-l-2 border-b-2 border-[#C4A77D]/50" />
-            <div className="absolute -bottom-4 -right-4 w-8 h-8 border-r-2 border-b-2 border-[#C4A77D]/50" />
-            <div className="bg-white rounded-sm shadow-lg border border-[#E8DFD6] px-16 py-14">
-              <div className="mb-6 flex justify-center">
-                <img src={emptyCartIcon} alt="Empty cart" className="w-28 h-28 opacity-60" />
-              </div>
-              <span className="inline-block text-[#8B7355] tracking-[0.35em] uppercase text-xs font-medium mb-3">
-                Nothing Here Yet
-              </span>
-              <h3 className="font-serif text-3xl font-bold text-[#3E2723] mb-4">
-                Giỏ hàng trống
-              </h3>
-              <div className="flex items-center justify-center gap-3 mb-6">
-                <div className="w-10 h-px bg-[#C4A77D]/50" />
-                <div className="w-1.5 h-1.5 rotate-45 border border-[#C4A77D]/50" />
-                <div className="w-10 h-px bg-[#C4A77D]/50" />
-              </div>
-              <p className="text-[#6D4C41]/70 mb-10 max-w-sm mx-auto leading-relaxed">
-                Bạn chưa thêm sản phẩm nào. Hãy khám phá menu và chọn những ly cà phê yêu thích!
-              </p>
-              <Link
-                to="/menu"
-                className="inline-flex items-center gap-2 bg-[#3E2723] text-white px-8 py-3 font-serif
-                           font-semibold hover:bg-[#6D4C41] transition-colors duration-300 tracking-wide"
-              >
-                <Coffee className="w-4 h-4" />
-                Khám phá Menu
-              </Link>
-            </div>
-          </div>
+        <div className="mt-7">
+          <Link
+            to="/client/menu"
+            className="inline-flex items-center gap-2 rounded-full border border-[var(--cart-border)] bg-white/80 px-4 py-2.5 text-sm font-medium text-[var(--cart-ink)] shadow-[0_14px_30px_rgba(63,41,33,0.06)] transition-all hover:-translate-y-0.5 hover:border-[#d6b9a7] hover:text-[var(--cart-accent)]"
+          >
+            <ChevronLeft className="h-4 w-4" />
+            Continue shopping
+          </Link>
         </div>
       </div>
-    );
-  }
 
-  /* ─────────────────────────── CART WITH ITEMS ──────────────────────────── */
-  return (
-    <div className="min-h-screen bg-[#FAF7F2]">
-      {/* ── Hero Banner ─────────────────────────────────────────────────── */}
-      <section className="relative bg-linear-to-br from-stone-900 via-stone-800 to-amber-900 pt-28 pb-16">
-        <div className="absolute inset-0 opacity-[0.04]" style={vintageBgStyle} />
-        {/* Corner accents */}
-        <div className="absolute top-8 left-8 w-16 h-16 border-l border-t border-amber-400/20" />
-        <div className="absolute top-8 right-8 w-16 h-16 border-r border-t border-amber-400/20" />
+      <CartSummary
+        allChecked={allChecked}
+        someChecked={someChecked}
+        selectedItemCount={selectedItemCount}
+        selectedTotalBeforeDiscount={selectedTotalBeforeDiscount}
+        selectedSavings={selectedSavings}
+        selectedPayable={selectedPayable}
+        onToggleAll={toggleAll}
+        onCheckout={handleCheckout}
+      />
 
-        <div className="container mx-auto px-4 text-center relative z-10">
-          <div className="flex items-center justify-center gap-4 mb-5">
-            <div className="h-px w-16 bg-linear-to-r from-transparent to-amber-400/60" />
-            <Star className="h-4 w-4 text-amber-400 fill-amber-400" />
-            <div className="h-px w-16 bg-linear-to-l from-transparent to-amber-400/60" />
-          </div>
-          <div className="flex items-center justify-center gap-3 mb-2">
-            <ShoppingCart className="w-8 h-8 text-amber-300" />
-            <h1 className="font-serif text-4xl md:text-5xl font-bold text-white tracking-wide drop-shadow-lg">
-              Your Cart
-            </h1>
-          </div>
-          <p className="mt-3 text-amber-200/80 text-base font-light tracking-wider">
-            {itemCount} {itemCount === 1 ? "item" : "items"} selected
-          </p>
-        </div>
-      </section>
-
-      {/* ── Main Content ─────────────────────────────────────────────────── */}
-      <div className="container mx-auto px-4 py-14">
-        <div className="flex flex-col lg:flex-row gap-10 items-start">
-
-          {/* ── Cart Items Table ────────────────────────────────────────── */}
-          <div className="flex-1 min-w-0">
-            {/* Section label */}
-            <div className="flex items-center gap-4 mb-6">
-              <span className="text-[#8B7355] tracking-[0.35em] uppercase text-xs font-medium">
-                Order Details
-              </span>
-              <div className="flex-1 h-px bg-[#C4A77D]/30" />
-            </div>
-
-            <div className="bg-white border border-[#E8DFD6] shadow-sm overflow-hidden">
-              {/* Table header */}
-              <div className="hidden md:grid grid-cols-[80px_1fr_140px_120px_40px] gap-4 px-6 py-4
-                              bg-[#3E2723] text-amber-100/90 text-xs tracking-[0.2em] uppercase font-medium">
-                <div></div>
-                <div>Sản phẩm</div>
-                <div className="text-center">Số lượng</div>
-                <div className="text-right">Thành tiền</div>
-                <div></div>
-              </div>
-
-              {/* Items */}
-              <div className="divide-y divide-[#E8DFD6]">
-                {cart.items.map((item) => (
-                  <div
-                    key={item.id}
-                    className="group grid grid-cols-[80px_1fr] md:grid-cols-[80px_1fr_140px_120px_40px]
-                               gap-4 px-6 py-5 items-center hover:bg-[#FAF7F2] transition-colors duration-200"
-                  >
-                    {/* Image */}
-                    <div className="w-[72px] h-[72px] bg-amber-50 border border-[#E8DFD6] overflow-hidden flex-shrink-0">
-                      <img
-                        src={item.imageUrl || coffeeCupIcon}
-                        alt={item.productNameSnapshot}
-                        className="w-full h-full object-cover"
-                        onError={(e) => {
-                          const t = e.target as HTMLImageElement;
-                          t.src = coffeeCupIcon;
-                          t.style.objectFit = "contain";
-                          t.style.padding = "10px";
-                        }}
-                      />
-                    </div>
-
-                    {/* Name + unit price */}
-                    <div>
-                      <p className="font-serif font-semibold text-[#3E2723] leading-snug">
-                        {item.productNameSnapshot}
-                      </p>
-                      <p className="text-sm text-[#8B7355] mt-1">
-                        {(item.priceSnapshot || 0).toLocaleString("vi-VN")}₫ / ly
-                      </p>
-                    </div>
-
-                    {/* Quantity stepper */}
-                    <div className="flex items-center justify-center md:justify-center gap-0">
-                      <button
-                        onClick={() => handleDecrease(item.productFranchiseId)}
-                        className="w-8 h-8 border border-[#C4A77D] text-[#6D4C41] hover:bg-[#3E2723]
-                                   hover:text-white hover:border-[#3E2723] transition-colors duration-200
-                                   flex items-center justify-center text-lg leading-none"
-                      >
-                        −
-                      </button>
-                      <span className="w-10 h-8 border-t border-b border-[#C4A77D] flex items-center
-                                       justify-center font-serif font-bold text-[#3E2723] text-sm">
-                        {item.quantity}
-                      </span>
-                      <button
-                        onClick={() => handleIncrease(item.productFranchiseId)}
-                        className="w-8 h-8 border border-[#C4A77D] text-[#6D4C41] hover:bg-[#3E2723]
-                                   hover:text-white hover:border-[#3E2723] transition-colors duration-200
-                                   flex items-center justify-center text-lg leading-none"
-                      >
-                        +
-                      </button>
-                    </div>
-
-                    {/* Line total */}
-                    <div className="text-right font-serif font-bold text-[#3E2723] hidden md:block">
-                      {(item.lineTotal || 0).toLocaleString("vi-VN")}₫
-                    </div>
-
-                    {/* Remove */}
-                    <div className="flex justify-center hidden md:flex">
-                      <button
-                        onClick={() => handleRemove(item.productFranchiseId)}
-                        title="Xóa sản phẩm"
-                        className="w-8 h-8 text-[#C4A77D] hover:text-red-600 transition-colors duration-200
-                                   flex items-center justify-center"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-
-                    {/* Mobile: total + remove row */}
-                    <div className="col-span-2 flex justify-between items-center md:hidden pt-1">
-                      <span className="font-serif font-bold text-[#3E2723]">
-                        {(item.lineTotal || 0).toLocaleString("vi-VN")}₫
-                      </span>
-                      <button
-                        onClick={() => handleRemove(item.productFranchiseId)}
-                        className="text-[#C4A77D] hover:text-red-600 transition-colors"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Continue shopping */}
-            <div className="mt-6">
-              <Link
-                to="/menu"
-                className="inline-flex items-center gap-2 text-[#6D4C41] hover:text-[#3E2723]
-                           text-sm font-medium tracking-wide transition-colors duration-200 group"
-              >
-                <ChevronLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform duration-200" />
-                Tiếp tục mua hàng
-              </Link>
-            </div>
-          </div>
-
-          {/* ── Order Summary Sidebar ───────────────────────────────────── */}
-          <div className="w-full lg:w-80 flex-shrink-0">
-            <div className="flex items-center gap-4 mb-6">
-              <span className="text-[#8B7355] tracking-[0.35em] uppercase text-xs font-medium">
-                Summary
-              </span>
-              <div className="flex-1 h-px bg-[#C4A77D]/30" />
-            </div>
-
-            <div className="relative bg-white border border-[#E8DFD6] shadow-sm p-7">
-              {/* Corner accents */}
-              <div className="absolute top-0 left-0 w-6 h-6 border-l-2 border-t-2 border-[#C4A77D]/60" />
-              <div className="absolute top-0 right-0 w-6 h-6 border-r-2 border-t-2 border-[#C4A77D]/60" />
-              <div className="absolute bottom-0 left-0 w-6 h-6 border-l-2 border-b-2 border-[#C4A77D]/60" />
-              <div className="absolute bottom-0 right-0 w-6 h-6 border-r-2 border-b-2 border-[#C4A77D]/60" />
-
-              {/* Total */}
-              <div className="flex justify-between items-center mb-7">
-                <span className="font-serif font-bold text-[#3E2723] text-lg">Tổng cộng</span>
-                <span className="font-serif font-bold text-[#3E2723] text-xl">
-                  {totalAmount.toLocaleString("vi-VN")}₫
-                </span>
-              </div>
-
-              {/* Checkout button */}
-              <button
-                onClick={handleCheckout}
-                className="w-full flex items-center justify-center gap-2 bg-[#3E2723] text-white
-                           py-3.5 font-serif font-semibold tracking-wide hover:bg-[#6D4C41]
-                           transition-colors duration-300 text-base"
-              >
-                <CreditCard className="w-4 h-4" />
-                Thanh toán
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
+      <CartVoucherDialog
+        open={!!voucherDialogCart}
+        cart={voucherDialogCart}
+        voucherCode={
+          voucherDialogCart ? voucherInputs[voucherDialogCart.id] || "" : ""
+        }
+        isApplying={
+          voucherDialogCart ? isVoucherPending(voucherDialogCart.id) : false
+        }
+        onOpenChange={(open) => !open && setVoucherDialogCartId(null)}
+        onVoucherCodeChange={(value) =>
+          voucherDialogCart &&
+          handleVoucherInputChange(voucherDialogCart.id, value)
+        }
+        onApply={handleApplyVoucher}
+      />
     </div>
   );
 };
 
 export default CartPage;
+
+

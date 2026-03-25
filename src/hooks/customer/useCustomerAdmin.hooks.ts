@@ -1,4 +1,9 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  keepPreviousData,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
 import { toast } from "sonner";
 import * as customerAdminApi from "@/api/customer/customer-admin.api";
 import type { CustomerSearchRequest } from "@/api/customer/customer-admin.type";
@@ -12,6 +17,8 @@ export const customerAdminKeys = {
   lists: () => [...customerAdminKeys.all, "list"] as const,
   list: (filters: CustomerSearchRequest) =>
     [...customerAdminKeys.lists(), filters] as const,
+  finds: () => [...customerAdminKeys.all, "find"] as const,
+  find: (keyword: string) => [...customerAdminKeys.finds(), keyword] as const,
   details: () => [...customerAdminKeys.all, "detail"] as const,
   detail: (id: string) => [...customerAdminKeys.details(), id] as const,
 };
@@ -27,6 +34,35 @@ export const useCustomerAdminSearch = (params: CustomerSearchRequest) => {
   return useQuery({
     queryKey: customerAdminKeys.list(params),
     queryFn: () => customerAdminApi.search(params),
+  });
+};
+
+export const useCustomerSearch = (
+  params: CustomerSearchRequest,
+  options?: { enabled?: boolean },
+) => {
+  return useQuery({
+    queryKey: customerAdminKeys.list(params),
+    queryFn: async () => {
+      const response = await customerAdminApi.search(params);
+      return response;
+    },
+    enabled: options?.enabled ?? true,
+    placeholderData: keepPreviousData,
+  });
+};
+
+export const useCustomerByKeyword = (
+  keyword: string,
+  options?: { enabled?: boolean },
+) => {
+  const normalizedKeyword = keyword.trim();
+
+  return useQuery({
+    queryKey: customerAdminKeys.find(normalizedKeyword),
+    queryFn: () => customerAdminApi.getCustomerByKeyword(normalizedKeyword),
+    enabled: !!normalizedKeyword && (options?.enabled ?? true),
+    placeholderData: keepPreviousData,
   });
 };
 

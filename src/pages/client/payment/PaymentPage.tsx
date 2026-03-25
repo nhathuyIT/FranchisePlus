@@ -1,8 +1,11 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useMemo, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
+import { ROUTER_URL } from "@/router/route.const";
 import { useCart } from "@/pages/client/cart/useCart";
+import { useCheckoutCartMutation } from "@/hooks/cart/useCart.hook";
 import { PRODUCTS_CLIENT } from "@/const/product-client.const";
 import { useAuthStore } from "@/stores/auth-store";
+import { useLoadingStore } from "@/stores/loading.store";
 import cashPaymentIcon from "@/assets/icons/cash-payment.svg";
 import qrPaymentIcon from "@/assets/icons/qr-payment.svg";
 import emptyCartIcon from "@/assets/icons/empty-cart.svg";
@@ -10,10 +13,125 @@ import secureLockIcon from "@/assets/icons/secure-lock.svg";
 import coffeeCupIcon from "@/assets/icons/coffee-cup.svg";
 import type { PaymentMethod, ShippingInfo } from "@/types/payment";
 
+type PaymentPageLocationState = {
+  selectedCartItemIds?: string[];
+};
+
 const PaymentPage = () => {
   const navigate = useNavigate();
-  const { cart, clearCart, subtotal, totalAmount, itemCount } = useCart();
+  const location = useLocation();
+  const { cart, carts } = useCart();
+  const checkoutCartMutation = useCheckoutCartMutation();
   const { authUser } = useAuthStore();
+  const setLoading = useLoadingStore((state) => state.setLoading);
+
+  const selectedCartItemIds = useMemo(() => {
+    const state = location.state as PaymentPageLocationState | null;
+
+    if (!Array.isArray(state?.selectedCartItemIds)) {
+      return [];
+    }
+
+    return state.selectedCartItemIds.filter(
+      (cartItemId): cartItemId is string =>
+        typeof cartItemId === "string" && cartItemId.length > 0,
+    );
+  }, [location.state]);
+
+  const selectedCartItemIdSet = useMemo(
+    () => new Set(selectedCartItemIds),
+    [selectedCartItemIds],
+  );
+
+  const checkoutCarts = useMemo(() => {
+    if (selectedCartItemIdSet.size === 0) {
+      return carts;
+    }
+
+    return carts
+      .map((singleCart) => ({
+        ...singleCart,
+        cartItems: singleCart.cartItems.filter((item) =>
+          selectedCartItemIdSet.has(item.cartItemId),
+        ),
+      }))
+      .filter((singleCart) => singleCart.cartItems.length > 0);
+  }, [carts, selectedCartItemIdSet]);
+
+  const checkoutItems = useMemo(() => {
+    if (selectedCartItemIdSet.size === 0) {
+      return cart.items;
+    }
+
+    return cart.items.filter((item) =>
+      selectedCartItemIdSet.has(item.cartItemId),
+    );
+  }, [cart.items, selectedCartItemIdSet]);
+
+  const checkoutItemCount = useMemo(
+    () =>
+      checkoutCarts.reduce(
+        (sum, singleCart) =>
+          sum +
+          singleCart.cartItems.reduce(
+            (cartSum, item) => cartSum + Number(item.quantity || 0),
+            0,
+          ),
+        0,
+      ),
+    [checkoutCarts],
+  );
+
+  const checkoutSubtotal = useMemo(
+    () =>
+      checkoutCarts.reduce((sum, singleCart) => {
+        if (singleCart.cartItems.length === 0) return sum;
+
+        const originalCart = carts.find(
+          (cartItem) => cartItem.id === singleCart.id,
+        );
+        if (!originalCart) return sum;
+
+        if (singleCart.cartItems.length === originalCart.cartItems.length) {
+          return sum + Number(originalCart.subtotalAmount || 0);
+        }
+
+        return (
+          sum +
+          singleCart.cartItems.reduce(
+            (cartSum, item) =>
+              cartSum + Number(item.lineTotal || item.finalLineTotal || 0),
+            0,
+          )
+        );
+      }, 0),
+    [carts, checkoutCarts],
+  );
+
+  const checkoutTotalAmount = useMemo(
+    () =>
+      checkoutCarts.reduce((sum, singleCart) => {
+        if (singleCart.cartItems.length === 0) return sum;
+
+        const originalCart = carts.find(
+          (cartItem) => cartItem.id === singleCart.id,
+        );
+        if (!originalCart) return sum;
+
+        if (singleCart.cartItems.length === originalCart.cartItems.length) {
+          return sum + Number(originalCart.finalAmount || 0);
+        }
+
+        return (
+          sum +
+          singleCart.cartItems.reduce(
+            (cartSum, item) => cartSum + Number(item.finalLineTotal || 0),
+            0,
+          )
+        );
+      }, 0),
+    [carts, checkoutCarts],
+  );
 
   const getUserEmail = (): string => {
     return authUser?.user?.email || "";
@@ -152,7 +270,7 @@ const PaymentPage = () => {
     }
   };
 
-  const handleSubmitOrder = (e: React.FormEvent) => {
+  const handleSubmitOrder = async (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
 
     // Validate all fields
@@ -183,36 +301,63 @@ const PaymentPage = () => {
       return;
     }
 
-    if (cart.items.length === 0) {
+    if (checkoutItems.length === 0) {
       alert("Giỏ hàng trống!");
       navigate("/client/cart");
       return;
     }
 
-    // Process order based on payment method
-    if (paymentMethod === "COD") {
-      // COD payment
-      alert(
-        `Đơn hàng của bạn đã được xác nhận!\n\n` +
-          `Phương thức thanh toán: Thanh toán khi nhận hàng\n` +
-          `Tổng tiền: ${totalAmount.toLocaleString("vi-VN")} VND\n\n` +
-          `Chúng tôi sẽ liên hệ với bạn sớm nhất!`,
-      );
-      clearCart();
-      navigate("/client/menu");
-    } else {
-      // QR payment - will integrate PayOS later
-      alert(
-        `Đang chuyển đến trang thanh toán QR...\n\n` +
-          `Tổng tiền: ${totalAmount.toLocaleString("vi-VN")} VND\n\n` +
-          `(Tính năng thanh toán QR sẽ được tích hợp PayOS sau)`,
-      );
-      // TODO: Integrate PayOS for QR payment
+    if (paymentMethod === "QR") {
+      navigate(ROUTER_URL.CLIENT_ROUTER.PAYMENT_QR, {
+        state: {
+          shippingInfo,
+          amount: checkoutTotalAmount,
+          itemCount: checkoutItemCount,
+        },
+      });
+      return;
+    }
+
+    const checkoutPayload = {
+      address: shippingInfo.address.trim(),
+      phone: shippingInfo.phone.trim(),
+      message: shippingInfo.notes.trim(),
+    };
+
+    const targetCartIds = Array.from(
+      new Set(checkoutCarts.map((singleCart) => singleCart.id).filter(Boolean)),
+    );
+
+    try {
+      setLoading(true);
+
+      for (const cartId of targetCartIds) {
+        await checkoutCartMutation.mutateAsync({
+          cartId,
+          data: checkoutPayload,
+        });
+      }
+
+      navigate(`${ROUTER_URL.ACCOUNT}/${ROUTER_URL.ACCOUNT_ROUTER.MY_ORDER}`);
+
+      // if (paymentMethod === "COD") {
+      //   alert(
+      //     `Đơn hàng của bạn đã được xác nhận!\n\n` +
+      //       `Phương thức thanh toán: Thanh toán khi nhận hàng\n` +
+      //       `Tổng tiền: ${totalAmount.toLocaleString("vi-VN")} VND\n\n` +
+      //       `Chúng tôi sẽ liên hệ với bạn sớm nhất!`,
+      //   );
+      //   navigate("/menu");
+      // }
+    } catch {
+      // Error toast is handled in the mutation hook
+    } finally {
+      setLoading(false);
     }
   };
 
   // Redirect if cart is empty
-  if (cart.items.length === 0) {
+  if (checkoutItems.length === 0) {
     return (
       <div className="min-h-screen bg-gray-50 py-8">
         <div className="max-w-6xl mx-auto px-4">
@@ -227,7 +372,7 @@ const PaymentPage = () => {
               Vui lòng thêm sản phẩm vào giỏ hàng trước khi thanh toán.
             </p>
             <button
-              onClick={() => navigate("/client/menu")}
+              onClick={() => navigate("/menu")}
               className="bg-[#B8860B] text-white px-8 py-3 rounded font-semibold hover:bg-amber-700 transition-colors"
             >
               Xem Menu
@@ -258,31 +403,6 @@ const PaymentPage = () => {
                 Thông tin giao hàng
               </h2>
               <form className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Họ và tên <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    name="fullName"
-                    value={shippingInfo.fullName}
-                    onChange={handleInputChange}
-                    onBlur={handleBlur}
-                    className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:border-transparent outline-none transition-all ${
-                      errors.fullName
-                        ? "border-red-500 focus:ring-red-200"
-                        : "border-gray-300 focus:ring-[#B8860B]"
-                    }`}
-                    placeholder="Nhập họ và tên"
-                    required
-                  />
-                  {errors.fullName && (
-                    <p className="mt-1 text-sm text-red-600">
-                      {errors.fullName}
-                    </p>
-                  )}
-                </div>
-
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -487,14 +607,17 @@ const PaymentPage = () => {
 
               {/* Order Items */}
               <div className="space-y-3 mb-4 max-h-64 overflow-y-auto">
-                {cart.items.map((item) => (
+                {checkoutItems.map((item) => (
                   <div
-                    key={item.productFranchiseId}
+                    key={item.cartItemId}
                     className="flex items-start gap-3 pb-3 border-b border-gray-100"
                   >
                     <div className="w-16 h-16 bg-amber-50 rounded-lg border border-gray-200 overflow-hidden shrink-0">
                       <img
-                        src={item.imageUrl || getProductImage(Number(item.productFranchiseId))}
+                        src={
+                          item.imageUrl ||
+                          getProductImage(Number(item.productFranchiseId))
+                        }
                         alt="coffee"
                         className="w-full h-full object-cover"
                         onError={(e) => {
@@ -525,12 +648,12 @@ const PaymentPage = () => {
               <div className="space-y-2 py-4 border-t border-gray-200">
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-600">Tổng sản phẩm:</span>
-                  <span className="font-medium">{itemCount}</span>
+                  <span className="font-medium">{checkoutItemCount}</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-600">Tạm tính:</span>
                   <span className="font-medium">
-                    {subtotal.toLocaleString("vi-VN")} VND
+                    {checkoutSubtotal.toLocaleString("vi-VN")} VND
                   </span>
                 </div>
                 <div className="flex justify-between text-sm">
@@ -540,7 +663,7 @@ const PaymentPage = () => {
                 <div className="flex justify-between text-lg font-bold pt-2 border-t border-gray-200">
                   <span className="text-gray-900">Tổng cộng:</span>
                   <span className="text-[#B8860B]">
-                    {totalAmount.toLocaleString("vi-VN")} VND
+                    {checkoutTotalAmount.toLocaleString("vi-VN")} VND
                   </span>
                 </div>
               </div>
@@ -549,15 +672,24 @@ const PaymentPage = () => {
               <div className="space-y-3 pt-4 border-t border-gray-200">
                 <button
                   onClick={handleSubmitOrder}
+                  disabled={checkoutCartMutation.isPending}
                   className="w-full bg-[#B8860B] text-white font-bold py-3 px-6 rounded-lg hover:bg-amber-700 transition-colors"
                 >
-                  {paymentMethod === "COD" ? "Đặt hàng" : "Thanh toán ngay"}
+                  {checkoutCartMutation.isPending
+                    ? "Đang xử lý..."
+                    : paymentMethod === "COD"
+                      ? "Đặt hàng"
+                      : "Thanh toán ngay"}
                 </button>
                 <button
-                  onClick={() => navigate("/client/cart")}
+                  onClick={() =>
+                    navigate(
+                      `${ROUTER_URL.ACCOUNT}/${ROUTER_URL.ACCOUNT_ROUTER.MY_ORDER}`,
+                    )
+                  }
                   className="w-full bg-gray-100 text-gray-700 font-semibold py-3 px-6 rounded-lg hover:bg-gray-200 transition-colors"
                 >
-                  Quay lại giỏ hàng
+                  My order
                 </button>
               </div>
 

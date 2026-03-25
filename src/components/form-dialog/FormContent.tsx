@@ -50,6 +50,7 @@ import { defaultSubmitText } from "./types";
 export function FormContent<TFormData extends FieldValues>({
   schema,
   fields,
+  onImageUpload,
   defaultValues,
   values,
   mode = "create",
@@ -170,6 +171,7 @@ export function FormContent<TFormData extends FieldValues>({
                 config: fieldConfig,
                 form,
                 disabled: isViewMode,
+                onImageUpload,
               })}
             </div>
           ))}

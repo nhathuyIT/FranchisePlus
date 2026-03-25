@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/common/PageHeader";
+import NormalLoadingLayout from "@/layouts/NormalLoadingLayout";
 import { FranchiseTable } from "./components/FranchiseTable";
 import {
   FormDialog,
@@ -41,6 +42,7 @@ import { useDebounce } from "@/hooks/common/useDebounce";
  */
 const FranchiseList = () => {
   const navigate = useNavigate();
+  const [isActionPending, setIsActionPending] = useState(false);
   const { authUser, getCurrentPermissions } = useAuthStore();
   const userPermissions = getCurrentPermissions();
 
@@ -109,61 +111,67 @@ const FranchiseList = () => {
   const handleSubmit = async (
     data: FranchiseFormData,
   ): Promise<SubmitResult | void> => {
-    if (dialog.mode === "edit" && dialog.data) {
-      // Update existing franchise
-      const apiData: FranchiseUpdateRequest = {
-        code: data.code,
-        name: data.name,
-        hotline: data.hotline || undefined,
-        logoUrl: data.logoUrl || null,
-        address: data.address,
-        openedAt: data.openedAt || null,
-        closedAt: data.closedAt || null,
-      };
+    setIsActionPending(true);
+    try {
+      await new Promise((r) => setTimeout(r, 500));
+      if (dialog.mode === "edit" && dialog.data) {
+        // Update existing franchise
+        const apiData: FranchiseUpdateRequest = {
+          code: data.code,
+          name: data.name,
+          hotline: data.hotline || undefined,
+          logoUrl: data.logoUrl || null,
+          address: data.address,
+          openedAt: data.openedAt || null,
+          closedAt: data.closedAt || null,
+        };
 
-      const response = await franchiseApi.update(
-        String(dialog.data.id),
-        apiData,
-      );
+        const response = await franchiseApi.update(
+          String(dialog.data.id),
+          apiData,
+        );
 
-      if (!response) {
-        throw new Error("Failed to update franchise");
+        if (!response) {
+          throw new Error("Failed to update franchise");
+        }
+
+        // Update status if changed
+        if (response.isActive !== data.isActive) {
+          await franchiseApi.updateStatus(String(dialog.data.id), {
+            isActive: data.isActive,
+          });
+        }
+
+        toast.success("Franchise updated successfully");
+      } else {
+        // Create new franchise
+        const apiData: FranchiseCreateRequest = {
+          code: data.code,
+          name: data.name,
+          hotline: data.hotline || undefined,
+          logoUrl: data.logoUrl || null,
+          address: data.address,
+          openedAt: data.openedAt || null,
+          closedAt: data.closedAt || null,
+        };
+
+        const response = await franchiseApi.create(apiData);
+
+        if (!response) {
+          throw new Error("Failed to create franchise");
+        }
+
+        // Update status if needed
+        if (response.isActive !== data.isActive) {
+          await franchiseApi.updateStatus(response.id, {
+            isActive: data.isActive,
+          });
+        }
+
+        toast.success("Franchise created successfully");
       }
-
-      // Update status if changed
-      if (response.isActive !== data.isActive) {
-        await franchiseApi.updateStatus(String(dialog.data.id), {
-          isActive: data.isActive,
-        });
-      }
-
-      toast.success("Franchise updated successfully");
-    } else {
-      // Create new franchise
-      const apiData: FranchiseCreateRequest = {
-        code: data.code,
-        name: data.name,
-        hotline: data.hotline || undefined,
-        logoUrl: data.logoUrl || null,
-        address: data.address,
-        openedAt: data.openedAt || null,
-        closedAt: data.closedAt || null,
-      };
-
-      const response = await franchiseApi.create(apiData);
-
-      if (!response) {
-        throw new Error("Failed to create franchise");
-      }
-
-      // Update status if needed
-      if (response.isActive !== data.isActive) {
-        await franchiseApi.updateStatus(response.id, {
-          isActive: data.isActive,
-        });
-      }
-
-      toast.success("Franchise created successfully");
+    } finally {
+      setIsActionPending(false);
     }
     // Errors are automatically caught by FormDialog and mapped to form fields
   };
@@ -300,7 +308,8 @@ const FranchiseList = () => {
 
   return (
     <div className="h-full flex flex-col">
-      <div className="flex-1 flex flex-col min-h-0 max-w-7xl mx-auto w-full">
+      <NormalLoadingLayout forceShow={isActionPending || statusMutation.isPending} />
+      <div className="flex-1 flex flex-col min-h-0 max-w-screen-2xl mx-auto w-full">
         <PageHeader
           title="Franchise Management"
           description="Manage all your franchise locations"
@@ -400,6 +409,7 @@ const FranchiseList = () => {
           entityName="Franchise"
           entity={deleteTarget}
           isDeleting={deleteMutation.isPending}
+          useLoadingOverlay
           deleteMessage={(franchise: Franchise) =>
             `Are you sure you want to delete "${franchise.name}"? This action cannot be undone and will affect all associated data.`
           }
@@ -413,6 +423,7 @@ const FranchiseList = () => {
           entityName="Franchises"
           entity={bulkDeleteTargets}
           isDeleting={deleteMutation.isPending}
+          useLoadingOverlay
           deleteMessage={`Are you sure you want to delete ${bulkDeleteTargets.length} franchise(s)? This action cannot be undone.`}
         />
       </div>
