@@ -324,17 +324,19 @@ const PaymentsPage = () => {
               </Select>
             </div>
           )}
-          <PaymentTable
-            payments={payments}
-            isLoading={isTableLoading}
-            error={tableError}
-            onRetry={handleRetry}
-            onView={canViewPayments ? handleView : undefined}
-            onConfirm={canManagePayments ? handleOpenConfirm : undefined}
-            onRefund={canManagePayments ? handleOpenRefund : undefined}
-            searchValue={searchInput}
-            onSearchChange={setSearchInput}
-          />
+          <div className="flex-1 flex flex-col min-h-0">
+            <PaymentTable
+              payments={payments}
+              isLoading={isTableLoading}
+              error={tableError}
+              onRetry={handleRetry}
+              onView={canViewPayments ? handleView : undefined}
+              onConfirm={canManagePayments ? handleOpenConfirm : undefined}
+              onRefund={canManagePayments ? handleOpenRefund : undefined}
+              searchValue={searchInput}
+              onSearchChange={setSearchInput}
+            />
+          </div>
         </div>
       </div>
 
