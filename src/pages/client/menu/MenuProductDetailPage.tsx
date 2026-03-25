@@ -1,4 +1,4 @@
-﻿import { useState } from "react";
+import { useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import {
   ChevronRight,
@@ -26,7 +26,7 @@ import { useAuthStore } from "@/stores/auth-store";
 import { ROUTER_URL } from "@/router/route.const";
 import { Button } from "@/components/ui/button";
 import { FooterInfo } from "@/components/common/FooterInfo";
-import NormalLoadingLayout from "@/layouts/NormalLoadingLayout";
+import LoadingLayout from "@/layouts/loading-layout";
 
 type ProductsAllDerived = {
   toppingFromProducts: ProductListItem[];
@@ -308,7 +308,7 @@ const MenuProductDetailPageContent = ({
   // Render
   return (
     <>
-      <NormalLoadingLayout forceShow={isCartActionLoading} />
+      <LoadingLayout forceVisible={isCartActionLoading} message="Processing" />
       <div className="min-h-screen bg-[#FAF7F2] pt-5 pb-16">
         {/* Breadcrumb */}
         <div className="bg-white border-b border-stone-200 shadow-sm">
