@@ -9,6 +9,7 @@ import type { ShippingInfo } from "@/types/payment";
 import { useGetOrderByCartId } from "@/hooks/client/useOrder.hook";
 import { useQueryClient } from "@tanstack/react-query";
 import { paymentKeys } from "@/hooks/payment";
+import { useLoadingStore } from "@/stores/loading.store";
 import PaymentLayout from "./components/PaymentLayout";
 
 type PaymentNewLocationState = {
@@ -25,6 +26,7 @@ type PaymentSuccessLocationState = {
   itemCount: number;
   orderId?: string;
   cartId?: string;
+  showPaymentLoading?: boolean;
 };
 
 const getMyOrderPath = () => {
@@ -41,6 +43,7 @@ const PaymentNewPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const queryClient = useQueryClient();
+  const setLoading = useLoadingStore((state) => state.setLoading);
   const state = (location.state || {}) as PaymentNewLocationState;
 
   const cartId = state.cartId?.trim() || "";
@@ -86,6 +89,8 @@ const PaymentNewPage = () => {
       return;
     }
 
+    setLoading(true);
+
     if (paymentMethod === "COD") {
       const successState: PaymentSuccessLocationState = {
         method: "COD",
@@ -93,6 +98,7 @@ const PaymentNewPage = () => {
         itemCount,
         orderId,
         cartId,
+        showPaymentLoading: true,
       };
 
       navigate(getClientPath(ROUTER_URL.CLIENT_ROUTER.PAYMENT_SUCCESS), {
@@ -108,6 +114,7 @@ const PaymentNewPage = () => {
         amount,
         itemCount,
         shippingInfo,
+        showPaymentLoading: true,
       },
     });
   };
