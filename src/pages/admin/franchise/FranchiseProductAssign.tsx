@@ -1,4 +1,4 @@
-﻿import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { useParams } from "react-router-dom";
 import { toast } from "sonner";
 import {
@@ -13,14 +13,15 @@ import CategoryFilterTabs from "./components/product-assign/CategoryFilterTabs";
 import ProductTable from "./components/product-assign/ProductTable";
 import AssignCategoryDialog from "./components/product-assign/AssignCategoryDialog";
 import AddCategoryDialog from "./components/product-assign/AddCategoryDialog";
+import NormalLoadingLayout from "@/layouts/NormalLoadingLayout";
 
-// Pure utility — no component deps, no need for useCallback
+// Pure utility - no component deps, no need for useCallback
 const formatSizeLabel = (size?: string | null) => (size ? size.replaceAll("_", " ") : "-");
 
 const FranchiseProductAssign = () => {
   const { id: franchiseId } = useParams<{ id: string }>();
 
-  // ── UI state ────────────────────────────────────────────────────────────────
+  // -- UI state ----------------------------------------------------------------
   const [productSearch, setProductSearch] = useState("");
   const [activeTabId, setActiveTabId] = useState<string | null>(null);
   const [assignmentView, setAssignmentView] = useState<"unassigned" | "assigned">("unassigned");
@@ -38,7 +39,7 @@ const FranchiseProductAssign = () => {
   const debouncedAssignCategorySearch = useDebounce(assignCategorySearch, 300, assignCategorySearch);
   const debouncedDialogCategorySearch = useDebounce(dialogCategorySearch, 300, dialogCategorySearch);
 
-  // ── Data (all fetching + derived Maps live in the custom hook) ──────────────
+  // -- Data (all fetching + derived Maps live in the custom hook) --------------
   const {
     franchise,
     productsWithCategories,
@@ -54,12 +55,16 @@ const FranchiseProductAssign = () => {
     existingCategoryIds,
   } = useFranchiseProductAssignData(franchiseId);
 
-  // ── Mutations ───────────────────────────────────────────────────────────────
+  // -- Mutations ---------------------------------------------------------------
   const addMutation = useAddProductToCategoryFranchise();
   const removeMutation = useDeleteProductCategoryFranchise();
   const addCategoryMutation = useAddCategoryToFranchise();
+  const isActionLoading =
+    addMutation.isPending ||
+    removeMutation.isPending ||
+    addCategoryMutation.isPending;
 
-  // ── Filtered lists (UI-search driven — kept in the component) ───────────────
+  // -- Filtered lists (UI-search driven - kept in the component) ---------------
 
   const availableCategories = useMemo(() => {
     const kw = debouncedDialogCategorySearch.toLowerCase().trim();
@@ -87,8 +92,8 @@ const FranchiseProductAssign = () => {
   }, [productsWithCategories, debouncedProductSearch]);
 
   // Single pass: splits searchedProducts into unassigned / assigned.
-  // Tab filtering uses the pre-built assignedIdsByCat Set → O(1) per product
-  // instead of p.categories.some(...) → O(k) per product.
+  // Tab filtering uses the pre-built assignedIdsByCat Set ? O(1) per product
+  // instead of p.categories.some(...) ? O(k) per product.
   const { unassignedProducts, assignedProducts } = useMemo(() => {
     const unassigned: typeof searchedProducts = [];
     const assigned: typeof searchedProducts = [];
@@ -105,10 +110,10 @@ const FranchiseProductAssign = () => {
     return { unassignedProducts: unassigned, assignedProducts: assigned };
   }, [searchedProducts, activeTabId, assignedIdsByCat]);
 
-  // Direct conditional reference — useMemo here would allocate for no gain
+  // Direct conditional reference - useMemo here would allocate for no gain
   const visibleProducts = assignmentView === "unassigned" ? unassignedProducts : assignedProducts;
 
-  // ── Handlers ─────────────────────────────────────────────────────────────────
+  // -- Handlers -----------------------------------------------------------------
 
   const handleOpenAssignDialog = useCallback((pid: string) => {
     setSelectedProductId(pid);
@@ -155,6 +160,7 @@ const FranchiseProductAssign = () => {
     setAssignCategorySearch("");
   };
 
+
   const handleAddCategoryConfirm = async () => {
     if (!dialogCategoryId || dialogCategoryId === "undefined" || !franchiseId) return;
     await addCategoryMutation.mutateAsync({
@@ -169,6 +175,7 @@ const FranchiseProductAssign = () => {
 
   return (
     <div className="h-full flex flex-col bg-[#F5F0EB]">
+      <NormalLoadingLayout forceShow={isActionLoading} />
       <PageHeader
         franchiseName={franchise?.name}
         productSearch={productSearch}
@@ -239,3 +246,4 @@ const FranchiseProductAssign = () => {
 };
 
 export default FranchiseProductAssign;
+
