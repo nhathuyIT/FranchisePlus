@@ -122,8 +122,8 @@ export const EditFranchiseProductModal = ({
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
+      <NormalLoadingLayout forceShow={isSubmitting} />
       <DialogContent className="sm:max-w-[500px]">
-        <NormalLoadingLayout forceShow={isSubmitting} />
         <DialogHeader>
           <DialogTitle className="text-[#4A3B2A]">Edit Product</DialogTitle>
           <DialogDescription>

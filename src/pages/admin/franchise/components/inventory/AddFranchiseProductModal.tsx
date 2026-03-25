@@ -238,8 +238,8 @@ export const AddFranchiseProductModal = ({
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
+      <NormalLoadingLayout forceShow={isSubmitting} />
       <DialogContent className="sm:max-w-[500px]">
-        <NormalLoadingLayout forceShow={isSubmitting} />
         <DialogHeader>
           <DialogTitle>Add Product to Franchise</DialogTitle>
           <DialogDescription>
