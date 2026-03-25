@@ -1,6 +1,8 @@
+import { useState } from "react";
 import { AlertTriangle, Package2 } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
-import { usePaymentByOrderId } from "@/hooks/payment";
+import { toast } from "sonner";
+import { usePaymentByOrderId, useRefundPaymentMutation } from "@/hooks/payment";
 import { useOrderDetailQuery } from "@/pages/admin/orders/hooks/use-order-management-query";
 import { ROUTER_URL } from "@/router/route.const";
 import { useLoadingStore } from "@/stores/loading.store";
@@ -12,8 +14,11 @@ import { OrderPageState } from "./components/OrderPageState";
 import { OrderPaymentCard } from "./components/OrderPaymentCard";
 import { OrderProgressCard } from "./components/OrderProgressCard";
 import { OrderSummaryCard } from "./components/OrderSummaryCard";
+import { PaymentActionDialog, type PaymentActionType } from "./components/PaymentActionDialog";
 import {
+  canCancelPayment,
   canRepayOrder,
+  canRequestRefund,
   getClientPath,
   getMyOrdersPath,
   getOrderItemCount,
@@ -27,29 +32,28 @@ const MyOrderDetailsPage = () => {
 
   const orderQuery = useOrderDetailQuery(normalizedOrderId, !!normalizedOrderId);
   const paymentQuery = usePaymentByOrderId(normalizedOrderId, !!normalizedOrderId);
+  const refundMutation = useRefundPaymentMutation();
 
   const order = orderQuery.data ?? null;
   const payment = paymentQuery.data ?? null;
   const itemCount = getOrderItemCount(order);
-  const canPayNow = order
-    ? canRepayOrder(order.status, payment?.status)
-    : false;
 
-  const handleBack = () => {
-    navigate(getMyOrdersPath());
-  };
+  const canPayNow = order ? canRepayOrder(order.status, payment?.status) : false;
+  const showCancelPayment = order ? canCancelPayment(order.status, payment?.status) : false;
+  const showRequestRefund = order ? canRequestRefund(order.status, payment?.status) : false;
 
+  // Dialog state
+  const [dialogAction, setDialogAction] = useState<PaymentActionType>(null);
+  const isDialogOpen = dialogAction !== null;
+
+  const handleBack = () => navigate(getMyOrdersPath());
   const handleRefresh = () => {
     void Promise.all([orderQuery.refetch(), paymentQuery.refetch()]);
   };
 
   const handlePayNow = () => {
-    if (!order) {
-      return;
-    }
-
+    if (!order) return;
     setLoading(true);
-
     navigate(getClientPath(ROUTER_URL.CLIENT_ROUTER.PAYMENT_QR), {
       state: {
         orderId: order.id,
@@ -59,6 +63,40 @@ const MyOrderDetailsPage = () => {
         showPaymentLoading: true,
       },
     });
+  };
+
+  const handleDialogConfirm = (reason: string) => {
+    if (!payment?.id || !dialogAction) return;
+
+    const currentAction = dialogAction;
+    setDialogAction(null); // close dialog immediately
+    setLoading(true); // show global fullscreen coffee cup loader
+
+    refundMutation.mutate(
+      {
+        paymentId: payment.id,
+        data: { refundReason: reason },
+      },
+      {
+        onSuccess: () => {
+          void Promise.all([orderQuery.refetch(), paymentQuery.refetch()]);
+
+          if (currentAction === "refund") {
+            toast.info("Refund has been processed.", {
+              description: "Your payment status has been updated to REFUNDED.",
+            });
+          }
+          setLoading(false);
+        },
+        onError: () => {
+          setLoading(false);
+        },
+      },
+    );
+  };
+
+  const handleDialogClose = () => {
+    setDialogAction(null);
   };
 
   if (!normalizedOrderId) {
@@ -85,9 +123,7 @@ const MyOrderDetailsPage = () => {
         icon={AlertTriangle}
         tone="danger"
         primaryActionLabel="Try again"
-        onPrimaryAction={() => {
-          void orderQuery.refetch();
-        }}
+        onPrimaryAction={() => { void orderQuery.refetch(); }}
         secondaryActionLabel="Back to orders"
         onSecondaryAction={handleBack}
       />
@@ -138,10 +174,23 @@ const MyOrderDetailsPage = () => {
                 : undefined
             }
             canPayNow={canPayNow}
+            canCancelPayment={showCancelPayment}
+            canRequestRefund={showRequestRefund}
+            isCancelLoading={refundMutation.isPending}
             onPayNow={handlePayNow}
+            onCancelPayment={() => setDialogAction("cancel")}
+            onRequestRefund={() => setDialogAction("refund")}
           />
         </div>
       </div>
+
+      {/* Confirmation Dialog */}
+      <PaymentActionDialog
+        open={isDialogOpen}
+        actionType={dialogAction}
+        onConfirm={handleDialogConfirm}
+        onClose={handleDialogClose}
+      />
     </div>
   );
 };

@@ -39,9 +39,10 @@ const CheckoutPage = () => {
 
     const timeoutId = window.setTimeout(() => {
       setLoading(false);
-    }, 2000);
+    }, 800);
 
     return () => {
+      setLoading(false);
       window.clearTimeout(timeoutId);
     };
   }, [locationState?.showCheckoutLoading, setLoading]);
@@ -283,7 +284,7 @@ const CheckoutPage = () => {
       }
 
       navigate(
-        `${ROUTER_URL.CLIENT}/${ROUTER_URL.CLIENT_ROUTER.PAYMENT_NEW}`,
+        `${ROUTER_URL.CLIENT}/${ROUTER_URL.CLIENT_ROUTER.PAYMENT}`,
         {
           replace: true,
           state: {
