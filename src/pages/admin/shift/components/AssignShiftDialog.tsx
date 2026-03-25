@@ -47,6 +47,7 @@ export function AssignShiftDialog({
       }}
       mode="create"
       submitText="Assign Shift"
+      hideButtonLoading
       columns={2}
       onSubmit={onSubmit}
       onSuccess={onSuccess}

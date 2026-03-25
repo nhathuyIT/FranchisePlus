@@ -1,42 +1,110 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Search, CreditCard, CheckCircle2 } from "lucide-react";
-import type { OrderStatus, Order } from "@/const/order.const";
+import { useLocation, useNavigate } from "react-router-dom";
+import type { Order } from "@/const/order.const";
 import type { ApiOrderStatus } from "@/api/order/order.api";
 import { useGetMyOrders } from "@/hooks/client/useOrder.hook";
 import { useAuthStore } from "@/stores/auth-store";
 import { usePaymentsByCustomerId } from "@/hooks/payment";
 import type { AdminPayment } from "@/types/admin-payment.type";
+import { ROUTER_URL } from "@/router/route.const";
+import { useLoadingStore } from "@/stores/loading.store";
 
 const ORDER_STATUS_TABS: { key: ApiOrderStatus | "ALL"; label: string }[] = [
   { key: "ALL", label: "All" },
   { key: "DRAFT", label: "Draft" },
   { key: "CONFIRMED", label: "Confirmed" },
   { key: "PREPARING", label: "Preparing" },
-  { key: "READY_FOR_PICKUP", label: "Ready for checkout" },
+  { key: "READY_FOR_PICKUP", label: "Ready for pickup" },
   { key: "OUT_FOR_DELIVERY", label: "Out for delivery" },
   { key: "COMPLETED", label: "Completed " },
   { key: "CANCELED", label: "Cancelled " },
 ];
 
-const ORDER_STATUS_STYLES: Record<
-  OrderStatus,
-  { label: string; color: string }
+const ORDER_STATUS_BADGE_MAP: Record<
+  ApiOrderStatus,
+  {
+    label: string;
+    wrapperClassName: string;
+    iconClassName: string;
+    textClassName: string;
+  }
 > = {
-  DRAFT: { label: "Draft", color: "text-gray-600" },
-  PENDING: { label: "Pending", color: "text-yellow-600" },
-  CONFIRMED: { label: "Confirmed", color: "text-blue-600" },
-  SHIPPING: { label: "Shipping", color: "text-orange-500" },
-  COMPLETED: { label: "Completed", color: "text-green-600" },
-  CANCELLED: { label: "Cancelled", color: "text-red-500" },
-  REFUNDED: { label: "Refunded", color: "text-gray-500" },
+  DRAFT: {
+    label: "DRAFT",
+    wrapperClassName: "bg-slate-50 border-slate-200",
+    iconClassName: "text-slate-500",
+    textClassName: "text-slate-600",
+  },
+  CONFIRMED: {
+    label: "CONFIRMED",
+    wrapperClassName: "bg-blue-50 border-blue-200",
+    iconClassName: "text-blue-500",
+    textClassName: "text-blue-700",
+  },
+  PREPARING: {
+    label: "PREPARING",
+    wrapperClassName: "bg-amber-50 border-amber-200",
+    iconClassName: "text-amber-600",
+    textClassName: "text-amber-700",
+  },
+  READY_FOR_PICKUP: {
+    label: "READY FOR PICKUP",
+    wrapperClassName: "bg-indigo-50 border-indigo-200",
+    iconClassName: "text-indigo-500",
+    textClassName: "text-indigo-700",
+  },
+  OUT_FOR_DELIVERY: {
+    label: "OUT FOR DELIVERY",
+    wrapperClassName: "bg-orange-50 border-orange-200",
+    iconClassName: "text-orange-500",
+    textClassName: "text-orange-700",
+  },
+  COMPLETED: {
+    label: "COMPLETED",
+    wrapperClassName: "bg-green-50 border-green-200",
+    iconClassName: "text-green-600",
+    textClassName: "text-green-700",
+  },
+  CANCELED: {
+    label: "CANCELED",
+    wrapperClassName: "bg-red-50 border-red-200",
+    iconClassName: "text-red-500",
+    textClassName: "text-red-600",
+  },
+};
+
+const getClientPath = (path: string) => {
+  return `${ROUTER_URL.CLIENT}/${path}`;
+};
+
+type MyOrdersLocationState = {
+  showMyOrdersLoading?: boolean;
 };
 
 const MyOrderPage = () => {
+  const location = useLocation();
   const customerId = useAuthStore((state) => state.authUser?.user?.id);
+  const setLoading = useLoadingStore((state) => state.setLoading);
   const stringCustomerId = String(customerId || "");
+  const locationState = location.state as MyOrdersLocationState | null;
 
   const [activeTab, setActiveTab] = useState<ApiOrderStatus | "ALL">("ALL");
   const [searchQuery, setSearchQuery] = useState("");
+
+  useEffect(() => {
+    if (!locationState?.showMyOrdersLoading) {
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      setLoading(false);
+    }, 2000);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [locationState?.showMyOrdersLoading, setLoading]);
 
   // 1. Lấy danh sách Order
   const {
@@ -149,12 +217,14 @@ const MyOrderPage = () => {
       ) : (
         <div className="space-y-4">
           {filteredOrders.map((order) => {
-            // Tìm payment tương ứng với Order (dựa trên rawId hoặc id fallback)
             const orderIdMatcher = order.rawId || String(order.id);
-            // Axios interceptor đã convert `order_id` thành `orderId`, nên ta map theo orderId
-            const matchedPayment = customerPayments.find(
-              (p) => String(p.orderId) === orderIdMatcher,
-            );
+            const matchedPayment = customerPayments.find((p) => {
+              const pOrderId =
+                typeof p.orderId === "object" && p.orderId !== null
+                  ? (p.orderId as Record<string, unknown>)._id || (p.orderId as Record<string, unknown>).id
+                  : String(p.orderId);
+              return String(pOrderId) === orderIdMatcher;
+            });
 
             return (
               <OrderRow
@@ -216,19 +286,32 @@ const OrderRow = ({
   payment?: AdminPayment;
   formatCurrency: (n: number) => string;
 }) => {
-  const statusInfo = ORDER_STATUS_STYLES[order.status];
-
-  const paymentStatus = payment?.status || "PENDING";
+  const navigate = useNavigate();
+  const setLoading = useLoadingStore((state) => state.setLoading);
+  const paymentStatus = String(payment?.status || "PENDING").toUpperCase();
   const isPaid = paymentStatus === "PAID";
-  const isCanceled = order.status === "CANCELLED";
+  const isRefunded = paymentStatus === "REFUNDED";
+  const orderStatus: ApiOrderStatus = order.apiStatus || "DRAFT";
+  const isCancelled = orderStatus === "CANCELED";
+  const isCompleted = orderStatus === "COMPLETED";
+  const badgeConfig = ORDER_STATUS_BADGE_MAP[orderStatus];
+
+  const itemCount = useMemo(() => {
+    return order.items.reduce((sum, item) => sum + Number(item.quantity || 0), 0);
+  }, [order.items]);
 
   const handlePayNow = () => {
-    // Luồng thanh toán tương lai: redirect to VNPAY/MOMO with order.code
-    console.log(
-      "Redirect to payment page or open modal for order:",
-      order.code,
-    );
-    alert("Chuyển hướng đến cổng thanh toán cho đơn hàng: " + order.code);
+    setLoading(true);
+
+    navigate(getClientPath(ROUTER_URL.CLIENT_ROUTER.PAYMENT_QR), {
+      state: {
+        orderId: order.rawId || String(order.id),
+        paymentId: payment?.id,
+        amount: Number(order.totalAmount || 0),
+        itemCount,
+        showPaymentLoading: true,
+      },
+    });
   };
 
   return (
@@ -244,39 +327,35 @@ const OrderRow = ({
         </div>
 
         <div className="flex items-center gap-3">
-          {/* Badge trạng thái Payment */}
-          {isPaid ? (
-            <div className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-green-50 border border-green-200">
-              <CheckCircle2 className="w-3.5 h-3.5 text-green-600" />
-              <span className="text-[11px] font-bold text-green-700 uppercase tracking-wide">
-                Đã Thanh Toán
-              </span>
-            </div>
-          ) : (
-            <div
-              className={`flex items-center gap-1 px-2.5 py-1 rounded-full border ${isCanceled ? "bg-gray-50 border-gray-200" : "bg-yellow-50 border-yellow-200"}`}
+          <div
+            className={`flex items-center gap-1 px-2.5 py-1 rounded-full border ${badgeConfig.wrapperClassName}`}
+          >
+            {isCompleted ? (
+              <CheckCircle2 className={`w-3.5 h-3.5 ${badgeConfig.iconClassName}`} />
+            ) : (
+              <CreditCard className={`w-3.5 h-3.5 ${badgeConfig.iconClassName}`} />
+            )}
+            <span
+              className={`text-[11px] font-bold uppercase tracking-wide ${badgeConfig.textClassName}`}
             >
-              <CreditCard
-                className={`w-3.5 h-3.5 ${isCanceled ? "text-gray-500" : "text-yellow-600"}`}
-              />
-              <span
-                className={`text-[11px] font-bold uppercase tracking-wide ${isCanceled ? "text-gray-600" : "text-yellow-700"}`}
-              >
-                {isCanceled ? "Cancelled" : "Unpaid"}
+              {badgeConfig.label}
+            </span>
+          </div>
+
+          {/* Optional: Payment Status Badge for better clarity */}
+          {isPaid && (
+            <div className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-green-50 border border-green-200">
+              <span className="text-[11px] font-bold text-green-700 uppercase tracking-wide">
+                PAID
               </span>
             </div>
           )}
-
-          {/* Ẩn text "Chờ thanh toán" của Order nếu trạng thái là PENDING/DRAFT để tránh lặp chữ với Payment Status */}
-          {order.status !== "PENDING" && order.status !== "DRAFT" && (
-            <>
-              <span className="text-gray-300">|</span>
-              <span
-                className={`text-xs font-semibold uppercase tracking-wide ${statusInfo.color}`}
-              >
-                {statusInfo.label}
+          {isRefunded && (
+            <div className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-gray-50 border border-gray-200">
+              <span className="text-[11px] font-bold text-gray-600 uppercase tracking-wide">
+                REFUNDED
               </span>
-            </>
+            </div>
           )}
         </div>
       </div>
@@ -321,14 +400,14 @@ const OrderRow = ({
               {formatCurrency(order.totalAmount)}
             </span>
           </span>
-          {order.status === "COMPLETED" && (
+          {isCompleted && (
             <button className="px-4 py-1.5 text-xs font-medium rounded-lg bg-[#5D4037] text-white hover:bg-[#3E2723] transition-colors cursor-pointer">
               Mua Lại
             </button>
           )}
 
           {/* CTA Dựa vào trạng thái thanh toán thật */}
-          {!isPaid && !isCanceled && (
+          {!isPaid && !isRefunded && !isCompleted && !isCancelled && (
             <button
               onClick={handlePayNow}
               className="flex items-center gap-1.5 px-4 py-1.5 text-xs font-semibold rounded-lg bg-[#C97B3D] text-white hover:bg-[#B5692F] shadow-sm transition-all cursor-pointer"

@@ -4,7 +4,10 @@ import { useShiftDetailQueries } from "@/hooks/shift/useShift.hook";
 import type { ShiftAssignment } from "@/types/shift-assignment.type";
 import type { Shift } from "@/types/shift";
 import type { ShiftCalendarEvent } from "./useShiftPageData";
-import { normalizeDateKey } from "../utils/shiftFormatters";
+import {
+  hasDisplayShiftName,
+  normalizeDateKey,
+} from "../utils/shiftFormatters";
 
 type UseStaffShiftPageDataOptions = {
   userId: string;
@@ -99,9 +102,9 @@ export function useStaffShiftPageData({
 
   const events = useMemo(
     () =>
-      assignments.map((a) =>
-        toStaffEvent(a, shiftById, userName, userAvatarUrl),
-      ),
+      assignments
+        .map((a) => toStaffEvent(a, shiftById, userName, userAvatarUrl))
+        .filter((event) => hasDisplayShiftName(event.taskName)),
     [assignments, shiftById, userName, userAvatarUrl],
   );
 

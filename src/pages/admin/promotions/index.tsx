@@ -1,11 +1,17 @@
 import { Plus } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useMemo, useState, type Ref } from "react";
+import { useWatch } from "react-hook-form";
 import * as z from "zod";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/common/PageHeader";
 import { FormDialog, useFormDialog } from "@/components/form-dialog";
-import type { FieldConfig } from "@/lib/form/field-config";
-import type { SelectOption } from "@/lib/form/field-config";
+import { FormControl, FormDescription } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import type {
+  CustomFieldRenderProps,
+  FieldConfig,
+  SelectOption,
+} from "@/lib/form/field-config";
 import type { Promotion } from "@/types/promotion";
 import type {
   CreatePromotionRequest,
@@ -29,23 +35,104 @@ const promotionSchema = z
     franchiseId: z.string().min(1, "Franchise ID is required"),
     productFranchiseId: z.string().optional(),
     type: z.enum(["PERCENT", "FIXED"]),
-    value: z
-      .number()
-      .min(0, "Promotion value must be greater than or equal to 0"),
+    value: z.number({ message: "Promotion value is required" }),
     startTime: z.string().min(1, "Start time is required"),
     endTime: z.string().min(1, "End time is required"),
     isActive: z.boolean(),
   })
-  .refine(
-    (data) =>
-      new Date(data.endTime).getTime() > new Date(data.startTime).getTime(),
-    {
-      path: ["endTime"],
-      message: "End time must be later than start time",
-    },
-  );
+  .superRefine((data, ctx) => {
+    if (new Date(data.endTime).getTime() <= new Date(data.startTime).getTime()) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["endTime"],
+        message: "End time must be later than start time",
+      });
+    }
+
+    if (data.type === "PERCENT") {
+      if (data.value <= 0) {
+        ctx.addIssue({
+          code: "custom",
+          path: ["value"],
+          message: "Percent promotion value must be greater than 0",
+        });
+      }
+
+      if (data.value > 100) {
+        ctx.addIssue({
+          code: "custom",
+          path: ["value"],
+          message: "Percent promotion value must be less than or equal to 100",
+        });
+      }
+
+      return;
+    }
+
+    if (data.value < 0) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["value"],
+        message: "Promotion value must be greater than or equal to 0",
+      });
+    }
+  });
 
 type PromotionFormData = z.infer<typeof promotionSchema>;
+
+type PromotionValueFieldProps = Pick<
+  CustomFieldRenderProps<PromotionFormData>,
+  "field" | "form" | "disabled"
+>;
+
+const PromotionValueField = ({
+  field,
+  form,
+  disabled = false,
+}: PromotionValueFieldProps) => {
+  const promotionType = useWatch({
+    control: form.control,
+    name: "type",
+  });
+  const isPercent = promotionType === "PERCENT";
+  const {
+    ref: inputRef,
+    name,
+    value,
+    onBlur,
+    onChange,
+  } = field;
+
+  return (
+    <>
+      <FormControl>
+        <Input
+          ref={inputRef as Ref<HTMLInputElement>}
+          name={name}
+          type="number"
+          placeholder={
+            isPercent ? "Enter a value from 0.01 to 100" : "e.g., 5000"
+          }
+          disabled={disabled}
+          min={isPercent ? 0.01 : 0}
+          max={isPercent ? 100 : undefined}
+          step={0.01}
+          value={typeof value === "number" ? value : ""}
+          onBlur={() => onBlur()}
+          onChange={(e) => {
+            const nextValue = e.target.value;
+            onChange(nextValue === "" ? undefined : Number(nextValue));
+          }}
+        />
+      </FormControl>
+      <FormDescription>
+        {isPercent
+          ? "For Percent promotions, the value must be greater than 0 and less than or equal to 100."
+          : "Use the fixed discount amount to apply to the promotion."}
+      </FormDescription>
+    </>
+  );
+};
 
 const DEFAULT_SEARCH_PARAMS: PromotionSearchRequest = {
   searchCondition: {
@@ -161,12 +248,16 @@ const PromotionsPage = () => {
       },
       {
         name: "value",
-        type: "number",
+        type: "custom",
         label: "Promotion Value",
-        placeholder: "e.g., 10 or 5000",
         required: true,
-        min: 0,
-        step: 0.01,
+        render: ({ field, form, disabled }) => (
+          <PromotionValueField
+            field={field}
+            form={form}
+            disabled={disabled}
+          />
+        ),
       },
       {
         name: "startTime",

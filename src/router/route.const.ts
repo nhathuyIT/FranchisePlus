@@ -1,4 +1,4 @@
-﻿export const ROUTER_URL = {
+export const ROUTER_URL = {
   HOME: "/",
   ABOUT: "/about",
   CONTACT: "/contact",
@@ -15,10 +15,13 @@
     REGISTER: "/client/register",
     CHANGE_PASSWORD: "/client/change-password",
     CART: "cart",
+    CHECKOUT: "checkout",
     PRODUCTS: "products",
     PRODUCT_DETAIL: "products/:slug",
     PAYMENT: "payment",
+    PAYMENT_NEW: "payment-new",
     PAYMENT_QR: "payment/qr",
+    PAYMENT_SUCCESS: "payment/success",
   },
   VERIFY_EMAIL: "verify-customer-email/:id",
   ACCOUNT: "/account",
@@ -56,6 +59,7 @@
     PRODUCTS_DETAIL: "products/:id",
     ORDERS: "orders",
     ORDERS_DETAIL: "orders/:orderId",
+    PAYMENTS: "payments",
     PROMOTIONS: "promotions",
     VOUCHERS: "vouchers",
     LOYALTY_RULES: "loyalty-rules",

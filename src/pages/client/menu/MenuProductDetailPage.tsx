@@ -1,4 +1,4 @@
-import { useState } from "react";
+﻿import { useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import {
   ChevronRight,
@@ -26,6 +26,7 @@ import { useAuthStore } from "@/stores/auth-store";
 import { ROUTER_URL } from "@/router/route.const";
 import { Button } from "@/components/ui/button";
 import { FooterInfo } from "@/components/common/FooterInfo";
+import NormalLoadingLayout from "@/layouts/NormalLoadingLayout";
 
 type ProductsAllDerived = {
   toppingFromProducts: ProductListItem[];
@@ -45,17 +46,17 @@ const MenuProductDetailPageContent = ({
   const { addItemAsync } = useCart();
   const { authUser } = useAuthStore();
 
-  // ── State ──────────────────────────────────────────────────────
+  // State
   const [selectedSizeProductFranchiseId, setSelectedSizeProductFranchiseId] =
     useState("");
   const [selectedToppings, setSelectedToppings] = useState<
     Record<string, string>
   >({});
   const [quantity, setQuantity] = useState(1);
-  const [isBuyingNow, setIsBuyingNow] = useState(false);
+  const [isCartActionLoading, setIsCartActionLoading] = useState(false);
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>("ALL");
 
-  // ── Queries ────────────────────────────────────────────────────
+  // Queries
   const { data: productDetailData, isLoading: isLoadingProduct } =
     useGetProductDetail(franchiseId, productId);
 
@@ -89,7 +90,7 @@ const MenuProductDetailPageContent = ({
     },
   );
 
-  // ── Derived state ──────────────────────────────────────────────
+  // Derived state
   const categoryTabs: { id: string; name: string; count: number }[] = [];
   const availableCategories = (categories ?? []).filter(
     (category) => category.categoryName.trim().toLowerCase() !== "topping",
@@ -169,7 +170,7 @@ const MenuProductDetailPageContent = ({
       ? (toppingDataByCategory ?? [])
       : toppingFromProducts;
 
-  // ── Handlers ───────────────────────────────────────────────────
+  // Handlers
   const handleToggleTopping = (product: ProductListItem, checked: boolean) => {
     const productIdKey = String(product.productId);
     if (!checked) {
@@ -191,14 +192,18 @@ const MenuProductDetailPageContent = ({
   };
 
   const handleAddToCart = async (showSuccessToast = true): Promise<boolean> => {
+    if (isCartActionLoading) {
+      return false;
+    }
+
     if (!authUser) {
       navigate(ROUTER_URL.CLIENT_ROUTER.LOGIN);
-      toast.error("Vui lòng đăng nhập để thực hiện");
+      toast.error("Please sign in to continue");
       return false;
     }
 
     if (!selectedSizeData) {
-      toast.error("Vui lòng chọn size");
+      toast.error("Please choose a size");
       return false;
     }
   
@@ -225,40 +230,40 @@ const MenuProductDetailPageContent = ({
           !!option,
       );
 
-    const added = await addItemAsync(
-      selectedSizeData.productFranchiseId,
-      detailName,
-      selectedSizeData.price,
-      quantity,
-      detailImageUrl,
-      {
-        franchiseId,
-        options,
-      },
-    );
+    setIsCartActionLoading(true);
 
+    let added = false;
+
+    try {
+      added = await addItemAsync(
+        selectedSizeData.productFranchiseId,
+        detailName,
+        selectedSizeData.price,
+        quantity,
+        detailImageUrl,
+        {
+          franchiseId,
+          options,
+        },
+      );
+    } finally {
+      setIsCartActionLoading(false);
+    }
     if (!added) {
       return false;
     }
 
     if (showSuccessToast) {
-      toast.success(`Đã thêm "${detailName}" vào giỏ hàng`);
+      toast.success(`Added "${detailName}" to your cart`);
     }
 
     return true;
   };
 
   const handleBuyNow = async () => {
-    if (isBuyingNow) return;
-
-    setIsBuyingNow(true);
-    try {
-      const added = await handleAddToCart(false);
-      if (added) {
-        navigate("/client/cart");
-      }
-    } finally {
-      setIsBuyingNow(false);
+    const added = await handleAddToCart(false);
+    if (added) {
+      navigate("/client/cart");
     }
   };
 
@@ -288,28 +293,29 @@ const MenuProductDetailPageContent = ({
 
   const totalPrice = basePrice + toppingPrice;
 
-  // ── Loading state ──────────────────────────────────────────────
+  // Loading state
   if (isLoadingProduct) {
     return (
       <div className="min-h-screen bg-[#FAF7F2] flex items-center justify-center pt-20">
         <div className="flex flex-col items-center gap-4 bg-white p-8 rounded-2xl shadow-xl">
           <Loader2 className="h-10 w-10 text-amber-600 animate-spin" />
-          <p className="font-serif text-stone-600">Đang tải sản phẩm...</p>
+          <p className="font-serif text-stone-600">Loading product...</p>
         </div>
       </div>
     );
   }
 
-  // ── Render ─────────────────────────────────────────────────────
+  // Render
   return (
     <>
+      <NormalLoadingLayout forceShow={isCartActionLoading} />
       <div className="min-h-screen bg-[#FAF7F2] pt-5 pb-16">
-        {/* ── Breadcrumb ──────────────────────────────────────────── */}
+        {/* Breadcrumb */}
         <div className="bg-white border-b border-stone-200 shadow-sm">
           <div className="container mx-auto px-4 py-3">
             <nav className="flex items-center gap-2 text-sm text-stone-500">
               <Link to="/" className="hover:text-amber-700 transition-colors">
-                Trang chủ
+                Home
               </Link>
               <ChevronRight className="h-3.5 w-3.5" />
               <Link
@@ -326,9 +332,9 @@ const MenuProductDetailPageContent = ({
           </div>
         </div>
 
-        {/* ── Main Layout: Sidebar + Product Detail ─────────────────────────── */}
+        {/* Main layout: sidebar + product detail */}
         <div className="container mx-auto px-4 mt-6 flex flex-col lg:flex-row gap-6 items-start">
-          {/* ── Sidebar (1/5 Width) ─────────────────────────────────── */}
+          {/* Sidebar */}
           <div className="w-full lg:w-1/5 shrink-0 bg-white rounded-2xl shadow-sm border border-stone-100 flex flex-col overflow-hidden max-h-[calc(100vh-120px)] top-24">
             <div className="p-4 border-b border-stone-100 bg-stone-50/50 shrink-0">
               <h3 className="font-serif font-bold text-stone-800 flex items-center gap-2">
@@ -427,12 +433,12 @@ const MenuProductDetailPageContent = ({
             </div>
           </div>
 
-          {/* ── Main Content Area (4/5 Width) ─────────────────────────────────── */}
+          {/* Main content area */}
           <div className="w-full lg:w-4/5 flex-1 flex flex-col gap-6">
-            {/* ── Main Product Detail ───────────────────────────────────────── */}
+            {/* Main product detail */}
             <div className="bg-white rounded-2xl shadow-sm border border-stone-100 overflow-hidden">
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-0">
-                {/* ── Left Column: Image ─────────────────────────────── */}
+                {/* Left column: image */}
                 <div className="lg:col-span-5 bg-stone-50">
                   <div className="sticky top-24">
                     {/* Main Image */}
@@ -476,13 +482,13 @@ const MenuProductDetailPageContent = ({
                         className="flex items-center gap-2 text-sm text-stone-600 hover:text-amber-700 transition-colors"
                       >
                         <ArrowLeft className="h-4 w-4" />
-                        Quay lại Menu
+                        Back to menu
                       </button>
                     </div>
                   </div>
                 </div>
 
-                {/* ── Right Column: Product Info ──────────────────────── */}
+                {/* Right column: product info */}
                 <div className="lg:col-span-7 p-6 md:p-8 lg:p-10 flex flex-col">
                   {/* Franchise name */}
                   {franchiseDetail && (
@@ -507,7 +513,7 @@ const MenuProductDetailPageContent = ({
                       ))}
                     </div>
                     <span className="text-xs text-stone-400">|</span>
-                    <span className="text-xs text-stone-500">Còn hàng</span>
+                    <span className="text-xs text-stone-500">In stock</span>
                   </div>
 
                   {/* Price section - Shopee style */}
@@ -543,7 +549,7 @@ const MenuProductDetailPageContent = ({
                     </div>
                   )}
 
-                  {/* ── Size Selection ──────────────────────────────── */}
+                  {/* Size selection */}
                   <div className="mt-6">
                     <div className="flex items-center gap-4">
                       <span className="text-sm text-stone-500 w-24 shrink-0">
@@ -592,7 +598,7 @@ const MenuProductDetailPageContent = ({
                     </div>
                   </div>
 
-                  {/* ── Topping Selection ───────────────────────────── */}
+                  {/* Topping selection */}
                   {detailHasTopping && (
                     <div className="mt-6 pt-6 border-t border-stone-100 scrollbar-hide scrollbar-invisible">
                       <div className="flex items-start gap-4">
@@ -660,7 +666,7 @@ const MenuProductDetailPageContent = ({
                             )
                           ) : (
                             <p className="text-sm text-stone-400 italic">
-                              Không có topping cho chi nhánh này
+                              No toppings available for this franchise
                             </p>
                           )}
                         </div>
@@ -668,11 +674,11 @@ const MenuProductDetailPageContent = ({
                     </div>
                   )}
 
-                  {/* ── Quantity ────────────────────────────────────── */}
+                  {/* Quantity */}
                   <div className="mt-6 pt-6 border-t border-stone-100">
                     <div className="flex items-center gap-4">
                       <span className="text-sm text-stone-500 w-24 shrink-0">
-                        Số Lượng
+                        Quantity
                       </span>
                       <div className="flex items-center border border-stone-200 rounded-lg overflow-hidden">
                         <button
@@ -699,7 +705,7 @@ const MenuProductDetailPageContent = ({
                     </div>
                   </div>
 
-                  {/* ── Action Buttons ──────────────────────────────── */}
+                  {/* Action buttons */}
                   <div className="mt-8 pt-6 border-t border-stone-100 flex flex-wrap gap-3">
                     <Button
                       type="button"
@@ -707,35 +713,36 @@ const MenuProductDetailPageContent = ({
                       onClick={() => {
                         void handleAddToCart();
                       }}
+                      disabled={isCartActionLoading}
                       className="flex-1 sm:flex-none px-8 py-6 rounded-xl border-2 border-amber-700 
                              text-amber-700 hover:bg-amber-50 
                              text-sm font-semibold transition-all duration-200
                              hover:shadow-md"
                     >
                       <ShoppingCart className="h-4 w-4 mr-2" />
-                      Thêm Vào Giỏ Hàng
+                      Add to cart
                     </Button>
                     <Button
                       type="button"
                       onClick={handleBuyNow}
-                      disabled={isBuyingNow}
+                      disabled={isCartActionLoading}
                       className="flex-1 sm:flex-none px-8 py-6 rounded-xl
                              bg-amber-700 text-white hover:bg-amber-800 
                              text-sm font-semibold transition-all duration-200
                              shadow-lg shadow-amber-700/25 hover:shadow-xl hover:shadow-amber-700/30"
                     >
-                      {isBuyingNow ? "Đang xử lý..." : "Mua Ngay"}
+                      {isCartActionLoading ? "Processing..." : "Buy now"}
                     </Button>
                   </div>
                 </div>
               </div>
             </div>
-            {/* ── Product Description Section ─────────────────────────── */}
+            {/* Product description section */}
             {(detailDescription || detailContent) && (
               <div className="bg-white rounded-2xl shadow-sm border border-stone-100 overflow-hidden">
                 <div className="bg-linear-to-r from-stone-800 to-stone-700 px-6 py-3">
                   <h2 className="font-serif text-white text-base font-semibold tracking-wide">
-                    MÔ TẢ SẢN PHẨM
+                    PRODUCT DETAILS
                   </h2>
                 </div>
                 <div className="p-6 md:p-8">
@@ -759,7 +766,7 @@ const MenuProductDetailPageContent = ({
               </div>
             )}
 
-            {/* ── Back to menu button ──────────────────────────────────── */}
+            {/* Back to menu button */}
           </div>
         </div>
       </div>
@@ -784,3 +791,6 @@ const MenuProductDetailPage = () => {
 };
 
 export default MenuProductDetailPage;
+
+
+

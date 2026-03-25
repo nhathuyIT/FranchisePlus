@@ -49,6 +49,45 @@ export const createPaymentColumns = (): ColumnDef<AdminPayment>[] => [
     ),
   },
   {
+    accessorKey: "orderId",
+    header: "Order Code",
+    cell: ({ row }) => {
+      const v = row.original.orderId;
+      const display = typeof v === "object" && v !== null && "code" in v ? v.code : String(v || "-");
+      return (
+        <div className="max-w-32 truncate text-[#5D4037]" title={display}>
+          {display}
+        </div>
+      );
+    },
+  },
+  {
+    accessorKey: "franchiseId",
+    header: "Franchise",
+    cell: ({ row }) => {
+      const v = row.original.franchiseId;
+      const display = typeof v === "object" && v !== null && "name" in v ? v.name : (v ? String(v) : "-");
+      return (
+        <div className="max-w-40 truncate text-[#5D4037]" title={display}>
+          {display}
+        </div>
+      );
+    },
+  },
+  {
+    accessorKey: "customerId",
+    header: "Customer",
+    cell: ({ row }) => {
+      const v = row.original.customerId;
+      const display = typeof v === "object" && v !== null && "name" in v ? v.name : (v ? String(v) : "-");
+      return (
+        <div className="max-w-40 truncate text-[#5D4037]" title={display}>
+          {display}
+        </div>
+      );
+    },
+  },
+  {
     accessorKey: "amount",
     header: "Amount",
     meta: { align: "right" as const },

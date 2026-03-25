@@ -63,6 +63,8 @@ export function FormContent<TFormData extends FieldValues>({
   submitText,
   cancelText = "Cancel",
   hideCancel = false,
+  hideButtonLoading = false,
+  useLoadingOverlay = false,
   onCancel,
   renderFooter,
   // Parent communication
@@ -194,6 +196,8 @@ export function FormContent<TFormData extends FieldValues>({
             submitText={finalSubmitText}
             cancelText={cancelText}
             hideCancel={hideCancel}
+            hideButtonLoading={hideButtonLoading}
+            useLoadingOverlay={useLoadingOverlay}
             onCancel={handleCancel}
           />
         )}

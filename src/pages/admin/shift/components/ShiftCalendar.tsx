@@ -1,4 +1,3 @@
-import { RotateCcw } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -8,6 +7,10 @@ import type {
   ShiftCalendarView,
 } from "../utils/shiftFormatters";
 import { SHIFT_WEEKDAY_LABELS } from "../utils/shiftFormatters";
+import {
+  ShiftCalendarSkeleton,
+  ShiftRefreshSkeleton,
+} from "./ShiftLoadingSkeletons";
 import { ShiftAssignmentTooltip } from "./ShiftAssignmentTooltip";
 
 type ShiftCalendarProps = {
@@ -66,11 +69,7 @@ export function ShiftCalendar({
   }
 
   if (isLoading) {
-    return (
-      <div className="rounded-2xl border border-[#E8DFD6] bg-[#FBF8F5] px-6 py-14 text-center text-[#8D6E63]">
-        Loading assignments...
-      </div>
-    );
+    return <ShiftCalendarSkeleton view={view} dayCount={days.length} />;
   }
 
   const visibleEventCount = view === "month" ? 3 : 6;
@@ -179,10 +178,7 @@ export function ShiftCalendar({
         </div>
 
       {isRefreshing && (
-        <div className="mt-4 flex items-center gap-2 text-xs text-[#8D6E63]">
-          <RotateCcw className="h-3.5 w-3.5 animate-spin" />
-          Refreshing assignments...
-        </div>
+        <ShiftRefreshSkeleton className="mt-4" />
       )}
     </div>
   );
