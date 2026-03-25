@@ -1,9 +1,8 @@
 import { useState, useMemo } from "react";
-import { Eye, Pencil, Trash2, Search } from "lucide-react";
+import { Eye, Pencil, Trash2 } from "lucide-react";
 import { DataTable, type ColumnFilter, type BulkAction } from "@/components/common/DataTable";
 import { createProductColumns } from "../columns/product.columns";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import type { AdminProductRow } from "../columns/product.columns";
 import { toast } from "sonner";
 import {
@@ -57,20 +56,6 @@ export const ProductTable = ({
 }: ProductTableProps) => {
   // Server-side search state
   const [searchInput, setSearchInput] = useState("");
-
-  // Handle manual search trigger
-  const handleSearch = () => {
-    if (onSearch) {
-      onSearch(searchInput.trim());
-    }
-  };
-
-  // Handle Enter key press
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter") {
-      handleSearch();
-    }
-  };
 
   // Excel Export
   const { exportToExcel, isExporting } = useExcelExport({
@@ -136,36 +121,16 @@ export const ProductTable = ({
 
   return (
     <div className="flex flex-col h-full gap-4">
-      {/* Server-side search input */}
-      {onSearch && (
-        <div className="flex items-center gap-2 max-w-md">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#5D4037]" />
-            <Input
-              placeholder="Search by name, SKU..."
-              value={searchInput}
-              onChange={(e) => setSearchInput(e.target.value)}
-              onKeyPress={handleKeyPress}
-              className="pl-10 border-[#E8DFD6] focus:border-[#6D4C41] focus:ring-[#6D4C41]"
-            />
-          </div>
-          <Button
-            onClick={handleSearch}
-            className="bg-[#6D4C41] hover:bg-[#5D4037] text-white px-4"
-          >
-            Search
-          </Button>
-        </div>
-      )}
-
       <DataTable
         columns={columns}
         data={products}
         isLoading={isLoading}
         error={error}
         onRetry={onRetry}
-        searchable={!onSearch}
-        searchPlaceholder="Search by name or SKU..."
+        searchable
+        searchPlaceholder="Search by name, SKU..."
+        searchValue={onSearch ? searchInput : undefined}
+        onSearchChange={onSearch ? (val) => { setSearchInput(val); onSearch(val); } : undefined}
         emptyMessage="No products found matching your search."
         initialPageSize={10}
         serverPagination={pagination}

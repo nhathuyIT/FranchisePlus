@@ -66,6 +66,6 @@ export const ROUTER_URL = {
     USER_FRANCHISE_ROLES: "user-franchise-roles",
     CUSTOMERS: "customers",
     CART: "cart",
-    CART_CHECKOUT: "cart/:cartId/checkout",
+    CART_CHECKOUT: "cart/:cartId/checkout"
   },
 };

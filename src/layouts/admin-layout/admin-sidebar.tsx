@@ -45,6 +45,7 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   customers: UserCheck,
   calendar: CalendarDays,
   cart: ShoppingCart,
+  orders: ReceiptText,
   receipt: ReceiptText,
   "credit-card": CreditCard,
 };

@@ -30,6 +30,7 @@ import {
   parseError,
   type ApiErrorResponse,
 } from "@/lib/form/error-mapping";
+import NormalLoadingLayout from "@/layouts/NormalLoadingLayout";
 
 const normalizeSize = (value?: string | null) => {
   const normalized = (value ?? "").trim().toUpperCase();
@@ -237,6 +238,7 @@ export const AddFranchiseProductModal = ({
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
+      <NormalLoadingLayout forceShow={isSubmitting} />
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>Add Product to Franchise</DialogTitle>
