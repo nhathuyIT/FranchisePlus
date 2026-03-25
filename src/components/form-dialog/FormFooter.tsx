@@ -13,6 +13,8 @@ function FormFooterComponent({
   submitText,
   cancelText,
   hideCancel = false,
+  hideButtonLoading = false,
+  useLoadingOverlay = false,
   onCancel,
 }: FormFooterProps) {
   // In view mode, only show close button
@@ -39,7 +41,9 @@ function FormFooterComponent({
         </Button>
       )}
       <Button type="submit" disabled={isSubmitting}>
-        {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+        {isSubmitting && !useLoadingOverlay && !hideButtonLoading ? (
+          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+        ) : null}
         {submitText}
       </Button>
     </div>
