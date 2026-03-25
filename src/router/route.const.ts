@@ -1,4 +1,4 @@
-﻿export const ROUTER_URL = {
+export const ROUTER_URL = {
   HOME: "/",
   ABOUT: "/about",
   CONTACT: "/contact",
@@ -59,6 +59,7 @@
     PRODUCTS_DETAIL: "products/:id",
     ORDERS: "orders",
     ORDERS_DETAIL: "orders/:orderId",
+    PAYMENTS: "payments",
     PROMOTIONS: "promotions",
     VOUCHERS: "vouchers",
     LOYALTY_RULES: "loyalty-rules",

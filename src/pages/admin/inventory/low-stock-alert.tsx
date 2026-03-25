@@ -1,7 +1,8 @@
-import { useMemo } from "react";
+import { useState, useMemo } from "react";
 import { AlertTriangle, Package } from "lucide-react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/common/PageHeader";
+import NormalLoadingLayout from "@/layouts/NormalLoadingLayout";
 import { InventoryStatsCards } from "./components/InventoryStatsCards";
 import { LowStockTable } from "./components/LowStockTable";
 import { FormDialog, useFormDialog } from "@/components/form-dialog";
@@ -53,6 +54,8 @@ const LowStockAlert = () => {
     [lowStockItems],
   );
 
+  const [isActionPending, setIsActionPending] = useState(false);
+
   // Form dialog state
   const adjustDialog = useFormDialog<InventorySearchItem>();
 
@@ -74,14 +77,20 @@ const LowStockAlert = () => {
   ): Promise<SubmitResult | void> => {
     if (!adjustDialog.data) return;
 
-    await inventoryApi.adjust({
-      productFranchiseId: String(adjustDialog.data.productFranchiseId),
-      change: data.change,
-      alertThreshold: data.alertThreshold,
-      reason: data.reason,
-    });
+    setIsActionPending(true);
+    try {
+      await new Promise((r) => setTimeout(r, 500));
+      await inventoryApi.adjust({
+        productFranchiseId: String(adjustDialog.data.productFranchiseId),
+        change: data.change,
+        alertThreshold: data.alertThreshold,
+        reason: data.reason,
+      });
 
-    toast.success("Stock adjusted successfully");
+      toast.success("Stock adjusted successfully");
+    } finally {
+      setIsActionPending(false);
+    }
   };
 
   // Bulk Export Handler
@@ -142,6 +151,7 @@ const LowStockAlert = () => {
 
   return (
     <div className="h-full flex flex-col">
+      <NormalLoadingLayout forceShow={isActionPending} />
       <div className="flex-1 flex flex-col min-h-0 max-w-screen-2xl mx-auto w-full">
         <PageHeader
           title="Low Stock Alert"

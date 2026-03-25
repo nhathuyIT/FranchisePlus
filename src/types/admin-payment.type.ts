@@ -1,9 +1,6 @@
 export type AdminPaymentMethod =
-  | "CARD"
-  | "CASH"
   | "COD"
   | "QR"
-  | "BANK_TRANSFER"
   | (string & {});
 
 export type AdminPaymentStatus =
@@ -14,8 +11,9 @@ export type AdminPaymentStatus =
 export interface AdminPayment {
   id: string;
   code: string;
-  orderId: string;
-  customerId: string;
+  orderId: string | { _id: string; code?: string };
+  customerId: string | { _id: string; name?: string };
+  franchiseId?: string | { _id: string; name?: string; code?: string };
   amount: number;
   method: AdminPaymentMethod;
   status: AdminPaymentStatus;
