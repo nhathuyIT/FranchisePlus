@@ -43,27 +43,9 @@ import {
   useUpdateInventoryFromExcel,
 } from "./hooks/useUpdateInventoryFromExcel";
 
-const formatImportIssueDescription = (issues: InventoryImportIssue[]) => {
-  if (issues.length === 0) {
-    return undefined;
-  }
-
-  const previewText = issues
-    .slice(0, 3)
-    .map(
-      (issue) => `Row ${issue.rowNumber}: ${issue.messages.join(", ")}`,
-    )
-    .join(" | ");
-
-  if (issues.length <= 3) {
-    return previewText;
-  }
-
-  return `${previewText} | +${issues.length - 3} more row(s).`;
-};
-
 const InventoryList = () => {
   const [isActionPending, setIsActionPending] = useState(false);
+  const [importErrors, setImportErrors] = useState<InventoryImportIssue[]>([]);
   const { authUser, getCurrentPermissions } = useAuthStore();
   const userPermissions = getCurrentPermissions();
 
@@ -136,28 +118,16 @@ const InventoryList = () => {
     void refetch();
   };
 
+  const handleDiscardChanges = useCallback(() => {
+    resetMainTableData();
+    setImportErrors([]);
+  }, [resetMainTableData]);
+
   const handleImport = useCallback(
     async (file: File) => {
+      setImportErrors([]);
       const result = await importFromExcel(file);
-      const description = formatImportIssueDescription(result.errors);
-
-      if (!result.success) {
-        toast.error(result.message, {
-          description,
-        });
-        return;
-      }
-
-      if (result.invalidRows > 0) {
-        toast.info(result.message, {
-          description,
-        });
-        return;
-      }
-
-      toast.success(result.message, {
-        description,
-      });
+      setImportErrors(result.errors);
     },
     [importFromExcel],
   );
@@ -257,6 +227,7 @@ const InventoryList = () => {
 
         await inventoryApi.adjustBulk({ items });
 
+        setImportErrors([]);
         toast.success(
           `Updated ${changes.length} inventory item(s) successfully`,
         );
@@ -354,9 +325,10 @@ const InventoryList = () => {
               isLoading={isLoading || isFetching || deleteMutation.isPending}
               isImporting={isImporting}
               error={listError}
+              importErrors={importErrors}
               onRetry={refetch}
               onImport={canManageInventory ? handleImport : undefined}
-              onDiscardChanges={resetMainTableData}
+              onDiscardChanges={handleDiscardChanges}
               onEdit={canManageInventory ? handleEdit : undefined}
               onDelete={canManageInventory ? handleOpenDelete : undefined}
               canEdit={canManageInventory}

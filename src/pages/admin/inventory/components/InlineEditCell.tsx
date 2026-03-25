@@ -19,7 +19,7 @@ interface InlineEditCellProps {
  * Errors render as a red border + red background on the input.
  */
 export const InlineEditCell = ({ item, fieldName }: InlineEditCellProps) => {
-  const { control, fieldIndexMap, errors, isEditable } =
+  const { control, fieldIndexMap, errors, isEditable, isFieldChanged } =
     useInventoryInlineEditContext();
 
   const fieldIndex = fieldIndexMap[String(item.id)];
@@ -50,45 +50,56 @@ export const InlineEditCell = ({ item, fieldName }: InlineEditCellProps) => {
     <Controller
       control={control}
       name={`rows.${fieldIndex}.${fieldName}`}
-      render={({ field }) => (
-        <div className="relative group flex justify-end">
-          <input
-            id={`inventory-inline-${fieldName}-${String(item.id)}`}
-            type="number"
-            min={0}
-            aria-label={`${label} for ${item.productName}`}
-            aria-invalid={hasError}
-            value={
-              field.value === undefined || field.value === null
-                ? ""
-                : field.value
-            }
-            onChange={(e) => {
-              const raw = e.target.value;
-              // Keep empty string as NaN so zod correct reports type error
-              field.onChange(raw === "" ? NaN : Number(raw));
-            }}
-            onBlur={field.onBlur}
-            className={[
-              "w-24 px-2 py-1 text-sm text-right rounded-md border-2 transition-all duration-200",
-              "focus:outline-none focus:ring-2 focus:ring-offset-0",
-              "[-moz-appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none",
-              hasError
-                ? "border-red-400 bg-red-50 text-red-700 focus:ring-red-300"
-                : "border-[#D4B5A0] bg-white text-[#3E2723] hover:border-[#6D4C41] focus:border-[#6D4C41] focus:ring-[#6D4C41]/20",
-            ].join(" ")}
-          />
-          {/* Subtle dirty indicator dot */}
-          <span
-            className={[
-              "absolute -top-1 -right-1 h-2 w-2 rounded-full bg-amber-400 ring-1 ring-white transition-opacity duration-200",
-              hasError
-                ? "opacity-0"
-                : "opacity-0 group-focus-within:opacity-100",
-            ].join(" ")}
-          />
-        </div>
-      )}
+      render={({ field }) => {
+        const numericValue =
+          typeof field.value === "number" ? field.value : Number(field.value);
+        const hasChanged =
+          Number.isFinite(numericValue) &&
+          isFieldChanged(String(item.id), fieldName, numericValue);
+
+        return (
+          <div className="relative group flex justify-end">
+            <input
+              id={`inventory-inline-${fieldName}-${String(item.id)}`}
+              type="number"
+              min={0}
+              aria-label={`${label} for ${item.productName}`}
+              aria-invalid={hasError}
+              value={
+                field.value === undefined || field.value === null
+                  ? ""
+                  : field.value
+              }
+              onChange={(e) => {
+                const raw = e.target.value;
+                // Keep empty string as NaN so zod correct reports type error
+                field.onChange(raw === "" ? NaN : Number(raw));
+              }}
+              onBlur={field.onBlur}
+              className={[
+                "w-24 px-2 py-1 text-sm text-right rounded-md border-2 transition-all duration-200",
+                "focus:outline-none focus:ring-2 focus:ring-offset-0",
+                "[-moz-appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none",
+                hasError
+                  ? "border-red-400 bg-red-50 text-red-700 focus:ring-red-300"
+                  : hasChanged
+                    ? "border-amber-200 bg-amber-50 text-[#3E2723] hover:border-amber-300 focus:border-amber-400 focus:ring-amber-200/70"
+                    : "border-[#D4B5A0] bg-white text-[#3E2723] hover:border-[#6D4C41] focus:border-[#6D4C41] focus:ring-[#6D4C41]/20",
+              ].join(" ")}
+            />
+            <span
+              className={[
+                "absolute -top-1 -right-1 h-2 w-2 rounded-full ring-1 ring-white transition-opacity duration-200",
+                hasError
+                  ? "opacity-0"
+                  : hasChanged
+                    ? "bg-amber-300 opacity-100"
+                    : "bg-amber-400 opacity-0 group-focus-within:opacity-100",
+              ].join(" ")}
+            />
+          </div>
+        );
+      }}
     />
   );
 };
