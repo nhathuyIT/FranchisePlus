@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { useDebounce } from "@/hooks/common/useDebounce";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/common/PageHeader";
+import NormalLoadingLayout from "@/layouts/NormalLoadingLayout";
 import { CustomerTable } from "./components/CustomerTable";
 import {
   FormDialog,
@@ -22,6 +23,7 @@ import {
 import * as userApi from "@/api/user/user.api";
 
 const UserCRUD = () => {
+  const [isActionPending, setIsActionPending] = useState(false);
   const [keyword, setKeyword] = useState("");
   const debouncedKeyword = useDebounce(keyword, 350, keyword);
 
@@ -64,50 +66,55 @@ const UserCRUD = () => {
   const handleSubmit = async (
     data: UserFormData,
   ): Promise<SubmitResult | void> => {
-    if (dialog.mode === "edit" && dialog.data) {
-      // Update existing user
-      const response = await userApi.update(String(dialog.data.id), {
-        name: data.name,
-        email: data.email,
-        phone: data.phone || undefined,
-        avatarUrl: data.avatarUrl || undefined,
-        ...(data.password ? { password: data.password } : {}),
-      });
-
-      if (!response) {
-        throw new Error("Failed to update user");
-      }
-
-      // Update status if changed
-      if (response.isActive !== data.isActive) {
-        await userApi.updateStatus(String(dialog.data.id), {
-          isActive: data.isActive,
+    setIsActionPending(true);
+    try {
+      if (dialog.mode === "edit" && dialog.data) {
+        // Update existing user
+        const response = await userApi.update(String(dialog.data.id), {
+          name: data.name,
+          email: data.email,
+          phone: data.phone || undefined,
+          avatarUrl: data.avatarUrl || undefined,
+          ...(data.password ? { password: data.password } : {}),
         });
-      }
 
-      toast.success("User updated successfully");
-    } else {
-      // Create new user
-      const response = await userApi.create({
-        email: data.email,
-        password: data.password || "",
-        name: data.name,
-        phone: data.phone || "",
-        avatarUrl: data.avatarUrl || undefined,
-      });
+        if (!response) {
+          throw new Error("Failed to update user");
+        }
 
-      if (!response) {
-        throw new Error("Failed to create user");
-      }
+        // Update status if changed
+        if (response.isActive !== data.isActive) {
+          await userApi.updateStatus(String(dialog.data.id), {
+            isActive: data.isActive,
+          });
+        }
 
-      // Update status if needed
-      if (response.isActive !== data.isActive) {
-        await userApi.updateStatus(String(response.id), {
-          isActive: data.isActive,
+        toast.success("User updated successfully");
+      } else {
+        // Create new user
+        const response = await userApi.create({
+          email: data.email,
+          password: data.password || "",
+          name: data.name,
+          phone: data.phone || "",
+          avatarUrl: data.avatarUrl || undefined,
         });
-      }
 
-      toast.success("User created successfully");
+        if (!response) {
+          throw new Error("Failed to create user");
+        }
+
+        // Update status if needed
+        if (response.isActive !== data.isActive) {
+          await userApi.updateStatus(String(response.id), {
+            isActive: data.isActive,
+          });
+        }
+
+        toast.success("User created successfully");
+      }
+    } finally {
+      setIsActionPending(false);
     }
   };
 
@@ -193,6 +200,13 @@ const UserCRUD = () => {
 
   return (
     <div className="h-full flex flex-col">
+      <NormalLoadingLayout
+        forceShow={
+          isActionPending ||
+          deleteMutation.isPending ||
+          userStatusMutation.isPending
+        }
+      />
       <div className="flex-1 flex flex-col min-h-0 max-w-screen-2xl mx-auto w-full">
         <PageHeader
           title="User Management"
