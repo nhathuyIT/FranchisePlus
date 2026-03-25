@@ -1,10 +1,11 @@
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
 import secureLockIcon from "@/assets/icons/secure-lock.svg";
 import { ROUTER_URL } from "@/router/route.const";
 import { paymentKeys } from "@/hooks/payment";
+import { useLoadingStore } from "@/stores/loading.store";
 import PaymentLayout from "./components/PaymentLayout";
 
 type PaymentSuccessLocationState = {
@@ -13,6 +14,11 @@ type PaymentSuccessLocationState = {
   itemCount?: number;
   orderId?: string;
   cartId?: string;
+  showPaymentLoading?: boolean;
+};
+
+type MyOrdersLocationState = {
+  showMyOrdersLoading?: boolean;
 };
 
 const getClientPath = (path: string) => {
@@ -27,15 +33,36 @@ const PaymentSuccessPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const state = (location.state || {}) as PaymentSuccessLocationState;
-
   const queryClient = useQueryClient();
+  const setLoading = useLoadingStore((loadingState) => loadingState.setLoading);
+
+  useEffect(() => {
+    if (!state.showPaymentLoading) {
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      setLoading(false);
+    }, 2000);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [setLoading, state.showPaymentLoading]);
 
   const handleGoToMyOrders = async () => {
+    setLoading(true);
+
     await Promise.all([
       queryClient.invalidateQueries({ queryKey: ["client-my-orders"] }),
       queryClient.invalidateQueries({ queryKey: paymentKeys.all }),
     ]);
-    navigate(getMyOrderPath());
+
+    const myOrdersState: MyOrdersLocationState = {
+      showMyOrdersLoading: true,
+    };
+
+    navigate(getMyOrderPath(), { state: myOrdersState });
   };
 
   const hasValidContext = useMemo(() => {

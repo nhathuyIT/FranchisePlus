@@ -174,6 +174,26 @@ export function useInventoryInlineEdit({
     [items, baselineItemMap, methods.formState.dirtyFields.rows, fieldIndexMap],
   );
 
+  const isFieldChanged = useCallback(
+    (
+      inventoryId: string,
+      fieldName: "quantity" | "alertThreshold",
+      value: number,
+    ): boolean => {
+      const idx = fieldIndexMap[inventoryId];
+      if (idx === undefined) return false;
+
+      const currentItem = items[idx];
+      if (!currentItem) return false;
+
+      const baselineItem =
+        baselineItemMap[String(currentItem.id)] ?? currentItem;
+
+      return value !== baselineItem[fieldName];
+    },
+    [items, baselineItemMap, fieldIndexMap],
+  );
+
   const hasDirtyRows = useMemo((): boolean => {
     const hasImportedDiff = items.some((item) => {
       const baselineItem = baselineItemMap[String(item.id)];
@@ -235,6 +255,7 @@ export function useInventoryInlineEdit({
     fieldIndexMap,
     collectErrors,
     isRowDirty,
+    isFieldChanged,
     hasDirtyRows,
     saveAllChanges,
   };

@@ -1,6 +1,6 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Search, CreditCard, CheckCircle2 } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import type { Order } from "@/const/order.const";
 import type { ApiOrderStatus } from "@/api/order/order.api";
 import { useGetMyOrders } from "@/hooks/client/useOrder.hook";
@@ -8,6 +8,7 @@ import { useAuthStore } from "@/stores/auth-store";
 import { usePaymentsByCustomerId } from "@/hooks/payment";
 import type { AdminPayment } from "@/types/admin-payment.type";
 import { ROUTER_URL } from "@/router/route.const";
+import { useLoadingStore } from "@/stores/loading.store";
 
 const ORDER_STATUS_TABS: { key: ApiOrderStatus | "ALL"; label: string }[] = [
   { key: "ALL", label: "All" },
@@ -77,12 +78,33 @@ const getClientPath = (path: string) => {
   return `${ROUTER_URL.CLIENT}/${path}`;
 };
 
+type MyOrdersLocationState = {
+  showMyOrdersLoading?: boolean;
+};
+
 const MyOrderPage = () => {
+  const location = useLocation();
   const customerId = useAuthStore((state) => state.authUser?.user?.id);
+  const setLoading = useLoadingStore((state) => state.setLoading);
   const stringCustomerId = String(customerId || "");
+  const locationState = location.state as MyOrdersLocationState | null;
 
   const [activeTab, setActiveTab] = useState<ApiOrderStatus | "ALL">("ALL");
   const [searchQuery, setSearchQuery] = useState("");
+
+  useEffect(() => {
+    if (!locationState?.showMyOrdersLoading) {
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      setLoading(false);
+    }, 2000);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [locationState?.showMyOrdersLoading, setLoading]);
 
   // 1. Lấy danh sách Order
   const {
@@ -265,6 +287,7 @@ const OrderRow = ({
   formatCurrency: (n: number) => string;
 }) => {
   const navigate = useNavigate();
+  const setLoading = useLoadingStore((state) => state.setLoading);
   const paymentStatus = String(payment?.status || "PENDING").toUpperCase();
   const isPaid = paymentStatus === "PAID";
   const isRefunded = paymentStatus === "REFUNDED";
@@ -278,12 +301,15 @@ const OrderRow = ({
   }, [order.items]);
 
   const handlePayNow = () => {
+    setLoading(true);
+
     navigate(getClientPath(ROUTER_URL.CLIENT_ROUTER.PAYMENT_QR), {
       state: {
         orderId: order.rawId || String(order.id),
         paymentId: payment?.id,
         amount: Number(order.totalAmount || 0),
         itemCount,
+        showPaymentLoading: true,
       },
     });
   };

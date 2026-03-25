@@ -1,31 +1,47 @@
+import type { KeyboardEvent } from "react";
 import type { ProductListItem } from "@/types/product.type";
 import { formatPrice, getMinPrice, getSizeLabel } from "../lib/helpers";
-import { Eye } from "lucide-react";
 
 export const ToppingCard = ({
   product,
   onViewDetail,
 }: {
   product: ProductListItem;
-  onViewDetail: (
-    product: ProductListItem,
-    productFranchiseId: string | number,
-  ) => void;
+  onViewDetail: () => void;
 }) => {
-  const fallbackSize = product.sizes.find((s) => s.isAvailable) ?? product.sizes[0];
+  const fallbackSize =
+    product.sizes.find((s) => s.isAvailable) ?? product.sizes[0];
   const minPrice =
     product.sizes.length > 0
       ? Math.min(...product.sizes.map((size) => size.price))
       : getMinPrice(product.sizes);
-  const defaultProductFranchiseId = fallbackSize?.productFranchiseId;
+  const canViewDetail = fallbackSize?.productFranchiseId != null;
+  const visibleSizes = product.sizes.filter(
+    (size) => getSizeLabel(size.size) !== "Default",
+  );
+  const handleCardKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    if (!canViewDetail) return;
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      onViewDetail();
+    }
+  };
 
   return (
     <div
-      className="group relative flex items-center gap-4 rounded-2xl bg-white p-4
+      role={canViewDetail ? "button" : undefined}
+      tabIndex={canViewDetail ? 0 : -1}
+      onClick={canViewDetail ? onViewDetail : undefined}
+      onKeyDown={handleCardKeyDown}
+      aria-label={`View details for ${product.name}`}
+      className={`group relative flex items-center gap-4 rounded-2xl bg-white p-4
+                 w-full text-left
                  border border-stone-200/60 shadow-sm
                  transition-all duration-500 ease-out
                  hover:shadow-[0_6px_24px_rgba(120,80,40,0.10)]
-                 hover:-translate-y-0.5 hover:border-amber-200/80"
+                 hover:-translate-y-0.5 hover:border-amber-200/80 ${
+                   canViewDetail ? "cursor-pointer" : "cursor-default opacity-80"
+                 }`}
     >
       {/* Image */}
       <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-xl bg-stone-100">
@@ -50,8 +66,9 @@ export const ToppingCard = ({
             {product.description}
           </p>
         )}
-        <div className="mt-1.5 flex flex-wrap gap-1">
-          {product.sizes.map((s) => (
+        {visibleSizes.length > 0 && (
+          <div className="mt-1.5 flex flex-wrap gap-1">
+            {visibleSizes.map((s) => (
               <span
                 key={String(s.productFranchiseId)}
                 className="text-[11px] px-2 py-0.5 bg-orange-50 text-orange-700 
@@ -60,30 +77,17 @@ export const ToppingCard = ({
                 {getSizeLabel(s.size)}: {formatPrice(s.price)}
               </span>
             ))}
-        </div>
+          </div>
+        )}
       </div>
 
-      {/* Price + action */}
-      <div className="flex flex-col items-end gap-2 shrink-0">
+      {/* Price */}
+      <div className="flex shrink-0 flex-col items-end gap-2">
         {minPrice !== null && (
           <span className="font-serif text-lg font-bold text-amber-700">
             {formatPrice(minPrice)}
           </span>
         )}
-        <button
-          type="button"
-          onClick={() => {
-            if (defaultProductFranchiseId == null) return;
-            onViewDetail(product, defaultProductFranchiseId);
-          }}
-          className="flex items-center gap-1 px-2.5 py-1 text-xs font-medium
-                     text-amber-700 hover:text-white bg-amber-50 hover:bg-amber-600
-                     rounded-full border border-amber-200 hover:border-amber-600
-                     transition-all duration-300 shadow-sm hover:shadow-md"
-        >
-          <Eye className="h-3 w-3" />
-          View
-        </button>
       </div>
 
       {/* Decorative left border */}

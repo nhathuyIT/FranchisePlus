@@ -21,6 +21,7 @@ import {
 } from "../hooks/useInventoryInlineEdit";
 import { InventoryInlineEditContext } from "../context/InventoryInlineEditContext";
 import { InventoryErrorBanner } from "./InventoryErrorBanner";
+import type { InventoryImportIssue } from "../hooks/useUpdateInventoryFromExcel";
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 
@@ -46,6 +47,7 @@ interface InventoryTableProps {
   ) => Promise<void>;
   /** Whether the current user has edit permission */
   canEdit?: boolean;
+  importErrors?: InventoryImportIssue[];
 }
 
 // ─── SaveBar ─────────────────────────────────────────────────────────────────
@@ -61,7 +63,7 @@ const SaveBar = ({ hasDirtyRows, isSaving, onSave, onReset }: SaveBarProps) => {
   if (!hasDirtyRows && !isSaving) return null;
 
   return (
-    <div className="flex items-center justify-between gap-3 mb-4 rounded-xl border-2 border-amber-200 bg-gradient-to-r from-amber-50 to-yellow-50 px-4 py-3 shadow-sm animate-in slide-in-from-top-2 duration-200">
+    <div className="mb-4 shrink-0 flex items-center justify-between gap-3 rounded-xl border-2 border-amber-200 bg-gradient-to-r from-amber-50 to-yellow-50 px-4 py-3 shadow-sm animate-in slide-in-from-top-2 duration-200">
       <div className="flex items-center gap-2">
         <div className="h-2 w-2 rounded-full bg-amber-400 animate-pulse" />
         <p className="text-sm font-medium text-amber-800">
@@ -115,6 +117,7 @@ export const InventoryTable = ({
   onBulkExport,
   onSaveBulk,
   canEdit = false,
+  importErrors = [],
 }: InventoryTableProps) => {
   const [isSaving, setIsSaving] = useState(false);
 
@@ -157,6 +160,7 @@ export const InventoryTable = ({
     fieldIndexMap,
     collectErrors,
     isRowDirty,
+    isFieldChanged,
     hasDirtyRows,
     saveAllChanges,
   } = useInventoryInlineEdit({
@@ -247,11 +251,12 @@ export const InventoryTable = ({
           errors: methods.formState.errors,
           fieldIndexMap,
           isRowDirty,
+          isFieldChanged,
           isEditable: canEdit && !!onSaveBulk,
         }}
       >
         {/* Error banner */}
-        <InventoryErrorBanner errors={validationErrors} />
+        <InventoryErrorBanner errors={validationErrors} importErrors={importErrors} />
 
         {/* Save / Discard bar — visible when there are pending changes */}
         <SaveBar
@@ -261,54 +266,56 @@ export const InventoryTable = ({
           onReset={handleDiscard}
         />
 
-        <DataTable
-          columns={inventoryColumns}
-          data={items}
-          isLoading={isLoading || isSaving}
-          error={error}
-          onRetry={onRetry}
-          emptyMessage="No inventory items found matching your criteria."
-          initialPageSize={10}
-          enableRowSelection={!!onBulkExport}
-          enableColumnVisibility
-          columnFilters={columnFilters}
-          bulkActions={bulkActions}
-          getRowStyle={getRowStyle}
-          onImport={onImport}
-          isImporting={isImporting}
-          onExport={handleExport}
-          isExporting={isExporting}
-          importLabel="Import Excel"
-          exportLabel="Export Excel"
-          renderActions={
-            onEdit || onDelete
-              ? (item) => (
-                  <div className="flex gap-2">
-                    {onEdit && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="border-2 border-[#6D4C41] text-[#6D4C41] hover:bg-[#6D4C41] hover:text-white rounded-lg transition-all duration-200"
-                        onClick={() => onEdit(item)}
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                    )}
-                    {onDelete && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="border-2 border-red-500 text-red-500 hover:bg-red-500 hover:text-white rounded-lg transition-all duration-200"
-                        onClick={() => onDelete(item)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    )}
-                  </div>
-                )
-              : undefined
-          }
-        />
+        <div className="flex-1 flex flex-col min-h-0">
+          <DataTable
+            columns={inventoryColumns}
+            data={items}
+            isLoading={isLoading || isSaving}
+            error={error}
+            onRetry={onRetry}
+            emptyMessage="No inventory items found matching your criteria."
+            initialPageSize={10}
+            enableRowSelection={!!onBulkExport}
+            enableColumnVisibility
+            columnFilters={columnFilters}
+            bulkActions={bulkActions}
+            getRowStyle={getRowStyle}
+            onImport={onImport}
+            isImporting={isImporting}
+            onExport={handleExport}
+            isExporting={isExporting}
+            importLabel="Import Excel"
+            exportLabel="Export Excel"
+            renderActions={
+              onEdit || onDelete
+                ? (item) => (
+                    <div className="flex gap-2">
+                      {onEdit && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="border-2 border-[#6D4C41] text-[#6D4C41] hover:bg-[#6D4C41] hover:text-white rounded-lg transition-all duration-200"
+                          onClick={() => onEdit(item)}
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                      )}
+                      {onDelete && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="border-2 border-red-500 text-red-500 hover:bg-red-500 hover:text-white rounded-lg transition-all duration-200"
+                          onClick={() => onDelete(item)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
+                  )
+                : undefined
+            }
+          />
+        </div>
       </InventoryInlineEditContext.Provider>
     </FormProvider>
   );
