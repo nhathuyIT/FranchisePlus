@@ -1,18 +1,14 @@
 ﻿import { startTransition, useEffect, useMemo, useState } from "react";
 import {
-  Activity,
   AlertCircle,
   Building2,
   Download,
-  FileText,
   Filter,
   Link2,
   Package,
   Store,
-  Truck,
   UserRound,
   Users,
-  Wallet,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -30,23 +26,14 @@ import {
 import { useFranchiseSelect } from "@/hooks/franchise";
 import { useAuthStore } from "@/stores/auth-store";
 import { DashboardDeliveryStatus } from "./components/DashboardDeliveryStatus";
-import { DashboardHighlightCard } from "./components/DashboardHighlightCard";
-import { DashboardInsightsPanel } from "./components/DashboardInsightsPanel";
 import { DashboardOrdersChart } from "./components/DashboardOrdersChart";
 import { DashboardPaymentChart } from "./components/DashboardPaymentChart";
-import {
-  DashboardStatsCards,
-  type DashboardStatCardItem,
-} from "./components/DashboardStatsCards";
 import {
   DashboardSummaryCards,
   type DashboardSummaryCardItem,
 } from "./components/DashboardSummaryCards";
 import {
-  buildDashboardInsights,
-  buildHighlightCopy,
   formatCount,
-  formatPercent,
   formatSummaryValue,
   getOperationalHealthScore,
   sumCounts,
@@ -67,12 +54,6 @@ const DashboardPage = () => {
     authUser?.franchiseRoles?.find(
       (role) => role.franchiseId === currentFranchiseId,
     )?.franchiseName ?? "Current Franchise";
-
-  useEffect(() => {
-    if (!isAdmin) {
-      setSelectedFranchiseId(currentFranchiseId);
-    }
-  }, [currentFranchiseId, isAdmin]);
 
   const accessibleFranchiseOptions = useMemo(() => {
     if (isAdmin) {
@@ -137,6 +118,10 @@ const DashboardPage = () => {
       ? selectedFranchise.name
       : `${selectedFranchise.name} (${selectedFranchise.code})`
     : selectedScopeFranchiseName;
+
+  useEffect(() => {
+    document.title = `Admin Dashboard | ${scopeLabel}`;
+  }, [scopeLabel]);
 
   const orderStatusData = dashboard
     ? toOrderStatusData(dashboard.countOrders)
@@ -215,62 +200,6 @@ const DashboardPage = () => {
         },
       ]
     : [];
-
-  const footerStats: DashboardStatCardItem[] = dashboard
-    ? [
-        {
-          title: "Total Orders",
-          value: formatCount(totalOrders),
-          caption: "Across every tracked order status.",
-          icon: FileText,
-        },
-        {
-          title: "Total Payments",
-          value: formatCount(totalPayments),
-          caption: "Paid, pending, refunded, and failed attempts combined.",
-          icon: Wallet,
-        },
-        {
-          title: "Total Deliveries",
-          value: formatCount(totalDeliveries),
-          caption: "Assigned, picking up, and delivered flows.",
-          icon: Truck,
-        },
-        {
-          title: "Operational Health",
-          value: `${healthScore}%`,
-          caption:
-            "Composite of completed orders, paid payments, and delivered trips.",
-          icon: Activity,
-          iconClassName: "bg-[#FFE5A6] text-[#8B6400]",
-        },
-      ]
-    : [];
-
-  const highlightCopy = dashboard
-    ? buildHighlightCopy(dashboard, scopeLabel)
-    : {
-        eyebrow: "Operational spotlight",
-        headline: scopeLabel,
-        description: "",
-      };
-  const insightItems = dashboard
-    ? buildDashboardInsights(dashboard, scopeLabel)
-    : [];
-  const highlightMetrics = [
-    {
-      label: "Health score",
-      value: `${healthScore}%`,
-    },
-    {
-      label: "Paid share",
-      value: formatPercent(paidRate),
-    },
-    {
-      label: "Delivered share",
-      value: formatPercent(deliveredRate),
-    },
-  ];
 
   const handleFranchiseChange = (value: string) => {
     if (!isAdmin) {
@@ -409,25 +338,53 @@ const DashboardPage = () => {
             ))}
           </div>
 
-          <div className="grid gap-6 xl:grid-cols-[minmax(0,1.65fr)_minmax(320px,0.85fr)]">
+          <div className="grid gap-6 xl:grid-cols-[minmax(0,1.45fr)_minmax(320px,0.95fr)]">
             <div className="rounded-[32px] border border-[#EADFD3] bg-white p-8">
-              <Skeleton className="h-6 w-48" />
-              <Skeleton className="mt-3 h-4 w-72" />
-              <Skeleton className="mt-8 h-[320px] w-full rounded-[28px]" />
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex-1">
+                  <Skeleton className="h-6 w-48" />
+                  <Skeleton className="mt-3 h-4 w-64 max-w-full" />
+                </div>
+                <Skeleton className="h-8 w-32 rounded-full" />
+              </div>
+              <div className="mt-6 rounded-[28px] bg-[#FCF7F0] p-5">
+                <Skeleton className="h-[320px] w-full rounded-[24px]" />
+              </div>
+              <div className="mt-5 grid gap-3 sm:grid-cols-3">
+                <Skeleton className="h-24 rounded-[24px]" />
+                <Skeleton className="h-24 rounded-[24px]" />
+                <Skeleton className="h-24 rounded-[24px]" />
+              </div>
             </div>
 
-            <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-1">
-              <div className="rounded-[32px] border border-[#EADFD3] bg-white p-8">
-                <Skeleton className="mx-auto h-6 w-40" />
-                <Skeleton className="mx-auto mt-3 h-4 w-36" />
-                <Skeleton className="mx-auto mt-8 h-52 w-52 rounded-full" />
-              </div>
-
-              <div className="rounded-[32px] bg-[#3A2018] p-8">
-                <Skeleton className="h-6 w-44 bg-white/15" />
-                <Skeleton className="mt-3 h-4 w-40 bg-white/10" />
-                <Skeleton className="mt-8 h-24 w-full rounded-[24px] bg-white/10" />
-              </div>
+            <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-1">
+              {Array.from({ length: 2 }).map((_, index) => (
+                <div
+                  key={`chart-skeleton-${index}`}
+                  className="rounded-[32px] border border-[#EADFD3] bg-white p-8"
+                >
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex-1">
+                      <Skeleton className="h-6 w-40" />
+                      <Skeleton className="mt-3 h-4 w-48 max-w-full" />
+                    </div>
+                    <Skeleton className="h-8 w-28 rounded-full" />
+                  </div>
+                  <Skeleton className="mx-auto mt-8 h-52 w-52 rounded-full" />
+                  <div className="mt-6 grid gap-3 sm:grid-cols-2">
+                    {Array.from({ length: 4 }).map((_, itemIndex) => (
+                      <Skeleton
+                        key={`chart-skeleton-item-${index}-${itemIndex}`}
+                        className="h-16 rounded-2xl"
+                      />
+                    ))}
+                  </div>
+                  <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                    <Skeleton className="h-24 rounded-[24px]" />
+                    <Skeleton className="h-24 rounded-[24px]" />
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         </div>
@@ -464,14 +421,14 @@ const DashboardPage = () => {
         <div className="space-y-6 pb-4">
           <DashboardSummaryCards cards={summaryCards} />
 
-          <div className="grid gap-6 xl:grid-cols-[minmax(0,1.65fr)_minmax(320px,0.85fr)]">
+          <div className="grid gap-6 xl:grid-cols-[minmax(0,1.45fr)_minmax(320px,0.95fr)]">
             <DashboardOrdersChart
               data={orderStatusData}
               totalOrders={totalOrders}
               scopeLabel={scopeLabel}
             />
 
-            <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-1">
+            <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-1">
               <DashboardPaymentChart
                 data={paymentStatusData}
                 totalPayments={totalPayments}
@@ -480,24 +437,13 @@ const DashboardPage = () => {
 
               <DashboardDeliveryStatus
                 data={deliveryStatusData}
+                totalDeliveries={totalDeliveries}
                 activeDeliveries={activeDeliveries}
                 deliveredRate={deliveredRate}
               />
             </div>
           </div>
-
-          <DashboardStatsCards stats={footerStats} />
-
-          <div className="grid gap-6 xl:grid-cols-[minmax(0,1.35fr)_minmax(320px,0.65fr)]">
-            <DashboardHighlightCard
-              eyebrow={highlightCopy.eyebrow}
-              headline={highlightCopy.headline}
-              description={highlightCopy.description}
-              metrics={highlightMetrics}
-            />
-
-            <DashboardInsightsPanel items={insightItems} />
-          </div>
+          
         </div>
       ) : null}
     </div>
