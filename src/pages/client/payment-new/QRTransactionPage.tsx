@@ -6,6 +6,7 @@ import qrPaymentIcon from "@/assets/icons/qr-payment.svg";
 import { ROUTER_URL } from "@/router/route.const";
 import type { ShippingInfo } from "@/types/payment";
 import { useConfirmPaymentMutation, usePaymentByOrderId } from "@/hooks/payment";
+import { useGetOrderByCartId } from "@/hooks/client/useOrder.hook";
 import PaymentLayout from "./components/PaymentLayout";
 import { usePaymentStatusPoller } from "./hooks/usePaymentStatusPoller";
 
@@ -29,7 +30,7 @@ type PaymentSuccessLocationState = {
 type QrDisplayStatus = "CHECKING" | "PAID" | "EXPIRED";
 
 const STATUS_CHECK_TIMEOUT_SECONDS = 120;
-const MOCK_AUTO_PAID_AFTER_SECONDS = 18;
+const MOCK_AUTO_PAID_AFTER_SECONDS = 5;
 const SUCCESS_REDIRECT_DELAY_MS = 900;
 
 const getClientPath = (path: string) => {
@@ -86,14 +87,18 @@ const QRTransactionPage = () => {
 
   const state = (location.state || {}) as QRPageLocationState;
   const cartId = state.cartId?.trim() || "";
-  const orderId = state.orderId?.trim() || "";
+  const orderIdFromState = state.orderId?.trim() || "";
   const paymentIdFromState = state.paymentId?.trim() || "";
+  
+  const { data: orderFromCart, isLoading: isLoadingOrder } = useGetOrderByCartId(cartId);
+  const orderId = orderIdFromState || orderFromCart?.rawId || "";
+  
   const amount = state.amount ?? 0;
   const itemCount = state.itemCount ?? 0;
   const shippingInfo = state.shippingInfo;
 
   const { mutateAsync: confirmPayment } = useConfirmPaymentMutation();
-  const { data: paymentByOrder, isFetched: isPaymentByOrderFetched } =
+  const { data: paymentByOrder, isFetched: isPaymentByOrderFetched, isLoading: isLoadingPayment } =
     usePaymentByOrderId(orderId, !paymentIdFromState && !!orderId);
 
   const hasValidContext = useMemo(() => {
@@ -148,14 +153,14 @@ const QRTransactionPage = () => {
   const statusMeta = getStatusMeta(displayStatus);
   const resolvedPaymentId = paymentIdFromState || paymentByOrder?.id || "";
   const isPaymentAlreadyPaid = paymentByOrder?.status === "PAID";
-  const shouldWaitPaymentLookup =
+  
+  const shouldWaitContext =
     displayStatus === "PAID" &&
     !paymentIdFromState &&
-    !!orderId &&
-    !isPaymentByOrderFetched;
+    (isLoadingOrder || isLoadingPayment || (!!orderId && !isPaymentByOrderFetched));
 
   useEffect(() => {
-    if (displayStatus !== "PAID" || hasShownPaidToast.current || shouldWaitPaymentLookup) {
+    if (displayStatus !== "PAID" || hasShownPaidToast.current || shouldWaitContext) {
       return;
     }
 
@@ -225,7 +230,7 @@ const QRTransactionPage = () => {
     navigate,
     orderId,
     resolvedPaymentId,
-    shouldWaitPaymentLookup,
+    shouldWaitContext,
     transactionCode,
   ]);
 

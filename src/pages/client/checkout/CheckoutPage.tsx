@@ -283,9 +283,19 @@ const CheckoutPage = () => {
       }
 
       navigate(
-        `${ROUTER_URL.ACCOUNT}/${ROUTER_URL.ACCOUNT_ROUTER.MY_ORDER}`,
+        `${ROUTER_URL.CLIENT}/${ROUTER_URL.CLIENT_ROUTER.PAYMENT_NEW}`,
         {
           replace: true,
+          state: {
+            cartId: targetCartIds[0],
+            amount: checkoutTotalAmount,
+            itemCount: checkoutItemCount,
+            shippingInfo: {
+              address: formValues.address.trim(),
+              phone: formValues.phone.trim(),
+              note: formValues.note.trim(),
+            },
+          },
         },
       );
     } finally {

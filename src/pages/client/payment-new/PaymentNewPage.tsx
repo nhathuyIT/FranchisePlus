@@ -6,6 +6,7 @@ import qrPaymentIcon from "@/assets/icons/qr-payment.svg";
 import secureLockIcon from "@/assets/icons/secure-lock.svg";
 import { ROUTER_URL } from "@/router/route.const";
 import type { ShippingInfo } from "@/types/payment";
+import { useGetOrderByCartId } from "@/hooks/client/useOrder.hook";
 import PaymentLayout from "./components/PaymentLayout";
 
 type PaymentNewLocationState = {
@@ -40,7 +41,11 @@ const PaymentNewPage = () => {
   const state = (location.state || {}) as PaymentNewLocationState;
 
   const cartId = state.cartId?.trim() || "";
-  const orderId = state.orderId?.trim() || "";
+  const orderIdFromState = state.orderId?.trim() || "";
+  
+  const { data: orderFromCart } = useGetOrderByCartId(cartId);
+  const orderId = orderIdFromState || orderFromCart?.rawId || "";
+
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod | null>(null);
 
   const hasValidContext = useMemo(() => {
