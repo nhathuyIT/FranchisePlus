@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import secureLockIcon from "@/assets/icons/secure-lock.svg";
@@ -125,11 +125,12 @@ const QRTransactionPage = () => {
   const hasNavigatedSuccess = useRef(false);
   const hasProcessedPaidStatus = useRef(false);
 
+  const [tail] = useState(() => String(Date.now()).slice(-6));
+
   const transactionCode = useMemo(() => {
     const baseRef = orderId || cartId || "GUEST";
-    const tail = String(Date.now()).slice(-6);
     return `MOCK-${baseRef}-${tail}`;
-  }, [cartId, orderId]);
+  }, [cartId, orderId, tail]);
 
   const qrDataUrl = useMemo(() => toDataUrl(transactionCode), [transactionCode]);
 

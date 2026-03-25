@@ -7,6 +7,8 @@ import secureLockIcon from "@/assets/icons/secure-lock.svg";
 import { ROUTER_URL } from "@/router/route.const";
 import type { ShippingInfo } from "@/types/payment";
 import { useGetOrderByCartId } from "@/hooks/client/useOrder.hook";
+import { useQueryClient } from "@tanstack/react-query";
+import { paymentKeys } from "@/hooks/payment";
 import PaymentLayout from "./components/PaymentLayout";
 
 type PaymentNewLocationState = {
@@ -38,6 +40,7 @@ type PaymentMethod = "COD" | "QR";
 const PaymentNewPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const queryClient = useQueryClient();
   const state = (location.state || {}) as PaymentNewLocationState;
 
   const cartId = state.cartId?.trim() || "";
@@ -69,7 +72,11 @@ const PaymentNewPage = () => {
     return <div className="min-h-screen bg-gray-50" />;
   }
 
-  const handleBackToOrders = () => {
+  const handleBackToOrders = async () => {
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: ["client-my-orders"] }),
+      queryClient.invalidateQueries({ queryKey: paymentKeys.all }),
+    ]);
     navigate(getMyOrderPath());
   };
 

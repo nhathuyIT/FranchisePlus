@@ -199,7 +199,7 @@ const MyOrderPage = () => {
             const matchedPayment = customerPayments.find((p) => {
               const pOrderId =
                 typeof p.orderId === "object" && p.orderId !== null
-                  ? (p.orderId as any)._id || (p.orderId as any).id
+                  ? (p.orderId as Record<string, unknown>)._id || (p.orderId as Record<string, unknown>).id
                   : String(p.orderId);
               return String(pOrderId) === orderIdMatcher;
             });
