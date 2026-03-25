@@ -2,8 +2,11 @@ import { AlertTriangle, X, ChevronDown, ChevronUp } from "lucide-react";
 import { useState } from "react";
 import type { RowValidationError } from "../hooks/useInventoryInlineEdit";
 
+import type { InventoryImportIssue } from "../hooks/useUpdateInventoryFromExcel";
+
 interface InventoryErrorBannerProps {
   errors: RowValidationError[];
+  importErrors?: InventoryImportIssue[];
 }
 
 const FIELD_LABEL: Record<RowValidationError["field"], string> = {
@@ -20,23 +23,28 @@ const FIELD_LABEL: Record<RowValidationError["field"], string> = {
  *
  * Format: Row {N} [{ProductName}] — {Field}: {message}
  */
-export const InventoryErrorBanner = ({ errors }: InventoryErrorBannerProps) => {
+export const InventoryErrorBanner = ({ errors, importErrors = [] }: InventoryErrorBannerProps) => {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isDismissed, setIsDismissed] = useState(false);
 
+  const hasErrors = errors.length > 0 || importErrors.length > 0;
+
   // Re-show banner whenever errors change
-  if (isDismissed && errors.length > 0) setIsDismissed(false);
+  if (isDismissed && hasErrors) setIsDismissed(false);
 
-  if (errors.length === 0 || isDismissed) return null;
+  if (!hasErrors || isDismissed) return null;
 
-  const errorCount = errors.length;
-  const rowCount = new Set(errors.map((e) => e.rowIndex)).size;
+  const errorCount = errors.length + importErrors.length;
+  const rowCount = new Set([
+    ...errors.map((e) => e.rowIndex),
+    ...importErrors.map((e) => e.rowNumber),
+  ]).size;
 
   return (
     <div
       role="alert"
       aria-live="polite"
-      className="mb-4 rounded-xl border-2 border-red-200 bg-gradient-to-r from-red-50 to-rose-50 shadow-sm overflow-hidden"
+      className="mb-4 shrink-0 rounded-xl border-2 border-red-200 bg-gradient-to-r from-red-50 to-rose-50 shadow-sm overflow-hidden"
     >
       {/* Header row */}
       <div className="flex items-center gap-3 px-4 py-3">
@@ -80,7 +88,22 @@ export const InventoryErrorBanner = ({ errors }: InventoryErrorBannerProps) => {
 
       {/* Error list */}
       {!isCollapsed && (
-        <ul className="border-t border-red-100 divide-y divide-red-100/60">
+        <ul className="max-h-40 overflow-y-auto border-t border-red-100 divide-y divide-red-100/60">
+          {importErrors.map((err, i) => (
+            <li
+              key={`import-${err.rowNumber}-${i}`}
+              className="flex items-start gap-3 px-4 py-2 text-sm"
+            >
+              <span className="mt-0.5 shrink-0 rounded-full bg-red-100 px-2 py-0.5 text-xs font-bold text-red-600 tabular-nums">
+                #{err.rowNumber}
+              </span>
+              <span className="text-red-700">
+                <span className="font-medium text-red-500">Import Error</span>
+                {": "}
+                {err.messages.join(" | ")}
+              </span>
+            </li>
+          ))}
           {errors.map((err, i) => (
             <li
               key={`${err.rowIndex}-${err.field}-${i}`}

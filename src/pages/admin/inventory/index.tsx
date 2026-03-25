@@ -64,6 +64,7 @@ const formatImportIssueDescription = (issues: InventoryImportIssue[]) => {
 
 const InventoryList = () => {
   const [isActionPending, setIsActionPending] = useState(false);
+  const [importErrors, setImportErrors] = useState<InventoryImportIssue[]>([]);
   const { authUser, getCurrentPermissions } = useAuthStore();
   const userPermissions = getCurrentPermissions();
 
@@ -136,10 +137,17 @@ const InventoryList = () => {
     void refetch();
   };
 
+  const handleDiscardChanges = useCallback(() => {
+    resetMainTableData();
+    setImportErrors([]);
+  }, [resetMainTableData]);
+
   const handleImport = useCallback(
     async (file: File) => {
+      setImportErrors([]);
       const result = await importFromExcel(file);
       const description = formatImportIssueDescription(result.errors);
+      setImportErrors(result.errors);
 
       if (!result.success) {
         toast.error(result.message, {
@@ -257,6 +265,7 @@ const InventoryList = () => {
 
         await inventoryApi.adjustBulk({ items });
 
+        setImportErrors([]);
         toast.success(
           `Updated ${changes.length} inventory item(s) successfully`,
         );
@@ -354,9 +363,10 @@ const InventoryList = () => {
               isLoading={isLoading || isFetching || deleteMutation.isPending}
               isImporting={isImporting}
               error={listError}
+              importErrors={importErrors}
               onRetry={refetch}
               onImport={canManageInventory ? handleImport : undefined}
-              onDiscardChanges={resetMainTableData}
+              onDiscardChanges={handleDiscardChanges}
               onEdit={canManageInventory ? handleEdit : undefined}
               onDelete={canManageInventory ? handleOpenDelete : undefined}
               canEdit={canManageInventory}
