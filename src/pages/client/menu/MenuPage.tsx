@@ -23,6 +23,8 @@ import { ToppingCard } from "./components/ToppingCard.";
 import { SectionDivider } from "./components/SectionDivider";
 import { EmptyState } from "./components/EmptyState";
 
+const DEFAULT_FRANCHISE_NAME = "Goat Coffee";
+
 type ProductsAllDerived = {
   allProductsVisible: ProductListItem[];
   categoryMenuCounts: Record<string, number>;
@@ -78,9 +80,24 @@ const MenuPage = () => {
   const { data: franchises, isLoading: isLoadingFranchises } =
     useGetAllFranchise();
 
+  const preferredFranchise =
+    franchises?.find(
+      (franchise) =>
+        franchise.name.trim().toLowerCase() ===
+        DEFAULT_FRANCHISE_NAME.toLowerCase(),
+    ) ??
+    franchises?.find((franchise) =>
+      franchise.name
+        .trim()
+        .toLowerCase()
+        .includes(DEFAULT_FRANCHISE_NAME.toLowerCase()),
+    ) ??
+    null;
+
   // Resolve the actual franchise ID (user-selected or first from API)
   const activeFranchiseId =
     selectedFranchiseId ||
+    preferredFranchise?.id ||
     (franchises && franchises.length > 0 ? franchises[0].id : "");
 
   const { data: categories, isLoading: isLoadingCategories } =
@@ -207,7 +224,8 @@ const MenuPage = () => {
   );
 
   // ── Derived state ──────────────────────────────────────────────────────
-  const selectedFranchise = franchises?.find((f) => f.id === activeFranchiseId);
+  const selectedFranchise =
+    franchises?.find((f) => f.id === activeFranchiseId) ?? preferredFranchise;
 
   const selectedCategory =
     activeCategoryId === "ALL"
@@ -321,7 +339,7 @@ const MenuPage = () => {
                   <span className="font-medium text-sm">
                     {isLoadingFranchises
                       ? "Loading..."
-                      : selectedFranchise?.name || "Select Branch"}
+                      : selectedFranchise?.name || DEFAULT_FRANCHISE_NAME}
                   </span>
                 </div>
                 <ChevronDown
@@ -445,7 +463,7 @@ const MenuPage = () => {
         {(selectedCategory || activeCategoryId === "ALL") && (
           <div className="text-center mb-10">
             <p className="text-xs uppercase tracking-[0.3em] text-amber-600/70 font-medium mb-1">
-              {selectedFranchise?.name}
+              {selectedFranchise?.name || DEFAULT_FRANCHISE_NAME}
             </p>
             <h2 className="font-serif text-3xl md:text-4xl font-bold text-stone-800 mb-2">
               {activeCategoryId === "ALL"
