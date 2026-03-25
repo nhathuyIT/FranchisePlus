@@ -7,6 +7,7 @@ import { ROUTER_URL } from "@/router/route.const";
 import type { ShippingInfo } from "@/types/payment";
 import { useConfirmPaymentMutation, usePaymentByOrderId } from "@/hooks/payment";
 import { useGetOrderByCartId } from "@/hooks/client/useOrder.hook";
+import { useLoadingStore } from "@/stores/loading.store";
 import PaymentLayout from "./components/PaymentLayout";
 import { usePaymentStatusPoller } from "./hooks/usePaymentStatusPoller";
 
@@ -17,6 +18,7 @@ type QRPageLocationState = {
   shippingInfo?: ShippingInfo;
   amount?: number;
   itemCount?: number;
+  showPaymentLoading?: boolean;
 };
 
 type PaymentSuccessLocationState = {
@@ -84,6 +86,7 @@ const getStatusMeta = (status: QrDisplayStatus) => {
 const QRTransactionPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const setLoading = useLoadingStore((state) => state.setLoading);
 
   const state = (location.state || {}) as QRPageLocationState;
   const cartId = state.cartId?.trim() || "";
@@ -159,6 +162,20 @@ const QRTransactionPage = () => {
     displayStatus === "PAID" &&
     !paymentIdFromState &&
     (isLoadingOrder || isLoadingPayment || (!!orderId && !isPaymentByOrderFetched));
+
+  useEffect(() => {
+    if (!state.showPaymentLoading) {
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      setLoading(false);
+    }, 2000);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [setLoading, state.showPaymentLoading]);
 
   useEffect(() => {
     if (displayStatus !== "PAID" || hasShownPaidToast.current || shouldWaitContext) {
