@@ -23,7 +23,7 @@ const CartEmpty: React.FC = () => {
           store, and check out faster.
         </p>
         <Link
-          to="/client/menu"
+          to="/menu"
           className="mt-8 inline-flex items-center justify-center rounded-full bg-[linear-gradient(135deg,#b76843_0%,#8f4a2e_100%)] px-8 py-3.5 text-sm font-semibold text-white shadow-[0_18px_30px_rgba(183,104,67,0.28)] transition-all hover:-translate-y-0.5 hover:opacity-95"
         >
           Browse menu

@@ -61,6 +61,7 @@ export function UpdateShiftDialog({
       }}
       mode="edit"
       submitText="Save Changes"
+      hideButtonLoading
       columns={2}
       onSubmit={onSubmit}
       onSuccess={onSuccess}

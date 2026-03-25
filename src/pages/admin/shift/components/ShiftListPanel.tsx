@@ -14,6 +14,7 @@ import {
   formatReadableDate,
   formatTimeLabel,
 } from "../utils/shiftFormatters";
+import { ShiftListPanelSkeleton } from "./ShiftLoadingSkeletons";
 
 type ShiftListPanelProps = {
   franchiseId: string;
@@ -73,9 +74,7 @@ export function ShiftListPanel({
             Select a franchise to load shifts.
           </div>
         ) : isLoading ? (
-          <div className="rounded-2xl border border-dashed border-[#D7CCC8] bg-[#FBF8F5] px-5 py-8 text-center text-[#8D6E63]">
-            Loading shifts...
-          </div>
+          <ShiftListPanelSkeleton />
         ) : error ? (
           <div className="rounded-2xl border border-rose-200 bg-rose-50 px-5 py-8 text-center">
             <p className="font-medium text-rose-700">{error.message}</p>

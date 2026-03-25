@@ -128,8 +128,16 @@ export const ADMIN_MENU: AdminMenuItem[] = [
   {
     label: "Orders",
     path: ROUTER_URL.ADMIN_ROUTER.ORDERS,
-    icon: "orders",
+    icon: "receipt",
     component: React.lazy(() => import("@/pages/admin/orders/index")),
+    isEnd: true,
+    permissions: [PermissionEnum.VIEW_ORDERS],
+  },
+  {
+    label: "Payments",
+    path: ROUTER_URL.ADMIN_ROUTER.PAYMENTS,
+    icon: "credit-card",
+    component: React.lazy(() => import("@/pages/admin/payments/index")),
     isEnd: true,
     permissions: [PermissionEnum.VIEW_ORDERS],
   },

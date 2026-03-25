@@ -5,6 +5,7 @@ import { CartProductImage } from "../components/CartProductImage";
 import {
   formatCartDateTime,
   formatCartMoney,
+  getCartDiscountLabels,
   getCartStatusClassName,
 } from "../utils/cartDisplay";
 
@@ -56,11 +57,25 @@ export const createCartColumns = (): ColumnDef<CartResponse>[] => {
       accessorKey: "finalAmount",
       header: "Final Amount",
       meta: { align: "right" as const },
-      cell: ({ row }) => (
-        <span className="font-semibold text-[#3E2723]">
-          {formatCartMoney(row.original.finalAmount)}
-        </span>
-      ),
+      cell: ({ row }) => {
+        const discountLabels = getCartDiscountLabels(row.original);
+
+        return (
+          <div className="space-y-1 text-right">
+            <p className="font-semibold text-[#3E2723]">
+              {formatCartMoney(row.original.finalAmount)}
+            </p>
+
+            {discountLabels.length > 0 ? (
+              <div className="space-y-0.5 text-[11px] text-[#A65A00]">
+                {discountLabels.map((label) => (
+                  <p key={label}>{label}</p>
+                ))}
+              </div>
+            ) : null}
+          </div>
+        );
+      },
     },
     {
       accessorKey: "updatedAt",

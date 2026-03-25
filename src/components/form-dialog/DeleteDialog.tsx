@@ -1,4 +1,5 @@
 import { AlertCircle, Loader2 } from "lucide-react";
+import NormalLoadingLayout from "@/layouts/NormalLoadingLayout";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -22,6 +23,8 @@ interface DeleteDialogProps<TEntity> {
   onConfirm: () => void | Promise<void>;
   /** Whether delete is in progress */
   isDeleting?: boolean;
+  hideButtonLoading?: boolean;
+  useLoadingOverlay?: boolean;
   confirmLabel?: string;
   pendingLabel?: string;
   /** Custom message function or static string */
@@ -41,6 +44,8 @@ export function DeleteDialog<TEntity>({
   entityName,
   onConfirm,
   isDeleting = false,
+  hideButtonLoading = false,
+  useLoadingOverlay = false,
   confirmLabel = "Delete",
   pendingLabel = "Deleting...",
   deleteMessage,
@@ -73,6 +78,10 @@ export function DeleteDialog<TEntity>({
   return (
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-md">
+        {useLoadingOverlay ? (
+          <NormalLoadingLayout forceShow={isDeleting} />
+        ) : null}
+
         <DialogHeader>
           <DialogTitle>Delete {entityName}</DialogTitle>
           <DialogDescription>This action cannot be undone.</DialogDescription>
@@ -105,7 +114,7 @@ export function DeleteDialog<TEntity>({
             onClick={onConfirm}
             disabled={isDeleting}
           >
-            {isDeleting ? (
+            {isDeleting && !useLoadingOverlay && !hideButtonLoading ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 {pendingLabel}

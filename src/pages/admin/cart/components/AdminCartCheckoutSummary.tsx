@@ -1,4 +1,4 @@
-import { AlertCircle, CreditCard, Loader2 } from "lucide-react";
+import { AlertCircle, CreditCard } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatCartMoney } from "../utils/cartDisplay";
 
@@ -109,14 +109,7 @@ export const AdminCartCheckoutSummary = ({
           disabled={!canCheckout || isSubmitting}
           className="h-11 rounded-2xl bg-[#F2A65A] font-semibold text-[#3B241D] hover:bg-[#F4B46F]"
         >
-          {isSubmitting ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Checking out...
-            </>
-          ) : (
-            "Checkout cart"
-          )}
+          {isSubmitting ? "Checking out..." : "Checkout cart"}
         </Button>
 
         <Button

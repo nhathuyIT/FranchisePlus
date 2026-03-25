@@ -77,6 +77,13 @@ export const PaymentTable = ({
       initialPageSize={10}
       serverPagination={pagination}
       enableColumnVisibility
+      defaultHiddenColumns={[
+        "providerTxnId",
+        "paidAt",
+        "refundedAt",
+        "customerId",
+        "franchiseId",
+      ]}
       columnFilters={columnFilters}
       renderActions={(payment) => (
         <>

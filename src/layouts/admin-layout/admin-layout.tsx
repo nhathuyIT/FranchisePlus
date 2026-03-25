@@ -31,7 +31,7 @@ const AdminLayout = () => {
         </header>
 
         <main className="flex-1 overflow-hidden flex flex-col bg-[#f0e8e1]">
-          <div className="flex-1 overflow-hidden container mx-auto p-6 flex flex-col">
+          <div className="flex h-full w-full flex-1 flex-col overflow-hidden p-6">
             <Outlet />
           </div>
         </main>

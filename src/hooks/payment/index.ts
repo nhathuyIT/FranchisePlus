@@ -1,1 +1,1 @@
-export * from "./usePaymentQuery";
+export * from "./usePayment.hook";

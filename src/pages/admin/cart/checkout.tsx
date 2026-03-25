@@ -3,6 +3,7 @@ import { AlertCircle, ArrowLeft, Loader2, PackageSearch } from "lucide-react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { PageHeader } from "@/components/common/PageHeader";
 import { DeleteDialog } from "@/components/form-dialog/DeleteDialog";
+import NormalLoadingLayout from "@/layouts/NormalLoadingLayout";
 import { Button } from "@/components/ui/button";
 import {
   Alert,
@@ -25,6 +26,7 @@ import type {
 import { AdminCartCheckoutForm } from "./components/AdminCartCheckoutForm";
 import { AdminCartCheckoutSummary } from "./components/AdminCartCheckoutSummary";
 import { AdminCheckoutItemCard } from "./components/AdminCheckoutItemCard";
+import { useCartCheckoutOrderFlow } from "./hooks/useCartCheckoutOrderFlow";
 
 const resolveCustomerStatus = (status?: string): CustomerStatusFilter => {
   switch (status) {
@@ -43,6 +45,12 @@ const CheckoutCartPage = () => {
   const location = useLocation();
   const { cartId = "" } = useParams<{ cartId: string }>();
   const { authUser } = useAuthStore();
+  const {
+    isResolvingOrder,
+    lookupError,
+    clearLookupError,
+    openOrderDetailByCartId,
+  } = useCartCheckoutOrderFlow();
 
   const navigationState =
     (location.state as AdminCartNavigationState | null) ?? null;
@@ -64,6 +72,7 @@ const CheckoutCartPage = () => {
     null,
   );
   const [deletingItemId, setDeletingItemId] = useState<string | null>(null);
+  const [hasCompletedCheckout, setHasCompletedCheckout] = useState(false);
 
   const cart = cartDetailQuery.data ?? null;
   const currentUserPhone = authUser?.user?.phone ?? "";
@@ -78,7 +87,9 @@ const CheckoutCartPage = () => {
     setHasInitializedForm(false);
     setItemToDelete(null);
     setDeletingItemId(null);
-  }, [cartId]);
+    setHasCompletedCheckout(false);
+    clearLookupError();
+  }, [cartId, clearLookupError]);
 
   useEffect(() => {
     if (!cart || hasInitializedForm) return;
@@ -120,6 +131,7 @@ const CheckoutCartPage = () => {
       navigate(`/admin/${ROUTER_URL.ADMIN_ROUTER.CART}`, {
         state: buildNavigationState(
           customerStatus ??
+            (hasCompletedCheckout ? "CHECKED_OUT" : null) ??
             navigationState?.customerStatus ??
             resolveCustomerStatus(cart?.status),
         ),
@@ -128,6 +140,7 @@ const CheckoutCartPage = () => {
     [
       buildNavigationState,
       cart?.status,
+      hasCompletedCheckout,
       navigate,
       navigationState?.customerStatus,
     ],
@@ -163,6 +176,12 @@ const CheckoutCartPage = () => {
 
   const disableReason = useMemo(() => {
     if (!cart) return "Cart detail is not available.";
+    if (isResolvingOrder) {
+      return "Checkout already succeeded. The system is locating the generated order detail now.";
+    }
+    if (hasCompletedCheckout) {
+      return "This cart has already been checked out in this session. Retry opening the created order detail instead of submitting checkout again.";
+    }
     if (cart.status !== "ACTIVE") {
       return `Only ACTIVE carts can be checked out. Current status: ${cart.status}.`;
     }
@@ -170,13 +189,15 @@ const CheckoutCartPage = () => {
       return "This cart does not contain any items yet.";
     }
     return null;
-  }, [cart]);
+  }, [cart, hasCompletedCheckout, isResolvingOrder]);
 
   const canCheckout =
     !!cart &&
     cart.status === "ACTIVE" &&
     cart.cartItems.length > 0 &&
-    !checkoutCartMutation.isPending;
+    !checkoutCartMutation.isPending &&
+    !isResolvingOrder &&
+    !hasCompletedCheckout;
 
   const handleCheckout = async () => {
     if (!cart) return;
@@ -189,7 +210,7 @@ const CheckoutCartPage = () => {
     }
 
     try {
-      const response = await checkoutCartMutation.mutateAsync({
+      await checkoutCartMutation.mutateAsync({
         cartId: cart.id,
         data: {
           address: formValues.address.trim(),
@@ -198,7 +219,9 @@ const CheckoutCartPage = () => {
         },
       });
 
-      handleBackToList(resolveCustomerStatus(response.status));
+      setHasCompletedCheckout(true);
+      void cartDetailQuery.refetch();
+      await openOrderDetailByCartId(cart.id);
     } catch {
       // Error toast is handled in the mutation hook.
     }
@@ -221,7 +244,16 @@ const CheckoutCartPage = () => {
 
   return (
     <div className="flex h-full flex-col scroll-hide">
-      <div className="mx-auto flex min-h-0 w-full max-w-7xl flex-1 flex-col">
+      <NormalLoadingLayout
+        forceShow={
+          (checkoutCartMutation.isPending ||
+            deleteCartItemMutation.isPending ||
+            isResolvingOrder) &&
+          !cartDetailQuery.isLoading
+        }
+      />
+
+      <div className="mx-auto flex min-h-0 w-full max-w-screen-2xl flex-1 flex-col">
         <PageHeader
           title="Checkout Cart"
           description="Finalize one existing cart from the admin workflow."
@@ -246,6 +278,36 @@ const CheckoutCartPage = () => {
               <AlertDescription>
                 Open checkout from a cart row so the page knows which cart to
                 load.
+              </AlertDescription>
+            </Alert>
+          ) : isResolvingOrder ? (
+            <Alert className="border-[#D9CBBF] bg-[#FFF8F1] text-[#6D4C41]">
+              <Loader2 className="h-4 w-4 animate-spin text-[#A65A00]" />
+              <AlertTitle>Opening post-checkout order flow</AlertTitle>
+              <AlertDescription>
+                Checkout succeeded. We are finding the generated order by cart
+                ID and will open its delivery and payment detail automatically.
+              </AlertDescription>
+            </Alert>
+          ) : lookupError ? (
+            <Alert className="border-[#F2D6C9] bg-[#FFF7F2] text-[#7A271A]">
+              <AlertCircle className="h-4 w-4 text-[#C2410C]" />
+              <AlertTitle>Order lookup after checkout failed</AlertTitle>
+              <AlertDescription>
+                <div className="space-y-3">
+                  <p>{lookupError}</p>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      if (!cart) return;
+                      void openOrderDetailByCartId(cart.id);
+                    }}
+                    className="border-[#D9CBBF] text-[#6D4C41] hover:bg-[#FFF8F1]"
+                  >
+                    Try opening order detail again
+                  </Button>
+                </div>
               </AlertDescription>
             </Alert>
           ) : cartDetailQuery.isLoading ? (
@@ -344,7 +406,7 @@ const CheckoutCartPage = () => {
                   finalAmount={cart.finalAmount}
                   canCheckout={canCheckout}
                   disableReason={disableReason}
-                  isSubmitting={checkoutCartMutation.isPending}
+                  isSubmitting={checkoutCartMutation.isPending || isResolvingOrder}
                   onBack={() => handleBackToList()}
                   onCheckout={() => {
                     void handleCheckout();
@@ -369,6 +431,7 @@ const CheckoutCartPage = () => {
           void handleConfirmDeleteItem();
         }}
         isDeleting={deleteCartItemMutation.isPending}
+        useLoadingOverlay
         deleteMessage={(item) =>
           `Remove "${item.productName || "this product"}" from the cart before checkout?`
         }
