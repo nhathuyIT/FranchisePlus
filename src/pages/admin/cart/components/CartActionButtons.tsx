@@ -1,4 +1,4 @@
-import { CreditCard, Loader2, Pencil, Trash2 } from "lucide-react";
+import { CreditCard, Pencil, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface CartActionButtonsProps {
@@ -59,17 +59,8 @@ export const CartActionButtons = ({
         disabled={!canCancelCart || isCancellingCart}
         className="border-[#E7C5B8] bg-[#FFF6F2] text-[#B34B2A] hover:bg-[#FFEDE6]"
       >
-        {isCancellingCart ? (
-          <>
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            Canceling...
-          </>
-        ) : (
-          <>
-            <Trash2 className="mr-2 h-4 w-4" />
-            Cancel cart
-          </>
-        )}
+        <Trash2 className="mr-2 h-4 w-4" />
+        {isCancellingCart ? "Canceling..." : "Cancel cart"}
       </Button>
     ) : null}
   </div>

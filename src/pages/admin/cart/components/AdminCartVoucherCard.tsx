@@ -1,4 +1,4 @@
-import { Loader2, TicketPercent, Trash2, X } from "lucide-react";
+import { TicketPercent, Trash2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -92,14 +92,7 @@ export const AdminCartVoucherCard = ({
               }
               className="h-11 bg-[#6D4C41] text-white hover:bg-[#5D4037]"
             >
-              {isApplying ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Applying...
-                </>
-              ) : (
-                "Apply voucher"
-              )}
+              {isApplying ? "Applying..." : "Apply voucher"}
             </Button>
 
             {hasAppliedVoucher ? (
@@ -110,17 +103,8 @@ export const AdminCartVoucherCard = ({
                 disabled={disabled || isBusy}
                 className="h-11 border-[#E8DFD6] text-[#A24A37] hover:bg-[#FFF8F2]"
               >
-                {isRemoving ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Removing...
-                  </>
-                ) : (
-                  <>
-                    <Trash2 className="mr-2 h-4 w-4" />
-                    Remove voucher
-                  </>
-                )}
+                <Trash2 className="mr-2 h-4 w-4" />
+                {isRemoving ? "Removing..." : "Remove voucher"}
               </Button>
             ) : null}
           </div>

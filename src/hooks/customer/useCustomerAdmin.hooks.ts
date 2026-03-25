@@ -1,7 +1,9 @@
+import { useMemo } from "react";
 import {
   keepPreviousData,
   useMutation,
   useQuery,
+  useQueries,
   useQueryClient,
 } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -176,5 +178,27 @@ export const useUpdateCustomerAdminStatus = () => {
         description: error.message,
       });
     },
+  });
+};
+
+/**
+ * Fetch multiple customer details by IDs.
+ * Useful for enriching list rows with customer names.
+ */
+export const useCustomerAdminDetailQueries = (
+  ids: string[],
+  enabled = true,
+) => {
+  const uniqueIds = useMemo(
+    () => Array.from(new Set(ids.filter((id) => Boolean(id)))),
+    [ids],
+  );
+
+  return useQueries({
+    queries: uniqueIds.map((id) => ({
+      queryKey: customerAdminKeys.detail(id),
+      queryFn: () => customerAdminApi.getById(id),
+      enabled: enabled && Boolean(id),
+    })),
   });
 };

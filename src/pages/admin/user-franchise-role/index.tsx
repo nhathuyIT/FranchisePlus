@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { useDebounce } from "@/hooks/common/useDebounce";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/common/PageHeader";
+import NormalLoadingLayout from "@/layouts/NormalLoadingLayout";
 import { UserFranchiseRoleTable } from "./components/UserFranchiseRoleTable";
 import {
   FormDialog,
@@ -19,7 +20,6 @@ import type { UserFranchiseRoleItem } from "@/api/user-franchise-role";
 import type { SubmitResult } from "@/components/form-dialog/types";
 import {
   useUserFranchiseRoleSearch,
-  useCreateUserFranchiseRole,
   useDeleteUserFranchiseRole,
   useRoles,
 } from "@/hooks/user-franchise-role";
@@ -34,6 +34,7 @@ import { useAuthStore } from "@/stores/auth-store";
  * Allows ADMIN to assign or remove roles from users per franchise context.
  */
 const UserFranchiseRolePage = () => {
+  const [isActionPending, setIsActionPending] = useState(false);
   const { getCurrentPermissions } = useAuthStore();
   const userPermissions = getCurrentPermissions();
 
@@ -100,7 +101,6 @@ const UserFranchiseRolePage = () => {
   const [deleteTarget, setDeleteTarget] =
     useState<UserFranchiseRoleItem | null>(null);
 
-  const createMutation = useCreateUserFranchiseRole();
   const deleteMutation = useDeleteUserFranchiseRole({ suppressToast: true });
 
   const refreshData = () => void refetch();
@@ -110,23 +110,30 @@ const UserFranchiseRolePage = () => {
   const handleSubmit = async (
     data: UserFranchiseRoleFormData,
   ): Promise<SubmitResult | void> => {
-    const selectedRole = roles.find((r) => r.value === data.roleId);
-    const isGlobalRole = selectedRole?.scope === "GLOBAL";
+    setIsActionPending(true);
+    try {
+      const selectedRole = roles.find((r) => r.value === data.roleId);
+      const isGlobalRole = selectedRole?.scope === "GLOBAL";
 
-    const response = await ufrApi.create({
-      userId: data.userId,
-      franchiseId:
-        isGlobalRole || data.franchiseId === "__global__" || !data.franchiseId
-          ? null
-          : data.franchiseId,
-      roleId: data.roleId,
-    });
+      const response = await ufrApi.create({
+        userId: data.userId,
+        franchiseId:
+          isGlobalRole ||
+          data.franchiseId === "__global__" ||
+          !data.franchiseId
+            ? null
+            : data.franchiseId,
+        roleId: data.roleId,
+      });
 
-    if (!response) {
-      throw new Error("Failed to assign role");
+      if (!response) {
+        throw new Error("Failed to assign role");
+      }
+
+      toast.success("Role assigned successfully");
+    } finally {
+      setIsActionPending(false);
     }
-
-    toast.success("Role assigned successfully");
   };
 
   // ── Delete Handler ───────────────────────────────────────────────────────
@@ -143,14 +150,14 @@ const UserFranchiseRolePage = () => {
     }
   };
 
-  // Prevent unused variable warning
-  void createMutation;
-
   // ── Render ───────────────────────────────────────────────────────────────
 
   return (
     <div className="h-full flex flex-col">
-      <div className="flex-1 flex flex-col min-h-0 max-w-7xl mx-auto w-full">
+      <NormalLoadingLayout
+        forceShow={isActionPending || deleteMutation.isPending}
+      />
+      <div className="flex-1 flex flex-col min-h-0 max-w-screen-2xl mx-auto w-full">
         <PageHeader
           title="User Franchise Roles"
           description="Manage which users hold which roles across franchise locations"

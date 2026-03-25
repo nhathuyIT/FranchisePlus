@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { MessageSquareText, Trash2 } from "lucide-react";
 import { DeleteDialog } from "@/components/form-dialog/DeleteDialog";
+import NormalLoadingLayout from "@/layouts/NormalLoadingLayout";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import type { CartItemResponse } from "@/types/cart";
@@ -59,6 +60,8 @@ export const EditCartItemCard = ({
 
   return (
     <>
+      <NormalLoadingLayout forceShow={isSavingNote} />
+
       <article className="rounded-2xl border border-[#E8DFD6] bg-white p-4 shadow-sm">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="flex min-w-0 items-start gap-4">
@@ -226,6 +229,7 @@ export const EditCartItemCard = ({
         getDisplayName={(value) => value}
         deleteMessage={`Remove "${item.productName || "this cart item"}" from the cart?`}
         isDeleting={isPending}
+        useLoadingOverlay
         onConfirm={async () => {
           const wasRemoved = await onDelete();
           if (wasRemoved) {

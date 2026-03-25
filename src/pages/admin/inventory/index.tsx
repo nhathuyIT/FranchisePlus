@@ -12,6 +12,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { PageHeader } from "@/components/common/PageHeader";
+import NormalLoadingLayout from "@/layouts/NormalLoadingLayout";
 import {
   DeleteDialog,
   FormDialog,
@@ -42,26 +43,9 @@ import {
   useUpdateInventoryFromExcel,
 } from "./hooks/useUpdateInventoryFromExcel";
 
-const formatImportIssueDescription = (issues: InventoryImportIssue[]) => {
-  if (issues.length === 0) {
-    return undefined;
-  }
-
-  const previewText = issues
-    .slice(0, 3)
-    .map(
-      (issue) => `Row ${issue.rowNumber}: ${issue.messages.join(", ")}`,
-    )
-    .join(" | ");
-
-  if (issues.length <= 3) {
-    return previewText;
-  }
-
-  return `${previewText} | +${issues.length - 3} more row(s).`;
-};
-
 const InventoryList = () => {
+  const [isActionPending, setIsActionPending] = useState(false);
+  const [importErrors, setImportErrors] = useState<InventoryImportIssue[]>([]);
   const { authUser, getCurrentPermissions } = useAuthStore();
   const userPermissions = getCurrentPermissions();
 
@@ -134,28 +118,16 @@ const InventoryList = () => {
     void refetch();
   };
 
+  const handleDiscardChanges = useCallback(() => {
+    resetMainTableData();
+    setImportErrors([]);
+  }, [resetMainTableData]);
+
   const handleImport = useCallback(
     async (file: File) => {
+      setImportErrors([]);
       const result = await importFromExcel(file);
-      const description = formatImportIssueDescription(result.errors);
-
-      if (!result.success) {
-        toast.error(result.message, {
-          description,
-        });
-        return;
-      }
-
-      if (result.invalidRows > 0) {
-        toast.info(result.message, {
-          description,
-        });
-        return;
-      }
-
-      toast.success(result.message, {
-        description,
-      });
+      setImportErrors(result.errors);
     },
     [importFromExcel],
   );
@@ -165,29 +137,41 @@ const InventoryList = () => {
   ): Promise<SubmitResult | void> => {
     if (!adjustDialog.data) return;
 
-    await inventoryApi.adjust({
-      productFranchiseId: String(adjustDialog.data.productFranchiseId),
-      change: data.change,
-      alertThreshold: data.alertThreshold,
-      reason: data.reason,
-    });
-    toast.success("Inventory adjusted successfully");
+    setIsActionPending(true);
+    try {
+      await new Promise((r) => setTimeout(r, 500));
+      await inventoryApi.adjust({
+        productFranchiseId: String(adjustDialog.data.productFranchiseId),
+        change: data.change,
+        alertThreshold: data.alertThreshold,
+        reason: data.reason,
+      });
+      toast.success("Inventory adjusted successfully");
+    } finally {
+      setIsActionPending(false);
+    }
   };
 
   const handleAddSubmit = async (
     data: AddInventoryItemFormData,
   ): Promise<SubmitResult | void> => {
-    const response = await inventoryApi.create({
-      productFranchiseId: data.productFranchiseId,
-      quantity: data.quantity,
-      alertThreshold: data.alertThreshold,
-    });
+    setIsActionPending(true);
+    try {
+      await new Promise((r) => setTimeout(r, 500));
+      const response = await inventoryApi.create({
+        productFranchiseId: data.productFranchiseId,
+        quantity: data.quantity,
+        alertThreshold: data.alertThreshold,
+      });
 
-    if (!response) {
-      throw new Error("Failed to create inventory item");
+      if (!response) {
+        throw new Error("Failed to create inventory item");
+      }
+
+      toast.success("Inventory item added successfully");
+    } finally {
+      setIsActionPending(false);
     }
-
-    toast.success("Inventory item added successfully");
   };
 
   const handleDelete = async () => {
@@ -231,19 +215,26 @@ const InventoryList = () => {
         newAlertThreshold: number;
       }>,
     ) => {
-      const items = changes.map(({ item, newQuantity, newAlertThreshold }) => ({
-        productFranchiseId: String(item.productFranchiseId),
-        change: newQuantity - item.quantity,
-        alertThreshold: newAlertThreshold,
-        reason: "Inline table edit",
-      }));
+      setIsActionPending(true);
+      try {
+        await new Promise((r) => setTimeout(r, 500));
+        const items = changes.map(({ item, newQuantity, newAlertThreshold }) => ({
+          productFranchiseId: String(item.productFranchiseId),
+          change: newQuantity - item.quantity,
+          alertThreshold: newAlertThreshold,
+          reason: "Inline table edit",
+        }));
 
-      await inventoryApi.adjustBulk({ items });
+        await inventoryApi.adjustBulk({ items });
 
-      toast.success(
-        `Updated ${changes.length} inventory item(s) successfully`,
-      );
-      void refetch();
+        setImportErrors([]);
+        toast.success(
+          `Updated ${changes.length} inventory item(s) successfully`,
+        );
+        void refetch();
+      } finally {
+        setIsActionPending(false);
+      }
     },
     [refetch],
   );
@@ -260,7 +251,8 @@ const InventoryList = () => {
 
   return (
     <div className="flex h-full flex-col">
-      <div className="mx-auto flex min-h-0 w-full max-w-7xl flex-1 flex-col">
+      <NormalLoadingLayout forceShow={isActionPending} />
+      <div className="mx-auto flex min-h-0 w-full max-w-screen-2xl flex-1 flex-col">
         <PageHeader
           title="Inventory Management"
           description="Track all products across franchises"
@@ -333,9 +325,10 @@ const InventoryList = () => {
               isLoading={isLoading || isFetching || deleteMutation.isPending}
               isImporting={isImporting}
               error={listError}
+              importErrors={importErrors}
               onRetry={refetch}
               onImport={canManageInventory ? handleImport : undefined}
-              onDiscardChanges={resetMainTableData}
+              onDiscardChanges={handleDiscardChanges}
               onEdit={canManageInventory ? handleEdit : undefined}
               onDelete={canManageInventory ? handleOpenDelete : undefined}
               canEdit={canManageInventory}
@@ -386,6 +379,7 @@ const InventoryList = () => {
           entityName="Inventory Item"
           entity={deleteTarget}
           isDeleting={deleteMutation.isPending}
+          useLoadingOverlay
           deleteMessage={(item: InventorySearchItem) =>
             `Are you sure you want to delete the inventory record for "${item.productName}"? This action cannot be undone.`
           }

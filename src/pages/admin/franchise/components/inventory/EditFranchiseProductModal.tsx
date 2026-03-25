@@ -13,6 +13,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { useUpdateProductFranchiseMutation } from "@/hooks/product-franchise/useProductFranchiseQuery";
 import { useAdjustInventory, useCreateInventory } from "@/hooks/inventory/useInventory.hooks";
+import NormalLoadingLayout from "@/layouts/NormalLoadingLayout";
 
 interface ProductFranchise {
   id: number | string;
@@ -46,6 +47,11 @@ export const EditFranchiseProductModal = ({
   const updateMutation = useUpdateProductFranchiseMutation();
   const adjustInventoryMutation = useAdjustInventory();
   const createInventoryMutation = useCreateInventory();
+
+  const isSubmitting =
+    updateMutation.isPending ||
+    adjustInventoryMutation.isPending ||
+    createInventoryMutation.isPending;
 
   useEffect(() => {
     if (productFranchise) {
@@ -116,6 +122,7 @@ export const EditFranchiseProductModal = ({
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
+      <NormalLoadingLayout forceShow={isSubmitting} />
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle className="text-[#4A3B2A]">Edit Product</DialogTitle>
@@ -202,16 +209,16 @@ export const EditFranchiseProductModal = ({
               variant="outline"
               onClick={handleClose}
               className="border-gray-300 text-gray-700 hover:bg-gray-100"
-              disabled={updateMutation.isPending || adjustInventoryMutation.isPending || createInventoryMutation.isPending}
+              disabled={isSubmitting}
             >
               Cancel
             </Button>
             <Button
               type="submit"
               className="bg-[#4A3B2A] hover:bg-[#3A2B1A] text-white"
-              disabled={updateMutation.isPending || adjustInventoryMutation.isPending || createInventoryMutation.isPending}
+              disabled={isSubmitting}
             >
-              {updateMutation.isPending || adjustInventoryMutation.isPending || createInventoryMutation.isPending
+              {isSubmitting
                 ? "Updating..."
                 : "Update Product"}
             </Button>

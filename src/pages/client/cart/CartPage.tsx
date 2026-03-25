@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+﻿import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { ChevronLeft } from "lucide-react";
 import { useCart } from "./useCart";
@@ -9,8 +9,8 @@ import {
   useRemoveVoucherInCartMutation,
   useUpdateCartMutation,
 } from "@/hooks/cart/useCart.hook";
-import NormalLoadingLayout from "@/layouts/NormalLoadingLayout";
 import { ROUTER_URL } from "@/router/route.const";
+import NormalLoadingLayout from "@/layouts/NormalLoadingLayout";
 import { useLoadingStore } from "@/stores/loading.store";
 import CartEmpty from "./components/CartEmpty";
 import CartPageHeader from "./components/CartPageHeader";
@@ -25,6 +25,7 @@ const CartPage: React.FC = () => {
     carts,
     updateItemQuantity,
     removeItem,
+    saveItemNote,
     saveEditedItem,
     itemCount,
     isLoading,
@@ -87,14 +88,15 @@ const CartPage: React.FC = () => {
     }
   };
 
-  const handleRemove = async (cartItemId: string) => {
-    const wasRemoved = await runWithCartActionLoading(() =>
-      removeItem(cartItemId),
-    );
+  const handleRemove = (cartItemId: string) => {
+    void runWithCartActionLoading(async () => {
+      const wasRemoved = await removeItem(cartItemId);
+      if (wasRemoved) {
+        removeSelection(cartItemId);
+      }
 
-    if (wasRemoved) {
-      removeSelection(cartItemId);
-    }
+      return wasRemoved;
+    });
   };
 
   const setCancellingCartState = (cartId: string, pending: boolean) => {
@@ -127,18 +129,16 @@ const CartPage: React.FC = () => {
 
     setCancellingCartState(cartId, true);
 
-    try {
-      await runWithCartActionLoading(() =>
-        cancelCartMutation.mutateAsync(cartId),
-      );
-      setVoucherDialogCartId((current) =>
-        current === cartId ? null : current,
-      );
-    } catch {
-      // mutation hook already handles error toast
-    } finally {
-      setCancellingCartState(cartId, false);
-    }
+    void runWithCartActionLoading(async () => {
+      try {
+        await cancelCartMutation.mutateAsync(cartId);
+        setVoucherDialogCartId((current) =>
+          current === cartId ? null : current,
+        );
+      } finally {
+        setCancellingCartState(cartId, false);
+      }
+    });
   };
 
   const handleCheckout = () => {
@@ -154,9 +154,11 @@ const CartPage: React.FC = () => {
 
     isNavigatingToCheckoutRef.current = true;
     setLoading(true);
-    navigate(ROUTER_URL.CLIENT + "/" + ROUTER_URL.CLIENT_ROUTER.PAYMENT, {
+
+    navigate(`${ROUTER_URL.CLIENT}/${ROUTER_URL.CLIENT_ROUTER.CHECKOUT}`, {
       state: {
         selectedCartItemIds: checkoutItemIds,
+        showCheckoutLoading: true,
       },
     });
   };
@@ -185,19 +187,17 @@ const CartPage: React.FC = () => {
 
     setVoucherPendingState(targetCartId, true);
 
-    try {
-      await runWithCartActionLoading(() =>
-        applyVoucherMutation.mutateAsync({
+    void runWithCartActionLoading(async () => {
+      try {
+        await applyVoucherMutation.mutateAsync({
           cartId: targetCartId,
           data: { voucherCode: code },
-        }),
-      );
-      setVoucherDialogCartId(null);
-    } catch {
-      // mutation hook already handles error toast
-    } finally {
-      setVoucherPendingState(targetCartId, false);
-    }
+        });
+        setVoucherDialogCartId(null);
+      } finally {
+        setVoucherPendingState(targetCartId, false);
+      }
+    });
   };
 
   const handleRemoveVoucher = async (cartId: string) => {
@@ -205,43 +205,39 @@ const CartPage: React.FC = () => {
 
     setVoucherPendingState(cartId, true);
 
-    try {
-      await runWithCartActionLoading(() =>
-        removeVoucherMutation.mutateAsync(cartId),
-      );
-      setVoucherInputs((current) => ({
-        ...current,
-        [cartId]: "",
-      }));
-      setVoucherDialogCartId((current) =>
-        current === cartId ? null : current,
-      );
-    } catch {
-      // mutation hook already handles error toast
-    } finally {
-      setVoucherPendingState(cartId, false);
-    }
+    void runWithCartActionLoading(async () => {
+      try {
+        await removeVoucherMutation.mutateAsync(cartId);
+        setVoucherInputs((current) => ({
+          ...current,
+          [cartId]: "",
+        }));
+        setVoucherDialogCartId((current) =>
+          current === cartId ? null : current,
+        );
+      } finally {
+        setVoucherPendingState(cartId, false);
+      }
+    });
   };
 
   const handleSaveCartMessage = async (cartId: string, message: string) => {
     setSavingMessageCartId(cartId);
 
-    try {
-      await runWithCartActionLoading(() =>
-        updateCartMutation.mutateAsync({
+    void runWithCartActionLoading(async () => {
+      try {
+        await updateCartMutation.mutateAsync({
           cartId,
           data: {
             message: message.trim(),
           },
-        }),
-      );
-    } catch {
-      // mutation hook already handles error toast
-    } finally {
-      setSavingMessageCartId((current) =>
-        current === cartId ? null : current,
-      );
-    }
+        });
+      } finally {
+        setSavingMessageCartId((current) =>
+          current === cartId ? null : current,
+        );
+      }
+    });
   };
 
   useEffect(() => {
@@ -329,11 +325,14 @@ const CartPage: React.FC = () => {
                   )
                 }
                 onUpdateQuantity={(cartItemId, quantity) =>
-                  runWithCartActionLoading(() =>
+                  void runWithCartActionLoading(() =>
                     updateItemQuantity(cartItemId, quantity),
                   )
                 }
                 onRemove={handleRemove}
+                onSaveItemNote={(cartItemId, note) =>
+                  runWithCartActionLoading(() => saveItemNote(cartItemId, note))
+                }
                 isItemPending={isItemPending}
                 onSaveMessage={(message) =>
                   handleSaveCartMessage(singleCart.id, message)

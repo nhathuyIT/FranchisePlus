@@ -23,7 +23,7 @@ export interface ApiOrder {
 	franchiseName?: string;
 	customerId?: string | number;
 	type?: string;
-	status?: string;
+	status?: ApiOrderStatus;
 	totalAmount?: number;
 	confirmedAt?: string | null;
 	completedAt?: string | null;
@@ -150,4 +150,34 @@ export const getOrdersByFranchiseId = async (
 	});
 
 	return normalizeOrderList(response);
+};
+
+export const getOrdersForStaffByFranchiseId = async (params: {
+	franchiseId: string | number;
+	status?: ApiOrderStatus;
+}): Promise<ApiOrder[]> => {
+	return getOrdersByFranchiseId(params.franchiseId, params.status);
+};
+
+export const changeOrderStatusPreparing = async (
+	orderId: string | number,
+): Promise<ApiOrder | null> => {
+	const response = await httpClient.put<ApiOrder, Record<string, never>>({
+		url: `/api/orders/${orderId}/preparing`,
+		data: {},
+	});
+
+	return response;
+};
+
+export const changeOrderStatusReadyForPickup = async (
+	orderId: string | number,
+	data?: { staffId?: string },
+): Promise<ApiOrder | null> => {
+	const response = await httpClient.put<ApiOrder, { staffId?: string }>({
+		url: `/api/orders/${orderId}/ready-for-pickup`,
+		data: data ?? {},
+	});
+
+	return response;
 };

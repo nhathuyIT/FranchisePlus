@@ -34,6 +34,7 @@ import {
 } from "@/hooks/inventory/useInventory.hooks";
 import type { InventorySearchItem } from "@/api/inventory/inventory.type";
 import { uploadFileToCloudinary } from "@/config/cloudinary";
+import NormalLoadingLayout from "@/layouts/NormalLoadingLayout";
 
 // ── Form schema ─────────────────────────────────────────────────────────────
 
@@ -154,7 +155,7 @@ const getProductFields = (
 
               // If searching, filter the cache first for instant results
               if (cachedProducts && cachedProducts.length > 0 && searchTerm) {
-                const filtered = cachedProducts.filter(p => 
+                const filtered = cachedProducts.filter(p =>
                   p.label.toLowerCase().includes(searchTerm.toLowerCase())
                 );
                 return filtered;
@@ -173,7 +174,7 @@ const getProductFields = (
                   pageSize: 50,
                 },
               });
-              
+
               return products.map((p) => ({
                 label: `${p.name} - ${p.sku} (${p.minPrice.toLocaleString()}₫ - ${p.maxPrice.toLocaleString()}₫)`,
                 value: String(p.id),
@@ -312,7 +313,7 @@ const ProductsPage = () => {
 
   // Dialog state
   const dialog = useFormDialog<AdminProductRow>();
-  
+
   // View modal state (separate from form dialog)
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [viewingProduct, setViewingProduct] = useState<AdminProductRow | null>(null);
@@ -368,7 +369,7 @@ const ProductsPage = () => {
 
   const responsePageInfo = globalProductsResponse?.pageInfo;
 
-  const {  data: franchiseProducts,
+  const { data: franchiseProducts,
     isLoading: isLoadingFranchise,
     error: franchiseError,
     refetch: refetchFranchise,
@@ -416,33 +417,33 @@ const ProductsPage = () => {
   // Select appropriate data based on context
   const products: AdminProductRow[] = isManagerView
     ? (franchiseProducts?.map((pf) => ({
-        ...(inventoryByProductFranchiseId.get(String(pf.id))
-          ? {
-              quantity:
-                inventoryByProductFranchiseId.get(String(pf.id))?.quantity ?? 0,
-              inventoryId: String(
-                inventoryByProductFranchiseId.get(String(pf.id))?.id ?? "",
-              ),
-              alertThreshold:
-                inventoryByProductFranchiseId.get(String(pf.id))?.alertThreshold ?? 0,
-            }
-          : { quantity: 0, inventoryId: undefined, alertThreshold: 0 }),
-        id: pf.productId,
-        franchiseProductId: String(pf.id), // Store ProductFranchise ID for updates/deletes
-        size: pf.size || "", // Store size for updates
-        sku: pf.productSku || "",
-        name: pf.productName || "",
-        description: null, // Not returned by backend for franchise products
-        content: null, // Not returned by backend for franchise products
-        imageUrl: pf.productImageUrl || null,
-        minPrice: pf.priceBase,
-        maxPrice: pf.priceBase,
-        isHaveTopping: null,
-        isActive: pf.isActive,
-        isDeleted: pf.isDeleted,
-        createdAt: pf.createdAt,
-        updatedAt: pf.updatedAt,
-      })) as AdminProductRow[] ?? [])
+      ...(inventoryByProductFranchiseId.get(String(pf.id))
+        ? {
+          quantity:
+            inventoryByProductFranchiseId.get(String(pf.id))?.quantity ?? 0,
+          inventoryId: String(
+            inventoryByProductFranchiseId.get(String(pf.id))?.id ?? "",
+          ),
+          alertThreshold:
+            inventoryByProductFranchiseId.get(String(pf.id))?.alertThreshold ?? 0,
+        }
+        : { quantity: 0, inventoryId: undefined, alertThreshold: 0 }),
+      id: pf.productId,
+      franchiseProductId: String(pf.id), // Store ProductFranchise ID for updates/deletes
+      size: pf.size || "", // Store size for updates
+      sku: pf.productSku || "",
+      name: pf.productName || "",
+      description: null, // Not returned by backend for franchise products
+      content: null, // Not returned by backend for franchise products
+      imageUrl: pf.productImageUrl || null,
+      minPrice: pf.priceBase,
+      maxPrice: pf.priceBase,
+      isHaveTopping: null,
+      isActive: pf.isActive,
+      isDeleted: pf.isDeleted,
+      createdAt: pf.createdAt,
+      updatedAt: pf.updatedAt,
+    })) as AdminProductRow[] ?? [])
     : (globalProductsResponse?.data ?? []).map((p) => ({ ...p }));
 
   const isLoading = isManagerView ? (isLoadingFranchise || isLoadingInventory) : isLoadingGlobal;
@@ -454,6 +455,18 @@ const ProductsPage = () => {
   const deleteMutation = useDeleteProductMutation();
   const productStatusMutation = useUpdateProductStatusMutation();
 
+  const isActionLoading =
+    createMutation.isPending ||
+    updateMutation.isPending ||
+    deleteMutation.isPending ||
+    productStatusMutation.isPending ||
+    createProductFranchiseMutation.isPending ||
+    updateProductFranchiseMutation.isPending ||
+    deleteProductFranchiseMutation.isPending ||
+    changeStatusProductFranchiseMutation.isPending ||
+    adjustInventoryMutation.isPending ||
+    createInventoryMutation.isPending;
+
   // ── Search handler ────────────────────────────────────────────────────────
 
   const handleSearch = useCallback((keyword: string) => {
@@ -461,7 +474,7 @@ const ProductsPage = () => {
       ...prev,
       searchCondition: { ...prev.searchCondition, keyword },
       pageInfo: { ...prev.pageInfo, pageNum: 1 },
-    }));  
+    }));
   }, []);
 
   const handlePageChange = useCallback((pageNum: number) => {
@@ -484,37 +497,37 @@ const ProductsPage = () => {
     console.log("[Products Page] Form submitted with data:", data);
     console.log("[Products Page] Is manager view:", isManagerView);
     console.log("[Products Page] Dialog mode:", dialog.mode);
-    
+
     // For managers, set maxPrice equal to minPrice since they only edit one price
     if (isManagerView) {
       data.maxPrice = data.minPrice;
     }
-    
+
     if (dialog.mode === "edit" && dialog.data) {
       const editingProduct = dialog.data;
-      
+
       // Manager editing franchise product
       if (isManagerView && editingProduct.franchiseProductId) {
         const franchiseProductId = editingProduct.franchiseProductId;
-        
+
         console.log("[Products Page] Manager editing franchise product:", franchiseProductId);
-        
+
         // Update size and price_base (required fields)
         const updatePayload = {
           size: data.size || "",
           price_base: data.minPrice,
         };
-        
+
         console.log("[Products Page] Update payload:", updatePayload);
-        
+
         // Check if status changed
         const statusChanged = editingProduct.isActive !== data.isActive;
-        
+
         // Always update size/price, then optionally change status
         await updateProductFranchiseMutation.mutateAsync(
           { id: franchiseProductId, data: updatePayload }
         );
-        
+
         // If status also changed, call the change status endpoint
         if (statusChanged) {
           await changeStatusProductFranchiseMutation.mutateAsync(
@@ -579,14 +592,14 @@ const ProductsPage = () => {
         if (!data.productId) {
           throw new Error("Please select a product.");
         }
-        
+
         const franchisePayload = {
           franchise_id: franchiseId,
           product_id: data.productId,
           size: data.size || "",
           price_base: data.minPrice,
         };
-        
+
         await createProductFranchiseMutation.mutateAsync(franchisePayload);
       } else {
         // Admin creating a global product
@@ -644,13 +657,13 @@ const ProductsPage = () => {
 
   const confirmDelete = async () => {
     if (!deletingProduct) return;
-    
+
     if (isManagerView && deletingProduct.franchiseProductId) {
       await deleteProductFranchiseMutation.mutateAsync(deletingProduct.franchiseProductId);
     } else {
       await deleteMutation.mutateAsync(deletingProduct.id);
     }
-    
+
     setDeleteDialogOpen(false);
     setDeletingProduct(null);
   };
@@ -690,7 +703,8 @@ const ProductsPage = () => {
         data: { is_active: isActive },
       });
     } else {
-      productStatusMutation.mutate({ id: product.id, isActive });
+      // Pass the full product so the mutation can build the complete PUT payload
+      productStatusMutation.mutate({ id: product.id, isActive, product });
     }
   };
 
@@ -710,25 +724,26 @@ const ProductsPage = () => {
     ? toProductFormValues(dialog.data, isManagerView)
     : isManagerView
       ? {
-          // Manager create defaults (schema requires name/maxPrice even if fields are hidden)
-          productId: "",
-          sku: "",
-          name: "temp",
-          size: "",
-          description: "",
-          content: "",
-          imageUrl: "",
-          minPrice: 0,
-          maxPrice: 999999,
-          quantity: 0,
-          isHaveTopping: undefined,
-          isActive: true,
-        }
+        // Manager create defaults (schema requires name/maxPrice even if fields are hidden)
+        productId: "",
+        sku: "",
+        name: "temp",
+        size: "",
+        description: "",
+        content: "",
+        imageUrl: "",
+        minPrice: 0,
+        maxPrice: 999999,
+        quantity: 0,
+        isHaveTopping: undefined,
+        isActive: true,
+      }
       : undefined;
 
   return (
     <div className="h-full flex flex-col">
-      <div className="flex-1 flex flex-col min-h-0 max-w-7xl mx-auto w-full">
+      <NormalLoadingLayout forceShow={isActionLoading} />
+      <div className="flex-1 flex flex-col min-h-0 max-w-screen-2xl mx-auto w-full">
         <PageHeader
           title={isManagerView ? "My Products" : "Product Management"}
           description={
@@ -753,13 +768,13 @@ const ProductsPage = () => {
             pagination={
               !isManagerView
                 ? {
-                    pageNum: responsePageInfo?.pageNum ?? searchParams.pageInfo.pageNum,
-                    pageSize: responsePageInfo?.pageSize ?? searchParams.pageInfo.pageSize,
-                    totalItems: responsePageInfo?.totalItems ?? products.length,
-                    totalPages: responsePageInfo?.totalPages ?? 1,
-                    onPageChange: handlePageChange,
-                    onPageSizeChange: handlePageSizeChange,
-                  }
+                  pageNum: responsePageInfo?.pageNum ?? searchParams.pageInfo.pageNum,
+                  pageSize: responsePageInfo?.pageSize ?? searchParams.pageInfo.pageSize,
+                  totalItems: responsePageInfo?.totalItems ?? products.length,
+                  totalPages: responsePageInfo?.totalPages ?? 1,
+                  onPageChange: handlePageChange,
+                  onPageSizeChange: handlePageSizeChange,
+                }
                 : undefined
             }
             isLoading={isLoading}
@@ -816,7 +831,7 @@ const ProductsPage = () => {
         onConfirm={confirmDelete}
         isDeleting={deleteMutation.isPending || deleteProductFranchiseMutation.isPending}
         getDisplayName={(product) => product.name}
-        deleteMessage={(product) => 
+        deleteMessage={(product) =>
           `Remove the "${product.name}" ${isManagerView ? 'from this franchise' : 'product'}? This action cannot be undone.`
         }
       />

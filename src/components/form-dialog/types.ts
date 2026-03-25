@@ -88,6 +88,10 @@ export interface FormDialogProps<TFormData extends FieldValues> {
   cancelText?: string;
   /** Hide cancel button */
   hideCancel?: boolean;
+  /** Hide loading indicator inside action buttons */
+  hideButtonLoading?: boolean;
+  /** Show overlay loading instead of button loading state */
+  useLoadingOverlay?: boolean;
 
   /** Prevent closing on overlay click while submitting */
   preventCloseOnSubmit?: boolean;
@@ -144,6 +148,10 @@ export interface FormContentProps<TFormData extends FieldValues> {
   cancelText?: string;
   /** Hide cancel button */
   hideCancel?: boolean;
+  /** Hide loading indicator inside action buttons */
+  hideButtonLoading?: boolean;
+  /** Show overlay loading instead of button loading state */
+  useLoadingOverlay?: boolean;
   /** Custom cancel handler (default: form.reset()) */
   onCancel?: () => void;
   /** Render custom footer (replaces default buttons) */
@@ -223,6 +231,10 @@ export interface FormFooterProps {
   cancelText: string;
   /** Hide cancel button */
   hideCancel?: boolean;
+  /** Hide loading indicator inside action buttons */
+  hideButtonLoading?: boolean;
+  /** Show overlay loading instead of button loading state */
+  useLoadingOverlay?: boolean;
   /** Cancel handler */
   onCancel: () => void;
 }

@@ -5,6 +5,43 @@ import type { MenuCategory } from "@/types/menu.type";
 import type { ProductListItem, ProductDetailItem } from "@/types/product.type";
 import type { FranchiseListResponse } from "../franchise";
 
+type ProductSizeLike = {
+  productFranchiseId: string | number;
+  size: string | null;
+  price: number;
+  isAvailable: boolean;
+};
+
+const dedupeSizes = <T extends ProductSizeLike>(sizes: T[] = []) => {
+  const sizesById = new Map<string, T>();
+
+  for (const size of sizes) {
+    sizesById.set(String(size.productFranchiseId), size);
+  }
+
+  return Array.from(sizesById.values());
+};
+
+const normalizeProductListItem = (product: ProductListItem): ProductListItem => ({
+  ...product,
+  sizes: dedupeSizes(product.sizes),
+});
+
+const normalizeMenuCategory = (category: MenuCategory): MenuCategory => ({
+  ...category,
+  products: category.products.map((product) => ({
+    ...product,
+    sizes: dedupeSizes(product.sizes),
+  })),
+});
+
+const normalizeProductDetail = (
+  product: ProductDetailItem,
+): ProductDetailItem => ({
+  ...product,
+  sizes: dedupeSizes(product.sizes),
+});
+
 export const getAllFranchise = async (): Promise<FranchiseListResponse> => {
   const response = await httpClient.get<FranchiseListResponse>({
     url: "/api/clients/franchises",
@@ -30,20 +67,19 @@ export const getMenuByFranchiseFilterByCategory = async (
     url: `/api/clients/menu?franchiseId=${franchiseID}&categoryId=${categoryID}`,
   });
 
-  return response!;
+  return (response ?? []).map(normalizeMenuCategory);
 };
 
 export const getMenuByFranchise = async (
   franchiseID: string,
 ): Promise<MenuCategory[]> => {
   const response = await httpClient.get<MenuCategory[]>({
-    url: `/api/clients/menu?franchiseId=${franchiseID}`,
+    url: `/api/clients/menu?franchiseId=${franchiseID}&categoryId=`,
   });
 
-  return response!;
+  return (response ?? []).map(normalizeMenuCategory);
 };
 
-// Get topping
 export const getProductByFranchiseFilterByCategory = async (
   franchiseID: string,
   categoryID: string,
@@ -52,28 +88,38 @@ export const getProductByFranchiseFilterByCategory = async (
     url: `/api/clients/products?franchiseId=${franchiseID}&categoryId=${categoryID}`,
   });
 
-  return response!;
+  return (response ?? []).map(normalizeProductListItem);
 };
 
-export const getProductByFranchise = async (
+export const getProductsByFranchise = async (
   franchiseID: string,
 ): Promise<ProductListItem[]> => {
   const response = await httpClient.get<ProductListItem[]>({
-    url: `/api/clients/products?franchiseId=${franchiseID}`,
+    url: `/api/clients/products?franchiseId=${franchiseID}&categoryId=`,
   });
 
-  return response!;
+  return (response ?? []).map(normalizeProductListItem);
+};
+
+export const getToppingByFranchise = async (
+  franchiseID: string,
+): Promise<ProductListItem[]> => {
+  const response = await httpClient.get<ProductListItem[]>({
+    url: `/api/clients/products?franchiseId=${franchiseID}&categoryId=Topping`,
+  });
+
+  return (response ?? []).map(normalizeProductListItem);
 };
 
 export const getProductDetail = async (
   franchiseID: string,
-  productFranchiseID: string,
+  productID: string,
 ): Promise<ProductDetailItem> => {
   const response = await httpClient.get<ProductDetailItem>({
-    url: `/api/clients/franchises/${franchiseID}/products/${productFranchiseID}`,
+    url: `/api/clients/franchises/${franchiseID}/products/${productID}`,
   });
 
-  return response!;
+  return normalizeProductDetail(response!);
 };
 
 export const getFranchiseDetail = async (

@@ -1,21 +1,24 @@
+import type { KeyboardEvent } from "react";
 import type { MenuProduct } from "@/types/menu.type";
-import { formatPrice, getMinPrice, getSizeLabel } from "../lib/helpers";
-import { Cookie, Eye } from "lucide-react";
+import { formatPrice, getMinPrice } from "../lib/helpers";
+import { Cookie } from "lucide-react";
 
 export const MenuProductCard = ({
   product,
   onViewDetail,
 }: {
   product: MenuProduct;
-  onViewDetail: (
-    product: MenuProduct,
-    productFranchiseId: string | number,
-  ) => void;
+  onViewDetail: () => void;
 }) => {
-  const availableSizes = product.sizes.filter((s) => s.isAvailable);
   const minPrice = getMinPrice(product.sizes);
-
-  const defaultProductFranchiseId = availableSizes[0]?.productFranchiseId;
+  const canViewDetail = product.sizes.some((size) => size.isAvailable);
+  const handleImageKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    if (!canViewDetail) return;
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      onViewDetail();
+    }
+  };
 
   return (
     <div
@@ -26,7 +29,16 @@ export const MenuProductCard = ({
                  hover:-translate-y-1 hover:border-amber-200/80"
     >
       {/* Image */}
-      <div className="relative overflow-hidden bg-stone-100 h-52">
+      <div
+        role={canViewDetail ? "button" : undefined}
+        tabIndex={canViewDetail ? 0 : -1}
+        onClick={canViewDetail ? onViewDetail : undefined}
+        onKeyDown={handleImageKeyDown}
+        aria-label={`View details for ${product.name}`}
+        className={`relative h-52 w-full overflow-hidden bg-stone-100 text-left ${
+          canViewDetail ? "cursor-pointer" : "cursor-default"
+        }`}
+      >
         <img
           src={product.imageUrl || "/placeholder-coffee.jpg"}
           alt={product.name}
@@ -51,24 +63,6 @@ export const MenuProductCard = ({
             Has Topping
           </span>
         )}
-
-        {/* View detail button */}
-        <button
-          type="button"
-          onClick={() => {
-            if (defaultProductFranchiseId == null) return;
-            onViewDetail(product, defaultProductFranchiseId);
-          }}
-          className="absolute bottom-3 right-3 flex items-center gap-1.5 px-3 py-1.5 
-                     bg-white/90 text-stone-800 text-xs font-semibold rounded-full
-                     shadow-lg backdrop-blur-sm
-                     opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0
-                     transition-all duration-300 ease-out
-                     hover:bg-white hover:shadow-xl"
-        >
-          <Eye className="h-3.5 w-3.5" />
-          Details
-        </button>
       </div>
 
       {/* Content */}
@@ -87,40 +81,9 @@ export const MenuProductCard = ({
           </p>
         )}
 
-        {/* Sizes & Prices */}
-        <div className="mt-auto pt-4 flex flex-col gap-2">
-          {availableSizes.map((s) => (
-            <div
-              key={s.size}
-              onClick={() => onViewDetail(product, s.productFranchiseId)}
-              className="group/row flex items-center justify-between px-4 py-2.5 rounded-xl 
-                          border transition-all duration-300
-                          bg-amber-50/80 border-amber-200/70 hover:bg-red-500 hover:border-red-500 hover:shadow-lg hover:shadow-red-500/25 hover:scale-[1.03] cursor-pointer"
-            >
-              <span
-                className="text-sm font-semibold transition-colors duration-300
-                            text-stone-700 group-hover/row:text-white"
-              >
-                {getSizeLabel(s.size)}
-              </span>
-              <span
-                className="font-serif text-lg font-bold transition-colors duration-300 flex justify-center w-full
-                            text-amber-700 group-hover/row:text-white"
-              >
-                {formatPrice(s.price)}
-              </span>
-            </div>
-          ))}
-        </div>
-
-        {/* Price */}
         {minPrice !== null && (
-          <div className="mt-3 flex items-center justify-between">
-            <span className="text-xs text-stone-400 italic">From</span>
-            <span
-              className="font-serif text-xl font-bold text-amber-700 
-                          group-hover:text-amber-600 transition-colors"
-            >
+          <div className="mt-auto pt-4">
+            <span className="flex items-center justify-center rounded-xl border border-gray-50-200/70 bg--50/80 px-4 py-3 font-serif text-2xl font-bold text-amber-700 transition-colors group-hover:text-amber-600">
               {formatPrice(minPrice)}
             </span>
           </div>

@@ -22,6 +22,10 @@ const AdminCartCheckoutPage = React.lazy(
   () => import("@/pages/admin/cart/checkout"),
 );
 
+const AdminOrderDetailPage = React.lazy(
+  () => import("@/pages/admin/orders/detail"),
+);
+
 export const AdminRoutes = (
   <>
     <Route path={ROUTER_URL.ADMIN}>
@@ -59,6 +63,14 @@ export const AdminRoutes = (
             }
           />
         ))}
+        <Route
+          path={ROUTER_URL.ADMIN_ROUTER.ORDERS_DETAIL}
+          element={
+            <PermissionGuard requiredPermissions={[Permission.VIEW_ORDERS]}>
+              <AdminOrderDetailPage />
+            </PermissionGuard>
+          }
+        />
         <Route
           path={ROUTER_URL.ADMIN_ROUTER.CART_CHECKOUT}
           element={

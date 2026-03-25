@@ -1,4 +1,4 @@
-import React from "react";
+﻿import React from "react";
 import { useForm } from "react-hook-form";
 import { MapPin, Store, TicketPercent } from "lucide-react";
 import type {
@@ -78,6 +78,10 @@ const CartStoreSection: React.FC<CartStoreSectionProps> = ({
   const menuQuery = useGetMenuByFranchise(cart.franchiseId);
   const hasCartDiscount =
     Number(cart.finalAmount || 0) < Number(cart.subtotalAmount || 0);
+  const totalDiscount = Math.max(
+    0,
+    Number(cart.subtotalAmount || 0) - Number(cart.finalAmount || 0),
+  );
   const messageForm = useForm<CartStoreMessageForm>({
     defaultValues: {
       message: initialMessage ?? "",
@@ -340,6 +344,7 @@ const CartStoreSection: React.FC<CartStoreSectionProps> = ({
                 onUpdateQuantity(item.cartItemId, quantity)
               }
               onRemove={() => onRemove(item.cartItemId)}
+              onSaveNote={(note) => onSaveItemNote(item.cartItemId, note)}
             />
           );
         })}
@@ -440,6 +445,15 @@ const CartStoreSection: React.FC<CartStoreSectionProps> = ({
                 </strong>
               </div>
 
+              {totalDiscount > 0 && (
+                <div className="flex items-center justify-between gap-4">
+                  <span>Discount</span>
+                  <strong className="text-[var(--cart-accent)]">
+                    - {formatCurrency(totalDiscount)}
+                  </strong>
+                </div>
+              )}
+
               <div className="flex items-center justify-between gap-4">
                 <span>Total payable</span>
                 <div className="text-right">
@@ -462,6 +476,7 @@ const CartStoreSection: React.FC<CartStoreSectionProps> = ({
 };
 
 export default CartStoreSection;
+
 
 
 

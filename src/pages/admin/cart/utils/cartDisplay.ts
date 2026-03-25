@@ -1,3 +1,5 @@
+import type { CartResponse } from "@/types/cart";
+
 export const formatCartMoney = (value: number) =>
   `${value.toLocaleString("vi-VN")} VND`;
 
@@ -10,7 +12,72 @@ export const formatVoucherValue = (type?: string, value?: number) => {
     return `${value}%`;
   }
 
-  return formatCartMoney(value);
+  return formatCartMoney(Number(value));
+};
+
+const formatDiscountValue = (
+  type?: string,
+  value?: number,
+  fallbackAmount?: number,
+) => {
+  if (value !== undefined && value !== null && value > 0) {
+    if (type?.toUpperCase() === "PERCENT") {
+      return `${value}%`;
+    }
+
+    return formatCartMoney(Number(value));
+  }
+
+  if ((fallbackAmount ?? 0) > 0) {
+    return formatCartMoney(Number(fallbackAmount));
+  }
+
+  return null;
+};
+
+type CartDiscountSummaryInput = Pick<
+  CartResponse,
+  | "promotionDiscount"
+  | "promotionType"
+  | "promotionValue"
+  | "voucherDiscount"
+  | "voucherType"
+  | "voucherValue"
+  | "loyaltyDiscount"
+>;
+
+export const getCartDiscountLabels = (cart: CartDiscountSummaryInput) => {
+  const labels: string[] = [];
+
+  if (cart.promotionDiscount > 0) {
+    const promotionValue = formatDiscountValue(
+      cart.promotionType,
+      cart.promotionValue,
+      cart.promotionDiscount,
+    );
+
+    if (promotionValue) {
+      labels.push(`Sale -${promotionValue}`);
+    }
+  }
+
+  if (cart.voucherDiscount > 0) {
+    const voucherValue = formatDiscountValue(
+      cart.voucherType,
+      cart.voucherValue,
+      cart.voucherDiscount,
+    );
+
+    if (voucherValue) {
+      labels.push(`Voucher -${voucherValue}`);
+    }
+  }
+
+  if (cart.loyaltyDiscount > 0) {
+    labels.push(`Loyalty -${formatCartMoney(cart.loyaltyDiscount)}`);
+  }
+
+  return labels;
 };
 
 export const formatCartDateTime = (value?: string) =>

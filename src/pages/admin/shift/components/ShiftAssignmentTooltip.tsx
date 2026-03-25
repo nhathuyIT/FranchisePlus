@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Clock, User } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -33,36 +33,87 @@ export function ShiftAssignmentTooltip({
   onSelect,
 }: ShiftAssignmentTooltipProps) {
   const [open, setOpen] = useState(false);
-  const isDisabled = !event.shiftName;
+  const openTimeoutRef = useRef<number | null>(null);
+  const closeTimeoutRef = useRef<number | null>(null);
   const displayLabel = getDisplayShiftName(
     label ?? event.shiftName ?? event.taskName,
   );
   const displayShiftName = getDisplayShiftName(event.shiftName);
+
+  const clearTimeoutRef = (timeoutRef: { current: number | null }) => {
+    if (timeoutRef.current !== null) {
+      window.clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
+  };
+
+  const openPreview = () => {
+    clearTimeoutRef(closeTimeoutRef);
+
+    if (open || openTimeoutRef.current !== null) {
+      return;
+    }
+
+    openTimeoutRef.current = window.setTimeout(() => {
+      setOpen(true);
+      openTimeoutRef.current = null;
+    }, 110);
+  };
+
+  const closePreview = () => {
+    clearTimeoutRef(openTimeoutRef);
+
+    if (!open && closeTimeoutRef.current !== null) {
+      return;
+    }
+
+    closeTimeoutRef.current = window.setTimeout(() => {
+      setOpen(false);
+      closeTimeoutRef.current = null;
+    }, 140);
+  };
+
+  const closePreviewImmediately = () => {
+    clearTimeoutRef(openTimeoutRef);
+    clearTimeoutRef(closeTimeoutRef);
+    setOpen(false);
+  };
+
+  useEffect(() => {
+    return () => {
+      clearTimeoutRef(openTimeoutRef);
+      clearTimeoutRef(closeTimeoutRef);
+    };
+  }, []);
+
+  if (!displayLabel) {
+    return null;
+  }
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <button
           type="button"
-          onMouseEnter={() => setOpen(true)}
-          onMouseLeave={() => setOpen(false)}
-          onFocus={() => setOpen(true)}
-          onBlur={() => setOpen(false)}
+          onPointerEnter={openPreview}
+          onPointerLeave={closePreview}
+          onFocus={() => {
+            clearTimeoutRef(closeTimeoutRef);
+            clearTimeoutRef(openTimeoutRef);
+            setOpen(true);
+          }}
+          onBlur={closePreviewImmediately}
           onClick={() => {
-            if (isDisabled) return;
-            setOpen(false);
+            closePreviewImmediately();
             onSelect();
           }}
           className={cn(
             "w-full rounded-xl border px-3 py-2 text-left text-xs transition hover:-translate-y-0.5 hover:shadow-sm",
             getShiftStatusClasses(event.status),
             isActive && "ring-2 ring-[#6D4C41]/20",
-            isDisabled && "cursor-not-allowed",
           )}
         >
-          {displayLabel ? (
-            <span className="block truncate font-semibold">{displayLabel}</span>
-          ) : null}
+          <span className="block truncate font-semibold">{displayLabel}</span>
           <div className="mt-1 flex items-center gap-1 opacity-75">
             <Clock className="h-3 w-3 shrink-0" />
             <span className="truncate">
@@ -81,7 +132,11 @@ export function ShiftAssignmentTooltip({
         side="top"
         align="start"
         sideOffset={10}
-        className="pointer-events-none w-72 rounded-2xl border border-[#E8DFD6] bg-white/95 p-4 shadow-[0_20px_50px_rgba(93,64,55,0.18)]"
+        onOpenAutoFocus={(previewEvent) => previewEvent.preventDefault()}
+        onCloseAutoFocus={(previewEvent) => previewEvent.preventDefault()}
+        onPointerEnter={openPreview}
+        onPointerLeave={closePreview}
+        className="w-72 rounded-2xl border border-[#E8DFD6] bg-white/95 p-4 shadow-[0_20px_50px_rgba(93,64,55,0.18)]"
       >
         <div className="space-y-4">
           <div className="flex items-start justify-between gap-3">
