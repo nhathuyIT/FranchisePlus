@@ -23,6 +23,7 @@ interface DeleteDialogProps<TEntity> {
   onConfirm: () => void | Promise<void>;
   /** Whether delete is in progress */
   isDeleting?: boolean;
+  hideButtonLoading?: boolean;
   useLoadingOverlay?: boolean;
   confirmLabel?: string;
   pendingLabel?: string;
@@ -43,6 +44,7 @@ export function DeleteDialog<TEntity>({
   entityName,
   onConfirm,
   isDeleting = false,
+  hideButtonLoading = false,
   useLoadingOverlay = false,
   confirmLabel = "Delete",
   pendingLabel = "Deleting...",
@@ -112,13 +114,13 @@ export function DeleteDialog<TEntity>({
             onClick={onConfirm}
             disabled={isDeleting}
           >
-            {isDeleting && !useLoadingOverlay ? (
+            {isDeleting && !useLoadingOverlay && !hideButtonLoading ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 {pendingLabel}
               </>
             ) : (
-              isDeleting ? pendingLabel : confirmLabel
+              confirmLabel
             )}
           </Button>
         </DialogFooter>

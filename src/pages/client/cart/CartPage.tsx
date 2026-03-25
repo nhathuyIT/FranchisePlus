@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useMemo, useState } from "react";
+﻿import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { ChevronLeft } from "lucide-react";
 import { useCart } from "./useCart";
@@ -35,11 +35,14 @@ const CartPage: React.FC = () => {
   const removeVoucherMutation = useRemoveVoucherInCartMutation();
   const updateCartMutation = useUpdateCartMutation();
   const setLoading = useLoadingStore((state) => state.setLoading);
+  const isNavigatingToCheckoutRef = useRef(false);
 
   const [voucherDialogCartId, setVoucherDialogCartId] = useState<string | null>(
     null,
   );
-  const [voucherInputs, setVoucherInputs] = useState<Record<string, string>>({});
+  const [voucherInputs, setVoucherInputs] = useState<Record<string, string>>(
+    {},
+  );
   const [cancellingCartIds, setCancellingCartIds] = useState<string[]>([]);
   const [voucherPendingCartIds, setVoucherPendingCartIds] = useState<string[]>(
     [],
@@ -116,7 +119,8 @@ const CartPage: React.FC = () => {
     });
   };
 
-  const isCancellingCart = (cartId: string) => cancellingCartIds.includes(cartId);
+  const isCancellingCart = (cartId: string) =>
+    cancellingCartIds.includes(cartId);
   const isVoucherPending = (cartId: string) =>
     voucherPendingCartIds.includes(cartId);
 
@@ -146,9 +150,13 @@ const CartPage: React.FC = () => {
       return;
     }
 
-    navigate("/client/payment", {
+    isNavigatingToCheckoutRef.current = true;
+    setLoading(true);
+
+    navigate(`${ROUTER_URL.CLIENT}/${ROUTER_URL.CLIENT_ROUTER.CHECKOUT}`, {
       state: {
         selectedCartItemIds: checkoutItemIds,
+        showCheckoutLoading: true,
       },
     });
   };
@@ -229,10 +237,14 @@ const CartPage: React.FC = () => {
   };
 
   useEffect(() => {
-    setLoading(isLoading);
+    if (!isNavigatingToCheckoutRef.current) {
+      setLoading(isLoading);
+    }
 
     return () => {
-      setLoading(false);
+      if (!isNavigatingToCheckoutRef.current) {
+        setLoading(false);
+      }
     };
   }, [isLoading, setLoading]);
 

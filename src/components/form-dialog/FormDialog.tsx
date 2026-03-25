@@ -7,6 +7,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
+import NormalLoadingLayout from "@/layouts/NormalLoadingLayout";
 import { cn } from "@/lib/utils";
 import { FormContent } from "./FormContent";
 import type { FormDialogProps } from "./types";
@@ -72,6 +73,8 @@ export function FormDialog<TFormData extends FieldValues>({
   submitText,
   cancelText = "Cancel",
   hideCancel = false,
+  hideButtonLoading = false,
+  useLoadingOverlay = false,
   renderFooter,
   columns = 1,
 }: FormDialogProps<TFormData>) {
@@ -122,6 +125,10 @@ export function FormDialog<TFormData extends FieldValues>({
       <DialogContent
         className={cn(dialogSizeClasses[size], "max-h-[90vh] overflow-y-auto")}
       >
+        {useLoadingOverlay ? (
+          <NormalLoadingLayout forceShow={isSubmitting} />
+        ) : null}
+
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
           {description && <DialogDescription>{description}</DialogDescription>}
@@ -141,6 +148,8 @@ export function FormDialog<TFormData extends FieldValues>({
           submitText={submitText}
           cancelText={cancelText}
           hideCancel={hideCancel}
+          hideButtonLoading={hideButtonLoading}
+          useLoadingOverlay={useLoadingOverlay}
           onCancel={handleCancel}
           renderFooter={renderFooter}
           onSubmittingChange={setIsSubmitting}

@@ -20,6 +20,14 @@ export interface OrderItemData {
 export interface Order {
   id: number;
   rawId?: string;
+  apiStatus?:
+    | "DRAFT"
+    | "CONFIRMED"
+    | "PREPARING"
+    | "READY_FOR_PICKUP"
+    | "OUT_FOR_DELIVERY"
+    | "COMPLETED"
+    | "CANCELED";
   code: string;
   franchiseId: number;
   franchiseName: string;

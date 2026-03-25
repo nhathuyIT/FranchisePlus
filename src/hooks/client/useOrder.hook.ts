@@ -59,6 +59,28 @@ const mapStatus = (status?: string): OrderStatus => {
 	return "PENDING";
 };
 
+const normalizeApiOrderStatus = (status?: string): ApiOrderStatus => {
+	const value = (status || "").toUpperCase();
+
+	if (value === "CANCELLED") {
+		return "CANCELED";
+	}
+
+	if (
+		value === "DRAFT" ||
+		value === "CONFIRMED" ||
+		value === "PREPARING" ||
+		value === "READY_FOR_PICKUP" ||
+		value === "OUT_FOR_DELIVERY" ||
+		value === "COMPLETED" ||
+		value === "CANCELED"
+	) {
+		return value;
+	}
+
+	return "DRAFT";
+};
+
 const mapOrderItem = (item: ApiOrderItem, index: number): OrderItemData => {
 	const quantity = toNumber(item.quantity) || 1;
 	const itemPrice = toNumber(item.priceSnapshot ?? item.price);
@@ -83,6 +105,7 @@ const mapOrder = (order: ApiOrder, index: number): Order => {
 	return {
 		id: toNumber(order.id) || index + 1,
 		rawId: String((order as any)._id || order.id || ""),
+		apiStatus: normalizeApiOrderStatus(order.status),
 		code: order.code || "N/A",
 		franchiseId: toNumber(order.franchiseId),
 		franchiseName: order.franchiseName || order.franchise?.name || "Unknown franchise",
