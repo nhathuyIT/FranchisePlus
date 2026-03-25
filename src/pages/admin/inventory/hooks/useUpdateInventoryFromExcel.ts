@@ -15,6 +15,7 @@ interface InventoryImportRowError {
 
 export interface InventoryImportIssue {
   rowNumber: number;
+  productName: string;
   messages: string[];
 }
 
@@ -324,6 +325,7 @@ const buildImportIssues = (
     .filter((row) => !row.isValid)
     .map((row) => ({
       rowNumber: row.rowNumber,
+      productName: row.productName || row.matchedItem?.productName || "Unknown Product",
       messages: Array.from(new Set(row.errors.map((error) => error.message))),
     }));
 

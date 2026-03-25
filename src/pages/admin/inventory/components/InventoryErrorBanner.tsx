@@ -23,7 +23,10 @@ const FIELD_LABEL: Record<RowValidationError["field"], string> = {
  *
  * Format: Row {N} [{ProductName}] — {Field}: {message}
  */
-export const InventoryErrorBanner = ({ errors, importErrors = [] }: InventoryErrorBannerProps) => {
+export const InventoryErrorBanner = ({
+  errors,
+  importErrors = [],
+}: InventoryErrorBannerProps) => {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isDismissed, setIsDismissed] = useState(false);
 
@@ -95,7 +98,7 @@ export const InventoryErrorBanner = ({ errors, importErrors = [] }: InventoryErr
               className="flex items-start gap-3 px-4 py-2 text-sm"
             >
               <span className="mt-0.5 shrink-0 rounded-full bg-red-100 px-2 py-0.5 text-xs font-bold text-red-600 tabular-nums">
-                #{err.rowNumber}
+                Row#{err.rowNumber}
               </span>
               <span className="text-red-700">
                 <span className="font-medium text-red-500">Import Error</span>

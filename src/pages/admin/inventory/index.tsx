@@ -51,7 +51,8 @@ const formatImportIssueDescription = (issues: InventoryImportIssue[]) => {
   const previewText = issues
     .slice(0, 3)
     .map(
-      (issue) => `Row ${issue.rowNumber}: ${issue.messages.join(", ")}`,
+      (issue) =>
+        `${issue.productName || "Unknown Product"} (Row ${issue.rowNumber}): ${issue.messages.join(", ")}`,
     )
     .join(" | ");
 
