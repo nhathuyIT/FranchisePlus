@@ -160,6 +160,7 @@ export const InventoryTable = ({
     fieldIndexMap,
     collectErrors,
     isRowDirty,
+    isFieldChanged,
     hasDirtyRows,
     saveAllChanges,
   } = useInventoryInlineEdit({
@@ -250,6 +251,7 @@ export const InventoryTable = ({
           errors: methods.formState.errors,
           fieldIndexMap,
           isRowDirty,
+          isFieldChanged,
           isEditable: canEdit && !!onSaveBulk,
         }}
       >

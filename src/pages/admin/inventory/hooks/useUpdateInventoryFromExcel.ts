@@ -98,6 +98,24 @@ const normalizeValue = (value: unknown) => String(value ?? "").trim();
 const buildInventoryKey = (productName: string, franchiseName: string) =>
   `${productName.trim().toLowerCase()}::${franchiseName.trim().toLowerCase()}`;
 
+const groupInventoryItemsByKey = (items: InventorySearchItem[]) => {
+  const groupedItems = new Map<string, InventorySearchItem[]>();
+
+  items.forEach((item) => {
+    const key = buildInventoryKey(item.productName, item.franchiseName);
+    const existingItems = groupedItems.get(key);
+
+    if (existingItems) {
+      existingItems.push(item);
+      return;
+    }
+
+    groupedItems.set(key, [item]);
+  });
+
+  return groupedItems;
+};
+
 const parseInventoryNumber = (value: string): number | null => {
   if (!value) return null;
   const parsed = Number(value);
@@ -176,35 +194,26 @@ const validateImportedRows = (
   parsedRows: ParsedExcelRow[],
   currentItems: InventorySearchItem[],
 ): InventoryImportRowResult[] => {
-  const existingCounts = new Map<string, number>();
-  const existingItemsByKey = new Map<string, InventorySearchItem>();
-  const fileCounts = new Map<string, number>();
-
-  currentItems.forEach((item) => {
-    const key = buildInventoryKey(item.productName, item.franchiseName);
-    existingCounts.set(key, (existingCounts.get(key) ?? 0) + 1);
-
-    if (!existingItemsByKey.has(key)) {
-      existingItemsByKey.set(key, item);
-    }
-  });
-
-  parsedRows.forEach((row) => {
-    const key = buildInventoryKey(row.productName, row.franchiseName);
-
-    if (!key || !row.productName || !row.franchiseName) {
-      return;
-    }
-
-    fileCounts.set(key, (fileCounts.get(key) ?? 0) + 1);
-  });
+  const existingItemsByKey = groupInventoryItemsByKey(currentItems);
+  const fileOccurrenceByKey = new Map<string, number>();
 
   return parsedRows.map<InventoryImportRowResult>((row) => {
     const errors: InventoryImportRowError[] = [];
     const importKey = buildInventoryKey(row.productName, row.franchiseName);
-    const matchedItem = existingItemsByKey.get(importKey) ?? null;
+    const fileOccurrenceIndex =
+      row.productName && row.franchiseName
+        ? (fileOccurrenceByKey.get(importKey) ?? 0)
+        : -1;
+    const matchedItem =
+      fileOccurrenceIndex >= 0
+        ? (existingItemsByKey.get(importKey)?.[fileOccurrenceIndex] ?? null)
+        : null;
     const quantity = parseInventoryNumber(row.quantityRaw);
     const alertThreshold = parseInventoryNumber(row.alertThresholdRaw);
+
+    if (fileOccurrenceIndex >= 0) {
+      fileOccurrenceByKey.set(importKey, fileOccurrenceIndex + 1);
+    }
 
     if (!row.productName || !row.franchiseName) {
       errors.push({
@@ -245,20 +254,6 @@ const validateImportedRows = (
       errors.push({
         field: "productName",
         message: "New data detected.",
-      });
-    }
-
-    if (importKey && (fileCounts.get(importKey) ?? 0) > 1) {
-      errors.push({
-        field: "productName",
-        message: "Duplicate data detected.",
-      });
-    }
-
-    if (importKey && (existingCounts.get(importKey) ?? 0) > 1) {
-      errors.push({
-        field: "productName",
-        message: "Duplicate data detected.",
       });
     }
 
