@@ -102,7 +102,11 @@ export const InventoryErrorBanner = ({
               </span>
               <span className="text-red-700">
                 <span className="font-medium text-red-500">Import Error</span>
-                {": "}
+                {" ["}
+                <span className="font-medium">
+                  {err.productName || "Unknown Product"}
+                </span>
+                {"]: "}
                 {err.messages.join(" | ")}
               </span>
             </li>
