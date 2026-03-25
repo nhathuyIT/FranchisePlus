@@ -133,7 +133,9 @@ const CartPage: React.FC = () => {
     void runWithCartActionLoading(async () => {
       try {
         await cancelCartMutation.mutateAsync(cartId);
-        setVoucherDialogCartId((current) => (current === cartId ? null : current));
+        setVoucherDialogCartId((current) =>
+          current === cartId ? null : current,
+        );
       } finally {
         setCancellingCartState(cartId, false);
       }
@@ -211,7 +213,9 @@ const CartPage: React.FC = () => {
           ...current,
           [cartId]: "",
         }));
-        setVoucherDialogCartId((current) => (current === cartId ? null : current));
+        setVoucherDialogCartId((current) =>
+          current === cartId ? null : current,
+        );
       } finally {
         setVoucherPendingState(cartId, false);
       }
