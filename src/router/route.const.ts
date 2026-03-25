@@ -28,6 +28,7 @@ export const ROUTER_URL = {
   ACCOUNT_ROUTER: {
     MY_PROFILE: "my-profile",
     MY_ORDER: "my-order",
+    MY_ORDER_DETAIL: "my-order/:orderId",
   },
 
   ADMIN: "/admin",

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Search, CreditCard, CheckCircle2 } from "lucide-react";
+import { Search, CreditCard, CheckCircle2, ChevronRight } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import type { Order } from "@/const/order.const";
 import type { ApiOrderStatus } from "@/api/order/order.api";
@@ -76,6 +76,10 @@ const ORDER_STATUS_BADGE_MAP: Record<
 
 const getClientPath = (path: string) => {
   return `${ROUTER_URL.CLIENT}/${path}`;
+};
+
+const getMyOrderDetailPath = (orderId: string) => {
+  return `${ROUTER_URL.ACCOUNT}/${ROUTER_URL.ACCOUNT_ROUTER.MY_ORDER_DETAIL.replace(":orderId", orderId)}`;
 };
 
 type MyOrdersLocationState = {
@@ -295,17 +299,22 @@ const OrderRow = ({
   const isCancelled = orderStatus === "CANCELED";
   const isCompleted = orderStatus === "COMPLETED";
   const badgeConfig = ORDER_STATUS_BADGE_MAP[orderStatus];
+  const orderId = order.rawId || String(order.id);
 
   const itemCount = useMemo(() => {
     return order.items.reduce((sum, item) => sum + Number(item.quantity || 0), 0);
   }, [order.items]);
+
+  const handleOpenDetail = () => {
+    navigate(getMyOrderDetailPath(orderId));
+  };
 
   const handlePayNow = () => {
     setLoading(true);
 
     navigate(getClientPath(ROUTER_URL.CLIENT_ROUTER.PAYMENT_QR), {
       state: {
-        orderId: order.rawId || String(order.id),
+        orderId,
         paymentId: payment?.id,
         amount: Number(order.totalAmount || 0),
         itemCount,
@@ -315,7 +324,18 @@ const OrderRow = ({
   };
 
   return (
-    <div className="bg-white border border-[#E8E0D8] rounded-xl overflow-hidden hover:shadow-sm transition-shadow">
+    <div
+      role="button"
+      tabIndex={0}
+      onClick={handleOpenDetail}
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          handleOpenDetail();
+        }
+      }}
+      className="group bg-white border border-[#E8E0D8] rounded-xl overflow-hidden cursor-pointer transition-all hover:border-[#D9C1AE] hover:shadow-md focus:outline-none focus:ring-2 focus:ring-[#C97B3D]/30"
+    >
       {/* Header row: Shop name + Status */}
       <div className="flex flex-col md:flex-row md:items-center justify-between px-5 py-3 border-b border-[#F5F0EB] gap-2">
         <div className="flex items-center gap-2">
@@ -327,6 +347,11 @@ const OrderRow = ({
         </div>
 
         <div className="flex items-center gap-3">
+          <span className="hidden items-center gap-1 text-xs font-medium text-[#A1887F] transition-colors group-hover:text-[#C97B3D] md:inline-flex">
+            View detail
+            <ChevronRight className="w-3.5 h-3.5" />
+          </span>
+
           <div
             className={`flex items-center gap-1 px-2.5 py-1 rounded-full border ${badgeConfig.wrapperClassName}`}
           >
@@ -392,7 +417,9 @@ const OrderRow = ({
 
       {/* Footer: Total + Date + Actions */}
       <div className="flex items-center justify-between px-5 py-3 border-t border-[#F5F0EB] bg-[#FDFCFB]">
-        <span className="text-xs text-[#A1887F]"></span>
+        <span className="text-xs text-[#A1887F]">
+          Click anywhere on this card to view the full order detail.
+        </span>
         <div className="flex items-center gap-4">
           <span className="text-sm text-[#5D4037]">
             Total Amount:{" "}
@@ -401,7 +428,13 @@ const OrderRow = ({
             </span>
           </span>
           {isCompleted && (
-            <button className="px-4 py-1.5 text-xs font-medium rounded-lg bg-[#5D4037] text-white hover:bg-[#3E2723] transition-colors cursor-pointer">
+            <button
+              type="button"
+              onClick={(event) => {
+                event.stopPropagation();
+              }}
+              className="px-4 py-1.5 text-xs font-medium rounded-lg bg-[#5D4037] text-white hover:bg-[#3E2723] transition-colors cursor-pointer"
+            >
               Mua Lại
             </button>
           )}
@@ -409,7 +442,11 @@ const OrderRow = ({
           {/* CTA Dựa vào trạng thái thanh toán thật */}
           {!isPaid && !isRefunded && !isCompleted && !isCancelled && (
             <button
-              onClick={handlePayNow}
+              type="button"
+              onClick={(event) => {
+                event.stopPropagation();
+                handlePayNow();
+              }}
               className="flex items-center gap-1.5 px-4 py-1.5 text-xs font-semibold rounded-lg bg-[#C97B3D] text-white hover:bg-[#B5692F] shadow-sm transition-all cursor-pointer"
             >
               <CreditCard className="w-3.5 h-3.5" /> Paying
