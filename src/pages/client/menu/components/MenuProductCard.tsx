@@ -83,9 +83,7 @@ export const MenuProductCard = ({
 
         {minPrice !== null && (
           <div className="mt-auto pt-4">
-            <span
-              className="flex items-center justify-center rounded-xl border border-amber-200/70 bg-amber-50/80 px-4 py-3 font-serif text-2xl font-bold text-amber-700 transition-colors group-hover:text-amber-600"
-            >
+            <span className="flex items-center justify-center rounded-xl border border-gray-50-200/70 bg--50/80 px-4 py-3 font-serif text-2xl font-bold text-amber-700 transition-colors group-hover:text-amber-600">
               {formatPrice(minPrice)}
             </span>
           </div>
