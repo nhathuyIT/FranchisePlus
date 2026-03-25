@@ -245,6 +245,7 @@ export const FranchiseInventoryTab = ({
         entityName="Product"
         onConfirm={confirmDelete}
         isDeleting={deleteMutation.isPending}
+        useLoadingOverlay
         getDisplayName={(pf) => pf.productName || "this product"}
         deleteMessage={(pf) => 
           `Remove the "${pf.productName || 'this product'}" from this franchise's inventory? This action cannot be undone.`

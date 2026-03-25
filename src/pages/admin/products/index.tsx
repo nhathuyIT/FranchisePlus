@@ -34,6 +34,7 @@ import {
 } from "@/hooks/inventory/useInventory.hooks";
 import type { InventorySearchItem } from "@/api/inventory/inventory.type";
 import { uploadFileToCloudinary } from "@/config/cloudinary";
+import NormalLoadingLayout from "@/layouts/NormalLoadingLayout";
 
 // ── Form schema ─────────────────────────────────────────────────────────────
 
@@ -454,6 +455,18 @@ const ProductsPage = () => {
   const deleteMutation = useDeleteProductMutation();
   const productStatusMutation = useUpdateProductStatusMutation();
 
+  const isActionLoading =
+    createMutation.isPending ||
+    updateMutation.isPending ||
+    deleteMutation.isPending ||
+    productStatusMutation.isPending ||
+    createProductFranchiseMutation.isPending ||
+    updateProductFranchiseMutation.isPending ||
+    deleteProductFranchiseMutation.isPending ||
+    changeStatusProductFranchiseMutation.isPending ||
+    adjustInventoryMutation.isPending ||
+    createInventoryMutation.isPending;
+
   // ── Search handler ────────────────────────────────────────────────────────
 
   const handleSearch = useCallback((keyword: string) => {
@@ -690,7 +703,8 @@ const ProductsPage = () => {
         data: { is_active: isActive },
       });
     } else {
-      productStatusMutation.mutate({ id: product.id, isActive });
+      // Pass the full product so the mutation can build the complete PUT payload
+      productStatusMutation.mutate({ id: product.id, isActive, product });
     }
   };
 
@@ -728,7 +742,8 @@ const ProductsPage = () => {
 
   return (
     <div className="h-full flex flex-col">
-      <div className="flex-1 flex flex-col min-h-0 max-w-7xl mx-auto w-full">
+      <NormalLoadingLayout forceShow={isActionLoading} />
+      <div className="flex-1 flex flex-col min-h-0 max-w-screen-2xl mx-auto w-full">
         <PageHeader
           title={isManagerView ? "My Products" : "Product Management"}
           description={

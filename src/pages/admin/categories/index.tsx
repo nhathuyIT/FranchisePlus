@@ -14,6 +14,7 @@ import {
   useDeleteCategoryMutation,
   useUpdateCategoryStatusMutation,
 } from "@/hooks/category/useCategoryQuery";
+import NormalLoadingLayout from "@/layouts/NormalLoadingLayout";
 
 const categorySchema = z.object({
   code: z.string().min(2, "Code must be at least 2 characters").max(50, "Code must be less than 50 characters"),
@@ -86,6 +87,12 @@ const CategoriesPage = () => {
   const deleteMutation = useDeleteCategoryMutation();
   const categoryStatusMutation = useUpdateCategoryStatusMutation();
 
+  const isActionLoading =
+    createMutation.isPending ||
+    updateMutation.isPending ||
+    deleteMutation.isPending ||
+    categoryStatusMutation.isPending;
+
   const categories = searchResponse ?? [];
 
   // ── Form submission handler ──────────────────────────────────────────────────────────────────
@@ -138,12 +145,13 @@ const CategoriesPage = () => {
   };
 
   const handleStatusToggle = (category: Category, isActive: boolean) => {
-    categoryStatusMutation.mutate({ id: category.id, isActive });
+    categoryStatusMutation.mutate({ id: category.id, isActive, category });
   };
 
   return (
     <div className="h-full flex flex-col">
-      <div className="flex-1 flex flex-col min-h-0 max-w-7xl mx-auto w-full">
+      <NormalLoadingLayout forceShow={isActionLoading} />
+      <div className="flex-1 flex flex-col min-h-0 max-w-screen-2xl mx-auto w-full">
         <PageHeader
           title="Category Management"
           description="Manage all product categories"
