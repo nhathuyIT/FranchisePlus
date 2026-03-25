@@ -1,8 +1,10 @@
 import { useMemo } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
+import { useQueryClient } from "@tanstack/react-query";
 import secureLockIcon from "@/assets/icons/secure-lock.svg";
 import { ROUTER_URL } from "@/router/route.const";
+import { paymentKeys } from "@/hooks/payment";
 import PaymentLayout from "./components/PaymentLayout";
 
 type PaymentSuccessLocationState = {
@@ -25,6 +27,16 @@ const PaymentSuccessPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const state = (location.state || {}) as PaymentSuccessLocationState;
+
+  const queryClient = useQueryClient();
+
+  const handleGoToMyOrders = async () => {
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: ["client-my-orders"] }),
+      queryClient.invalidateQueries({ queryKey: paymentKeys.all }),
+    ]);
+    navigate(getMyOrderPath());
+  };
 
   const hasValidContext = useMemo(() => {
     return (
@@ -84,7 +96,7 @@ const PaymentSuccessPage = () => {
         <section className="space-y-3 rounded-xl border border-gray-200 bg-white p-5">
           <button
             type="button"
-            onClick={() => navigate(getMyOrderPath())}
+            onClick={handleGoToMyOrders}
             className="w-full rounded-lg bg-[#B8860B] px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-amber-700"
           >
             Go to My Orders
