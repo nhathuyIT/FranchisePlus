@@ -252,7 +252,7 @@ const DashboardPage = () => {
   };
 
   return (
-    <div className="flex h-full min-h-0 flex-col overflow-auto pr-1">
+    <div className="flex h-full min-h-0 flex-col overflow-auto pr-1 scroll-y-auto scrollbar-hide">
       <div className="mb-6 flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.3em] text-[#9A7B62]">
