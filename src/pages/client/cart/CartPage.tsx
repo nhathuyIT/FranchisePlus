@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+﻿import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { ChevronLeft } from "lucide-react";
 import { useCart } from "./useCart";
@@ -10,6 +10,7 @@ import {
   useUpdateCartMutation,
 } from "@/hooks/cart/useCart.hook";
 import { ROUTER_URL } from "@/router/route.const";
+import NormalLoadingLayout from "@/layouts/NormalLoadingLayout";
 import { useLoadingStore } from "@/stores/loading.store";
 import CartEmpty from "./components/CartEmpty";
 import CartPageHeader from "./components/CartPageHeader";
@@ -50,6 +51,7 @@ const CartPage: React.FC = () => {
   const [savingMessageCartId, setSavingMessageCartId] = useState<string | null>(
     null,
   );
+  const [cartActionLoadingCount, setCartActionLoadingCount] = useState(0);
 
   const {
     selectedItemIds,
@@ -72,11 +74,28 @@ const CartPage: React.FC = () => {
     [carts, voucherDialogCartId],
   );
 
+  const isCartActionLoading = cartActionLoadingCount > 0;
+
+  const runWithCartActionLoading = async <T,>(
+    action: () => Promise<T>,
+  ): Promise<T> => {
+    setCartActionLoadingCount((current) => current + 1);
+
+    try {
+      return await action();
+    } finally {
+      setCartActionLoadingCount((current) => Math.max(0, current - 1));
+    }
+  };
+
   const handleRemove = (cartItemId: string) => {
-    void removeItem(cartItemId).then((wasRemoved) => {
+    void runWithCartActionLoading(async () => {
+      const wasRemoved = await removeItem(cartItemId);
       if (wasRemoved) {
         removeSelection(cartItemId);
       }
+
+      return wasRemoved;
     });
   };
 
@@ -111,15 +130,15 @@ const CartPage: React.FC = () => {
 
     setCancellingCartState(cartId, true);
 
-    cancelCartMutation.mutate(cartId, {
-      onSuccess: () => {
+    void runWithCartActionLoading(async () => {
+      try {
+        await cancelCartMutation.mutateAsync(cartId);
         setVoucherDialogCartId((current) =>
           current === cartId ? null : current,
         );
-      },
-      onSettled: () => {
+      } finally {
         setCancellingCartState(cartId, false);
-      },
+      }
     });
   };
 
@@ -163,25 +182,23 @@ const CartPage: React.FC = () => {
   const handleApplyVoucher = () => {
     if (!voucherDialogCart || isVoucherPending(voucherDialogCart.id)) return;
 
-    const code = (voucherInputs[voucherDialogCart.id] ?? "").trim();
+    const targetCartId = voucherDialogCart.id;
+    const code = (voucherInputs[targetCartId] ?? "").trim();
     if (!code) return;
 
-    setVoucherPendingState(voucherDialogCart.id, true);
+    setVoucherPendingState(targetCartId, true);
 
-    applyVoucherMutation.mutate(
-      {
-        cartId: voucherDialogCart.id,
-        data: { voucherCode: code },
-      },
-      {
-        onSuccess: () => {
-          setVoucherDialogCartId(null);
-        },
-        onSettled: () => {
-          setVoucherPendingState(voucherDialogCart.id, false);
-        },
-      },
-    );
+    void runWithCartActionLoading(async () => {
+      try {
+        await applyVoucherMutation.mutateAsync({
+          cartId: targetCartId,
+          data: { voucherCode: code },
+        });
+        setVoucherDialogCartId(null);
+      } finally {
+        setVoucherPendingState(targetCartId, false);
+      }
+    });
   };
 
   const handleRemoveVoucher = (cartId: string) => {
@@ -189,8 +206,9 @@ const CartPage: React.FC = () => {
 
     setVoucherPendingState(cartId, true);
 
-    removeVoucherMutation.mutate(cartId, {
-      onSuccess: () => {
+    void runWithCartActionLoading(async () => {
+      try {
+        await removeVoucherMutation.mutateAsync(cartId);
         setVoucherInputs((current) => ({
           ...current,
           [cartId]: "",
@@ -198,35 +216,30 @@ const CartPage: React.FC = () => {
         setVoucherDialogCartId((current) =>
           current === cartId ? null : current,
         );
-      },
-      onSettled: () => {
+      } finally {
         setVoucherPendingState(cartId, false);
-      },
+      }
     });
   };
 
   const handleSaveCartMessage = (cartId: string, message: string) => {
     setSavingMessageCartId(cartId);
 
-    updateCartMutation.mutate(
-      {
-        cartId,
-        data: {
-          message: message.trim(),
-        },
-      },
-      {
-        onSettled: () => {
-          setSavingMessageCartId((current) =>
-            current === cartId ? null : current,
-          );
-        },
-      },
-    );
+    void runWithCartActionLoading(async () => {
+      try {
+        await updateCartMutation.mutateAsync({
+          cartId,
+          data: {
+            message: message.trim(),
+          },
+        });
+      } finally {
+        setSavingMessageCartId((current) =>
+          current === cartId ? null : current,
+        );
+      }
+    });
   };
-
-  const handleSaveItemNote = (cartItemId: string, note: string) =>
-    saveItemNote(cartItemId, note);
 
   useEffect(() => {
     if (!isNavigatingToCheckoutRef.current) {
@@ -267,6 +280,7 @@ const CartPage: React.FC = () => {
         } as React.CSSProperties
       }
     >
+      <NormalLoadingLayout forceShow={isCartActionLoading} />
       <div className="pointer-events-none absolute inset-x-0 top-0 h-[28rem] overflow-hidden">
         <div className="absolute -left-20 top-10 h-72 w-72 rounded-full bg-[#f0d4bb]/55 blur-3xl" />
         <div className="absolute right-[-5rem] top-0 h-80 w-80 rounded-full bg-[#edd8c9]/70 blur-3xl" />
@@ -307,13 +321,19 @@ const CartPage: React.FC = () => {
                 onToggleCart={(checked) => toggleCart(singleCart.id, checked)}
                 onToggleItem={toggleItem}
                 onSaveEditedItem={(item, options) =>
-                  saveEditedItem(item.cartItemId, options)
+                  runWithCartActionLoading(() =>
+                    saveEditedItem(item.cartItemId, options),
+                  )
                 }
                 onUpdateQuantity={(cartItemId, quantity) =>
-                  void updateItemQuantity(cartItemId, quantity)
+                  void runWithCartActionLoading(() =>
+                    updateItemQuantity(cartItemId, quantity),
+                  )
                 }
                 onRemove={handleRemove}
-                onSaveItemNote={handleSaveItemNote}
+                onSaveItemNote={(cartItemId, note) =>
+                  runWithCartActionLoading(() => saveItemNote(cartItemId, note))
+                }
                 isItemPending={isItemPending}
                 onSaveMessage={(message) =>
                   handleSaveCartMessage(singleCart.id, message)

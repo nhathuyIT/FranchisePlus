@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { CalendarDays, Building2, RotateCcw } from "lucide-react";
+import { CalendarDays, Building2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -18,6 +18,10 @@ import {
   getDisplayShiftName,
   getShiftStatusLabel,
 } from "../utils/shiftFormatters";
+import {
+  ShiftCalendarSkeleton,
+  ShiftRefreshSkeleton,
+} from "./ShiftLoadingSkeletons";
 
 function buildViewOnlyValues(
   event: ShiftCalendarEvent,
@@ -131,9 +135,10 @@ export function StaffShiftView() {
                 </Button>
               </div>
             ) : pageData.isLoading ? (
-              <div className="rounded-2xl border border-[#E8DFD6] bg-[#FBF8F5] px-6 py-14 text-center text-[#8D6E63]">
-                Loading your shifts...
-              </div>
+              <ShiftCalendarSkeleton
+                view={calendar.view}
+                dayCount={calendar.days.length}
+              />
             ) : (
               <div>
                 <div className="grid grid-cols-7 gap-1.5">
@@ -240,10 +245,7 @@ export function StaffShiftView() {
                 </div>
 
                 {pageData.isFetching && (
-                  <div className="mt-4 flex items-center gap-2 text-xs text-[#8D6E63]">
-                    <RotateCcw className="h-3.5 w-3.5 animate-spin" />
-                    Refreshing shifts...
-                  </div>
+                  <ShiftRefreshSkeleton className="mt-4" />
                 )}
               </div>
             )}

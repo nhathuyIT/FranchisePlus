@@ -8,7 +8,10 @@ import type {
   ShiftAssignmentListItem,
   ShiftAssignmentStatus,
 } from "@/types/shift-assignment.type";
-import { normalizeDateKey } from "../utils/shiftFormatters";
+import {
+  hasDisplayShiftName,
+  normalizeDateKey,
+} from "../utils/shiftFormatters";
 
 export type ShiftCalendarEvent = {
   id: string;
@@ -231,9 +234,9 @@ export function useShiftPageData({
 
   const franchiseEvents = useMemo(
     () =>
-      (franchiseAssignmentsQuery.data?.data ?? []).map((assignment) =>
-        toEvent(assignment, shiftById, userById),
-      ),
+      (franchiseAssignmentsQuery.data?.data ?? [])
+        .map((assignment) => toEvent(assignment, shiftById, userById))
+        .filter((event) => hasDisplayShiftName(event.taskName)),
     [franchiseAssignmentsQuery.data, shiftById, userById],
   );
 
@@ -242,7 +245,9 @@ export function useShiftPageData({
       (isSearching
         ? (searchQuery.data?.data ?? [])
         : (franchiseAssignmentsQuery.data?.data ?? [])
-      ).map((assignment) => toEvent(assignment, shiftById, userById)),
+      )
+        .map((assignment) => toEvent(assignment, shiftById, userById))
+        .filter((event) => hasDisplayShiftName(event.taskName)),
     [
       isSearching,
       searchQuery.data,
