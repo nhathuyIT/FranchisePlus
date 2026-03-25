@@ -14,6 +14,8 @@ export const paymentKeys = {
   byOrder: (orderId: string) => [...paymentKeys.all, "order", orderId] as const,
   byCustomer: (customerId: string) =>
     [...paymentKeys.all, "customer", customerId] as const,
+  byFranchise: (franchiseId: string, status?: string) =>
+    [...paymentKeys.all, "franchise", franchiseId, status] as const,
 };
 
 export const usePaymentById = (paymentId: string, enabled = true) => {
@@ -48,6 +50,18 @@ export const usePaymentsByCustomerId = (
     queryKey: paymentKeys.byCustomer(customerId),
     queryFn: () => paymentApi.getPaymentsByCustomerId(customerId),
     enabled: !!customerId && enabled,
+  });
+};
+
+export const usePaymentsByFranchiseId = (
+  franchiseId: string,
+  status?: string,
+  enabled = true,
+) => {
+  return useQuery({
+    queryKey: paymentKeys.byFranchise(franchiseId, status),
+    queryFn: () => paymentApi.getPaymentsByFranchiseId(franchiseId, status),
+    enabled: !!franchiseId && enabled,
   });
 };
 

@@ -1,11 +1,8 @@
 import { z } from "zod";
 
 export const PAYMENT_METHOD_VALUES = [
-  "CARD",
-  "CASH",
   "COD",
   "QR",
-  "BANK_TRANSFER",
 ] as const;
 
 export const ConfirmPaymentSchema = z.object({

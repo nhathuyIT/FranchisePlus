@@ -7,6 +7,7 @@ import type { AdminPayment } from "@/types/admin-payment.type";
 import {
   useConfirmPaymentMutation,
   usePaymentByCode,
+  usePaymentsByFranchiseId,
   useRefundPaymentMutation,
 } from "@/hooks/payment";
 import { useDebounce } from "@/hooks/common/useDebounce";
@@ -20,6 +21,15 @@ import {
 import { PaymentTable } from "./components/PaymentTable";
 import { Permission } from "@/config/permission";
 import { useAuthStore } from "@/stores/auth-store";
+import { useFranchiseSelect } from "@/hooks/franchise";
+import NormalLoadingLayout from "@/layouts/NormalLoadingLayout";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const PAYMENT_METHOD_OPTIONS = PAYMENT_METHOD_VALUES.map((method) => ({
   label: method,
@@ -73,8 +83,9 @@ const toDisplayDateTime = (value: string): string => {
 };
 
 const PaymentsPage = () => {
-  const { getCurrentPermissions } = useAuthStore();
+  const { authUser, getCurrentPermissions, isAdmin } = useAuthStore();
   const userPermissions = getCurrentPermissions();
+  const isAdminUser = isAdmin();
 
   const canViewPayments = userPermissions.includes(Permission.VIEW_ORDERS);
   const canManagePayments = userPermissions.includes(Permission.MANAGE_ORDERS);
@@ -82,36 +93,52 @@ const PaymentsPage = () => {
   const [searchInput, setSearchInput] = useState("");
   const debouncedSearchCode = useDebounce(searchInput.trim(), 350, searchInput);
 
+  const [selectedFranchiseId, setSelectedFranchiseId] = useState("");
+  const activeFranchiseId = isAdminUser ? selectedFranchiseId : authUser?.currentFranchiseId || "";
+  const { data: franchiseOptions = [] } = useFranchiseSelect();
+
   const viewDialog = useFormDialog<AdminPayment>();
   const confirmDialog = useFormDialog<AdminPayment>();
   const refundDialog = useFormDialog<AdminPayment>();
 
   const {
     data: paymentByCode,
-    isLoading,
-    isFetching,
-    error,
-    refetch,
+    isLoading: isCodeLoading,
+    isFetching: isCodeFetching,
+    error: codeError,
+    refetch: refetchCode,
   } = usePaymentByCode(
     debouncedSearchCode,
     !!debouncedSearchCode && canViewPayments,
   );
 
-  const tableError = error instanceof Error ? error : null;
+  const {
+    data: paymentsByFranchise = [],
+    isLoading: isFranchiseLoading,
+    isFetching: isFranchiseFetching,
+    error: franchiseError,
+    refetch: refetchFranchise,
+  } = usePaymentsByFranchiseId(
+    activeFranchiseId,
+    undefined,
+    !!activeFranchiseId && !debouncedSearchCode && canViewPayments,
+  );
+
+  const tableError = (codeError || franchiseError) instanceof Error ? (codeError || franchiseError as Error) : null;
 
   const confirmMutation = useConfirmPaymentMutation();
   const refundMutation = useRefundPaymentMutation();
 
   const payments = useMemo<AdminPayment[]>(() => {
-    if (!canViewPayments || !paymentByCode) return [];
-    return [paymentByCode];
-  }, [canViewPayments, paymentByCode]);
+    if (!canViewPayments) return [];
+    if (debouncedSearchCode && paymentByCode) return [paymentByCode];
+    if (!debouncedSearchCode && paymentsByFranchise.length > 0) return paymentsByFranchise;
+    return [];
+  }, [canViewPayments, paymentByCode, paymentsByFranchise, debouncedSearchCode]);
 
-  const isTableLoading =
-    isLoading ||
-    isFetching ||
-    confirmMutation.isPending ||
-    refundMutation.isPending;
+  const isTableLoading = debouncedSearchCode 
+    ? (isCodeLoading || isCodeFetching) 
+    : (isFranchiseLoading || isFranchiseFetching);
 
   const confirmFields = useMemo<FieldConfig<ConfirmPaymentFormData>[]>(
     () => [
@@ -210,8 +237,8 @@ const PaymentsPage = () => {
   );
 
   const handleRetry = () => {
-    if (!debouncedSearchCode) return;
-    void refetch();
+    if (debouncedSearchCode) void refetchCode();
+    else void refetchFranchise();
   };
 
   const handleView = (payment: AdminPayment) => {
@@ -228,31 +255,46 @@ const PaymentsPage = () => {
     refundDialog.openEdit(payment);
   };
 
+  const [isActionLoading, setIsActionLoading] = useState(false);
+
   const handleConfirmSubmit = async (data: ConfirmPaymentFormData) => {
     if (!confirmDialog.data) return;
 
-    await confirmMutation.mutateAsync({
-      paymentId: confirmDialog.data.id,
-      data: {
-        method: data.method,
-        providerTxnId: data.providerTxnId?.trim() || undefined,
-      },
-    });
+    setIsActionLoading(true);
+    try {
+      await new Promise((r) => setTimeout(r, 500));
+      await confirmMutation.mutateAsync({
+        paymentId: confirmDialog.data.id,
+        data: {
+          method: data.method,
+          providerTxnId: data.providerTxnId?.trim() || undefined,
+        },
+      });
+    } finally {
+      setIsActionLoading(false);
+    }
   };
 
   const handleRefundSubmit = async (data: RefundPaymentFormData) => {
     if (!refundDialog.data) return;
 
-    await refundMutation.mutateAsync({
-      paymentId: refundDialog.data.id,
-      data: {
-        refundReason: data.refundReason.trim(),
-      },
-    });
+    setIsActionLoading(true);
+    try {
+      await new Promise((r) => setTimeout(r, 500));
+      await refundMutation.mutateAsync({
+        paymentId: refundDialog.data.id,
+        data: {
+          refundReason: data.refundReason.trim(),
+        },
+      });
+    } finally {
+      setIsActionLoading(false);
+    }
   };
 
   return (
     <div className="h-full flex flex-col">
+      <NormalLoadingLayout forceShow={isActionLoading} />
       <div className="flex-1 flex flex-col min-h-0 max-w-screen-2xl mx-auto w-full">
         <PageHeader
           title="Payment Management"
@@ -260,6 +302,28 @@ const PaymentsPage = () => {
         />
 
         <div className="flex-1 min-h-0 flex flex-col bg-white rounded-2xl shadow-lg border border-[#E8DFD6] p-6">
+          {isAdminUser && (
+            <div className="mb-4 flex shrink-0 flex-wrap items-center gap-3">
+              <Select
+                value={selectedFranchiseId || "all"}
+                onValueChange={(value) =>
+                  setSelectedFranchiseId(value === "all" ? "" : value)
+                }
+              >
+                <SelectTrigger className="w-52 border-[#E8DFD6] focus:border-[#6D4C41]">
+                  <SelectValue placeholder="All Franchises" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Franchises</SelectItem>
+                  {franchiseOptions.map((franchise: any) => (
+                    <SelectItem key={franchise.value} value={franchise.value}>
+                      {franchise.name} ({franchise.code})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
           <PaymentTable
             payments={payments}
             isLoading={isTableLoading}
@@ -290,7 +354,7 @@ const PaymentsPage = () => {
             ? {
                 method: isPaymentMethodValue(confirmDialog.data.method)
                   ? confirmDialog.data.method
-                  : "CARD",
+                  : "COD",
                 providerTxnId: confirmDialog.data.providerTxnId || "",
               }
             : undefined
@@ -333,8 +397,14 @@ const PaymentsPage = () => {
           viewDialog.data
             ? {
                 code: viewDialog.data.code || "-",
-                orderId: viewDialog.data.orderId || "-",
-                customerId: viewDialog.data.customerId || "-",
+                orderId:
+                  typeof viewDialog.data.orderId === "object" && viewDialog.data.orderId !== null
+                    ? viewDialog.data.orderId.code || "-"
+                    : String(viewDialog.data.orderId || "-"),
+                customerId:
+                  typeof viewDialog.data.customerId === "object" && viewDialog.data.customerId !== null
+                    ? viewDialog.data.customerId.name || "-"
+                    : String(viewDialog.data.customerId || "-"),
                 amount: formatCurrency(viewDialog.data.amount),
                 method: viewDialog.data.method || "-",
                 status: viewDialog.data.status || "-",
