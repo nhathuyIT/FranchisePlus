@@ -154,6 +154,10 @@ export function getDisplayShiftName(value?: string | null) {
     : normalizedValue;
 }
 
+export function hasDisplayShiftName(value?: string | null) {
+  return Boolean(getDisplayShiftName(value));
+}
+
 export function getShiftStatusLabel(status: ShiftAssignmentStatus) {
   return `${status.charAt(0)}${status.slice(1).toLowerCase()}`;
 }

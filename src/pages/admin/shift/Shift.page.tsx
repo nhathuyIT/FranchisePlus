@@ -13,6 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import NormalLoadingLayout from "@/layouts/NormalLoadingLayout";
 import type { SelectOption } from "@/lib/form/field-config";
 import type { CreateShiftFormData, UpdateShiftFormData } from "@/lib/schemas/shift.schema";
 import type {
@@ -138,6 +139,13 @@ function ShiftAdminPage() {
   const assignShiftBulkMutation = useAssignShiftsForUserBulkMutation();
   const changeShiftAssignmentStatusMutation =
     useChangeShiftAssignmentStatusMutation();
+  const isCrudLoading =
+    createShiftMutation.isPending ||
+    updateShiftMutation.isPending ||
+    deleteShiftMutation.isPending ||
+    assignShiftMutation.isPending ||
+    assignShiftBulkMutation.isPending ||
+    changeShiftAssignmentStatusMutation.isPending;
 
   const selectedFranchise =
     franchiseOptions.find((option) => option.value === activeFranchiseId) ??
@@ -377,6 +385,8 @@ function ShiftAdminPage() {
 
   return (
     <div className="flex h-full flex-col overflow-y-auto scrollbar-hide">
+      <NormalLoadingLayout forceShow={isCrudLoading} />
+
       <div className="mx-auto flex min-h-0 w-full max-w-screen-2xl flex-1 flex-col">
         <PageHeader
           title="Shift Management"
@@ -564,6 +574,7 @@ function ShiftAdminPage() {
         entityName="Shift"
         onConfirm={handleDeleteShift}
         isDeleting={deleteShiftMutation.isPending}
+        hideButtonLoading
         getDisplayName={(shift) => shift.name}
         deleteMessage={(shift) =>
           `Delete the "${shift.name}" shift? All assignments for this shift will also be removed.`

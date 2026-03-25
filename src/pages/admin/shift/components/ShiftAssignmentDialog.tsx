@@ -76,7 +76,7 @@ export function ShiftAssignmentDialog({
               className="bg-[#6D4C41] text-white hover:bg-[#3E2723]"
               disabled={isSubmitting || !values || !hasStatusChanged}
             >
-              {isSubmitting ? "Updating..." : "Update Status"}
+              Update Status
             </Button>
           </div>
         );
