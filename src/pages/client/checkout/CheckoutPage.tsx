@@ -257,10 +257,10 @@ const CheckoutPage = () => {
       return;
     }
 
-    if (checkoutItems.length === 0) {
-      navigate(`${ROUTER_URL.CLIENT}/${ROUTER_URL.CLIENT_ROUTER.CART}`);
-      return;
-    }
+    // if (checkoutItems.length === 0) {
+    //   navigate(`${ROUTER_URL.CLIENT}/${ROUTER_URL.CLIENT_ROUTER.CART}`);
+    //   return;
+    // }
 
     const checkoutPayload = {
       address: formValues.address.trim(),
@@ -282,54 +282,53 @@ const CheckoutPage = () => {
         });
       }
 
-      navigate(
-        `${ROUTER_URL.CLIENT}/${ROUTER_URL.CLIENT_ROUTER.PAYMENT_NEW}`,
-        {
-          replace: true,
-          state: {
-            cartId: targetCartIds[0],
-            amount: checkoutTotalAmount,
-            itemCount: checkoutItemCount,
-            shippingInfo: {
-              address: formValues.address.trim(),
-              phone: formValues.phone.trim(),
-              note: formValues.note.trim(),
-            },
+      navigate(`${ROUTER_URL.CLIENT}/${ROUTER_URL.CLIENT_ROUTER.PAYMENT_NEW}`, {
+        replace: true,
+        state: {
+          cartId: targetCartIds[0],
+          amount: checkoutTotalAmount,
+          itemCount: checkoutItemCount,
+          shippingInfo: {
+            address: formValues.address.trim(),
+            phone: formValues.phone.trim(),
+            note: formValues.note.trim(),
           },
         },
-      );
+      });
     } finally {
       setLoading(false);
     }
   };
 
-  if (checkoutItems.length === 0) {
-    return (
-      <div className="min-h-screen bg-gray-50 py-8">
-        <div className="mx-auto max-w-6xl px-4">
-          <div className="py-16 text-center">
-            <div className="mb-6 flex justify-center">
-              <img src={emptyCartIcon} alt="Empty cart" className="h-32 w-32" />
-            </div>
-            <h3 className="mb-4 text-2xl font-bold text-[#5B4037]">
-              Your cart is empty
-            </h3>
-            <p className="mb-8 text-gray-600">
-              Please add products to your cart before proceeding to checkout.
-            </p>
-            <button
-              onClick={() =>
-                navigate(`${ROUTER_URL.CLIENT}/${ROUTER_URL.CLIENT_ROUTER.CART}`)
-              }
-              className="rounded bg-[#B8860B] px-8 py-3 font-semibold text-white transition-colors hover:bg-amber-700"
-            >
-              Back to cart
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  // if (checkoutItems.length === 0) {
+  //   return (
+  //     <div className="min-h-screen bg-gray-50 py-8">
+  //       <div className="mx-auto max-w-6xl px-4">
+  //         <div className="py-16 text-center">
+  //           <div className="mb-6 flex justify-center">
+  //             <img src={emptyCartIcon} alt="Empty cart" className="h-32 w-32" />
+  //           </div>
+  //           <h3 className="mb-4 text-2xl font-bold text-[#5B4037]">
+  //             Your cart is empty
+  //           </h3>
+  //           <p className="mb-8 text-gray-600">
+  //             Please add products to your cart before proceeding to checkout.
+  //           </p>
+  //           <button
+  //             onClick={() =>
+  //               navigate(
+  //                 `${ROUTER_URL.CLIENT}/${ROUTER_URL.CLIENT_ROUTER.CART}`,
+  //               )
+  //             }
+  //             className="rounded bg-[#B8860B] px-8 py-3 font-semibold text-white transition-colors hover:bg-amber-700"
+  //           >
+  //             Back to cart
+  //           </button>
+  //         </div>
+  //       </div>
+  //     </div>
+  //   );
+  // }
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
@@ -337,7 +336,8 @@ const CheckoutPage = () => {
         <div className="mb-8">
           <h1 className="mb-2 text-3xl font-bold text-[#5B4037]">Checkout</h1>
           <p className="text-gray-600">
-            Please enter your phone number, address, and note before confirming your order.
+            Please enter your phone number, address, and note before confirming
+            your order.
           </p>
         </div>
 

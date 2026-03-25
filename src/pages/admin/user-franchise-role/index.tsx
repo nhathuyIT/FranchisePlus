@@ -118,9 +118,7 @@ const UserFranchiseRolePage = () => {
       const response = await ufrApi.create({
         userId: data.userId,
         franchiseId:
-          isGlobalRole ||
-          data.franchiseId === "__global__" ||
-          !data.franchiseId
+          isGlobalRole || data.franchiseId === "__global__" || !data.franchiseId
             ? null
             : data.franchiseId,
         roleId: data.roleId,

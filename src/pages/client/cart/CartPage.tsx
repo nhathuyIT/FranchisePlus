@@ -10,7 +10,6 @@ import {
   useUpdateCartMutation,
 } from "@/hooks/cart/useCart.hook";
 import { ROUTER_URL } from "@/router/route.const";
-import NormalLoadingLayout from "@/layouts/NormalLoadingLayout";
 import { useLoadingStore } from "@/stores/loading.store";
 import CartEmpty from "./components/CartEmpty";
 import CartPageHeader from "./components/CartPageHeader";
@@ -18,6 +17,7 @@ import CartSummary from "./components/CartSummary";
 import CartTableHeader from "./components/CartTableHeader";
 import CartStoreSection from "./components/CartStoreSection";
 import CartVoucherDialog from "./components/CartVoucherDialog";
+import LoadingLayout from "@/layouts/loading-layout";
 
 const CartPage: React.FC = () => {
   const {
@@ -280,7 +280,7 @@ const CartPage: React.FC = () => {
         } as React.CSSProperties
       }
     >
-      <NormalLoadingLayout forceShow={isCartActionLoading} />
+      <LoadingLayout forceVisible={isCartActionLoading} />
       <div className="pointer-events-none absolute inset-x-0 top-0 h-[28rem] overflow-hidden">
         <div className="absolute -left-20 top-10 h-72 w-72 rounded-full bg-[#f0d4bb]/55 blur-3xl" />
         <div className="absolute right-[-5rem] top-0 h-80 w-80 rounded-full bg-[#edd8c9]/70 blur-3xl" />
