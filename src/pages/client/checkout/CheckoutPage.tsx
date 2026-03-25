@@ -163,12 +163,12 @@ const CheckoutPage = () => {
 
   const validatePhone = (phone: string): string => {
     if (!phone.trim()) {
-      return "Vui long nhap so dien thoai.";
+      return "Please enter your phone number.";
     }
 
     const phoneRegex = /^0(3|5|7|8|9)[0-9]{8}$/;
     if (!phoneRegex.test(phone.trim())) {
-      return "So dien thoai phai co 10 chu so va bat dau bang 03, 05, 07, 08 hoac 09.";
+      return "Phone number must be 10 digits and start with 03, 05, 07, 08, or 09.";
     }
 
     return "";
@@ -176,11 +176,11 @@ const CheckoutPage = () => {
 
   const validateAddress = (address: string): string => {
     if (!address.trim()) {
-      return "Vui long nhap dia chi giao hang.";
+      return "Please enter your delivery address.";
     }
 
     if (address.trim().length < 10) {
-      return "Dia chi can du chi tiet de giao hang.";
+      return "Please provide a more detailed delivery address.";
     }
 
     return "";
@@ -188,7 +188,7 @@ const CheckoutPage = () => {
 
   const validateNote = (note: string): string => {
     if (note.trim().length > 200) {
-      return "Ghi chu khong duoc vuot qua 200 ky tu.";
+      return "Note cannot exceed 200 characters.";
     }
 
     return "";
@@ -302,10 +302,10 @@ const CheckoutPage = () => {
               <img src={emptyCartIcon} alt="Empty cart" className="h-32 w-32" />
             </div>
             <h3 className="mb-4 text-2xl font-bold text-[#5B4037]">
-              Gio hang trong
+              Your cart is empty
             </h3>
             <p className="mb-8 text-gray-600">
-              Vui long them san pham vao gio hang truoc khi checkout.
+              Please add products to your cart before proceeding to checkout.
             </p>
             <button
               onClick={() =>
@@ -313,7 +313,7 @@ const CheckoutPage = () => {
               }
               className="rounded bg-[#B8860B] px-8 py-3 font-semibold text-white transition-colors hover:bg-amber-700"
             >
-              Quay lai gio hang
+              Back to cart
             </button>
           </div>
         </div>
@@ -327,7 +327,7 @@ const CheckoutPage = () => {
         <div className="mb-8">
           <h1 className="mb-2 text-3xl font-bold text-[#5B4037]">Checkout</h1>
           <p className="text-gray-600">
-            Vui long nhap so dien thoai, dia chi va ghi chu truoc khi xac nhan don hang.
+            Please enter your phone number, address, and note before confirming your order.
           </p>
         </div>
 
@@ -335,13 +335,13 @@ const CheckoutPage = () => {
           <div className="space-y-6 lg:col-span-2">
             <div className="rounded-lg bg-white p-6 shadow-sm">
               <h2 className="mb-4 text-xl font-bold text-[#5B4037]">
-                Thong tin giao hang
+                Delivery information
               </h2>
 
               <div className="space-y-4">
                 <div>
                   <label className="mb-1 block text-sm font-medium text-gray-700">
-                    So dien thoai <span className="text-red-500">*</span>
+                    Phone number <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="tel"
@@ -363,7 +363,7 @@ const CheckoutPage = () => {
 
                 <div>
                   <label className="mb-1 block text-sm font-medium text-gray-700">
-                    Dia chi <span className="text-red-500">*</span>
+                    Address <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="text"
@@ -376,7 +376,7 @@ const CheckoutPage = () => {
                         ? "border-red-500 focus:ring-red-200"
                         : "border-gray-300 focus:ring-[#B8860B]"
                     }`}
-                    placeholder="So nha, duong, phuong xa, quan huyen, tinh thanh"
+                    placeholder="House number, street, ward, district, city"
                   />
                   {errors.address ? (
                     <p className="mt-1 text-sm text-red-600">
@@ -387,7 +387,7 @@ const CheckoutPage = () => {
 
                 <div>
                   <label className="mb-1 block text-sm font-medium text-gray-700">
-                    Ghi chu
+                    Note
                     <span className="ml-2 text-xs text-gray-500">
                       ({formValues.note.length}/200)
                     </span>
@@ -404,7 +404,7 @@ const CheckoutPage = () => {
                         ? "border-red-500 focus:ring-red-200"
                         : "border-gray-300 focus:ring-[#B8860B]"
                     }`}
-                    placeholder="Ghi chu cho don hang"
+                    placeholder="Add a note for your order"
                   />
                   {errors.note ? (
                     <p className="mt-1 text-sm text-red-600">{errors.note}</p>
@@ -417,7 +417,7 @@ const CheckoutPage = () => {
           <div className="lg:col-span-1">
             <div className="sticky top-8 rounded-lg bg-white p-6 shadow-sm">
               <h2 className="mb-4 text-xl font-bold text-[#5B4037]">
-                Don hang cua ban
+                Your order
               </h2>
 
               <div className="mb-4 max-h-64 space-y-3 overflow-y-auto">
@@ -460,21 +460,21 @@ const CheckoutPage = () => {
 
               <div className="space-y-2 border-t border-gray-200 py-4">
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">Tong san pham:</span>
+                  <span className="text-gray-600">Total items:</span>
                   <span className="font-medium">{checkoutItemCount}</span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">Tam tinh:</span>
+                  <span className="text-gray-600">Subtotal:</span>
                   <span className="font-medium">
                     {checkoutSubtotal.toLocaleString("vi-VN")} VND
                   </span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">Phi van chuyen:</span>
-                  <span className="font-medium text-green-600">Mien phi</span>
+                  <span className="text-gray-600">Shipping fee:</span>
+                  <span className="font-medium text-green-600">Free</span>
                 </div>
                 <div className="flex justify-between border-t border-gray-200 pt-2 text-lg font-bold">
-                  <span className="text-gray-900">Tong cong:</span>
+                  <span className="text-gray-900">Total:</span>
                   <span className="text-[#B8860B]">
                     {checkoutTotalAmount.toLocaleString("vi-VN")} VND
                   </span>
@@ -490,8 +490,8 @@ const CheckoutPage = () => {
                   className="w-full rounded-lg bg-[#B8860B] px-6 py-3 font-bold text-white transition-colors hover:bg-amber-700 disabled:cursor-not-allowed disabled:opacity-70"
                 >
                   {checkoutCartMutation.isPending
-                    ? "Dang xu ly..."
-                    : "Xac nhan don hang"}
+                    ? "Processing..."
+                    : "Confirm order"}
                 </button>
                 <button
                   onClick={() =>
@@ -507,7 +507,7 @@ const CheckoutPage = () => {
 
               <div className="mt-4 flex items-center justify-center gap-2 text-xs text-gray-500">
                 <img src={secureLockIcon} alt="Secure" className="h-4 w-4" />
-                <span>Thong tin cua ban duoc bao mat an toan.</span>
+                <span>Your information is securely protected.</span>
               </div>
             </div>
           </div>
