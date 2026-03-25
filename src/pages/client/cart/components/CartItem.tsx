@@ -1,6 +1,5 @@
 import React from "react";
-import { useForm } from "react-hook-form";
-import { MessageSquareText, PencilLine, Trash2 } from "lucide-react";
+import { PencilLine, Trash2 } from "lucide-react";
 import type {
   CartItemEditConfig,
   CartItemOptionRequest,
@@ -8,13 +7,8 @@ import type {
 } from "@/types/cart";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Textarea } from "@/components/ui/textarea";
 import coffeeCupIcon from "@/assets/icons/coffee-cup.svg";
 import { formatCurrency } from "../cart.utils";
-
-type CartItemNoteForm = {
-  note: string;
-};
 
 interface QuantityControlProps {
   quantity: number;
@@ -38,26 +32,33 @@ interface CartItemProps {
   ) => Promise<boolean> | void;
   onUpdateQuantity: (quantity: number) => void;
   onRemove: () => void;
-  onSaveNote: (note: string) => Promise<boolean> | void;
 }
 
 function normalizeCartItemOptions(options?: CartItemOptionRequest[]) {
   if (!Array.isArray(options)) return [];
 
   return options
-    .filter((option) => !!option?.productFranchiseId && Number(option.quantity || 0) > 0)
+    .filter(
+      (option) =>
+        !!option?.productFranchiseId && Number(option.quantity || 0) > 0,
+    )
     .map((option) => ({
       productFranchiseId: String(option.productFranchiseId),
       quantity: Math.max(1, Number(option.quantity || 1)),
     }))
-    .sort((left, right) => left.productFranchiseId.localeCompare(right.productFranchiseId));
+    .sort((left, right) =>
+      left.productFranchiseId.localeCompare(right.productFranchiseId),
+    );
 }
 
 function areCartItemOptionsEqual(
   left: CartItemOptionRequest[],
   right: CartItemOptionRequest[],
 ) {
-  return JSON.stringify(normalizeCartItemOptions(left)) === JSON.stringify(normalizeCartItemOptions(right));
+  return (
+    JSON.stringify(normalizeCartItemOptions(left)) ===
+    JSON.stringify(normalizeCartItemOptions(right))
+  );
 }
 
 function buildInitialSelectedToppings(
@@ -185,9 +186,7 @@ const CartItem: React.FC<CartItemProps> = ({
   onSaveEdit,
   onUpdateQuantity,
   onRemove,
-  onSaveNote,
 }) => {
-  const [isNoteEditorOpen, setIsNoteEditorOpen] = React.useState(false);
   const [isEditEditorOpen, setIsEditEditorOpen] = React.useState(false);
   const originalLineTotal = Number(item.lineTotal || 0);
   const finalLineTotal = Number(item.finalLineTotal || 0);
@@ -204,21 +203,9 @@ const CartItem: React.FC<CartItemProps> = ({
     [editConfig, item],
   );
 
-  const [selectedEditToppings, setSelectedEditToppings] = React.useState<Record<string, string>>(
-    () => createEditDraft(),
-  );
-
-  const noteForm = useForm<CartItemNoteForm>({
-    defaultValues: {
-      note: item.note ?? "",
-    },
-  });
-  const {
-    register,
-    handleSubmit,
-    reset,
-    formState: { isDirty },
-  } = noteForm;
+  const [selectedEditToppings, setSelectedEditToppings] = React.useState<
+    Record<string, string>
+  >(() => createEditDraft());
 
   const currentItemOptions = React.useMemo(
     () =>
@@ -252,12 +239,6 @@ const CartItem: React.FC<CartItemProps> = ({
   const resetEditDraft = React.useCallback(() => {
     setSelectedEditToppings(createEditDraft());
   }, [createEditDraft]);
-
-  React.useEffect(() => {
-    reset({
-      note: item.note ?? "",
-    });
-  }, [item.cartItemId, item.note, reset]);
 
   React.useEffect(() => {
     resetEditDraft();
@@ -365,12 +346,6 @@ const CartItem: React.FC<CartItemProps> = ({
                 </div>
               )}
 
-              {item.note && (
-                <div className="mt-3 inline-flex max-w-full rounded-full border border-[var(--cart-border)] bg-white/90 px-3 py-1.5 text-xs text-[var(--cart-muted)]">
-                  Note: {item.note}
-                </div>
-              )}
-
               <div className="mt-4 grid gap-2 rounded-[1.25rem] border border-[var(--cart-border-soft)] bg-[#fbf6f0] px-4 py-3 text-sm lg:hidden">
                 <div className="flex items-center justify-between">
                   <span className="text-[var(--cart-muted)]">Unit price</span>
@@ -432,7 +407,6 @@ const CartItem: React.FC<CartItemProps> = ({
                 }
 
                 resetEditDraft();
-                setIsNoteEditorOpen(false);
                 setIsEditEditorOpen(true);
               }}
               className={`inline-flex items-center gap-2 rounded-full border px-3.5 py-2 text-sm transition-all disabled:cursor-not-allowed disabled:text-[#b7a59a] ${
@@ -445,23 +419,6 @@ const CartItem: React.FC<CartItemProps> = ({
               {isEditEditorOpen ? "Close edit" : "Edit"}
             </button>
           )}
-
-          <button
-            type="button"
-            disabled={isPending}
-            onClick={() => {
-              setIsEditEditorOpen(false);
-              setIsNoteEditorOpen((current) => !current);
-            }}
-            className={`inline-flex items-center gap-2 rounded-full border px-3.5 py-2 text-sm transition-all disabled:cursor-not-allowed disabled:text-[#b7a59a] ${
-              isNoteEditorOpen
-                ? "border-[#ebc7b5] bg-[#fff3ea] text-[var(--cart-accent)]"
-                : "border-[var(--cart-border)] bg-white/88 text-[var(--cart-muted)] hover:border-[#d7b7a4] hover:text-[var(--cart-accent)]"
-            }`}
-          >
-            <MessageSquareText className="h-4 w-4" />
-            {isNoteEditorOpen ? "Close note" : "Note"}
-          </button>
 
           <button
             type="button"
@@ -496,7 +453,6 @@ const CartItem: React.FC<CartItemProps> = ({
                   Update the toppings directly in your cart.
                 </p>
               </div>
-
 
               {!!editConfig.toppingOptions.length && (
                 <div className="space-y-3">
@@ -534,7 +490,8 @@ const CartItem: React.FC<CartItemProps> = ({
                                 alt={topping.name}
                                 className="h-full w-full object-cover"
                                 onError={(event) => {
-                                  const target = event.target as HTMLImageElement;
+                                  const target =
+                                    event.target as HTMLImageElement;
                                   target.src = coffeeCupIcon;
                                   target.style.objectFit = "contain";
                                   target.style.padding = "8px";
@@ -550,7 +507,7 @@ const CartItem: React.FC<CartItemProps> = ({
                                   </p>
                                   <p className="mt-1 text-xs text-[var(--cart-muted)]">
                                     {isSelected && selectedSize
-                                      ? `Selected: ${selectedSize.label} · ${formatCurrency(selectedSize.price)}`
+                                      ? `Selected: ${selectedSize.label} - ${formatCurrency(selectedSize.price)}`
                                       : "Not selected"}
                                   </p>
                                 </div>
@@ -608,7 +565,7 @@ const CartItem: React.FC<CartItemProps> = ({
                                             : "border-[var(--cart-border)] bg-white text-[var(--cart-ink)] hover:border-[#d7b7a4]"
                                         }`}
                                       >
-                                        {size.label} · {formatCurrency(size.price)}
+                                        {size.label} - {formatCurrency(size.price)}
                                       </button>
                                     );
                                   })}
@@ -649,72 +606,8 @@ const CartItem: React.FC<CartItemProps> = ({
           </form>
         </div>
       )}
-
-      {isNoteEditorOpen && (
-        <div className="mt-4 min-w-0 lg:col-start-2 lg:col-end-7 lg:mt-5">
-          <form
-            onSubmit={handleSubmit(async (values) => {
-              const wasSaved = await onSaveNote(values.note);
-              if (wasSaved !== false) {
-                setIsNoteEditorOpen(false);
-              }
-            })}
-            className="rounded-[1.5rem] border border-[var(--cart-border)] bg-[linear-gradient(180deg,#fffdf9_0%,#fbf4ed_100%)] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]"
-          >
-            <div className="flex items-start gap-3">
-              <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-[1rem] bg-white text-[var(--cart-accent)] shadow-[0_10px_24px_rgba(63,41,33,0.05)]">
-                <MessageSquareText className="h-4 w-4" />
-              </div>
-
-              <div className="min-w-0 flex-1 space-y-3">
-                <div>
-                  <p className="text-sm font-medium text-[var(--cart-ink)]">
-                    Note for this item
-                  </p>
-                  <p className="mt-1 text-xs text-[var(--cart-muted)]">
-                    Add a request so the store can prepare it more accurately.
-                  </p>
-                </div>
-
-                <Textarea
-                  disabled={isPending}
-                  placeholder="For example: less ice, pack separately, seal carefully..."
-                  className="min-h-28 resize-y rounded-[1.2rem] border-[var(--cart-border)] bg-white/95 text-[var(--cart-ink)] placeholder:text-[#a08778]"
-                  {...register("note")}
-                />
-
-                <div className="flex items-center justify-end gap-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    disabled={isPending}
-                    onClick={() => {
-                      reset({
-                        note: item.note ?? "",
-                      });
-                      setIsNoteEditorOpen(false);
-                    }}
-                    className="rounded-full border-[var(--cart-border)] bg-white/80 text-[var(--cart-ink)] hover:bg-white"
-                  >
-                    Close
-                  </Button>
-
-                  <Button
-                    type="submit"
-                    disabled={isPending || !isDirty}
-                    className="rounded-full bg-[linear-gradient(135deg,var(--cart-accent)_0%,var(--cart-accent-deep)_100%)] text-white shadow-[0_14px_28px_rgba(183,104,67,0.22)] hover:opacity-95"
-                  >
-                    {isPending ? "Saving..." : "Save note"}
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </form>
-        </div>
-      )}
     </article>
   );
 };
 
 export default CartItem;
-

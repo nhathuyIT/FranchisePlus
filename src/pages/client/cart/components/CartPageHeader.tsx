@@ -17,8 +17,7 @@ const CartPageHeader: React.FC<CartPageHeaderProps> = ({ selectedItemCount }) =>
               Your cart
             </h1>
             <p className="mt-4 max-w-2xl text-sm leading-7 text-[var(--cart-muted)] sm:text-[15px]">
-              Manage each store in one clean view so you can track vouchers,
-              notes, and checkout faster.
+              Manage each store in one clean view so you can track vouchers and checkout faster.
             </p>
           </div>
 

@@ -295,8 +295,8 @@ export function useCart() {
     quantity = 1,
     imageUrl?: string,
     meta?: AddItemMeta,
-  ) => {
-    void addItemAsync(
+  ) =>
+    addItemAsync(
       productId,
       productName,
       price,
@@ -304,7 +304,6 @@ export function useCart() {
       imageUrl,
       meta,
     );
-  };
 
   const removeItem = async (cartItemId: string): Promise<boolean> => {
     if (!cartItemId || isItemPending(cartItemId)) {

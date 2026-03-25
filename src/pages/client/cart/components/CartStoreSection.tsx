@@ -47,7 +47,6 @@ interface CartStoreSectionProps {
   ) => Promise<boolean> | void;
   onUpdateQuantity: (cartItemId: string, quantity: number) => void;
   onRemove: (cartItemId: string) => void;
-  onSaveItemNote: (cartItemId: string, note: string) => void;
   isItemPending: (cartItemId: string) => boolean;
   onCancelCart: () => void;
   onSaveMessage: (message: string) => void;
@@ -70,7 +69,6 @@ const CartStoreSection: React.FC<CartStoreSectionProps> = ({
   onSaveEditedItem,
   onUpdateQuantity,
   onRemove,
-  onSaveItemNote,
   isItemPending,
   onCancelCart,
   onSaveMessage,
@@ -342,7 +340,6 @@ const CartStoreSection: React.FC<CartStoreSectionProps> = ({
                 onUpdateQuantity(item.cartItemId, quantity)
               }
               onRemove={() => onRemove(item.cartItemId)}
-              onSaveNote={(note) => onSaveItemNote(item.cartItemId, note)}
             />
           );
         })}
