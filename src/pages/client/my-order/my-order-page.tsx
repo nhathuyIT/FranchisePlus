@@ -320,6 +320,7 @@ const OrderRow = ({
     navigate(getClientPath(ROUTER_URL.CLIENT_ROUTER.PAYMENT_QR), {
       state: {
         orderId,
+        orderCode: order.code,
         paymentId: payment?.id,
         amount: Number(order.totalAmount || 0),
         itemCount,

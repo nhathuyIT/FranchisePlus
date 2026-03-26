@@ -6,12 +6,14 @@ import { useQueryClient } from "@tanstack/react-query";
 import { ROUTER_URL } from "@/router/route.const";
 import { paymentKeys } from "@/hooks/payment";
 import { useLoadingStore } from "@/stores/loading.store";
+import { useGetOrderByCartId, useGetOrderById } from "@/hooks/client/useOrder.hook";
 
 type PaymentSuccessLocationState = {
   method?: "COD" | "QR";
   amount?: number;
   itemCount?: number;
   orderId?: string;
+  orderCode?: string;
   cartId?: string;
   showPaymentLoading?: boolean;
 };
@@ -30,6 +32,15 @@ const PaymentSuccessPage = () => {
   const state = (location.state || {}) as PaymentSuccessLocationState;
   const queryClient = useQueryClient();
   const setLoading = useLoadingStore((loadingState) => loadingState.setLoading);
+  const normalizedCartId = state.cartId?.trim() || "";
+  const normalizedOrderId = state.orderId?.trim() || "";
+  const orderIdForQuery = normalizedOrderId && !normalizedCartId ? normalizedOrderId : undefined;
+  const orderCodeFromState = state.orderCode?.trim() || "";
+
+  const { data: orderFromCart } = useGetOrderByCartId(normalizedCartId);
+  const { data: orderFromId } = useGetOrderById(orderIdForQuery);
+  const resolvedOrderCode =
+    orderCodeFromState || orderFromCart?.code || orderFromId?.code || "";
 
   useEffect(() => {
     if (!state.showPaymentLoading) return;
@@ -135,12 +146,12 @@ const PaymentSuccessPage = () => {
               <span className="text-sm font-bold text-[#3E2723]">{state.itemCount}</span>
             </div>
 
-            {/* Order ID */}
-            {state.orderId && (
+            {/* Order Code */}
+            {resolvedOrderCode && (
               <div className="rounded-2xl bg-[#F0FDF4] px-4 py-3">
-                <p className="text-xs text-[#9A7B67]">Order ID</p>
+                <p className="text-xs text-[#9A7B67]">Order Code</p>
                 <p className="mt-0.5 font-mono text-xs font-semibold text-[#5B4037] break-all">
-                  {state.orderId}
+                  {resolvedOrderCode}
                 </p>
               </div>
             )}

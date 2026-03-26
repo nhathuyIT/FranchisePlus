@@ -14,6 +14,7 @@ import QRDisplay from "./components/QRDisplay";
 type QRPageLocationState = {
   cartId?: string;
   orderId?: string;
+  orderCode?: string;
   paymentId?: string;
   shippingInfo?: ShippingInfo;
   amount?: number;
@@ -26,6 +27,7 @@ type PaymentSuccessLocationState = {
   amount: number;
   itemCount: number;
   orderId?: string;
+  orderCode?: string;
   cartId?: string;
 };
 
@@ -63,6 +65,7 @@ const QRTransactionPage = () => {
   const state = (location.state || {}) as QRPageLocationState;
   const cartId = state.cartId?.trim() || "";
   const orderIdFromState = state.orderId?.trim() || "";
+  const orderCodeFromState = state.orderCode?.trim() || "";
   const paymentIdFromState = state.paymentId?.trim() || "";
 
   const { data: orderFromCart, isLoading: isLoadingOrder } = useGetOrderByCartId(cartId);
@@ -119,6 +122,11 @@ const QRTransactionPage = () => {
 
   const resolvedPaymentId = paymentIdFromState || paymentByOrder?.id || "";
   const isPaymentAlreadyPaid = paymentByOrder?.status === "PAID";
+  const orderCodeFromPayment =
+    typeof paymentByOrder?.orderId === "object" && paymentByOrder.orderId !== null
+      ? paymentByOrder.orderId.code || ""
+      : "";
+  const orderCode = orderCodeFromState || orderFromCart?.code || orderCodeFromPayment;
 
   const shouldWaitContext =
     displayStatus === "PAID" &&
@@ -173,6 +181,7 @@ const QRTransactionPage = () => {
         amount,
         itemCount,
         orderId,
+        orderCode,
         cartId,
       };
 
@@ -193,6 +202,7 @@ const QRTransactionPage = () => {
     isPaymentAlreadyPaid,
     itemCount,
     navigate,
+    orderCode,
     orderId,
     resolvedPaymentId,
     shouldWaitContext,
@@ -399,11 +409,11 @@ const QRTransactionPage = () => {
                     </span>
                   </div>
                 )}
-                {orderId && (
+                {orderCode && (
                   <div className="rounded-xl bg-[#FAF6F0] px-4 py-3">
-                    <p className="text-xs text-[#9A7B67]">Order ID</p>
+                    <p className="text-xs text-[#9A7B67]">Order Code</p>
                     <p className="mt-0.5 font-mono text-xs font-semibold text-[#5B4037] break-all">
-                      {orderId}
+                      {orderCode}
                     </p>
                   </div>
                 )}

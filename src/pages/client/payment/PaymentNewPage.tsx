@@ -19,6 +19,7 @@ import { useLoadingStore } from "@/stores/loading.store";
 type PaymentLocationState = {
   cartId?: string;
   orderId?: string;
+  orderCode?: string;
   amount?: number;
   itemCount?: number;
   shippingInfo?: ShippingInfo;
@@ -29,6 +30,7 @@ type PaymentSuccessLocationState = {
   amount: number;
   itemCount: number;
   orderId?: string;
+  orderCode?: string;
   cartId?: string;
   showPaymentLoading?: boolean;
 };
@@ -78,9 +80,11 @@ const PaymentPage = () => {
 
   const cartId = state.cartId?.trim() || "";
   const orderIdFromState = state.orderId?.trim() || "";
+  const orderCodeFromState = state.orderCode?.trim() || "";
 
   const { data: orderFromCart } = useGetOrderByCartId(cartId);
   const orderId = orderIdFromState || orderFromCart?.rawId || "";
+  const orderCode = orderCodeFromState || orderFromCart?.code || "";
 
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod | null>(null);
 
@@ -125,6 +129,7 @@ const PaymentPage = () => {
         amount,
         itemCount,
         orderId,
+        orderCode,
         cartId,
         showPaymentLoading: true,
       };
@@ -135,7 +140,15 @@ const PaymentPage = () => {
     }
 
     navigate(getClientPath(ROUTER_URL.CLIENT_ROUTER.PAYMENT_QR), {
-      state: { cartId, orderId, amount, itemCount, shippingInfo, showPaymentLoading: true },
+      state: {
+        cartId,
+        orderId,
+        orderCode,
+        amount,
+        itemCount,
+        shippingInfo,
+        showPaymentLoading: true,
+      },
     });
   };
 
@@ -247,6 +260,14 @@ const PaymentPage = () => {
                 Order Summary
               </p>
               <div className="space-y-2.5">
+                {orderCode && (
+                  <div className="flex justify-between rounded-xl bg-[#FAF6F0] px-4 py-3">
+                    <span className="text-sm text-[#6D4C41]">Order Code</span>
+                    <span className="max-w-[60%] break-all text-right font-mono text-xs font-semibold text-[#5B4037]">
+                      {orderCode}
+                    </span>
+                  </div>
+                )}
                 <div className="flex justify-between rounded-xl bg-[#FAF6F0] px-4 py-3">
                   <span className="text-sm text-[#6D4C41]">Items</span>
                   <span className="text-sm font-bold text-[#3E2723]">{itemCount}</span>

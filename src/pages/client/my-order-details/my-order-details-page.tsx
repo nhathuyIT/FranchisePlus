@@ -57,6 +57,7 @@ const MyOrderDetailsPage = () => {
     navigate(getClientPath(ROUTER_URL.CLIENT_ROUTER.PAYMENT_QR), {
       state: {
         orderId: order.id,
+        orderCode: order.code,
         paymentId: payment?.id,
         amount: Number(order.finalAmount || 0),
         itemCount,
