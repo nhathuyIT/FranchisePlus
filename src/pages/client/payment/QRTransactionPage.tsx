@@ -371,7 +371,7 @@ const QRTransactionPage = () => {
               {displayStatus === "PAID" && (
                 <div className="mt-5 rounded-2xl bg-emerald-50 border border-emerald-200 p-4 text-center">
                   <p className="text-sm font-semibold text-emerald-700">
-                    🎉 Payment confirmed! Redirecting...
+                    Payment confirmed! Redirecting...
                   </p>
                 </div>
               )}
