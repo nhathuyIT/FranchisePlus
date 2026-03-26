@@ -5,7 +5,6 @@ import {
 } from "@/const/product-client.const";
 import { Star, ArrowRight, Plus } from "lucide-react";
 import { useCart } from "../../cart/useCart";
-import { toast } from "sonner";
 import { Link } from "react-router-dom";
 import { createProductSlug } from "@/lib/slugify";
 
@@ -27,11 +26,6 @@ export const CoffeeShowcase = () => {
     const price = product.minPrice;
 
     addItem(productId, product.name, price, 1);
-
-    toast.success(`${product.name} đã được thêm vào giỏ hàng!`, {
-      description: `Giá: ${price.toLocaleString("vi-VN")}₫`,
-      duration: 2000,
-    });
   };
 
   return (
