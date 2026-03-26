@@ -75,7 +75,10 @@ const QRTransactionPage = () => {
   const itemCount = state.itemCount ?? 0;
   const shippingInfo = state.shippingInfo;
 
-  const { mutateAsync: confirmPayment } = useConfirmPaymentMutation();
+  const { mutateAsync: confirmPayment } = useConfirmPaymentMutation({
+    disableSuccessToast: true,
+    disableErrorToast: true,
+  });
   const {
     data: paymentByOrder,
     isFetched: isPaymentByOrderFetched,

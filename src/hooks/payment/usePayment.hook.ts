@@ -65,7 +65,14 @@ export const usePaymentsByFranchiseId = (
   });
 };
 
-export const useConfirmPaymentMutation = () => {
+type ConfirmPaymentMutationOptions = {
+  disableSuccessToast?: boolean;
+  disableErrorToast?: boolean;
+};
+
+export const useConfirmPaymentMutation = (
+  options?: ConfirmPaymentMutationOptions,
+) => {
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -86,12 +93,16 @@ export const useConfirmPaymentMutation = () => {
         });
       }
 
-      toast.success("Payment confirmed successfully!");
+      if (!options?.disableSuccessToast) {
+        toast.success("Payment confirmed successfully!");
+      }
     },
     onError: (error: Error) => {
-      toast.error("Failed to confirm payment", {
-        description: error.message,
-      });
+      if (!options?.disableErrorToast) {
+        toast.error("Failed to confirm payment", {
+          description: error.message,
+        });
+      }
     },
   });
 };
