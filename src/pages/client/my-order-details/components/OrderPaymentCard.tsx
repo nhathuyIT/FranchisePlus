@@ -1,4 +1,4 @@
-import { AlertCircle, CreditCard, ReceiptText } from "lucide-react";
+import { AlertCircle, CreditCard, ReceiptText, XCircle, Undo2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import type { AdminPayment } from "@/types/admin-payment.type";
@@ -15,7 +15,12 @@ interface OrderPaymentCardProps {
   isLoading?: boolean;
   errorMessage?: string;
   canPayNow?: boolean;
+  canCancelPayment?: boolean;
+  canRequestRefund?: boolean;
+  isCancelLoading?: boolean;
   onPayNow: () => void;
+  onCancelPayment?: () => void;
+  onRequestRefund?: () => void;
 }
 
 export function OrderPaymentCard({
@@ -23,7 +28,12 @@ export function OrderPaymentCard({
   isLoading = false,
   errorMessage,
   canPayNow = false,
+  canCancelPayment = false,
+  canRequestRefund = false,
+  isCancelLoading = false,
   onPayNow,
+  onCancelPayment,
+  onRequestRefund,
 }: OrderPaymentCardProps) {
   const paymentStatusMeta = getPaymentStatusMeta(payment);
 
@@ -107,6 +117,7 @@ export function OrderPaymentCard({
         </div>
       )}
 
+      {/* Pay Now CTA */}
       {canPayNow ? (
         <div className="mt-5 rounded-2xl border border-[#F0E1CF] bg-[#FFF7EE] p-4">
           <p className="text-sm leading-6 text-[#6D4C41]">
@@ -120,6 +131,48 @@ export function OrderPaymentCard({
           >
             <CreditCard className="h-4 w-4" />
             Continue payment
+          </Button>
+        </div>
+      ) : null}
+
+      {/* Refund Payment (PENDING) */}
+      {canCancelPayment && onCancelPayment ? (
+        <div className="mt-4 rounded-2xl border border-rose-100 bg-rose-50 p-4">
+          <p className="text-sm font-semibold leading-5 text-rose-700">Refund pending payment</p>
+          <p className="mt-1 text-xs leading-5 text-rose-600">
+            This will <strong>refund the payment only</strong>. Your order will remain active
+            — contact support if you also need the order cancelled.
+          </p>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={onCancelPayment}
+            disabled={isCancelLoading}
+            className="mt-3 w-full border-rose-300 text-rose-600 hover:bg-rose-100 hover:text-rose-700"
+          >
+            <XCircle className="h-4 w-4" />
+            {isCancelLoading ? "Processing..." : "Refund Payment"}
+          </Button>
+        </div>
+      ) : null}
+
+      {/* Request Refund (PAID) */}
+      {canRequestRefund && onRequestRefund ? (
+        <div className="mt-4 rounded-2xl border border-amber-100 bg-amber-50 p-4">
+          <p className="text-sm font-semibold leading-5 text-amber-800">Request a payment refund</p>
+          <p className="mt-1 text-xs leading-5 text-amber-700">
+            This will <strong>refund your payment only</strong>. The order status will NOT be
+            cancelled — contact support if you need the order cancelled.
+          </p>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={onRequestRefund}
+            disabled={isCancelLoading}
+            className="mt-3 w-full border-amber-300 text-amber-700 hover:bg-amber-100"
+          >
+            <Undo2 className="h-4 w-4" />
+            {isCancelLoading ? "Processing..." : "Request Refund"}
           </Button>
         </div>
       ) : null}

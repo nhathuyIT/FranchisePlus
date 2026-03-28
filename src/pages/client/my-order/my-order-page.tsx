@@ -103,9 +103,10 @@ const MyOrderPage = () => {
 
     const timeoutId = window.setTimeout(() => {
       setLoading(false);
-    }, 2000);
+    }, 800);
 
     return () => {
+      setLoading(false);
       window.clearTimeout(timeoutId);
     };
   }, [locationState?.showMyOrdersLoading, setLoading]);
@@ -114,12 +115,16 @@ const MyOrderPage = () => {
   const {
     data: orders = [],
     isLoading: isOrdersLoading,
+    isFetching: isOrdersFetching,
     isError,
   } = useGetMyOrders(activeTab === "ALL" ? undefined : activeTab);
 
   // 2. Lấy TẤT CẢ Payment của khách hàng này (Chỉ tốn 1 Request duy nhất)
-  const { data: customerPayments = [], isLoading: isPaymentsLoading } =
-    usePaymentsByCustomerId(stringCustomerId, !!customerId);
+  const { 
+    data: customerPayments = [], 
+    isLoading: isPaymentsLoading,
+    isFetching: isPaymentsFetching
+  } = usePaymentsByCustomerId(stringCustomerId, !!customerId);
 
   const filteredOrders = useMemo(() => {
     let filtered = orders;
@@ -141,7 +146,7 @@ const MyOrderPage = () => {
     return new Intl.NumberFormat("vi-VN").format(amount) + "đ";
   };
 
-  const isLoading = isOrdersLoading || isPaymentsLoading;
+  const isLoading = isOrdersLoading || isPaymentsLoading || isOrdersFetching || isPaymentsFetching;
 
   return (
     <div>
@@ -315,6 +320,7 @@ const OrderRow = ({
     navigate(getClientPath(ROUTER_URL.CLIENT_ROUTER.PAYMENT_QR), {
       state: {
         orderId,
+        orderCode: order.code,
         paymentId: payment?.id,
         amount: Number(order.totalAmount || 0),
         itemCount,
@@ -378,7 +384,7 @@ const OrderRow = ({
           {isRefunded && (
             <div className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-gray-50 border border-gray-200">
               <span className="text-[11px] font-bold text-gray-600 uppercase tracking-wide">
-                REFUNDED
+                Payment Refunded
               </span>
             </div>
           )}
@@ -449,7 +455,7 @@ const OrderRow = ({
               }}
               className="flex items-center gap-1.5 px-4 py-1.5 text-xs font-semibold rounded-lg bg-[#C97B3D] text-white hover:bg-[#B5692F] shadow-sm transition-all cursor-pointer"
             >
-              <CreditCard className="w-3.5 h-3.5" /> Paying
+              <CreditCard className="w-3.5 h-3.5" /> Pay Now
             </button>
           )}
         </div>
