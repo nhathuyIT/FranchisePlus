@@ -25,6 +25,7 @@ import { toast } from "sonner";
 import { useAuthStore } from "@/stores/auth-store";
 import { ROUTER_URL } from "@/router/route.const";
 import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 import { FooterInfo } from "@/components/common/FooterInfo";
 import LoadingLayout from "@/layouts/loading-layout";
 
@@ -55,6 +56,7 @@ const MenuProductDetailPageContent = ({
   const [quantity, setQuantity] = useState(1);
   const [isCartActionLoading, setIsCartActionLoading] = useState(false);
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>("ALL");
+  const [note, setNote] = useState("");
 
   // Queries
   const { data: productDetailData, isLoading: isLoadingProduct } =
@@ -191,7 +193,7 @@ const MenuProductDetailPageContent = ({
     }));
   };
 
-  const handleAddToCart = async (showSuccessToast = true): Promise<boolean> => {
+  const handleAddToCart = async (): Promise<boolean> => {
     if (isCartActionLoading) {
       return false;
     }
@@ -243,6 +245,7 @@ const MenuProductDetailPageContent = ({
         detailImageUrl,
         {
           franchiseId,
+          note: note.trim() || undefined,
           options,
         },
       );
@@ -253,15 +256,11 @@ const MenuProductDetailPageContent = ({
       return false;
     }
 
-    if (showSuccessToast) {
-      toast.success(`Added "${detailName}" to your cart`);
-    }
-
     return true;
   };
 
   const handleBuyNow = async () => {
-    const added = await handleAddToCart(false);
+    const added = await handleAddToCart();
     if (added) {
       navigate("/client/cart");
     }
@@ -701,6 +700,22 @@ const MenuProductDetailPageContent = ({
                         >
                           <Plus className="h-3.5 w-3.5" />
                         </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="mt-6 pt-6 border-t border-stone-100">
+                    <div className="flex items-start gap-4">
+                      <span className="text-sm text-stone-500 w-24 shrink-0 pt-3">
+                        Note
+                      </span>
+                      <div className="flex-1 space-y-2">
+                        <Textarea
+                          value={note}
+                          onChange={(event) => setNote(event.target.value)}
+                          placeholder="For example: less ice, less sugar, pack separately..."
+                          className="min-h-24 rounded-xl border-stone-200 bg-white text-sm text-stone-700 placeholder:text-stone-400 focus-visible:ring-amber-500/30"
+                        />
                       </div>
                     </div>
                   </div>
