@@ -237,7 +237,7 @@ const FranchiseDetail = () => {
 
           <TabsContent
             value="categories"
-            className="mt-6 flex-1 min-h-0 overflow-auto"
+            className="mt-6 flex flex-1 min-h-0 flex-col"
           >
             <FranchiseCategoryTab
               franchiseId={id!}
