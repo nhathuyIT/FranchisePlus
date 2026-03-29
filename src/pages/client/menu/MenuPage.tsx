@@ -380,7 +380,7 @@ const MenuPage = () => {
                     onValueChange={handleFranchiseChange}
                     disabled={isLoadingFranchises || !franchises?.length}
                   >
-                    <SelectTrigger className="h-12 w-full rounded-full border border-white/20 bg-black/10 px-4 text-left text-white shadow-none transition-all duration-300 hover:border-white/30 hover:bg-white/12 focus:border-amber-300 focus:ring-amber-200/20 disabled:cursor-not-allowed disabled:opacity-70 sm:h-13">
+                    <SelectTrigger className="h-12 w-full rounded-full border border-white/20 bg-black/10 px-4 text-left text-white shadow-none transition-all duration-300 hover:border-[#C4A77D] hover:bg-[#6D4C41]/35 focus:border-[#C4A77D] focus:ring-[#C4A77D]/20 disabled:cursor-not-allowed disabled:opacity-70 sm:h-13">
                       <div className="flex min-w-0 items-center gap-2">
                         <MapPin className="h-4 w-4 shrink-0 text-amber-300" />
                         <SelectValue
@@ -490,7 +490,7 @@ const MenuPage = () => {
                         value={activeCategoryId}
                         onValueChange={(value) => setSelectedCategoryId(value)}
                       >
-                        <SelectTrigger className="h-12 w-full rounded-[1rem] border-[#E8DFD6] bg-white px-4 text-left text-sm font-medium text-[#5D4037] shadow-sm focus:border-[#C97B3D] focus:ring-[#C97B3D]/15">
+                        <SelectTrigger className="h-12 w-full rounded-[1rem] border-[#E8DFD6] bg-white px-4 text-left text-sm font-medium text-[#5D4037] shadow-sm transition-colors duration-200 hover:border-[#6D4C41] hover:bg-[#FAF8F5] hover:text-[#6D4C41] focus:border-[#6D4C41] focus:ring-[#6D4C41]/15">
                           <SelectValue placeholder="Select category" />
                         </SelectTrigger>
                         <SelectContent
@@ -523,7 +523,7 @@ const MenuPage = () => {
                             key={category.id}
                             type="button"
                             onClick={() => setSelectedCategoryId(category.id)}
-                            className={`relative whitespace-nowrap rounded-full px-4 py-2.5 text-sm font-medium
+                            className={`relative cursor-pointer whitespace-nowrap rounded-full px-4 py-2.5 text-sm font-medium
                                        transition-all duration-300 ease-out lg:px-5
                                        ${
                                          isActive
