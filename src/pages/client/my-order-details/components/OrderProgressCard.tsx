@@ -52,17 +52,26 @@ export function OrderProgressCard({ status }: OrderProgressCardProps) {
     (step) => step.status === status,
   );
 
+  // Calculate progress percentage for screen readers
+  const progressPercentage = isCanceledOrder
+    ? currentIndex * 20 // Canceled orders show progress up to cancellation point
+    : Math.min(((currentIndex + 1) / ORDER_PROGRESS_STEPS.length) * 100, 100);
+
   return (
-    <section className="rounded-3xl border border-[#E9DED3] bg-white p-5 shadow-[0_18px_40px_-32px_rgba(117,76,36,0.35)]">
+    <section
+      className="rounded-3xl border border-[#E9DED3] bg-white p-5 shadow-[0_18px_40px_-32px_rgba(117,76,36,0.35)]"
+      aria-labelledby="progress-heading"
+      aria-describedby="progress-description"
+    >
       <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[#9A7B67]">
             Fulfillment Progress
           </p>
-          <h2 className="mt-2 text-xl font-semibold text-[#3E2723]">
+          <h2 id="progress-heading" className="mt-2 text-xl font-semibold text-[#3E2723]">
             Where this order stands
           </h2>
-          <p className="mt-2 max-w-3xl text-sm leading-6 text-[#6D4C41]">
+          <p id="progress-description" className="mt-2 max-w-3xl text-sm leading-6 text-[#6D4C41]">
             {PROGRESS_COPY[status]}
           </p>
         </div>
@@ -79,9 +88,17 @@ export function OrderProgressCard({ status }: OrderProgressCardProps) {
             ? "border-rose-200 bg-rose-50/80"
             : "border-emerald-200 bg-[#EEF8F0]",
         )}
+        role="region"
+        aria-live="polite"
+        aria-label="Order progress tracker"
       >
-        <div className="overflow-x-auto scrollbar-hide">
-          <div className="grid min-w-[760px] grid-cols-5 gap-0">
+        {/* Mobile Layout: Vertical Steps */}
+        <div className="md:hidden">
+          <ol
+            className="space-y-6"
+            role="list"
+            aria-label={`Order progress: ${progressPercentage.toFixed(0)}% complete`}
+          >
             {ORDER_PROGRESS_STEPS.map((step, index) => {
               const state = getOrderProgressState(status, step.status);
               const isDone = state === "completed";
@@ -91,24 +108,30 @@ export function OrderProgressCard({ status }: OrderProgressCardProps) {
               const showFilledLine = !isCanceledOrder && currentIndex > index;
 
               return (
-                <div key={step.status} className="relative px-3">
+                <li
+                  key={step.status}
+                  className="relative"
+                  role="listitem"
+                  aria-current={isActive ? "step" : undefined}
+                >
                   {index < ORDER_PROGRESS_STEPS.length - 1 ? (
                     <span
                       className={cn(
-                        "absolute left-1/2 right-[-50%] top-[22px] h-[2px]",
+                        "absolute left-5.5 top-11 h-6 w-0.5",
                         isCanceled
                           ? "bg-rose-300"
                           : showFilledLine
                             ? "bg-emerald-700"
                             : "bg-[#C8DCCB]",
                       )}
+                      aria-hidden="true"
                     />
                   ) : null}
 
-                  <div className="relative z-10 flex flex-col items-center text-center">
+                  <div className="relative z-10 flex items-start gap-4">
                     <span
                       className={cn(
-                        "flex h-11 w-11 items-center justify-center rounded-full border text-sm font-semibold shadow-[0_4px_12px_-8px_rgba(37,99,69,0.35)]",
+                        "flex h-11 w-11 shrink-0 items-center justify-center rounded-full border text-sm font-semibold shadow-[0_4px_12px_-8px_rgba(37,99,69,0.35)]",
                         isCanceled && "border-rose-300 bg-white text-rose-600",
                         isDone &&
                           "border-emerald-300 bg-white text-emerald-700",
@@ -117,33 +140,119 @@ export function OrderProgressCard({ status }: OrderProgressCardProps) {
                         isUpcoming &&
                           "border-[#D4E4D5] bg-white text-[#8AA08C]",
                       )}
+                      aria-label={`Step ${index + 1}${isDone ? " completed" : isActive ? " current" : isCanceled ? " canceled" : " upcoming"}`}
                     >
                       {isDone ? (
-                        <Check className="h-4 w-4" />
+                        <Check className="h-4 w-4" aria-hidden="true" />
                       ) : (
                         <span>{index + 1}</span>
                       )}
                     </span>
 
-                    <p className="mt-4 text-[15px] font-semibold text-[#2F241F]">
-                      {step.label}
-                    </p>
-                    <p
-                      className={cn(
-                        "mt-1 text-sm",
-                        isCanceled
-                          ? "text-rose-700"
-                          : isUpcoming
-                            ? "text-[#78907A]"
-                            : "text-[#6D4C41]",
-                      )}
-                    >
-                      {getStepCaption(state)}
-                    </p>
+                    <div className="flex-1 pt-2">
+                      <p className="text-[15px] font-semibold text-[#2F241F]">
+                        {step.label}
+                      </p>
+                      <p
+                        className={cn(
+                          "mt-1 text-sm",
+                          isCanceled
+                            ? "text-rose-700"
+                            : isUpcoming
+                              ? "text-[#78907A]"
+                              : "text-[#6D4C41]",
+                        )}
+                        aria-label={`Status: ${getStepCaption(state)}`}
+                      >
+                        {getStepCaption(state)}
+                      </p>
+                    </div>
                   </div>
-                </div>
+                </li>
               );
             })}
+          </ol>
+        </div>
+
+        {/* Desktop Layout: Horizontal Steps */}
+        <div className="hidden md:block">
+          <div className="overflow-x-auto scrollbar-hide">
+            <ol
+              className="grid min-w-190 grid-cols-5 gap-0"
+              role="list"
+              aria-label={`Order progress: ${progressPercentage.toFixed(0)}% complete`}
+            >
+              {ORDER_PROGRESS_STEPS.map((step, index) => {
+                const state = getOrderProgressState(status, step.status);
+                const isDone = state === "completed";
+                const isActive = state === "active";
+                const isUpcoming = state === "upcoming";
+                const isCanceled = state === "canceled";
+                const showFilledLine = !isCanceledOrder && currentIndex > index;
+
+                return (
+                  <li
+                    key={step.status}
+                    className="relative px-3"
+                    role="listitem"
+                    aria-current={isActive ? "step" : undefined}
+                  >
+                    {index < ORDER_PROGRESS_STEPS.length - 1 ? (
+                      <span
+                        className={cn(
+                          "absolute left-1/2 right-[-50%] top-5.5 h-0.5",
+                          isCanceled
+                            ? "bg-rose-300"
+                            : showFilledLine
+                              ? "bg-emerald-700"
+                              : "bg-[#C8DCCB]",
+                        )}
+                        aria-hidden="true"
+                      />
+                    ) : null}
+
+                    <div className="relative z-10 flex flex-col items-center text-center">
+                      <span
+                        className={cn(
+                          "flex h-11 w-11 items-center justify-center rounded-full border text-sm font-semibold shadow-[0_4px_12px_-8px_rgba(37,99,69,0.35)]",
+                          isCanceled && "border-rose-300 bg-white text-rose-600",
+                          isDone &&
+                            "border-emerald-300 bg-white text-emerald-700",
+                          isActive &&
+                            "border-emerald-300 bg-[#F8FCF8] text-emerald-700",
+                          isUpcoming &&
+                            "border-[#D4E4D5] bg-white text-[#8AA08C]",
+                        )}
+                        aria-label={`Step ${index + 1}${isDone ? " completed" : isActive ? " current" : isCanceled ? " canceled" : " upcoming"}`}
+                      >
+                        {isDone ? (
+                          <Check className="h-4 w-4" aria-hidden="true" />
+                        ) : (
+                          <span>{index + 1}</span>
+                        )}
+                      </span>
+
+                      <p className="mt-4 text-[15px] font-semibold text-[#2F241F]">
+                        {step.label}
+                      </p>
+                      <p
+                        className={cn(
+                          "mt-1 text-sm",
+                          isCanceled
+                            ? "text-rose-700"
+                            : isUpcoming
+                              ? "text-[#78907A]"
+                              : "text-[#6D4C41]",
+                        )}
+                        aria-label={`Status: ${getStepCaption(state)}`}
+                      >
+                        {getStepCaption(state)}
+                      </p>
+                    </div>
+                  </li>
+                );
+              })}
+            </ol>
           </div>
         </div>
       </div>

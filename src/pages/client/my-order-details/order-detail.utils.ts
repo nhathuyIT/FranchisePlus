@@ -109,3 +109,10 @@ export const getOrderStatusNarrative = (status: AdminOrderStatus) => {
       return "Track every stage of this order, from confirmation to payment and delivery.";
   }
 };
+
+export const formatStaffInfo = (staffName?: string, staffEmail?: string) => {
+  const staffInfo = [];
+  if (staffName) staffInfo.push(staffName);
+  if (staffEmail) staffInfo.push(`(${staffEmail})`);
+  return staffInfo.join(" ");
+};
