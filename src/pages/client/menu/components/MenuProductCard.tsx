@@ -37,9 +37,7 @@ export const MenuProductCard = ({
                  }`}
     >
       {/* Image */}
-      <div
-        className="relative h-52 w-full overflow-hidden bg-stone-100 text-left"
-      >
+      <div className="relative h-44 w-full overflow-hidden bg-stone-100 text-left sm:h-52">
         <img
           src={product.imageUrl || "/placeholder-coffee.jpg"}
           alt={product.name}
@@ -67,9 +65,9 @@ export const MenuProductCard = ({
       </div>
 
       {/* Content */}
-      <div className="flex flex-1 flex-col p-5">
+      <div className="flex flex-1 flex-col p-4 sm:p-5">
         <h3
-          className="font-serif text-lg font-bold text-stone-800 leading-snug 
+          className="font-serif text-base font-bold leading-snug text-stone-800 sm:text-lg
                       group-hover:text-amber-800 transition-colors duration-300
                       line-clamp-2"
         >
@@ -77,14 +75,14 @@ export const MenuProductCard = ({
         </h3>
 
         {product.description && (
-          <p className="mt-1.5 text-sm text-stone-500 line-clamp-2 leading-relaxed">
+          <p className="mt-1.5 line-clamp-2 text-sm leading-relaxed text-stone-500">
             {product.description}
           </p>
         )}
 
         {minPrice !== null && (
           <div className="mt-auto pt-4">
-            <span className="flex items-center justify-center rounded-xl border border-gray-50-200/70 bg--50/80 px-4 py-3 font-serif text-2xl font-bold text-amber-700 transition-colors group-hover:text-amber-600">
+            <span className="flex items-center justify-center rounded-xl border border-amber-100/80 bg-amber-50/80 px-4 py-3 font-serif text-xl font-bold text-amber-700 transition-colors group-hover:text-amber-600 sm:text-2xl">
               {formatPrice(minPrice)}
             </span>
           </div>
