@@ -114,8 +114,6 @@ const ProfilePage = () => {
         <ProfileDetails user={user} />
       </section>
 
-      {/* ═══ Recent Activity ═══ */}
-      <ProfileHeader />
 
       {/* Edit Profile Dialog */}
       <EditProfileDialog

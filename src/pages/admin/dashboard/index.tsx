@@ -1,4 +1,4 @@
-﻿import { startTransition, useEffect, useMemo, useState } from "react";
+import { startTransition, useEffect, useMemo, useState } from "react";
 import {
   AlertCircle,
   Building2,
@@ -9,6 +9,24 @@ import {
   UserRound,
   Users,
 } from "lucide-react";
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Cell,
+  ComposedChart,
+  Legend,
+  Line,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
+import type {
+  DashboardDeliveryStatus as DashboardDeliveryKey,
+  DashboardOrderStatus,
+  DashboardPaymentStatus,
+} from "@/types/dashboard.type";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -24,21 +42,183 @@ import {
 } from "@/hooks/dashboard/useDashboard.hooks";
 import { useFranchiseSelect } from "@/hooks/franchise";
 import { useAuthStore } from "@/stores/auth-store";
-import { DashboardDeliveryStatus } from "./components/DashboardDeliveryStatus";
-import { DashboardOrdersChart } from "./components/DashboardOrdersChart";
-import { DashboardPaymentChart } from "./components/DashboardPaymentChart";
 import {
   DashboardSummaryCards,
   type DashboardSummaryCardItem,
 } from "./components/DashboardSummaryCards";
 import {
+  DELIVERY_STATUS_META,
   formatCount,
   formatSummaryValue,
-  sumCounts,
-  toDeliveryStatusData,
-  toOrderStatusData,
-  toPaymentStatusData,
+  ORDER_STATUS_META,
+  PAYMENT_STATUS_META,
 } from "./dashboard.utils";
+
+interface StatusChartDatum {
+  label: string;
+  value: number;
+  fill: string;
+}
+
+interface OverviewChartDatum {
+  name: string;
+  total: number;
+  mapped: number;
+  fill: string;
+}
+
+interface StatusChartCardProps {
+  title: string;
+  description: string;
+  data: StatusChartDatum[];
+  height: number;
+}
+
+const ORDER_STATUS_SEQUENCE: DashboardOrderStatus[] = [
+  "DRAFT",
+  "CONFIRMED",
+  "PREPARING",
+  "READY_FOR_PICKUP",
+  "OUT_FOR_DELIVERY",
+  "COMPLETED",
+  "CANCELED",
+];
+
+const PAYMENT_STATUS_SEQUENCE: DashboardPaymentStatus[] = [
+  "PAID",
+  "PENDING",
+  "REFUNDED",
+  "FAILED",
+];
+
+const DELIVERY_STATUS_SEQUENCE: DashboardDeliveryKey[] = [
+  "ASSIGNED",
+  "PICKING_UP",
+  "DELIVERED",
+];
+
+const tooltipContentStyle = {
+  borderRadius: "18px",
+  border: "1px solid #E8DBCA",
+  background: "#FFFDF8",
+  boxShadow: "0 18px 40px rgba(62, 39, 35, 0.08)",
+};
+
+const axisTickStyle = {
+  fill: "#5A4335",
+  fontSize: 12,
+  fontWeight: 600,
+};
+
+const StatusChartCard = ({
+  title,
+  description,
+  data,
+  height,
+}: StatusChartCardProps) => {
+  return (
+    <section className="rounded-[32px] border border-[#EADFD3] bg-white p-6 shadow-[0_24px_50px_rgba(84,54,42,0.08)] sm:p-8">
+      <div>
+        <h2 className="text-2xl font-semibold text-[#2E1A13]">{title}</h2>
+        <p className="mt-2 text-sm text-[#826856]">{description}</p>
+      </div>
+
+      <div className="mt-6 rounded-[28px] bg-[#FCF7F0] p-4 sm:p-5">
+        <div style={{ height }}>
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart
+              data={data}
+              layout="vertical"
+              margin={{ top: 4, right: 24, left: 0, bottom: 4 }}
+              barCategoryGap={18}
+            >
+              <CartesianGrid
+                horizontal={false}
+                stroke="#EDE1D4"
+                strokeDasharray="4 4"
+              />
+              <XAxis
+                type="number"
+                allowDecimals={false}
+                axisLine={false}
+                tickLine={false}
+                tick={axisTickStyle}
+              />
+              <YAxis
+                dataKey="label"
+                type="category"
+                width={132}
+                axisLine={false}
+                tickLine={false}
+                tick={axisTickStyle}
+              />
+              <Tooltip
+                formatter={(value) => [formatCount(Number(value ?? 0)), "Count"]}
+                labelStyle={{ color: "#3E2723", fontWeight: 600 }}
+                contentStyle={tooltipContentStyle}
+              />
+              <Bar dataKey="value" radius={[999, 999, 999, 999]} barSize={18}>
+                {data.map((item) => (
+                  <Cell key={item.label} fill={item.fill} />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+    </section>
+  );
+};
+
+const DashboardLoadingState = () => {
+  return (
+    <div className="space-y-6 pb-4">
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
+        {Array.from({ length: 6 }).map((_, index) => (
+          <div
+            key={`summary-skeleton-${index}`}
+            className="rounded-[28px] border border-[#EADFD3] bg-white p-6"
+          >
+            <Skeleton className="h-12 w-12 rounded-2xl" />
+            <Skeleton className="mt-8 h-4 w-24" />
+            <Skeleton className="mt-3 h-8 w-28" />
+            <Skeleton className="mt-3 h-4 w-full" />
+          </div>
+        ))}
+      </div>
+
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,1.3fr)_minmax(320px,0.9fr)]">
+        {Array.from({ length: 2 }).map((_, index) => (
+          <div
+            key={`top-chart-skeleton-${index}`}
+            className="rounded-[32px] border border-[#EADFD3] bg-white p-8"
+          >
+            <Skeleton className="h-6 w-48" />
+            <Skeleton className="mt-3 h-4 w-64 max-w-full" />
+            <div className="mt-6 rounded-[28px] bg-[#FCF7F0] p-5">
+              <Skeleton className="h-[320px] w-full rounded-[24px]" />
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div className="grid gap-6 xl:grid-cols-2">
+        {Array.from({ length: 2 }).map((_, index) => (
+          <div
+            key={`bottom-chart-skeleton-${index}`}
+            className="rounded-[32px] border border-[#EADFD3] bg-white p-8"
+          >
+            <Skeleton className="h-6 w-40" />
+            <Skeleton className="mt-3 h-4 w-52 max-w-full" />
+            <div className="mt-6 rounded-[28px] bg-[#FCF7F0] p-5">
+              <Skeleton className="h-[260px] w-full rounded-[24px]" />
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
 
 const DashboardPage = () => {
   const authUser = useAuthStore((state) => state.authUser);
@@ -121,30 +301,68 @@ const DashboardPage = () => {
     document.title = `Admin Dashboard | ${scopeLabel}`;
   }, [scopeLabel]);
 
-  const orderStatusData = dashboard
-    ? toOrderStatusData(dashboard.countOrders)
-    : [];
-  const paymentStatusData = dashboard
-    ? toPaymentStatusData(dashboard.countPayments)
-    : [];
-  const deliveryStatusData = dashboard
-    ? toDeliveryStatusData(dashboard.countDeliveries)
-    : [];
+  const overviewChartData = useMemo<OverviewChartDatum[]>(() => {
+    if (!dashboard) {
+      return [];
+    }
 
-  const totalOrders = dashboard ? sumCounts(dashboard.countOrders) : 0;
-  const totalPayments = dashboard ? sumCounts(dashboard.countPayments) : 0;
-  const totalDeliveries = dashboard ? sumCounts(dashboard.countDeliveries) : 0;
-  const paidRate =
-    dashboard && totalPayments > 0
-      ? dashboard.countPayments.PAID / totalPayments
-      : 0;
-  const deliveredRate =
-    dashboard && totalDeliveries > 0
-      ? dashboard.countDeliveries.DELIVERED / totalDeliveries
-      : 0;
-  const activeDeliveries = dashboard
-    ? dashboard.countDeliveries.ASSIGNED + dashboard.countDeliveries.PICKING_UP
-    : 0;
+    return [
+      {
+        name: "Users",
+        total: dashboard.countUsers,
+        mapped: dashboard.countUserFranchises,
+        fill: "#4A2C23",
+      },
+      {
+        name: "Customers",
+        total: dashboard.countCustomers,
+        mapped: dashboard.countCustomerFranchises,
+        fill: "#A95B24",
+      },
+      {
+        name: "Products",
+        total: dashboard.countProducts,
+        mapped: dashboard.countProductFranchises,
+        fill: "#D1A451",
+      },
+    ];
+  }, [dashboard]);
+
+  const orderStatusChartData = useMemo<StatusChartDatum[]>(() => {
+    if (!dashboard) {
+      return [];
+    }
+
+    return ORDER_STATUS_SEQUENCE.map((status) => ({
+      label: ORDER_STATUS_META[status].label,
+      value: dashboard.countOrders[status],
+      fill: ORDER_STATUS_META[status].fill,
+    }));
+  }, [dashboard]);
+
+  const paymentStatusChartData = useMemo<StatusChartDatum[]>(() => {
+    if (!dashboard) {
+      return [];
+    }
+
+    return PAYMENT_STATUS_SEQUENCE.map((status) => ({
+      label: PAYMENT_STATUS_META[status].label,
+      value: dashboard.countPayments[status],
+      fill: PAYMENT_STATUS_META[status].fill,
+    }));
+  }, [dashboard]);
+
+  const deliveryStatusChartData = useMemo<StatusChartDatum[]>(() => {
+    if (!dashboard) {
+      return [];
+    }
+
+    return DELIVERY_STATUS_SEQUENCE.map((status) => ({
+      label: DELIVERY_STATUS_META[status].label,
+      value: dashboard.countDeliveries[status],
+      fill: DELIVERY_STATUS_META[status].fill,
+    }));
+  }, [dashboard]);
 
   const summaryCards: DashboardSummaryCardItem[] = dashboard
     ? [
@@ -222,8 +440,8 @@ const DashboardPage = () => {
             Admin Dashboard
           </h1>
           <p className="mt-3 max-w-3xl text-sm leading-6 text-[#6B4C3B] sm:text-base">
-            Overview of your franchise performance, operational flow, and live
-            network health in one place.
+            Visual summary of dashboard counts returned directly from the
+            current API scope.
           </p>
 
           {activeDashboardQuery.isFetching && dashboard ? (
@@ -234,7 +452,7 @@ const DashboardPage = () => {
           ) : null}
         </div>
 
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center mt-10">
+        <div className="mt-10 flex flex-col gap-3 sm:flex-row sm:items-center">
           {isAdmin ? (
             <Select
               value={effectiveFranchiseId || "all"}
@@ -274,71 +492,7 @@ const DashboardPage = () => {
       </div>
 
       {isInitialLoading ? (
-        <div className="space-y-6 pb-4">
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
-            {Array.from({ length: 6 }).map((_, index) => (
-              <div
-                key={`summary-skeleton-${index}`}
-                className="rounded-[28px] border border-[#EADFD3] bg-white p-6"
-              >
-                <Skeleton className="h-12 w-12 rounded-2xl" />
-                <Skeleton className="mt-8 h-4 w-24" />
-                <Skeleton className="mt-3 h-8 w-28" />
-                <Skeleton className="mt-3 h-4 w-full" />
-              </div>
-            ))}
-          </div>
-
-          <div className="grid gap-6 xl:grid-cols-[minmax(0,1.45fr)_minmax(320px,0.95fr)]">
-            <div className="rounded-[32px] border border-[#EADFD3] bg-white p-8">
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex-1">
-                  <Skeleton className="h-6 w-48" />
-                  <Skeleton className="mt-3 h-4 w-64 max-w-full" />
-                </div>
-                <Skeleton className="h-8 w-32 rounded-full" />
-              </div>
-              <div className="mt-6 rounded-[28px] bg-[#FCF7F0] p-5">
-                <Skeleton className="h-[320px] w-full rounded-[24px]" />
-              </div>
-              <div className="mt-5 grid gap-3 sm:grid-cols-3">
-                <Skeleton className="h-24 rounded-[24px]" />
-                <Skeleton className="h-24 rounded-[24px]" />
-                <Skeleton className="h-24 rounded-[24px]" />
-              </div>
-            </div>
-
-            <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-1">
-              {Array.from({ length: 2 }).map((_, index) => (
-                <div
-                  key={`chart-skeleton-${index}`}
-                  className="rounded-[32px] border border-[#EADFD3] bg-white p-8"
-                >
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex-1">
-                      <Skeleton className="h-6 w-40" />
-                      <Skeleton className="mt-3 h-4 w-48 max-w-full" />
-                    </div>
-                    <Skeleton className="h-8 w-28 rounded-full" />
-                  </div>
-                  <Skeleton className="mx-auto mt-8 h-52 w-52 rounded-full" />
-                  <div className="mt-6 grid gap-3 sm:grid-cols-2">
-                    {Array.from({ length: 4 }).map((_, itemIndex) => (
-                      <Skeleton
-                        key={`chart-skeleton-item-${index}-${itemIndex}`}
-                        className="h-16 rounded-2xl"
-                      />
-                    ))}
-                  </div>
-                  <div className="mt-5 grid gap-3 sm:grid-cols-2">
-                    <Skeleton className="h-24 rounded-[24px]" />
-                    <Skeleton className="h-24 rounded-[24px]" />
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
+        <DashboardLoadingState />
       ) : error ? (
         <div className="rounded-[32px] border border-[#E7D5C6] bg-white p-8 shadow-[0_20px_40px_rgba(84,54,42,0.08)]">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -372,27 +526,103 @@ const DashboardPage = () => {
         <div className="space-y-6 pb-4">
           <DashboardSummaryCards cards={summaryCards} />
 
-          <div className="grid gap-6 xl:grid-cols-[minmax(0,1.45fr)_minmax(320px,0.95fr)]">
-            <DashboardOrdersChart
-              data={orderStatusData}
-              totalOrders={totalOrders}
-              scopeLabel={scopeLabel}
+          <div className="grid gap-6 xl:grid-cols-[minmax(0,1.3fr)_minmax(320px,0.9fr)]">
+            <section className="rounded-[32px] border border-[#EADFD3] bg-white p-6 shadow-[0_24px_50px_rgba(84,54,42,0.08)] sm:p-8">
+              <div>
+                <h2 className="text-2xl font-semibold text-[#2E1A13]">
+                  Overview Composition
+                </h2>
+                <p className="mt-2 text-sm text-[#826856]">
+                  Compare the primary counts and franchise-linked counts returned
+                  by the selected dashboard scope.
+                </p>
+              </div>
+
+              <div className="mt-6 rounded-[28px] bg-[#FCF7F0] p-4 sm:p-5">
+                <div className="h-[320px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <ComposedChart
+                      data={overviewChartData}
+                      margin={{ top: 12, right: 16, left: 0, bottom: 0 }}
+                    >
+                      <CartesianGrid
+                        vertical={false}
+                        stroke="#EDE1D4"
+                        strokeDasharray="4 4"
+                      />
+                      <XAxis
+                        dataKey="name"
+                        axisLine={false}
+                        tickLine={false}
+                        tick={axisTickStyle}
+                      />
+                      <YAxis
+                        allowDecimals={false}
+                        axisLine={false}
+                        tickLine={false}
+                        tick={axisTickStyle}
+                      />
+                      <Tooltip
+                        formatter={(value) => [
+                          formatCount(Number(value ?? 0)),
+                          "Count",
+                        ]}
+                        labelStyle={{ color: "#3E2723", fontWeight: 600 }}
+                        contentStyle={tooltipContentStyle}
+                      />
+                      <Legend
+                        wrapperStyle={{ paddingTop: 8 }}
+                        formatter={(value) => (
+                          <span className="text-sm text-[#6B4C3B]">{value}</span>
+                        )}
+                      />
+                      <Bar
+                        dataKey="total"
+                        name="Primary Count"
+                        radius={[16, 16, 0, 0]}
+                        barSize={44}
+                      >
+                        {overviewChartData.map((item) => (
+                          <Cell key={item.name} fill={item.fill} />
+                        ))}
+                      </Bar>
+                      <Line
+                        type="monotone"
+                        dataKey="mapped"
+                        name="Franchise Links"
+                        stroke="#C97F32"
+                        strokeWidth={3}
+                        dot={{ r: 4, fill: "#C97F32" }}
+                        activeDot={{ r: 6 }}
+                      />
+                    </ComposedChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+            </section>
+
+            <StatusChartCard
+              title="Orders by Status"
+              description="Raw order status counts returned from the dashboard API."
+              data={orderStatusChartData}
+              height={320}
+            />
+          </div>
+
+          <div className="grid gap-6 xl:grid-cols-2">
+            <StatusChartCard
+              title="Payments by Status"
+              description="Payment status distribution from the current dashboard scope."
+              data={paymentStatusChartData}
+              height={260}
             />
 
-            <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-1">
-              <DashboardPaymentChart
-                data={paymentStatusData}
-                totalPayments={totalPayments}
-                paidRate={paidRate}
-              />
-
-              <DashboardDeliveryStatus
-                data={deliveryStatusData}
-                totalDeliveries={totalDeliveries}
-                activeDeliveries={activeDeliveries}
-                deliveredRate={deliveredRate}
-              />
-            </div>
+            <StatusChartCard
+              title="Deliveries by Status"
+              description="Delivery status distribution from the current dashboard scope."
+              data={deliveryStatusChartData}
+              height={260}
+            />
           </div>
         </div>
       ) : null}
