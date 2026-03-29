@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { Textarea } from "@/components/ui/textarea";
 import { PRODUCTS_CLIENT } from "@/const/product-client.const";
 import { createProductSlug, parseProductIdFromSlug } from "@/lib/slugify";
 import { useCart } from "@/pages/client/cart/useCart";
@@ -28,27 +29,41 @@ const ProductDetailPage = () => {
   }, [slug]);
 
   const [quantity, setQuantity] = useState(1);
+  const [note, setNote] = useState("");
   const [selectedImage, setSelectedImage] = useState(
     product?.imageUrl || "/placeholder-coffee.jpg",
   );
 
-  const handleAddToCart = () => {
+  const handleAddToCart = async () => {
     if (!product) return;
 
-    addItem(product.id, product.name, product.minPrice, quantity);
+    const added = await addItem(
+      product.id,
+      product.name,
+      product.minPrice,
+      quantity,
+      product.imageUrl || undefined,
+      { note: note.trim() || undefined },
+    );
 
-    // Show confirmation
-    alert(`Added ${quantity} "${product.name}" to cart!`);
+    if (!added) return;
   };
 
-  const handleBuyNow = () => {
+  const handleBuyNow = async () => {
     if (!product) return;
 
-    // Add to cart first
-    addItem(product.id, product.name, product.minPrice, quantity);
+    const added = await addItem(
+      product.id,
+      product.name,
+      product.minPrice,
+      quantity,
+      product.imageUrl || undefined,
+      { note: note.trim() || undefined },
+    );
 
-    // Navigate to cart
-    navigate("/client/cart");
+    if (added) {
+      navigate("/client/cart");
+    }
   };
 
   if (!product) {
@@ -134,7 +149,7 @@ const ProductDetailPage = () => {
             className="mb-1 inline-flex w-fit items-center gap-1 text-xs font-medium text-neutral-500 hover:text-neutral-700"
             onClick={() => navigate("/client/menu")}
           >
-            <span className="text-lg">←</span>
+            <span className="text-lg">Ã¢â€ Â</span>
             Back to list
           </button>
 
@@ -190,6 +205,18 @@ const ProductDetailPage = () => {
               <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
               {product.isActive ? "In stock" : "Out of stock"}
             </span>
+          </div>
+
+          <div className="mt-5 space-y-2">
+            <label className="text-sm font-medium text-neutral-700">
+              Note for the store
+            </label>
+            <Textarea
+              value={note}
+              onChange={(event) => setNote(event.target.value)}
+              placeholder="For example: less ice, less sugar, pack separately..."
+              className="min-h-24 rounded-2xl border-neutral-200 bg-white text-sm text-neutral-700 placeholder:text-neutral-400"
+            />
           </div>
 
           <div className="mt-5 flex flex-wrap gap-4">

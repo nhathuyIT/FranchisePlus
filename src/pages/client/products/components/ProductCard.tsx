@@ -4,7 +4,6 @@ import { createProductSlug } from "@/lib/slugify";
 import { useCart } from "../../cart/useCart";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
-import { toast } from "sonner";
 
 type ProductCardProps = {
 	product: ProductClient;
@@ -23,8 +22,6 @@ export const ProductCard = ({ product }: ProductCardProps) => {
 		
 		// Use minPrice as default price for adding to cart
 		addItem(product.id, product.name, product.minPrice, 1);		
-		toast.success(`${product.name} đã được thêm vào giỏ hàng!`, {
-		});
 	};
 
 	return (

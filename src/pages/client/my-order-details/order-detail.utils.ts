@@ -73,6 +73,22 @@ export const canRepayOrder = (
   orderStatus !== "COMPLETED" &&
   orderStatus !== "CANCELED";
 
+export const canCancelPayment = (
+  orderStatus: AdminOrderStatus,
+  paymentStatus?: AdminPayment["status"] | null,
+) =>
+  paymentStatus === "PENDING" &&
+  orderStatus !== "COMPLETED" &&
+  orderStatus !== "CANCELED";
+
+export const canRequestRefund = (
+  orderStatus: AdminOrderStatus,
+  paymentStatus?: AdminPayment["status"] | null,
+) =>
+  paymentStatus === "PAID" &&
+  orderStatus !== "COMPLETED" &&
+  orderStatus !== "CANCELED";
+
 export const getOrderStatusNarrative = (status: AdminOrderStatus) => {
   switch (status) {
     case "DRAFT":

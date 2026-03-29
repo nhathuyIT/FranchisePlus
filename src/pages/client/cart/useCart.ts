@@ -215,7 +215,7 @@ export function useCart() {
     );
   };
 
-  // Keep item-level pending state local so +/-/remove/note save cannot be double-submitted.
+  // Keep item-level pending state local so +/-/remove/edit cannot be double-submitted.
   const setItemPendingState = (cartItemId: string, pending: boolean) => {
     setPendingCartItemIds((current) => {
       if (pending) {
@@ -295,8 +295,8 @@ export function useCart() {
     quantity = 1,
     imageUrl?: string,
     meta?: AddItemMeta,
-  ) => {
-    void addItemAsync(
+  ) =>
+    addItemAsync(
       productId,
       productName,
       price,
@@ -304,7 +304,6 @@ export function useCart() {
       imageUrl,
       meta,
     );
-  };
 
   const removeItem = async (cartItemId: string): Promise<boolean> => {
     if (!cartItemId || isItemPending(cartItemId)) {
@@ -345,39 +344,6 @@ export function useCart() {
       await updateCartItemMutation.mutateAsync({
         cartItemId: targetItem.cartItemId,
         quantity,
-      });
-      return true;
-    } catch {
-      return false;
-    } finally {
-      setItemPendingState(cartItemId, false);
-    }
-  };
-
-  // Item notes piggyback on update-cart-item until the backend exposes a dedicated note endpoint.
-  const saveItemNote = async (
-    cartItemId: string,
-    note: string,
-  ): Promise<boolean> => {
-    if (!cartItemId || isItemPending(cartItemId)) {
-      return false;
-    }
-
-    const targetItem = findItemByCartItemId(cartItemId);
-    if (!targetItem) return false;
-
-    const normalizedNote = note.trim();
-    if (String(targetItem.note ?? "") === normalizedNote) {
-      return false;
-    }
-
-    setItemPendingState(cartItemId, true);
-
-    try {
-      await updateCartItemMutation.mutateAsync({
-        cartItemId: targetItem.cartItemId,
-        quantity: Math.max(1, Number(targetItem.quantity || 1)),
-        note: normalizedNote,
       });
       return true;
     } catch {
@@ -440,7 +406,6 @@ export function useCart() {
     addItem,
     addItemAsync,
     updateItemQuantity,
-    saveItemNote,
     saveEditedItem,
     removeItem,
     clearCart,
