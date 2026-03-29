@@ -4,7 +4,6 @@ import {
   Coffee,
   MapPin,
   ChevronDown,
-  Loader2,
   UtensilsCrossed,
   Cookie,
   Star,
@@ -22,6 +21,8 @@ import { MenuProductCard } from "./components/MenuProductCard";
 import { ToppingCard } from "./components/ToppingCard.";
 import { SectionDivider } from "./components/SectionDivider";
 import { EmptyState } from "./components/EmptyState";
+import { FooterInfo } from "../homepage/components";
+import LoadingLayout from "@/layouts/loading-layout";
 
 const DEFAULT_FRANCHISE_NAME = "Goat Coffee";
 
@@ -408,7 +409,6 @@ const MenuPage = () => {
           </svg>
         </div>
       </section>
-
       {/* ── Main Content ───────────────────────────────────────────────── */}
       <div className="container mx-auto px-4 pb-20 -mt-2">
         {/* ── Category tabs ──────────────────────────────────────────── */}
@@ -586,16 +586,12 @@ const MenuPage = () => {
           </>
         )}
       </div>
-
+      <FooterInfo />;
       {/* ── Loading overlay for franchise change ──────────────────────── */}
-      {isLoadingFranchises && (
-        <div className="fixed inset-0 bg-white/60 backdrop-blur-sm z-50 flex items-center justify-center">
-          <div className="flex flex-col items-center gap-4 bg-white p-8 rounded-2xl shadow-2xl">
-            <Loader2 className="h-10 w-10 text-amber-600 animate-spin" />
-            <p className="font-serif text-stone-600">Loading menu...</p>
-          </div>
-        </div>
-      )}
+      <LoadingLayout
+        forceVisible={isLoadingFranchises}
+        message="Loading menu"
+      />
     </div>
   );
 };

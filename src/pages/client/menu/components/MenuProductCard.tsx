@@ -12,7 +12,7 @@ export const MenuProductCard = ({
 }) => {
   const minPrice = getMinPrice(product.sizes);
   const canViewDetail = product.sizes.some((size) => size.isAvailable);
-  const handleImageKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+  const handleCardKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
     if (!canViewDetail) return;
     if (event.key === "Enter" || event.key === " ") {
       event.preventDefault();
@@ -22,22 +22,23 @@ export const MenuProductCard = ({
 
   return (
     <div
-      className="group relative flex flex-col overflow-hidden rounded-2xl bg-white 
-                 border border-stone-200/60 shadow-sm
+      role={canViewDetail ? "button" : undefined}
+      tabIndex={canViewDetail ? 0 : -1}
+      onClick={canViewDetail ? onViewDetail : undefined}
+      onKeyDown={handleCardKeyDown}
+      aria-label={`View details for ${product.name}`}
+      className={`group relative flex flex-col overflow-hidden rounded-2xl bg-white 
+                 border border-stone-200/60 shadow-sm text-left
                  transition-all duration-500 ease-out
                  hover:shadow-[0_8px_30px_rgba(120,80,40,0.12)]
-                 hover:-translate-y-1 hover:border-amber-200/80"
+                 hover:-translate-y-1 hover:border-amber-200/80
+                 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/60 ${
+                   canViewDetail ? "cursor-pointer" : "cursor-default"
+                 }`}
     >
       {/* Image */}
       <div
-        role={canViewDetail ? "button" : undefined}
-        tabIndex={canViewDetail ? 0 : -1}
-        onClick={canViewDetail ? onViewDetail : undefined}
-        onKeyDown={handleImageKeyDown}
-        aria-label={`View details for ${product.name}`}
-        className={`relative h-52 w-full overflow-hidden bg-stone-100 text-left ${
-          canViewDetail ? "cursor-pointer" : "cursor-default"
-        }`}
+        className="relative h-52 w-full overflow-hidden bg-stone-100 text-left"
       >
         <img
           src={product.imageUrl || "/placeholder-coffee.jpg"}

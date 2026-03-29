@@ -1,107 +1,215 @@
-import { Link } from "react-router-dom";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "../ui/dropdown-menu";
+import { useState, type ReactNode } from "react";
+import { Link, useLocation } from "react-router-dom";
 import { Button } from "../ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import {
   FileText,
-  LogOut,
-  Settings,
-  User,
-  ShoppingCart,
   Key,
+  LogOut,
+  Menu as MenuIcon,
+  ShoppingCart,
+  User,
+  X,
 } from "lucide-react";
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "../ui/dialog";
+import { Badge } from "../ui/badge";
 import { useAuthStore } from "@/stores/auth-store";
 import { useLogoutCustomer } from "@/hooks/client/useClient.hooks";
 import { useCart } from "@/pages/client/cart/useCart";
-import { Badge } from "../ui/badge";
+import { ROUTER_URL } from "@/router/route.const";
+import { cn } from "@/lib/utils";
+
+const NAV_LINKS = [
+  { label: "Menu", to: `/${ROUTER_URL.MENU}` },
+  { label: "The Stories", to: ROUTER_URL.ABOUT },
+  { label: "Contact", to: ROUTER_URL.CONTACT },
+  { label: "Locations", to: ROUTER_URL.LOCATIONS },
+];
+
+const CART_PATH = `${ROUTER_URL.CLIENT}/${ROUTER_URL.CLIENT_ROUTER.CART}`;
+const LOGIN_PATH = ROUTER_URL.CLIENT_ROUTER.LOGIN;
+const REGISTER_PATH = ROUTER_URL.CLIENT_ROUTER.REGISTER;
+const CHANGE_PASSWORD_PATH = ROUTER_URL.CLIENT_ROUTER.CHANGE_PASSWORD;
+const PROFILE_PATH = `${ROUTER_URL.ACCOUNT}/${ROUTER_URL.ACCOUNT_ROUTER.MY_PROFILE}`;
+const ORDER_PATH = `${ROUTER_URL.ACCOUNT}/${ROUTER_URL.ACCOUNT_ROUTER.MY_ORDER}`;
+
+const PANEL_ITEM_CLASS =
+  "flex w-full items-center gap-3 border-b border-[#E8DFD6] px-5 py-4 text-left transition-colors duration-200";
+
+type HeaderSidePanelProps = {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  trigger: ReactNode;
+  title: string;
+  description: string;
+  children: ReactNode;
+  side?: "left" | "right";
+};
+
+const HeaderSidePanel = ({
+  open,
+  onOpenChange,
+  trigger,
+  title,
+  description,
+  children,
+  side = "right",
+}: HeaderSidePanelProps) => {
+  const isLeft = side === "left";
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogTrigger asChild>{trigger}</DialogTrigger>
+
+      <DialogContent
+        showCloseButton={false}
+        className={cn(
+          "top-0 flex h-screen w-[calc(100vw-0.75rem)] max-w-sm translate-y-0 flex-col gap-0 rounded-none border-0 bg-[#FFFDF9] p-0 shadow-2xl transition-[transform,opacity] duration-300 ease-out data-[state=open]:translate-x-0 data-[state=open]:opacity-100 data-[state=closed]:opacity-0 sm:max-w-sm",
+          isLeft
+            ? "left-0 right-auto border-r border-[#E8DFD6] data-[state=closed]:-translate-x-full"
+            : "right-0 left-auto border-l border-[#E8DFD6] data-[state=closed]:translate-x-full",
+        )}
+      >
+        <div className="flex items-start justify-between border-b border-[#E8DFD6] bg-[linear-gradient(180deg,#fffdfa_0%,#fcf5ee_100%)] px-5 py-5">
+          <DialogHeader className="text-left">
+            <DialogTitle className="font-coffee text-2xl text-[#5D4037]">
+              {title}
+            </DialogTitle>
+            <DialogDescription className="text-sm text-[#8D6E63]">
+              {description}
+            </DialogDescription>
+          </DialogHeader>
+
+          <DialogClose asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-12 w-12 rounded-full p-3 text-[#6D4C41] hover:bg-[#F8E5E2] hover:text-[#C62828] active:bg-[#F3C9C3] active:text-[#B71C1C]"
+            >
+              <X className="h-5 w-5" />
+              <span className="sr-only">Close panel</span>
+            </Button>
+          </DialogClose>
+        </div>
+
+        <div className="flex min-h-0 flex-1 flex-col overflow-y-auto px-5 py-5">
+          {children}
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+};
 
 const Header = () => {
-  const { authUser, isAdmin } = useAuthStore();
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isAccountOpen, setIsAccountOpen] = useState(false);
+  const location = useLocation();
+  const { authUser } = useAuthStore();
   const { itemCount } = useCart();
   const logoutMutation = useLogoutCustomer();
   const user = authUser?.user;
   const primaryRole = authUser?.roles[0]?.name || "User";
 
+  const isActiveLink = (path: string) => {
+    if (path === `/${ROUTER_URL.MENU}`) {
+      return (
+        location.pathname === path ||
+        location.pathname.startsWith(`${path}/`) ||
+        location.pathname.startsWith("/client/products")
+      );
+    }
+
+    return (
+      location.pathname === path || location.pathname.startsWith(`${path}/`)
+    );
+  };
+
+  const getPanelItemClass = (isActive = false) =>
+    cn(
+      PANEL_ITEM_CLASS,
+      isActive
+        ? "font-medium text-[#6D4C41]"
+        : "text-[#5D4037] hover:text-[#6D4C41]",
+    );
+
+  const handleLogout = () => {
+    setIsAccountOpen(false);
+    logoutMutation.mutate();
+  };
+
   return (
-    <header className="sticky top-0 z-50 w-full h-18 border-b bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60">
-      <div className="container mx-auto flex h-16 items-center justify-between px-4">
-        {/* Left: Original Logo Block */}
-        <Link
-          to={"/"}
-          className="flex w-48 h-16 overflow-hidden rounded-md group"
-        >
-          {/* PHẦN BÊN TRÁI: Chứa Logo (50% chiều rộng) */}
-          <div className="w-1/2 h-full flex items-center justify-end">
+    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60">
+      <div className="container mx-auto px-4 sm:px-6">
+        <div className="grid h-18 grid-cols-[1fr_auto_1fr] items-center gap-3">
+          <div className="flex items-center justify-start">
+            <HeaderSidePanel
+              open={isMenuOpen}
+              onOpenChange={setIsMenuOpen}
+              title="Menu"
+              description="Browse the main pages from a fixed panel on the left."
+              side="left"
+              trigger={
+                <Button
+                  variant="ghost"
+                  className="h-11 rounded-full border-0 bg-transparent px-4 text-[#5D4037] shadow-none hover:bg-transparent hover:text-[#6D4C41]"
+                  aria-label="Open site menu"
+                >
+                  <MenuIcon className="h-5 w-5" />
+                  <span className="font-coffee text-lg leading-none">Menu</span>
+                </Button>
+              }
+            >
+              <nav className="-mx-5 flex flex-col gap-0">
+                {NAV_LINKS.map((link) => (
+                  <DialogClose asChild key={link.to}>
+                    <Link
+                      to={link.to}
+                      className={getPanelItemClass(isActiveLink(link.to))}
+                    >
+                      <MenuIcon className="h-4 w-4" />
+                      <span className="font-coffee text-lg">{link.label}</span>
+                    </Link>
+                  </DialogClose>
+                ))}
+              </nav>
+            </HeaderSidePanel>
+          </div>
+
+          <Link
+            to={ROUTER_URL.HOME}
+            className="flex h-13 w-13 items-center justify-center rounded-full border-0 bg-transparent shadow-none transition-transform hover:scale-105"
+            aria-label="Go to homepage"
+          >
             <img
-              className="h-15 object-contain group-hover:scale-110 transition-transform"
-              src={"/coffee-beans.png"}
-              alt="Coffee Franchise"
+              className="h-9 w-9 object-contain"
+              src="/coffee-beans.png"
+              alt="GOAT Coffee"
             />
-          </div>
+          </Link>
 
-          {/* PHẦN BÊN PHẢI: Chia đôi trên dưới (50% chiều rộng) */}
-          <div className="w-1/2 h-full flex flex-col">
-            <div className="h-1/2 flex items-end justify-start pl-2">
-              <h3 className="font-bold leading-none text-[24px] text-[#6D4C41] uppercase tracking-tighter">
-                GOAT
-              </h3>
-            </div>
-            <div className="h-1/2 flex items-start justify-between pl-2">
-              <p className="text-lg font-medium text-[#6D4C41] italic">
-                coffee
-              </p>
-            </div>
-          </div>
-        </Link>
-
-        {/* Center: Navigation */}
-        <nav className="hidden md:flex items-center gap-10 absolute left-1/2 -translate-x-1/2">
-          <Link
-            to="/menu"
-            className="text-2xl font-coffee tracking-wide text-[#5D4037] hover:text-[#6D4C41] transition-colors duration-200"
-          >
-            Menu
-          </Link>
-          <Link
-            to="/about"
-            className="text-2xl font-coffee tracking-wide text-[#5D4037] hover:text-[#6D4C41] transition-colors duration-200"
-          >
-            The Stories
-          </Link>
-          <Link
-            to="/contact"
-            className="text-2xl font-coffee tracking-wide text-[#5D4037] hover:text-[#6D4C41] transition-colors duration-200"
-          >
-            Contact
-          </Link>
-          <Link
-            to="/locations"
-            className="text-2xl font-coffee tracking-wide text-[#5D4037] hover:text-[#6D4C41] transition-colors duration-200"
-          >
-            Locations
-          </Link>
-        </nav>
-
-        <div className="flex items-center gap-6">
-          <div className="flex items-center gap-4">
-            {/* Cart Icon */}
-            <Link to="/client/cart">
+          <div className="flex items-center justify-end gap-2 sm:gap-3">
+            <Link to={CART_PATH}>
               <Button
                 variant="ghost"
                 size="icon"
-                className="relative h-12 w-12 text-[#5D4037] hover:text-[#6D4C41] hover:bg-[#FAF8F5]"
+                className="relative h-11 w-11 rounded-full text-[#5D4037] hover:bg-[#FAF8F5] hover:text-[#6D4C41] sm:h-12 sm:w-12"
               >
-                <ShoppingCart className="h-7 w-7" strokeWidth={2} />
+                <ShoppingCart
+                  className="h-6 w-6 sm:h-7 sm:w-7"
+                  strokeWidth={2}
+                />
                 {itemCount > 0 && (
                   <Badge
                     variant="destructive"
-                    className="absolute -top-1 -right-1 h-6 w-6 text-xs font-bold flex items-center justify-center p-0 min-w-[1.5rem]"
+                    className="absolute -top-1 -right-1 flex h-6 w-6 min-w-[1.5rem] items-center justify-center p-0 text-xs font-bold"
                   >
                     {itemCount > 99 ? "99+" : itemCount}
                   </Badge>
@@ -109,14 +217,23 @@ const Header = () => {
               </Button>
             </Link>
 
-            {authUser ? (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    className="relative h-10 w-10 rounded-full"
-                  >
-                    <Avatar className="h-12 w-12">
+            <HeaderSidePanel
+              open={isAccountOpen}
+              onOpenChange={setIsAccountOpen}
+              title={authUser ? "My Account" : "Welcome"}
+              description={
+                authUser
+                  ? "Manage profile, orders, password, and account session."
+                  : "Sign in or create an account from the same right-side panel."
+              }
+              trigger={
+                <Button
+                  variant="ghost"
+                  className="relative h-11 w-11 rounded-full p-0 text-[#5D4037] hover:bg-[#FAF8F5] hover:text-[#6D4C41] sm:h-12 sm:w-12"
+                  aria-label="Open account menu"
+                >
+                  {authUser ? (
+                    <Avatar className="h-11 w-11 border border-[#E8DFD6] sm:h-12 sm:w-12">
                       <AvatarImage
                         src={user?.avatarUrl || undefined}
                         alt={user?.name}
@@ -125,89 +242,105 @@ const Header = () => {
                         <User className="h-5 w-5" />
                       </AvatarFallback>
                     </Avatar>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="center" className="w-56">
-                  <div className="flex items-center justify-start gap-2 p-2">
-                    <div className="flex flex-col space-y-1">
-                      <p className="text-sm font-medium leading-none">
-                        {user?.name || "Username"}
-                      </p>
-                      <p className="text-xs leading-none text-muted-foreground">
-                        {primaryRole}
-                      </p>
+                  ) : (
+                    <span className="flex h-11 w-11 items-center justify-center rounded-full border border-[#E8DFD6] bg-[#FFFDF9] sm:h-12 sm:w-12">
+                      <User className="h-5 w-5" />
+                    </span>
+                  )}
+                </Button>
+              }
+            >
+              {authUser ? (
+                <>
+                  <div className="px-0 py-1">
+                    <div className="flex items-center gap-3">
+                      <Avatar className="h-12 w-12">
+                        <AvatarImage
+                          src={user?.avatarUrl || undefined}
+                          alt={user?.name}
+                        />
+                        <AvatarFallback>
+                          <User className="h-5 w-5" />
+                        </AvatarFallback>
+                      </Avatar>
+
+                      <div className="min-w-0">
+                        <p className="truncate text-base font-semibold text-[#3E2723]">
+                          {user?.name || "Username"}
+                        </p>
+                        <p className="text-sm text-[#8D6E63]">{primaryRole}</p>
+                      </div>
                     </div>
                   </div>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem asChild>
-                    <Link
-                      to="/account/my-profile"
-                      className="flex items-center cursor-pointer"
-                    >
-                      <User className="mr-2 h-4 w-4" />
-                      <span>My Profile</span>
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link
-                      to="/account/my-order"
-                      className="flex items-center cursor-pointer"
-                    >
-                      <FileText className="mr-2 h-4 w-4" />
-                      <span>My Order</span>
-                    </Link>
-                  </DropdownMenuItem>
-                  {isAdmin() && (
-                    <>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem asChild>
-                        <Link
-                          to="/admin/dashboard"
-                          className="flex items-center cursor-pointer"
-                        >
-                          <Settings className="mr-2 h-4 w-4" />
-                          <span>Admin Dashboard</span>
-                        </Link>
-                      </DropdownMenuItem>
-                    </>
-                  )}
 
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem asChild className="cursor-pointer">
-                    <Link
-                      to="/client/change-password"
-                      title="Change password"
-                      className="flex items-center"
-                    >
-                      <Key className="mr-2 h-4 w-4" />{" "}
-                      {/* Thêm icon Key cho đồng bộ */}
-                      <span>Change password</span>
-                    </Link>
-                  </DropdownMenuItem>
+                  <div className="mt-5 -mx-5 flex flex-col gap-0">
+                    <DialogClose asChild>
+                      <Link
+                        to={PROFILE_PATH}
+                        className={getPanelItemClass(
+                          location.pathname.startsWith(PROFILE_PATH),
+                        )}
+                      >
+                        <User className="h-4 w-4" />
+                        <span>My Profile</span>
+                      </Link>
+                    </DialogClose>
 
-                  {/* Item Log Out */}
-                  <DropdownMenuItem
-                    onClick={() => logoutMutation.mutate()}
-                    className="cursor-pointer flex items-center text-red-600 focus:text-red-600 focus:bg-red-50"
-                  >
-                    <LogOut className="mr-2 h-4 w-4" />
-                    <span>Log out</span>
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            ) : (
-              <>
-                <Button className="text-md" variant="ghost" asChild>
-                  <Link to="/client/login">Login</Link>
-                </Button>
-                <Button
-                  asChild
-                  className="bg-[#6D4C41] hover:bg-[#5D4037] text-white text-md"
-                >
-                  <Link to="/client/register">Sign Up</Link>
-                </Button>
-              </>
-            )}
+                    <DialogClose asChild>
+                      <Link
+                        to={ORDER_PATH}
+                        className={getPanelItemClass(
+                          location.pathname.startsWith(ORDER_PATH),
+                        )}
+                      >
+                        <FileText className="h-4 w-4" />
+                        <span>My Order</span>
+                      </Link>
+                    </DialogClose>
+
+                    <DialogClose asChild>
+                      <Link
+                        to={CHANGE_PASSWORD_PATH}
+                        className={getPanelItemClass(
+                          location.pathname === CHANGE_PASSWORD_PATH,
+                        )}
+                      >
+                        <Key className="h-4 w-4" />
+                        <span>Change password</span>
+                      </Link>
+                    </DialogClose>
+                  </div>
+
+                  <div className="mt-auto border-t border-[#E8DFD6] pt-5">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      onClick={handleLogout}
+                      className="h-11 w-full justify-start rounded-2xl px-4 text-red-600 hover:bg-red-50 hover:text-red-700"
+                    >
+                      <LogOut className="h-4 w-4" />
+                      <span>Log out</span>
+                    </Button>
+                  </div>
+                </>
+              ) : (
+                <div className="-mx-5 flex flex-col gap-0">
+                  <DialogClose asChild>
+                    <Link to={LOGIN_PATH} className={getPanelItemClass()}>
+                      <User className="h-4 w-4" />
+                      <span>Login</span>
+                    </Link>
+                  </DialogClose>
+
+                  <DialogClose asChild>
+                    <Link to={REGISTER_PATH} className={getPanelItemClass()}>
+                      <FileText className="h-4 w-4" />
+                      <span>Sign Up</span>
+                    </Link>
+                  </DialogClose>
+                </div>
+              )}
+            </HeaderSidePanel>
           </div>
         </div>
       </div>
