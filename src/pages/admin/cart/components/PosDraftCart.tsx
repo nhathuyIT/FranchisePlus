@@ -32,7 +32,7 @@ export const PosDraftCart = ({
   const totalAmount = items.reduce((sum, item) => sum + getLineTotal(item), 0);
 
   return (
-    <div className="flex h-full min-h-0 flex-col">
+    <div className="flex h-full min-h-0 flex-col rounded-[28px] border border-[#E2D1C1] bg-[linear-gradient(180deg,#F7EEE6_0%,#F0E0D2_100%)] p-4">
       <div className="mb-4 flex items-center justify-between">
         <div>
           <p className="text-sm font-semibold text-[#3E2723]">Draft Cart</p>

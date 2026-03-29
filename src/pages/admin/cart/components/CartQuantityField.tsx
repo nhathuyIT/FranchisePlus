@@ -78,7 +78,6 @@ export const CartQuantityField = ({
           `Do you want to remove "${entityLabel}" from this cart?`
         }
         isDeleting={controller.isSubmitting}
-        useLoadingOverlay
         onConfirm={controller.handleConfirmDelete}
       />
     </>

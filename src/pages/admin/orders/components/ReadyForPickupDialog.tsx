@@ -3,8 +3,8 @@ import { useEffect, useMemo, useState } from "react";
 import { AlertCircle, UserRound } from "lucide-react";
 import { PopoverSearchSelect } from "@/components/form-dialog";
 import { Button } from "@/components/ui/button";
-import { useDebounce } from "@/hooks/common/useDebounce";
-import { useUserFranchiseRoleSearch } from "@/hooks/user-franchise-role";
+import { useAuthStore } from "@/stores/auth-store";
+import { getCurrentAuthUser } from "@/utils/localstorgae.utils";
 import {
   Dialog,
   DialogContent,
@@ -14,6 +14,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import type { ReadyForPickupPayload } from "../models/order-management.type";
+import { useFranchiseDeliveryStaffQuery } from "../hooks/use-order-management-query";
 
 const isStaffRole = (roleCode?: string | null, roleName?: string | null) => {
   const normalized = `${roleCode || ""} ${roleName || ""}`.toUpperCase();
@@ -41,30 +42,32 @@ export function ReadyForPickupDialog({
   isSubmitting,
   onSubmit,
 }: ReadyForPickupDialogProps) {
+  const { authUser, getCurrentRole } = useAuthStore();
   const [selectedStaffId, setSelectedStaffId] = useState("");
   const [searchValue, setSearchValue] = useState("");
   const [validationError, setValidationError] = useState("");
-  const debouncedSearchValue = useDebounce(
-    searchValue.trim(),
-    350,
-    searchValue,
+  const currentRole = getCurrentRole();
+  const persistedAuthUser = useMemo(() => getCurrentAuthUser(), []);
+  const staffQuery = useFranchiseDeliveryStaffQuery(
+    franchiseId,
+    open && !!franchiseId,
   );
-  const staffQuery = useUserFranchiseRoleSearch(
-    {
-      searchCondition: {
-        franchiseId: franchiseId || undefined,
-        isDeleted: false,
-        ...(debouncedSearchValue ? { keyword: debouncedSearchValue } : {}),
-      },
-      pageInfo: {
-        pageNum: 1,
-        pageSize: 1000,
-      },
-    },
-    {
-      enabled: open && !!franchiseId,
-    },
-  );
+  const activeUser = authUser?.user ?? persistedAuthUser?.user ?? null;
+  const isCurrentActorStaff = isStaffRole(currentRole?.code, currentRole?.name);
+  const currentStaffIdentity = useMemo(() => {
+    if (!activeUser?.id) {
+      return null;
+    }
+
+    const email = activeUser.email?.trim() || "";
+    const name = activeUser.name?.trim() || email || String(activeUser.id);
+
+    return {
+      userId: String(activeUser.id),
+      name,
+      email,
+    };
+  }, [activeUser]);
 
   useEffect(() => {
     if (!open) {
@@ -75,14 +78,8 @@ export function ReadyForPickupDialog({
   }, [open]);
 
   const staffAssignments = useMemo(
-    () =>
-      (staffQuery.data?.pageData ?? []).filter(
-        (assignment) =>
-          assignment.franchiseId === franchiseId &&
-          !assignment.isDeleted &&
-          isStaffRole(assignment.roleCode, assignment.roleName),
-      ),
-    [franchiseId, staffQuery.data?.pageData],
+    () => staffQuery.data ?? [],
+    [staffQuery.data],
   );
 
   const staffMembers = useMemo(() => {
@@ -92,6 +89,7 @@ export function ReadyForPickupDialog({
         userId: string;
         name: string;
         email?: string | null;
+        phone?: string | null;
         roleLabel?: string | null;
       }
     >();
@@ -103,9 +101,10 @@ export function ReadyForPickupDialog({
 
       uniqueStaffByUserId.set(assignment.userId, {
         userId: assignment.userId,
-        name: assignment.userName?.trim() || assignment.userId,
-        email: assignment.userEmail,
-        roleLabel: assignment.roleName || assignment.roleCode,
+        name: assignment.name?.trim() || assignment.userId,
+        email: assignment.email,
+        phone: assignment.phone,
+        roleLabel: assignment.roleCode,
       });
     }
 
@@ -113,6 +112,28 @@ export function ReadyForPickupDialog({
       left.name.localeCompare(right.name),
     );
   }, [staffAssignments]);
+  const matchedCurrentStaff = useMemo(() => {
+    if (!currentStaffIdentity) {
+      return null;
+    }
+
+    const normalizedCurrentEmail = currentStaffIdentity.email.toLowerCase();
+    const normalizedCurrentName = currentStaffIdentity.name.toLowerCase();
+
+    return (
+      staffMembers.find((staff) => {
+        const normalizedStaffEmail = staff.email?.trim().toLowerCase() || "";
+        const normalizedStaffName = staff.name.trim().toLowerCase();
+
+        return (
+          staff.userId === currentStaffIdentity.userId ||
+          (!!normalizedCurrentEmail &&
+            normalizedStaffEmail === normalizedCurrentEmail) ||
+          normalizedStaffName === normalizedCurrentName
+        );
+      }) ?? null
+    );
+  }, [currentStaffIdentity, staffMembers]);
 
   const options = useMemo(
     () =>
@@ -122,17 +143,39 @@ export function ReadyForPickupDialog({
           <div className="flex min-w-0 flex-col">
             <span className="truncate font-medium">{staff.name}</span>
             <span className="truncate text-xs text-[#8D6E63]">
-              {[staff.email, staff.roleLabel].filter(Boolean).join(" - ") ||
+              {[staff.email, staff.phone, staff.roleLabel]
+                .filter(Boolean)
+                .join(" - ") ||
                 staff.userId}
             </span>
           </div>
         ),
-        searchText: [staff.name, staff.email, staff.roleLabel]
+        searchText: [staff.name, staff.email, staff.phone, staff.roleLabel]
           .filter(Boolean)
           .join(" "),
       })),
     [staffMembers],
   );
+
+  useEffect(() => {
+    if (!open || !isCurrentActorStaff || !currentStaffIdentity) {
+      return;
+    }
+
+    setSearchValue((currentValue) =>
+      currentValue.trim() ? currentValue : currentStaffIdentity.name,
+    );
+  }, [currentStaffIdentity, isCurrentActorStaff, open]);
+
+  useEffect(() => {
+    if (!open || !isCurrentActorStaff || !matchedCurrentStaff) {
+      return;
+    }
+
+    setSelectedStaffId((currentValue) =>
+      currentValue || matchedCurrentStaff.userId,
+    );
+  }, [isCurrentActorStaff, matchedCurrentStaff, open]);
 
   const selectedStaff = staffMembers.find(
     (staff) => staff.userId === selectedStaffId,
@@ -175,9 +218,7 @@ export function ReadyForPickupDialog({
           </div>
         ) : staffQuery.error instanceof Error ? (
           <div className="rounded-2xl border border-[#F5C6CB] bg-[#FFF5F5] px-4 py-4 text-sm text-[#9B2C2C]">
-            <p className="font-semibold">
-              Failed to load staff role assignments.
-            </p>
+            <p className="font-semibold">Failed to load franchise staff.</p>
             <p className="mt-1">{staffQuery.error.message}</p>
             <Button
               type="button"
@@ -200,12 +241,13 @@ export function ReadyForPickupDialog({
               }}
               options={options}
               placeholder="Select one delivery staff member"
-              searchPlaceholder="Search by name, email, or role"
-              emptyText="No staff role assignments found for this franchise"
+              searchPlaceholder="Search by name, email, or phone"
+              emptyText="No staff found for this franchise"
               isLoading={staffQuery.isLoading || staffQuery.isFetching}
               loadingText="Loading staff..."
               searchValue={searchValue}
               onSearchValueChange={setSearchValue}
+              resetSearchOnClose={false}
             />
 
             {selectedStaff && (
@@ -217,7 +259,11 @@ export function ReadyForPickupDialog({
                       {selectedStaff.name}
                     </p>
                     <p className="mt-1 text-sm text-[#6D4C41]">
-                      {[selectedStaff.email, selectedStaff.roleLabel]
+                      {[
+                        selectedStaff.email,
+                        selectedStaff.phone,
+                        selectedStaff.roleLabel,
+                      ]
                         .filter(Boolean)
                         .join(" - ") || selectedStaff.userId}
                     </p>

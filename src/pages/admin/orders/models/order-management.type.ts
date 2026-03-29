@@ -138,6 +138,7 @@ export interface DeliveryStaffMember {
   email?: string;
   phone?: string;
   roleCode?: string;
+  image?: string;
 }
 
 export interface DeliverySearchItem {

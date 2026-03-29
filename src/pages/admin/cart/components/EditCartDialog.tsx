@@ -23,10 +23,7 @@ import {
 import { useGetMenuByFranchise } from "@/hooks/product/useMenu.hook";
 import { getSizeLabel } from "@/pages/client/menu/lib/helpers";
 import type { UpdateCartRequest } from "@/types/cart";
-import {
-  formatCartMoney,
-  formatVoucherValue,
-} from "../utils/cartDisplay";
+import { formatCartMoney, formatVoucherValue } from "../utils/cartDisplay";
 import { AdminCartVoucherCard } from "./AdminCartVoucherCard";
 import { EditCartCartForm } from "./EditCartCartForm";
 import { EditCartItemCard } from "./EditCartItemCard";
@@ -61,7 +58,9 @@ export const EditCartDialog = ({
   const [pendingOptionKeys, setPendingOptionKeys] = useState<string[]>([]);
   const [voucherCode, setVoucherCode] = useState("");
 
-  const { data: menuData = [] } = useGetMenuByFranchise(cart?.franchiseId ?? "");
+  const { data: menuData = [] } = useGetMenuByFranchise(
+    cart?.franchiseId ?? "",
+  );
 
   const sizeLabelByProductFranchiseId = useMemo(() => {
     const sizeMap = new Map<string, string>();
@@ -250,10 +249,7 @@ export const EditCartDialog = ({
   };
 
   const canManageVoucher =
-    !!cartId &&
-    !!cart &&
-    cart.status === "ACTIVE" &&
-    cart.cartItems.length > 0;
+    !!cartId && !!cart && cart.status === "ACTIVE" && cart.cartItems.length > 0;
   const hasAppliedVoucher =
     !!cart &&
     (Boolean(cart.voucherId) ||
@@ -272,6 +268,8 @@ export const EditCartDialog = ({
     pendingOptionKeys.length > 0 ||
     applyVoucherMutation.isPending ||
     removeVoucherMutation.isPending;
+  const isDialogLoading =
+    open && (cartDetailQuery.isLoading || isActionLoading);
 
   const handleApplyVoucher = async () => {
     if (
@@ -318,14 +316,15 @@ export const EditCartDialog = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-[calc(100vw-2rem)] overflow-hidden p-0 sm:max-w-[1280px]">
-        <NormalLoadingLayout forceShow={isActionLoading} />
+      <NormalLoadingLayout forceShow={isDialogLoading} />
 
+      <DialogContent className="max-w-[calc(100vw-2rem)] overflow-hidden p-0 sm:max-w-[1280px]">
         <div className="flex max-h-[90vh] flex-col">
           <DialogHeader className="border-b border-[#E8DFD6] px-6 py-5">
             <DialogTitle className="text-[#3E2723]">Edit Cart</DialogTitle>
             <DialogDescription className="text-[#8D6E63]">
-              Update cart info, voucher, item quantities, notes, and existing option rows.
+              Update cart info, voucher, item quantities, notes, and existing
+              option rows.
             </DialogDescription>
           </DialogHeader>
 
@@ -386,79 +385,11 @@ export const EditCartDialog = ({
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div>
                       <p className="text-sm font-semibold text-[#3E2723]">
-                        Cart Summary
-                      </p>
-                      <p className="mt-1 text-sm text-[#8D6E63]">
-                        Current totals update after each cart or voucher change.
-                      </p>
-                    </div>
-
-                    <div className="rounded-full bg-[#FAF1E8] px-3 py-1.5 text-sm font-medium text-[#6D4C41]">
-                      Final: {formatCartMoney(cart.finalAmount)}
-                    </div>
-                  </div>
-
-                  <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
-                    <div className="rounded-2xl border border-[#E8DFD6] bg-white px-4 py-3">
-                      <p className="text-xs uppercase tracking-wide text-[#8D6E63]">
-                        Subtotal
-                      </p>
-                      <p className="mt-2 font-semibold text-[#3E2723]">
-                        {formatCartMoney(cart.subtotalAmount)}
-                      </p>
-                    </div>
-
-                    <div className="rounded-2xl border border-[#E8DFD6] bg-white px-4 py-3">
-                      <p className="text-xs uppercase tracking-wide text-[#8D6E63]">
-                        Promotion
-                      </p>
-                      <p className="mt-2 font-semibold text-[#3E2723]">
-                        {formatCartMoney(cart.promotionDiscount)}
-                      </p>
-                    </div>
-
-                    <div className="rounded-2xl border border-[#E8DFD6] bg-white px-4 py-3">
-                      <p className="text-xs uppercase tracking-wide text-[#8D6E63]">
-                        Voucher
-                      </p>
-                      <p className="mt-2 font-semibold text-[#3E2723]">
-                        {formatCartMoney(cart.voucherDiscount)}
-                      </p>
-                      <p className="mt-1 text-xs text-[#8D6E63]">
-                        {cart.voucherCode?.trim()
-                          ? cart.voucherCode
-                          : voucherValueLabel || "No voucher"}
-                      </p>
-                    </div>
-
-                    <div className="rounded-2xl border border-[#E8DFD6] bg-white px-4 py-3">
-                      <p className="text-xs uppercase tracking-wide text-[#8D6E63]">
-                        Total Discount
-                      </p>
-                      <p className="mt-2 font-semibold text-[#3E2723]">
-                        {formatCartMoney(totalDiscount)}
-                      </p>
-                    </div>
-
-                    <div className="rounded-2xl border border-[#D9CBBF] bg-[#FFF8F1] px-4 py-3">
-                      <p className="text-xs uppercase tracking-wide text-[#8D6E63]">
-                        Final Amount
-                      </p>
-                      <p className="mt-2 text-lg font-semibold text-[#5D4037]">
-                        {formatCartMoney(cart.finalAmount)}
-                      </p>
-                    </div>
-                  </div>
-                </section>
-
-                <section className="rounded-2xl border border-[#E8DFD6] bg-[#FFFDFC] p-5 shadow-sm">
-                  <div className="flex flex-wrap items-start justify-between gap-3">
-                    <div>
-                      <p className="text-sm font-semibold text-[#3E2723]">
                         Cart Items
                       </p>
                       <p className="mt-1 text-sm text-[#8D6E63]">
-                        Quantity buttons use debounced sync. Manual input saves on blur or Enter.
+                        Quantity buttons use debounced sync. Manual input saves
+                        on blur or Enter.
                       </p>
                     </div>
 
@@ -487,11 +418,7 @@ export const EditCartDialog = ({
                           }
                           onDelete={() => handleDeleteItem(item.cartItemId)}
                           onSaveNote={(note, quantity) =>
-                            handleSaveItemNote(
-                              item.cartItemId,
-                              note,
-                              quantity,
-                            )
+                            handleSaveItemNote(item.cartItemId, note, quantity)
                           }
                           onCommitOptionQuantity={(
                             optionProductFranchiseId,
@@ -522,16 +449,107 @@ export const EditCartDialog = ({
             )}
           </div>
 
-          <DialogFooter className="border-t border-[#E8DFD6] px-6 py-4">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-              className="border-[#E8DFD6] text-[#6D4C41]"
-            >
-              Close
-            </Button>
-          </DialogFooter>
+          {cart &&
+          !cartDetailQuery.isLoading &&
+          !(cartDetailQuery.error instanceof Error) ? (
+            <div className="border-t border-[#f3e7dc] bg-[#f5f2ee] px-6 py-3 shadow-[0_-10px_30px_rgba(62,39,35,0.05)]">
+              <div className="rounded-[24px] border border-[#D7BFA8] bg-[#faf7f5] px-4 py-3 shadow-[0_10px_24px_rgba(62,39,35,0.06)]">
+                <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+                  <div className="flex flex-wrap items-center gap-3">
+                    <div>
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#8D6E63]">
+                        Cart Summary
+                      </p>
+                      <p className="mt-1 text-sm font-semibold text-[#3E2723]">
+                        Final: {formatCartMoney(cart.finalAmount)}
+                      </p>
+                    </div>
+
+                    <div className="hidden h-9 w-px bg-[#E2CCB8] xl:block" />
+
+                    <p className="text-xs text-[#8D6E63]">
+                      Live totals update after each cart or voucher change.
+                    </p>
+                  </div>
+
+                  <div className="flex flex-1 flex-wrap items-stretch gap-2 xl:justify-end">
+                    <div className="min-w-[118px] rounded-xl border border-[#E2CCB8] bg-white px-3 py-2">
+                      <p className="text-[10px] uppercase tracking-wide text-[#8D6E63]">
+                        Subtotal
+                      </p>
+                      <p className="mt-1 text-sm font-semibold text-[#3E2723]">
+                        {formatCartMoney(cart.subtotalAmount)}
+                      </p>
+                    </div>
+
+                    <div className="min-w-[118px] rounded-xl border border-[#E2CCB8] bg-white px-3 py-2">
+                      <p className="text-[10px] uppercase tracking-wide text-[#8D6E63]">
+                        Promotion
+                      </p>
+                      <p className="mt-1 text-sm font-semibold text-[#3E2723]">
+                        {formatCartMoney(cart.promotionDiscount)}
+                      </p>
+                    </div>
+
+                    <div className="min-w-[118px] rounded-xl border border-[#E2CCB8] bg-white px-3 py-2">
+                      <p className="text-[10px] uppercase tracking-wide text-[#8D6E63]">
+                        Voucher
+                      </p>
+                      <p className="mt-1 text-sm font-semibold text-[#3E2723]">
+                        {formatCartMoney(cart.voucherDiscount)}
+                      </p>
+                      <p className="mt-0.5 text-[11px] text-[#8D6E63]">
+                        {cart.voucherCode?.trim()
+                          ? cart.voucherCode
+                          : voucherValueLabel || "No voucher"}
+                      </p>
+                    </div>
+
+                    <div className="min-w-[118px] rounded-xl border border-[#E2CCB8] bg-white px-3 py-2">
+                      <p className="text-[10px] uppercase tracking-wide text-[#8D6E63]">
+                        Discount
+                      </p>
+                      <p className="mt-1 text-sm font-semibold text-[#3E2723]">
+                        {formatCartMoney(totalDiscount)}
+                      </p>
+                    </div>
+
+                    <div className="min-w-[132px] rounded-xl border border-[#D9CBBF] bg-[#FFF8F1] px-3 py-2">
+                      <p className="text-[10px] uppercase tracking-wide text-[#8D6E63]">
+                        Final Amount
+                      </p>
+                      <p className="mt-1 text-sm font-semibold text-[#5D4037]">
+                        {formatCartMoney(cart.finalAmount)}
+                      </p>
+                    </div>
+
+                  </div>
+                </div>
+
+                <DialogFooter className="mt-3 p-0">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => onOpenChange(false)}
+                    className="border-[#D7BFA8] bg-white px-5 text-[#6D4C41]"
+                  >
+                    Close
+                  </Button>
+                </DialogFooter>
+              </div>
+            </div>
+          ) : (
+            <DialogFooter className="border-t border-[#E8DFD6] px-6 py-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => onOpenChange(false)}
+                className="border-[#E8DFD6] text-[#6D4C41]"
+              >
+                Close
+              </Button>
+            </DialogFooter>
+          )}
         </div>
       </DialogContent>
     </Dialog>

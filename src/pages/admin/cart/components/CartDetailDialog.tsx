@@ -1,5 +1,6 @@
 import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import NormalLoadingLayout from "@/layouts/NormalLoadingLayout";
 import {
   Dialog,
   DialogContent,
@@ -26,6 +27,8 @@ export const CartDetailDialog = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
+      <NormalLoadingLayout forceShow={open && cartDetailQuery.isLoading} />
+
       <DialogContent className="max-w-[calc(100vw-2rem)] overflow-hidden p-0 sm:max-w-[1100px]">
         <div className="flex max-h-[90vh] flex-col">
           <DialogHeader className="border-b border-[#E8DFD6] px-6 py-5">

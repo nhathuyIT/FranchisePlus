@@ -295,7 +295,9 @@ const CartManagement = () => {
 
   return (
     <div className="flex h-full flex-col scroll-hide">
-      <NormalLoadingLayout forceShow={cancelCartMutation.isPending} />
+      <NormalLoadingLayout
+        forceShow={cancelCartMutation.isPending || isCustomerTableLoading}
+      />
 
       <div className="mx-auto flex min-h-0 w-full max-w-screen-2xl flex-1 flex-col">
         <PageHeader
@@ -350,7 +352,7 @@ const CartManagement = () => {
               columns={customerColumns}
               data={canViewCart ? customerRows : []}
               emptyMessage={customerEmptyMessage}
-              isLoading={isCustomerTableLoading}
+              isLoading={false}
               error={suppressNoCartError ? null : userCartError}
               onRetry={
                 selectedUser && !suppressNoCartError
@@ -446,7 +448,6 @@ const CartManagement = () => {
           void handleConfirmCancelCart();
         }}
         isDeleting={cancelCartMutation.isPending}
-        useLoadingOverlay
         confirmLabel="Cancel cart"
         pendingLabel="Canceling..."
         deleteMessage={() =>

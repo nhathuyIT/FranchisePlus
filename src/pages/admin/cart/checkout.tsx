@@ -1,23 +1,17 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { AlertCircle, ArrowLeft, Loader2, PackageSearch } from "lucide-react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { PageHeader } from "@/components/common/PageHeader";
-import { DeleteDialog } from "@/components/form-dialog/DeleteDialog";
 import NormalLoadingLayout from "@/layouts/NormalLoadingLayout";
 import { Button } from "@/components/ui/button";
-import {
-  Alert,
-  AlertDescription,
-  AlertTitle,
-} from "@/components/ui/alert";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
   useCartDetailQuery,
   useCheckoutCartMutation,
-  useDeleteCartItemMutation,
 } from "@/hooks/cart/useCart.hook";
 import { ROUTER_URL } from "@/router/route.const";
 import { useAuthStore } from "@/stores/auth-store";
-import type { CartItemResponse, CheckoutCartRequest } from "@/types/cart";
+import type { CheckoutCartRequest } from "@/types/cart";
 import type {
   AdminCartNavigationState,
   CartLookupUser,
@@ -57,7 +51,6 @@ const CheckoutCartPage = () => {
 
   const cartDetailQuery = useCartDetailQuery(cartId, !!cartId);
   const checkoutCartMutation = useCheckoutCartMutation();
-  const deleteCartItemMutation = useDeleteCartItemMutation();
 
   const [formValues, setFormValues] = useState<CheckoutCartRequest>({
     address: "",
@@ -68,10 +61,6 @@ const CheckoutCartPage = () => {
     Partial<Record<"address" | "phone", string>>
   >({});
   const [hasInitializedForm, setHasInitializedForm] = useState(false);
-  const [itemToDelete, setItemToDelete] = useState<CartItemResponse | null>(
-    null,
-  );
-  const [deletingItemId, setDeletingItemId] = useState<string | null>(null);
   const [hasCompletedCheckout, setHasCompletedCheckout] = useState(false);
 
   const cart = cartDetailQuery.data ?? null;
@@ -85,8 +74,6 @@ const CheckoutCartPage = () => {
     });
     setErrors({});
     setHasInitializedForm(false);
-    setItemToDelete(null);
-    setDeletingItemId(null);
     setHasCompletedCheckout(false);
     clearLookupError();
   }, [cartId, clearLookupError]);
@@ -102,7 +89,7 @@ const CheckoutCartPage = () => {
     setHasInitializedForm(true);
   }, [cart, currentUserPhone, hasInitializedForm]);
 
-  const buildSelectedUser = useCallback((): CartLookupUser | null => {
+  const buildSelectedUser = (): CartLookupUser | null => {
     if (navigationState?.selectedUser) {
       return navigationState.selectedUser;
     }
@@ -115,38 +102,31 @@ const CheckoutCartPage = () => {
       email: "",
       phone: cart.phone || null,
     };
-  }, [cart, navigationState?.selectedUser]);
+  };
 
-  const buildNavigationState = useCallback(
-    (customerStatus: CustomerStatusFilter): AdminCartNavigationState => ({
-      selectedUser: buildSelectedUser(),
-      selectedCartId: cart?.id ?? cartId ?? null,
-      customerStatus,
-    }),
-    [buildSelectedUser, cart?.id, cartId],
-  );
+  const buildNavigationState = (
+    customerStatus: CustomerStatusFilter,
+  ): AdminCartNavigationState => ({
+    selectedUser: buildSelectedUser(),
+    selectedCartId: cart?.id ?? cartId ?? null,
+    customerStatus,
+  });
 
-  const handleBackToList = useCallback(
-    (customerStatus?: CustomerStatusFilter) => {
-      navigate(`/admin/${ROUTER_URL.ADMIN_ROUTER.CART}`, {
-        state: buildNavigationState(
-          customerStatus ??
-            (hasCompletedCheckout ? "CHECKED_OUT" : null) ??
-            navigationState?.customerStatus ??
-            resolveCustomerStatus(cart?.status),
-        ),
-      });
-    },
-    [
-      buildNavigationState,
-      cart?.status,
-      hasCompletedCheckout,
-      navigate,
-      navigationState?.customerStatus,
-    ],
-  );
+  const handleBackToList = (customerStatus?: CustomerStatusFilter) => {
+    navigate(`/admin/${ROUTER_URL.ADMIN_ROUTER.CART}`, {
+      state: buildNavigationState(
+        customerStatus ??
+          (hasCompletedCheckout ? "CHECKED_OUT" : null) ??
+          navigationState?.customerStatus ??
+          resolveCustomerStatus(cart?.status),
+      ),
+    });
+  };
 
-  const handleFieldChange = (field: keyof CheckoutCartRequest, value: string) => {
+  const handleFieldChange = (
+    field: keyof CheckoutCartRequest,
+    value: string,
+  ) => {
     setFormValues((current) => ({
       ...current,
       [field]: value,
@@ -168,7 +148,8 @@ const CheckoutCartPage = () => {
     }
 
     if (!formValues.address?.trim()) {
-      nextErrors.address = "Delivery address is required to checkout this cart.";
+      nextErrors.address =
+        "Delivery address is required to checkout this cart.";
     }
 
     return nextErrors;
@@ -227,29 +208,13 @@ const CheckoutCartPage = () => {
     }
   };
 
-  const handleConfirmDeleteItem = async () => {
-    if (!itemToDelete) return;
-
-    setDeletingItemId(itemToDelete.cartItemId);
-
-    try {
-      await deleteCartItemMutation.mutateAsync(itemToDelete.cartItemId);
-      setItemToDelete(null);
-    } catch {
-      // Error toast is handled in the mutation hook.
-    } finally {
-      setDeletingItemId(null);
-    }
-  };
-
   return (
     <div className="flex h-full flex-col scroll-hide">
       <NormalLoadingLayout
         forceShow={
-          (checkoutCartMutation.isPending ||
-            deleteCartItemMutation.isPending ||
-            isResolvingOrder) &&
-          !cartDetailQuery.isLoading
+          cartDetailQuery.isLoading ||
+          checkoutCartMutation.isPending ||
+          isResolvingOrder
         }
       />
 
@@ -337,8 +302,8 @@ const CheckoutCartPage = () => {
                 Cart detail is unavailable
               </p>
               <p className="mt-2 max-w-lg text-sm">
-                This cart could not be found or is no longer accessible from
-                the current admin context.
+                This cart could not be found or is no longer accessible from the
+                current admin context.
               </p>
             </div>
           ) : (
@@ -382,8 +347,6 @@ const CheckoutCartPage = () => {
                           key={item.cartItemId}
                           item={item}
                           index={index + 1}
-                          isDeleting={deletingItemId === item.cartItemId}
-                          onDelete={() => setItemToDelete(item)}
                         />
                       ))}
                     </div>
@@ -406,7 +369,9 @@ const CheckoutCartPage = () => {
                   finalAmount={cart.finalAmount}
                   canCheckout={canCheckout}
                   disableReason={disableReason}
-                  isSubmitting={checkoutCartMutation.isPending || isResolvingOrder}
+                  isSubmitting={
+                    checkoutCartMutation.isPending || isResolvingOrder
+                  }
                   onBack={() => handleBackToList()}
                   onCheckout={() => {
                     void handleCheckout();
@@ -417,26 +382,6 @@ const CheckoutCartPage = () => {
           )}
         </div>
       </div>
-
-      <DeleteDialog<CartItemResponse>
-        open={!!itemToDelete}
-        onOpenChange={(open) => {
-          if (!open) {
-            setItemToDelete(null);
-          }
-        }}
-        entity={itemToDelete}
-        entityName="cart item"
-        onConfirm={() => {
-          void handleConfirmDeleteItem();
-        }}
-        isDeleting={deleteCartItemMutation.isPending}
-        useLoadingOverlay
-        deleteMessage={(item) =>
-          `Remove "${item.productName || "this product"}" from the cart before checkout?`
-        }
-        getDisplayName={(item) => item.productName || "Cart item"}
-      />
     </div>
   );
 };
