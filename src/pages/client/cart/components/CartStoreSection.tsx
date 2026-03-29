@@ -1,4 +1,4 @@
-import React from "react";
+﻿import React from "react";
 import { useForm } from "react-hook-form";
 import { MapPin, Store, TicketPercent } from "lucide-react";
 import type {
@@ -78,6 +78,8 @@ const CartStoreSection: React.FC<CartStoreSectionProps> = ({
   const menuQuery = useGetMenuByFranchise(cart.franchiseId);
   const hasCartDiscount =
     Number(cart.finalAmount || 0) < Number(cart.subtotalAmount || 0);
+  const promotionDiscount = Math.max(Number(cart.promotionDiscount || 0), 0);
+  const voucherDiscount = Math.max(Number(cart.voucherDiscount || 0), 0);
   const totalDiscount = Math.max(
     0,
     Number(cart.subtotalAmount || 0) - Number(cart.finalAmount || 0),
@@ -305,9 +307,15 @@ const CartStoreSection: React.FC<CartStoreSectionProps> = ({
               {cart.cartItems.length} items
             </span>
 
-            {hasCartDiscount && (
+            {promotionDiscount > 0 && (
+              <span className="rounded-full bg-[#fff4ea] px-3 py-2 font-medium text-[var(--cart-accent-deep)]">
+                Promotion -{formatCurrency(promotionDiscount)}
+              </span>
+            )}
+
+            {voucherDiscount > 0 && (
               <span className="rounded-full bg-[#fff1e7] px-3 py-2 font-medium text-[var(--cart-accent)]">
-                Save {formatCurrency(cart.subtotalAmount - cart.finalAmount)}
+                Voucher -{formatCurrency(voucherDiscount)}
               </span>
             )}
 
@@ -421,9 +429,9 @@ const CartStoreSection: React.FC<CartStoreSectionProps> = ({
           </div>
 
           <div className="flex flex-col items-stretch gap-3 text-sm sm:flex-row sm:flex-wrap sm:items-center">
-            {Number(cart.voucherDiscount || 0) > 0 ? (
+              {voucherDiscount > 0 ? (
               <span className="rounded-full bg-[#fff1e7] px-3 py-2 font-medium text-[var(--cart-accent)]">
-                Save {formatCurrency(Number(cart.voucherDiscount || 0))}
+                  Save {formatCurrency(voucherDiscount)}
               </span>
             ) : (
               <span className="text-[var(--cart-muted)]">No voucher applied</span>
@@ -461,11 +469,29 @@ const CartStoreSection: React.FC<CartStoreSectionProps> = ({
                 </strong>
               </div>
 
-              {totalDiscount > 0 && (
+              {promotionDiscount > 0 && (
                 <div className="flex items-center justify-between gap-4">
-                  <span>Discount</span>
+                  <span>Promotion discount</span>
+                  <strong className="text-[var(--cart-accent-deep)]">
+                    - {formatCurrency(promotionDiscount)}
+                  </strong>
+                </div>
+              )}
+
+              {voucherDiscount > 0 && (
+                <div className="flex items-center justify-between gap-4">
+                  <span>Voucher discount</span>
                   <strong className="text-[var(--cart-accent)]">
-                    - {formatCurrency(totalDiscount)}
+                    - {formatCurrency(voucherDiscount)}
+                  </strong>
+                </div>
+              )}
+
+              {totalDiscount > promotionDiscount + voucherDiscount && (
+                <div className="flex items-center justify-between gap-4">
+                  <span>Other discount</span>
+                  <strong className="text-[var(--cart-accent)]">
+                    - {formatCurrency(totalDiscount - promotionDiscount - voucherDiscount)}
                   </strong>
                 </div>
               )}
