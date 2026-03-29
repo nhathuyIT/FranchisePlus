@@ -34,7 +34,7 @@ export const ToppingCard = ({
       onClick={canViewDetail ? onViewDetail : undefined}
       onKeyDown={handleCardKeyDown}
       aria-label={`View details for ${product.name}`}
-      className={`group relative flex items-center gap-4 rounded-2xl bg-white p-4
+      className={`group relative flex items-start gap-3 rounded-2xl bg-white p-3.5 sm:items-center sm:gap-4 sm:p-4
                  w-full text-left
                  border border-stone-200/60 shadow-sm
                  transition-all duration-500 ease-out
@@ -44,7 +44,7 @@ export const ToppingCard = ({
                  }`}
     >
       {/* Image */}
-      <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-xl bg-stone-100">
+      <div className="relative h-[4.5rem] w-[4.5rem] shrink-0 overflow-hidden rounded-xl bg-stone-100 sm:h-20 sm:w-20">
         <img
           src={product.imageUrl || "/placeholder-coffee.jpg"}
           alt={product.name}
@@ -56,13 +56,13 @@ export const ToppingCard = ({
       {/* Info */}
       <div className="flex-1 min-w-0">
         <h4
-          className="font-serif text-base font-semibold text-stone-800 truncate
+          className="truncate font-serif text-[15px] font-semibold text-stone-800 sm:text-base
                       group-hover:text-amber-800 transition-colors duration-300"
         >
           {product.name}
         </h4>
         {product.description && (
-          <p className="text-xs text-stone-500 truncate mt-0.5">
+          <p className="mt-0.5 truncate text-xs text-stone-500">
             {product.description}
           </p>
         )}
@@ -82,9 +82,9 @@ export const ToppingCard = ({
       </div>
 
       {/* Price */}
-      <div className="flex shrink-0 flex-col items-end gap-2">
+      <div className="flex shrink-0 flex-col items-end gap-2 self-center">
         {minPrice !== null && (
-          <span className="font-serif text-lg font-bold text-amber-700">
+          <span className="font-serif text-base font-bold text-amber-700 sm:text-lg">
             {formatPrice(minPrice)}
           </span>
         )}
