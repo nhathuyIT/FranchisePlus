@@ -30,17 +30,6 @@ export const ViewModal = ({
           <DetailRow label="Category Name" value={category.categoryName} />
           <DetailRow label="Franchise Name" value={category.franchiseName} />
           <DetailRow
-            label="Display Order"
-            value={
-              <Badge
-                variant="outline"
-                className="border-[#6D4C41]/30 text-[#6D4C41] font-mono"
-              >
-                {category.displayOrder}
-              </Badge>
-            }
-          />
-          <DetailRow
             label="Status"
             value={
               <Badge
@@ -51,14 +40,6 @@ export const ViewModal = ({
                 }
               >
                 {category.isActive ? "Active" : "Inactive"}
-              </Badge>
-            }
-          />
-          <DetailRow
-            label="Is Deleted"
-            value={
-              <Badge variant={category.isDeleted ? "destructive" : "outline"}>
-                {category.isDeleted ? "Yes" : "No"}
               </Badge>
             }
           />

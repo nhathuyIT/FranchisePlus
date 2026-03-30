@@ -1,10 +1,4 @@
-import {
-  AlertCircle,
-  Clock3,
-  Hash,
-  RefreshCcw,
-  UserRound,
-} from "lucide-react";
+import { AlertCircle, Clock3, Hash, RefreshCcw, UserRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { AdminOrderStatus } from "../models/order-management.type";
@@ -18,7 +12,6 @@ interface DeliveryBoxProps {
   assignedToEmail?: string | null;
   assignedAt?: string | null;
   deliveryError: Error | null;
-  deliveryEmptyMessage: string;
   deliveryActionMessage: string;
   isMutating: boolean;
   isRefreshing: boolean;
@@ -217,7 +210,6 @@ export function DeliveryBox({
   assignedToEmail,
   assignedAt,
   deliveryError,
-  deliveryEmptyMessage,
   deliveryActionMessage,
   isMutating,
   isRefreshing,
@@ -255,21 +247,12 @@ export function DeliveryBox({
       (!deliveryId &&
       (status === "READY_FOR_PICKUP" || status === "OUT_FOR_DELIVERY")
         ? "Cannot continue delivery flow because deliveryId is missing."
-        : !deliveryId && (status === "CONFIRMED" || status === "PREPARING")
-          ? deliveryEmptyMessage
-          : "");
+        : "");
 
   return (
     <section className="rounded-[16px] border border-[#E9E2D8] bg-white shadow-[0_8px_24px_rgba(64,45,24,0.08)]">
       <div className="border-b border-[#F1E9DE] px-5 py-5">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-          <div>
-            <p className="text-lg font-semibold text-[#2F2419]">Delivery</p>
-            <p className="mt-1 text-sm text-[#5B4B3A]">
-              Track and control shipping progress
-            </p>
-          </div>
-
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-end">
           <div className="flex flex-wrap items-center gap-2">
             <div
               className={cn(

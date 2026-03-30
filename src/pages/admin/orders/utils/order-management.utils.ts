@@ -9,6 +9,7 @@ export const ORDER_STATUS_FILTERS: Array<{
   label: string;
 }> = [
   { value: "all", label: "All Orders" },
+  { value: "DRAFT", label: "Draft" },
   { value: "CONFIRMED", label: "Confirmed" },
   { value: "PREPARING", label: "Preparing" },
   { value: "READY_FOR_PICKUP", label: "Ready for Pickup" },

@@ -1,5 +1,6 @@
 import { httpClient } from "@/api/httpClient.api";
 import type {
+  DeliveryStaffMember,
   DeliveryReference,
   FranchiseOrderListItem,
   OrderDetail,
@@ -21,6 +22,7 @@ import {
 } from "./service.utils";
 
 const BASE_ORDER_URL = "/api/orders";
+const BASE_USER_FRANCHISE_ROLE_URL = "/api/user-franchise-roles";
 
 const normalizeOrderItemOption = (raw: unknown): OrderItemOption => {
   const record = toRecord(raw) || {};
@@ -167,6 +169,30 @@ const normalizeOrderListItem = (
   };
 };
 
+const normalizeAssignableStaff = (
+  raw: unknown,
+  franchiseId: string,
+): DeliveryStaffMember | null => {
+  const record = toRecord(raw);
+  if (!record) return null;
+
+  const userId = toStringValue(record.value, record.userId, record.id);
+  if (!userId) {
+    return null;
+  }
+
+  return {
+    id: userId,
+    userId,
+    franchiseId: franchiseId || null,
+    name: toStringValue(record.name, record.email, userId),
+    email: toStringValue(record.email) || undefined,
+    phone: toStringValue(record.phone) || undefined,
+    roleCode: toStringValue(record.code) || undefined,
+    image: toStringValue(record.image) || undefined,
+  };
+};
+
 export const getOrderByCartId = async (cartId: string) => {
   const response = await httpClient.get<unknown, never>({
     url: `${BASE_ORDER_URL}/cart/${encodeURIComponent(cartId)}`,
@@ -221,4 +247,14 @@ export const setOrderReadyForPickup = async (
     url: `${BASE_ORDER_URL}/${encodeURIComponent(orderId)}/ready-for-pickup`,
     data: payload,
   });
+};
+
+export const getAssignableStaffByFranchise = async (franchiseId: string) => {
+  const response = await httpClient.get<unknown, never>({
+    url: `${BASE_USER_FRANCHISE_ROLE_URL}/franchise/${encodeURIComponent(franchiseId)}`,
+  });
+
+  return extractArray(response)
+    .map((item) => normalizeAssignableStaff(item, franchiseId))
+    .filter((item): item is DeliveryStaffMember => item !== null);
 };

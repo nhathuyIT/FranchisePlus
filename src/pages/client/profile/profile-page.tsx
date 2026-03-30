@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { useAuthStore } from "@/stores/auth-store";
-import { ProfileHeader } from "./components/profile-header";
 import { ProfileDetails } from "./components/profile-details";
 import { EditProfileDialog } from "./components/edit-profile-dialog";
 
@@ -114,8 +113,6 @@ const ProfilePage = () => {
         <ProfileDetails user={user} />
       </section>
 
-      {/* ═══ Recent Activity ═══ */}
-      <ProfileHeader />
 
       {/* Edit Profile Dialog */}
       <EditProfileDialog

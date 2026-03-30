@@ -13,7 +13,6 @@ import { toast } from "sonner";
 
 const updateSchema = z.object({
   isActive: z.boolean(),
-  displayOrder: z.number().min(0, "Display order must be 0 or greater"),
 });
 
 type UpdateForm = z.infer<typeof updateSchema>;
@@ -24,12 +23,6 @@ const UPDATE_FIELDS: FieldConfig<UpdateForm>[] = [
     label: "Status",
     type: "switch",
     description: "Toggle to activate or deactivate this category",
-  },
-  {
-    name: "displayOrder",
-    label: "Display Order",
-    type: "number",
-    min: 0,
   },
 ];
 
@@ -78,7 +71,6 @@ export const UpdateModal = ({
       fields={UPDATE_FIELDS}
       values={{
         isActive: category.isActive,
-        displayOrder: category.displayOrder,
       }}
       mode="edit"
       onSubmit={handleSubmit}

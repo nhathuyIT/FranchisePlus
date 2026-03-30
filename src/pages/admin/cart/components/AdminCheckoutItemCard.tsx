@@ -1,5 +1,3 @@
-import { Trash2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import type { CartItemResponse } from "@/types/cart";
 import { formatCartMoney } from "../utils/cartDisplay";
 import { CartDetailField } from "./CartDetailField";
@@ -9,18 +7,14 @@ import { CartProductImage } from "./CartProductImage";
 interface AdminCheckoutItemCardProps {
   item: CartItemResponse;
   index: number;
-  isDeleting?: boolean;
-  onDelete: () => void;
 }
 
 export const AdminCheckoutItemCard = ({
   item,
   index,
-  isDeleting = false,
-  onDelete,
 }: AdminCheckoutItemCardProps) => (
   <article className="overflow-hidden rounded-[26px] border border-[#E3D5C8] bg-white shadow-sm">
-    <div className="flex flex-wrap items-start justify-between gap-4 border-b border-[#F0E4DA] bg-[#FFF8F1] px-5 py-4">
+    <div className="flex flex-wrap items-start gap-4 border-b border-[#F0E4DA] bg-[#FFF8F1] px-5 py-4">
       <div className="flex min-w-0 items-center gap-4">
         <span className="inline-flex h-9 min-w-9 items-center justify-center rounded-full border border-[#D7CCC8] bg-white px-2 text-xs font-semibold text-[#6D4C41]">
           #{index}
@@ -44,18 +38,6 @@ export const AdminCheckoutItemCard = ({
           </p>
         </div>
       </div>
-
-      <Button
-        type="button"
-        variant="outline"
-        size="sm"
-        onClick={onDelete}
-        disabled={isDeleting}
-        className="rounded-full border-[#E8DFD6] text-[#A65A00] hover:bg-[#FFF3E0]"
-      >
-        <Trash2 className="mr-2 h-4 w-4" />
-        {isDeleting ? "Removing..." : "Delete item"}
-      </Button>
     </div>
 
     <div className="p-5">

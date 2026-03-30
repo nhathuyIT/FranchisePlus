@@ -189,6 +189,60 @@ export function useCartSelection(carts: CartResponse[]) {
     [carts, selectedItemIds],
   );
 
+  const { selectedPromotionSavings, selectedVoucherSavings } = useMemo(() => {
+    return carts.reduce(
+      (acc, cart) => {
+        const selectedCartItems = cart.cartItems.filter((item) =>
+          selectedItemIds.includes(item.cartItemId),
+        );
+
+        if (selectedCartItems.length === 0) {
+          return acc;
+        }
+
+        const isFullCartSelected = selectedCartItems.length === cart.cartItems.length;
+        const selectedSubtotal = isFullCartSelected
+          ? Number(cart.subtotalAmount || 0)
+          : selectedCartItems.reduce(
+              (cartSum, item) =>
+                cartSum + Number(item.lineTotal || item.finalLineTotal || 0),
+              0,
+            );
+        const selectedFinal = isFullCartSelected
+          ? Number(cart.finalAmount || 0)
+          : selectedCartItems.reduce(
+              (cartSum, item) => cartSum + Number(item.finalLineTotal || 0),
+              0,
+            );
+        const selectedDiscount = Math.max(selectedSubtotal - selectedFinal, 0);
+
+        if (selectedDiscount <= 0) {
+          return acc;
+        }
+
+        const cartPromotionDiscount = Math.max(Number(cart.promotionDiscount || 0), 0);
+        const cartVoucherDiscount = Math.max(Number(cart.voucherDiscount || 0), 0);
+        const knownDiscount = cartPromotionDiscount + cartVoucherDiscount;
+
+        if (knownDiscount <= 0) {
+          return acc;
+        }
+
+        const promotionRatio = cartPromotionDiscount / knownDiscount;
+        const voucherRatio = cartVoucherDiscount / knownDiscount;
+
+        acc.selectedPromotionSavings += selectedDiscount * promotionRatio;
+        acc.selectedVoucherSavings += selectedDiscount * voucherRatio;
+
+        return acc;
+      },
+      {
+        selectedPromotionSavings: 0,
+        selectedVoucherSavings: 0,
+      },
+    );
+  }, [carts, selectedItemIds]);
+
   const selectedSavings = Math.max(selectedTotalBeforeDiscount - selectedPayable, 0);
   const allChecked =
     allCartItemIds.length > 0 && selectedItemIds.length === allCartItemIds.length;
@@ -206,6 +260,8 @@ export function useCartSelection(carts: CartResponse[]) {
     selectedTotalBeforeDiscount,
     selectedPayable,
     selectedSavings,
+    selectedPromotionSavings,
+    selectedVoucherSavings,
     allChecked,
     someChecked,
   };
