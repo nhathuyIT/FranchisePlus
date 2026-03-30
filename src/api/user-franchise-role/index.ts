@@ -6,6 +6,8 @@ export type {
   UserFranchiseRoleCreateRequest,
   UserFranchiseRoleUpdateRequest,
   UserFranchiseRoleItem,
+  UserByFranchiseItem,
+  UserByFranchiseResponse,
   UserFranchiseRoleListResponse,
   UserFranchiseRoleDetailResponse,
   PageInfo,

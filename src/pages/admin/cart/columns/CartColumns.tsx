@@ -3,7 +3,6 @@ import { Badge } from "@/components/ui/badge";
 import type { CartItemResponse, CartResponse } from "@/types/cart";
 import { CartProductImage } from "../components/CartProductImage";
 import {
-  formatCartDateTime,
   formatCartMoney,
   getCartDiscountLabels,
   getCartStatusClassName,
@@ -76,15 +75,6 @@ export const createCartColumns = (): ColumnDef<CartResponse>[] => {
           </div>
         );
       },
-    },
-    {
-      accessorKey: "updatedAt",
-      header: "Updated At",
-      cell: ({ row }) => (
-        <span className="text-sm text-[#5D4037]">
-          {formatCartDateTime(row.original.updatedAt)}
-        </span>
-      ),
     },
   ];
 

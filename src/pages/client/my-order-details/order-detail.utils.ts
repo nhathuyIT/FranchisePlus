@@ -73,6 +73,22 @@ export const canRepayOrder = (
   orderStatus !== "COMPLETED" &&
   orderStatus !== "CANCELED";
 
+export const canCancelPayment = (
+  orderStatus: AdminOrderStatus,
+  paymentStatus?: AdminPayment["status"] | null,
+) =>
+  paymentStatus === "PENDING" &&
+  orderStatus !== "COMPLETED" &&
+  orderStatus !== "CANCELED";
+
+export const canRequestRefund = (
+  orderStatus: AdminOrderStatus,
+  paymentStatus?: AdminPayment["status"] | null,
+) =>
+  paymentStatus === "PAID" &&
+  orderStatus !== "COMPLETED" &&
+  orderStatus !== "CANCELED";
+
 export const getOrderStatusNarrative = (status: AdminOrderStatus) => {
   switch (status) {
     case "DRAFT":
@@ -92,4 +108,11 @@ export const getOrderStatusNarrative = (status: AdminOrderStatus) => {
     default:
       return "Track every stage of this order, from confirmation to payment and delivery.";
   }
+};
+
+export const formatStaffInfo = (staffName?: string, staffEmail?: string) => {
+  const staffInfo = [];
+  if (staffName) staffInfo.push(staffName);
+  if (staffEmail) staffInfo.push(`(${staffEmail})`);
+  return staffInfo.join(" ");
 };

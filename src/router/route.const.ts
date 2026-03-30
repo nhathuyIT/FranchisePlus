@@ -19,7 +19,6 @@ export const ROUTER_URL = {
     PRODUCTS: "products",
     PRODUCT_DETAIL: "products/:slug",
     PAYMENT: "payment",
-    PAYMENT_NEW: "payment-new",
     PAYMENT_QR: "payment/qr",
     PAYMENT_SUCCESS: "payment/success",
   },

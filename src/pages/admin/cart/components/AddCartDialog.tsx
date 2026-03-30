@@ -148,6 +148,9 @@ export const AddCartDialog = ({
       selectedFranchiseId,
       toppingCategoryId,
     );
+  const isDialogLoading =
+    createCartMutation.isPending ||
+    (open && Boolean(selectedFranchiseId) && (isMenuLoading || isToppingLoading));
 
   const categoryTabs = useMemo<PosCategoryTab[]>(() => {
     return menuData.reduce<PosCategoryTab[]>((tabs, category) => {
@@ -418,9 +421,9 @@ export const AddCartDialog = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-[calc(100vw-2rem)] overflow-hidden p-0 sm:max-w-[1400px]">
-        <NormalLoadingLayout forceShow={createCartMutation.isPending} />
+      <NormalLoadingLayout forceShow={isDialogLoading} />
 
+      <DialogContent className="max-w-[calc(100vw-2rem)] overflow-hidden p-0 sm:max-w-[1400px]">
         <div className="flex max-h-[90vh] flex-col">
           <DialogHeader className="border-b border-[#E8DFD6] px-6 py-5">
             <DialogTitle className="text-[#3E2723]">Add Cart</DialogTitle>

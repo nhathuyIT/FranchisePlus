@@ -168,8 +168,8 @@ function ShiftAdminPage() {
 
   const employeeFieldOptions: SelectOption[] = pageData.employees.map(
     (employee) => ({
-      label: employee.email
-        ? `${employee.name} (${employee.email})`
+      label: employee.roleLabel
+        ? `${employee.name} (${employee.roleLabel})`
         : employee.name,
       value: String(employee.id),
     }),
@@ -191,11 +191,11 @@ function ShiftAdminPage() {
         <div className="flex min-w-0 flex-col">
           <span className="truncate font-medium">{employee.name}</span>
           <span className="truncate text-xs text-[#8D6E63]">
-            {employee.email}
+            {employee.roleLabel || "No role"}
           </span>
         </div>
       ),
-      searchText: `${employee.name} ${employee.email}`,
+      searchText: `${employee.name} ${employee.roleLabel}`,
     }));
 
   const shiftSearchOptions: PopoverSearchSelectOption[] = pageData.shifts.map(

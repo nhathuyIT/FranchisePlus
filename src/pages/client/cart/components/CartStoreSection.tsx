@@ -45,14 +45,13 @@ interface CartStoreSectionProps {
     item: CartItemResponse,
     options: CartItemOptionRequest[],
   ) => Promise<boolean> | void;
-  onUpdateQuantity: (cartItemId: string, quantity: number) => void;
-  onRemove: (cartItemId: string) => void;
-  onSaveItemNote: (cartItemId: string, note: string) => void;
+  onUpdateQuantity: (cartItemId: string, quantity: number) => Promise<unknown> | void;
+  onRemove: (cartItemId: string) => Promise<unknown> | void;
   isItemPending: (cartItemId: string) => boolean;
-  onCancelCart: () => void;
-  onSaveMessage: (message: string) => void;
+  onCancelCart: () => Promise<unknown> | void;
+  onSaveMessage: (message: string) => Promise<unknown> | void;
   onOpenVoucherDialog: () => void;
-  onRemoveVoucher: () => void;
+  onRemoveVoucher: () => Promise<unknown> | void;
 }
 
 const CartStoreSection: React.FC<CartStoreSectionProps> = ({
@@ -70,7 +69,6 @@ const CartStoreSection: React.FC<CartStoreSectionProps> = ({
   onSaveEditedItem,
   onUpdateQuantity,
   onRemove,
-  onSaveItemNote,
   isItemPending,
   onCancelCart,
   onSaveMessage,
@@ -80,6 +78,8 @@ const CartStoreSection: React.FC<CartStoreSectionProps> = ({
   const menuQuery = useGetMenuByFranchise(cart.franchiseId);
   const hasCartDiscount =
     Number(cart.finalAmount || 0) < Number(cart.subtotalAmount || 0);
+  const promotionDiscount = Math.max(Number(cart.promotionDiscount || 0), 0);
+  const voucherDiscount = Math.max(Number(cart.voucherDiscount || 0), 0);
   const totalDiscount = Math.max(
     0,
     Number(cart.subtotalAmount || 0) - Number(cart.finalAmount || 0),
@@ -227,6 +227,23 @@ const CartStoreSection: React.FC<CartStoreSectionProps> = ({
   const resolveProductSize = (productFranchiseId: string) =>
     sizeLabelByProductFranchiseId.get(String(productFranchiseId));
 
+  const handleHeaderClick = (event: React.MouseEvent<HTMLDivElement>) => {
+    if (isCancellingCart || checked) {
+      return;
+    }
+
+    const target = event.target as HTMLElement;
+    if (
+      target.closest(
+        "button, a, input, textarea, select, [data-cart-header-ignore-toggle='true']",
+      )
+    ) {
+      return;
+    }
+
+    onToggleCart(true);
+  };
+
   React.useEffect(() => {
     reset({
       message: initialMessage ?? "",
@@ -236,46 +253,46 @@ const CartStoreSection: React.FC<CartStoreSectionProps> = ({
   return (
     <section
       aria-busy={isCancellingCart}
-      className={`overflow-hidden rounded-[1.75rem] border border-[var(--cart-border)] bg-[var(--cart-panel-strong)] shadow-[0_18px_38px_rgba(63,41,33,0.05)] transition-all ${
+      className={`overflow-hidden rounded-[1.35rem] sm:rounded-[1.75rem] border border-[var(--cart-border)] bg-[var(--cart-panel-strong)] shadow-[0_18px_38px_rgba(63,41,33,0.05)] transition-all ${
         isCancellingCart ? "opacity-70" : ""
       }`}
     >
-      <div className="border-b border-[var(--cart-border-soft)] bg-[linear-gradient(180deg,#fffdfa_0%,#fcf5ee_100%)] px-5 py-5 md:px-6">
+      <div className="cursor-pointer border-b border-[var(--cart-border-soft)] bg-[linear-gradient(180deg,#fffdfa_0%,#fcf5ee_100%)] px-4 py-4 sm:px-5 sm:py-5 md:px-6" onClick={handleHeaderClick}>
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-          <div className="flex items-start gap-3">
+          <div className="flex items-start gap-2.5 sm:gap-3">
             <Checkbox
               disabled={isCancellingCart}
               checked={checked ? true : indeterminate ? "indeterminate" : false}
               onCheckedChange={(next) => onToggleCart(next === true)}
-              className="mt-1"
+              className="mt-0.5 sm:mt-1"
             />
 
-            <div className="flex items-start gap-3">
-              <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-[1.1rem] bg-[var(--cart-warm)] text-[var(--cart-accent)] shadow-[inset_0_1px_0_rgba(255,255,255,0.7)]">
+            <div className="flex items-start gap-2.5 sm:gap-3">
+              <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-[1rem] bg-[var(--cart-warm)] text-[var(--cart-accent)] shadow-[inset_0_1px_0_rgba(255,255,255,0.7)] sm:h-12 sm:w-12 sm:rounded-[1.1rem]">
                 <Store className="h-5 w-5" />
               </div>
 
               <div className="space-y-2">
                 <div>
-                  <h2 className="text-lg font-semibold text-[var(--cart-ink)]">
+                  <h2 className="text-base font-semibold text-[var(--cart-ink)] sm:text-lg">
                     {cart.franchiseName || "Store"}
                   </h2>
-                  <p className="mt-1 text-sm text-[var(--cart-muted)]">
+                  <p className="mt-1 text-xs text-[var(--cart-muted)] sm:text-sm">
                     {cart.cartItems.length} items in this cart
                   </p>
                 </div>
 
                 {(cart.address || cart.phone) && (
-                  <div className="flex flex-wrap gap-2.5 text-sm text-[var(--cart-muted)]">
+                  <div className="flex flex-col gap-2 text-xs text-[var(--cart-muted)] sm:flex-wrap sm:flex-row sm:gap-2.5 sm:text-sm">
                     {cart.address && (
-                      <div className="inline-flex items-start gap-2 rounded-full border border-[var(--cart-border)] bg-white/80 px-3 py-2 shadow-[0_8px_18px_rgba(63,41,33,0.04)]">
+                      <div className="inline-flex max-w-full items-start gap-2 rounded-2xl border border-[var(--cart-border)] bg-white/80 px-3 py-2 text-left shadow-[0_8px_18px_rgba(63,41,33,0.04)] sm:rounded-full">
                         <MapPin className="mt-0.5 h-4 w-4 flex-shrink-0 text-[var(--cart-accent)]" />
                         <span>{cart.address}</span>
                       </div>
                     )}
 
                     {cart.phone && (
-                      <div className="rounded-full border border-[var(--cart-border)] bg-white/80 px-3 py-2 shadow-[0_8px_18px_rgba(63,41,33,0.04)]">
+                      <div className="w-fit rounded-2xl border border-[var(--cart-border)] bg-white/80 px-3 py-2 shadow-[0_8px_18px_rgba(63,41,33,0.04)] sm:rounded-full">
                         {cart.phone}
                       </div>
                     )}
@@ -285,14 +302,20 @@ const CartStoreSection: React.FC<CartStoreSectionProps> = ({
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2.5 text-sm">
-            <span className="rounded-full border border-[var(--cart-border)] bg-white/80 px-3 py-2 font-medium text-[var(--cart-muted)] shadow-[0_8px_18px_rgba(63,41,33,0.04)]">
+          <div className="flex flex-col gap-2.5 text-sm sm:flex-row sm:flex-wrap sm:items-center lg:justify-end">
+            <span className="inline-flex w-fit items-center justify-center rounded-full border border-[var(--cart-border)] bg-white/80 px-3 py-2 font-medium text-[var(--cart-muted)] shadow-[0_8px_18px_rgba(63,41,33,0.04)]">
               {cart.cartItems.length} items
             </span>
 
-            {hasCartDiscount && (
+            {promotionDiscount > 0 && (
+              <span className="rounded-full bg-[#fff4ea] px-3 py-2 font-medium text-[var(--cart-accent-deep)]">
+                Promotion -{formatCurrency(promotionDiscount)}
+              </span>
+            )}
+
+            {voucherDiscount > 0 && (
               <span className="rounded-full bg-[#fff1e7] px-3 py-2 font-medium text-[var(--cart-accent)]">
-                Save {formatCurrency(cart.subtotalAmount - cart.finalAmount)}
+                Voucher -{formatCurrency(voucherDiscount)}
               </span>
             )}
 
@@ -302,7 +325,7 @@ const CartStoreSection: React.FC<CartStoreSectionProps> = ({
               size="sm"
               onClick={onCancelCart}
               disabled={isCancellingCart}
-              className="rounded-full border-[var(--cart-border)] bg-white/85 px-4 text-[var(--cart-accent-deep)] hover:border-[#d8b8a4] hover:bg-[#fff6ef]"
+              data-cart-header-ignore-toggle="true" className="self-end w-auto min-w-28 rounded-full border-[var(--cart-border)] bg-white/85 px-3 py-1.5 text-xs text-[var(--cart-accent-deep)] hover:border-[#d8b8a4] hover:bg-[#fff6ef] sm:px-4 sm:py-2 sm:text-sm"
             >
               {isCancellingCart ? "Cancelling..." : "Cancel cart"}
             </Button>
@@ -346,16 +369,15 @@ const CartStoreSection: React.FC<CartStoreSectionProps> = ({
                 onUpdateQuantity(item.cartItemId, quantity)
               }
               onRemove={() => onRemove(item.cartItemId)}
-              onSaveNote={(note) => onSaveItemNote(item.cartItemId, note)}
             />
           );
         })}
       </div>
 
-      <div className="border-t border-[var(--cart-border-soft)] px-5 py-5 md:px-6">
+      <div className="border-t border-[var(--cart-border-soft)] px-4 py-4 sm:px-5 sm:py-5 md:px-6">
         <form
           onSubmit={handleSubmit((values) => onSaveMessage(values.message))}
-          className="rounded-[1.5rem] border border-[var(--cart-border)] bg-[linear-gradient(180deg,#fffdf9_0%,#faf3ec_100%)] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]"
+          className="rounded-[1.25rem] border border-[var(--cart-border)] bg-[linear-gradient(180deg,#fffdf9_0%,#faf3ec_100%)] p-3.5 sm:rounded-[1.5rem] sm:p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]"
         >
           <div className="space-y-3">
             <div>
@@ -374,7 +396,7 @@ const CartStoreSection: React.FC<CartStoreSectionProps> = ({
               {...register("message")}
             />
 
-            <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <p className="text-xs text-[var(--cart-muted)]">
                 This content is stored in the cart message field.
               </p>
@@ -383,7 +405,7 @@ const CartStoreSection: React.FC<CartStoreSectionProps> = ({
                 type="submit"
                 size="sm"
                 disabled={isCancellingCart || isSavingMessage || !isDirty}
-                className="rounded-full bg-[linear-gradient(135deg,var(--cart-accent)_0%,var(--cart-accent-deep)_100%)] px-5 text-white shadow-[0_14px_28px_rgba(183,104,67,0.22)] hover:opacity-95"
+                className="self-end w-auto min-w-32 rounded-full bg-[linear-gradient(135deg,var(--cart-accent)_0%,var(--cart-accent-deep)_100%)] px-5 text-white shadow-[0_14px_28px_rgba(183,104,67,0.22)] hover:opacity-95"
               >
                 {isSavingMessage ? "Saving..." : "Save message"}
               </Button>
@@ -393,7 +415,7 @@ const CartStoreSection: React.FC<CartStoreSectionProps> = ({
       </div>
 
       <div className="border-t border-[var(--cart-border-soft)] bg-[linear-gradient(180deg,#fdf8f3_0%,#f7efe7_100%)]">
-        <div className="flex flex-col gap-4 px-5 py-5 md:px-6 lg:flex-row lg:items-center lg:justify-between">
+        <div className="flex flex-col gap-4 px-4 py-4 sm:px-5 sm:py-5 md:px-6 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex items-center gap-3 text-sm text-[var(--cart-ink)]">
             <div className="flex h-10 w-10 items-center justify-center rounded-[1rem] bg-white text-[var(--cart-accent)] shadow-[0_10px_24px_rgba(63,41,33,0.05)]">
               <TicketPercent className="h-4 w-4" />
@@ -406,10 +428,10 @@ const CartStoreSection: React.FC<CartStoreSectionProps> = ({
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-3 text-sm">
-            {Number(cart.voucherDiscount || 0) > 0 ? (
+          <div className="flex flex-col items-stretch gap-3 text-sm sm:flex-row sm:flex-wrap sm:items-center">
+              {voucherDiscount > 0 ? (
               <span className="rounded-full bg-[#fff1e7] px-3 py-2 font-medium text-[var(--cart-accent)]">
-                Save {formatCurrency(Number(cart.voucherDiscount || 0))}
+                  Save {formatCurrency(voucherDiscount)}
               </span>
             ) : (
               <span className="text-[var(--cart-muted)]">No voucher applied</span>
@@ -419,7 +441,7 @@ const CartStoreSection: React.FC<CartStoreSectionProps> = ({
               type="button"
               disabled={isCancellingCart || isVoucherPending}
               onClick={onOpenVoucherDialog}
-              className="rounded-full border border-[var(--cart-border)] bg-white/85 px-4 py-2 font-medium text-[var(--cart-ink)] shadow-[0_10px_24px_rgba(63,41,33,0.04)] transition-all hover:border-[#d7b7a4] hover:text-[var(--cart-accent)] disabled:cursor-not-allowed disabled:text-[#b7a59a]"
+              className="w-full rounded-full border border-[var(--cart-border)] bg-white/85 px-4 py-2 font-medium text-[var(--cart-ink)] shadow-[0_10px_24px_rgba(63,41,33,0.04)] transition-all hover:border-[#d7b7a4] hover:text-[var(--cart-accent)] disabled:cursor-not-allowed disabled:text-[#b7a59a] sm:w-auto"
             >
               Choose or enter code
             </button>
@@ -429,7 +451,7 @@ const CartStoreSection: React.FC<CartStoreSectionProps> = ({
                 type="button"
                 disabled={isCancellingCart || isVoucherPending}
                 onClick={onRemoveVoucher}
-                className="rounded-full border border-[#ebc8b6] bg-[#fff8f2] px-4 py-2 text-[#a24a37] transition-colors hover:text-[#7c2f20] disabled:cursor-not-allowed disabled:text-[#b7a59a]"
+                className="w-full rounded-full border border-[#ebc8b6] bg-[#fff8f2] px-4 py-2 text-[#a24a37] transition-colors hover:text-[#7c2f20] disabled:cursor-not-allowed disabled:text-[#b7a59a] sm:w-auto"
               >
                 {isVoucherPending ? "Removing voucher..." : "Remove voucher"}
               </button>
@@ -437,8 +459,8 @@ const CartStoreSection: React.FC<CartStoreSectionProps> = ({
           </div>
         </div>
 
-        <div className="border-t border-[var(--cart-border-soft)] px-5 py-5 md:px-6">
-          <div className="rounded-[1.5rem] border border-[var(--cart-border)] bg-white/88 p-4 shadow-[0_14px_34px_rgba(63,41,33,0.04)]">
+        <div className="border-t border-[var(--cart-border-soft)] px-4 py-4 sm:px-5 sm:py-5 md:px-6">
+          <div className="rounded-[1.25rem] border border-[var(--cart-border)] bg-white/88 p-3.5 sm:rounded-[1.5rem] sm:p-4 shadow-[0_14px_34px_rgba(63,41,33,0.04)]">
             <div className="space-y-3 text-sm text-[var(--cart-muted)]">
               <div className="flex items-center justify-between gap-4">
                 <span>Subtotal</span>
@@ -447,11 +469,29 @@ const CartStoreSection: React.FC<CartStoreSectionProps> = ({
                 </strong>
               </div>
 
-              {totalDiscount > 0 && (
+              {promotionDiscount > 0 && (
                 <div className="flex items-center justify-between gap-4">
-                  <span>Discount</span>
+                  <span>Promotion discount</span>
+                  <strong className="text-[var(--cart-accent-deep)]">
+                    - {formatCurrency(promotionDiscount)}
+                  </strong>
+                </div>
+              )}
+
+              {voucherDiscount > 0 && (
+                <div className="flex items-center justify-between gap-4">
+                  <span>Voucher discount</span>
                   <strong className="text-[var(--cart-accent)]">
-                    - {formatCurrency(totalDiscount)}
+                    - {formatCurrency(voucherDiscount)}
+                  </strong>
+                </div>
+              )}
+
+              {totalDiscount > promotionDiscount + voucherDiscount && (
+                <div className="flex items-center justify-between gap-4">
+                  <span>Other discount</span>
+                  <strong className="text-[var(--cart-accent)]">
+                    - {formatCurrency(totalDiscount - promotionDiscount - voucherDiscount)}
                   </strong>
                 </div>
               )}

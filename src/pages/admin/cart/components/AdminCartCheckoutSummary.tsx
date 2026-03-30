@@ -29,8 +29,7 @@ export const AdminCartCheckoutSummary = ({
   onBack,
   onCheckout,
 }: AdminCartCheckoutSummaryProps) => {
-  const totalDiscount =
-    promotionDiscount + voucherDiscount + loyaltyDiscount;
+  const totalDiscount = promotionDiscount + voucherDiscount + loyaltyDiscount;
 
   return (
     <aside className="rounded-[28px] border border-[#E6D7CA] bg-[linear-gradient(180deg,#4f3428_0%,#3b241d_100%)] p-6 text-white shadow-[0_24px_60px_rgba(62,39,35,0.22)]">
@@ -67,12 +66,6 @@ export const AdminCartCheckoutSummary = ({
           <span>Voucher</span>
           <span className="font-semibold text-white">
             {formatCartMoney(voucherDiscount)}
-          </span>
-        </div>
-        <div className="flex items-center justify-between text-sm text-[#EBDAD0]">
-          <span>Loyalty</span>
-          <span className="font-semibold text-white">
-            {formatCartMoney(loyaltyDiscount)}
           </span>
         </div>
         <div className="border-t border-white/10 pt-3">
