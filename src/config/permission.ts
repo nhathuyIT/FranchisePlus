@@ -52,10 +52,7 @@ export const Permission = {
   VIEW_USER_FRANCHISE_ROLES: "VIEW_USER_FRANCHISE_ROLES",
 
   MANAGE_CATEGORY: "MANAGE_CATEGORY",
-  VIEW_CATEGORY: "VIEW_CATEGORY",
-
-  MANAGE_LOYALTY_RULES: "MANAGE_LOYALTY_RULES",
-  VIEW_LOYALTY_RULES: "VIEW_LOYALTY_RULES",
+  VIEW_CATEGORY: "VIEW_CATEGORY"
 } as const;
 
 export type Permission = (typeof Permission)[keyof typeof Permission];
