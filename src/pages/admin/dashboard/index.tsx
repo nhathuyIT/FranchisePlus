@@ -9,24 +9,6 @@ import {
   UserRound,
   Users,
 } from "lucide-react";
-import {
-  Bar,
-  BarChart,
-  CartesianGrid,
-  Cell,
-  ComposedChart,
-  Legend,
-  Line,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
-import type {
-  DashboardDeliveryStatus as DashboardDeliveryKey,
-  DashboardOrderStatus,
-  DashboardPaymentStatus,
-} from "@/types/dashboard.type";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -42,133 +24,21 @@ import {
 } from "@/hooks/dashboard/useDashboard.hooks";
 import { useFranchiseSelect } from "@/hooks/franchise";
 import { useAuthStore } from "@/stores/auth-store";
+import { DashboardDeliveryStatus } from "./components/DashboardDeliveryStatus";
+import { DashboardOrdersChart } from "./components/DashboardOrdersChart";
+import { DashboardPaymentChart } from "./components/DashboardPaymentChart";
 import {
   DashboardSummaryCards,
   type DashboardSummaryCardItem,
 } from "./components/DashboardSummaryCards";
 import {
-  DELIVERY_STATUS_META,
   formatCount,
   formatSummaryValue,
-  ORDER_STATUS_META,
-  PAYMENT_STATUS_META,
+  sumCounts,
+  toDeliveryStatusData,
+  toOrderStatusData,
+  toPaymentStatusData,
 } from "./dashboard.utils";
-
-interface StatusChartDatum {
-  label: string;
-  value: number;
-  fill: string;
-}
-
-interface OverviewChartDatum {
-  name: string;
-  total: number;
-  mapped: number;
-  fill: string;
-}
-
-interface StatusChartCardProps {
-  title: string;
-  description: string;
-  data: StatusChartDatum[];
-  height: number;
-}
-
-const ORDER_STATUS_SEQUENCE: DashboardOrderStatus[] = [
-  "DRAFT",
-  "CONFIRMED",
-  "PREPARING",
-  "READY_FOR_PICKUP",
-  "OUT_FOR_DELIVERY",
-  "COMPLETED",
-  "CANCELED",
-];
-
-const PAYMENT_STATUS_SEQUENCE: DashboardPaymentStatus[] = [
-  "PAID",
-  "PENDING",
-  "REFUNDED",
-  "FAILED",
-];
-
-const DELIVERY_STATUS_SEQUENCE: DashboardDeliveryKey[] = [
-  "ASSIGNED",
-  "PICKING_UP",
-  "DELIVERED",
-];
-
-const tooltipContentStyle = {
-  borderRadius: "18px",
-  border: "1px solid #E8DBCA",
-  background: "#FFFDF8",
-  boxShadow: "0 18px 40px rgba(62, 39, 35, 0.08)",
-};
-
-const axisTickStyle = {
-  fill: "#5A4335",
-  fontSize: 12,
-  fontWeight: 600,
-};
-
-const StatusChartCard = ({
-  title,
-  description,
-  data,
-  height,
-}: StatusChartCardProps) => {
-  return (
-    <section className="rounded-[32px] border border-[#EADFD3] bg-white p-6 shadow-[0_24px_50px_rgba(84,54,42,0.08)] sm:p-8">
-      <div>
-        <h2 className="text-2xl font-semibold text-[#2E1A13]">{title}</h2>
-        <p className="mt-2 text-sm text-[#826856]">{description}</p>
-      </div>
-
-      <div className="mt-6 rounded-[28px] bg-[#FCF7F0] p-4 sm:p-5">
-        <div style={{ height }}>
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart
-              data={data}
-              layout="vertical"
-              margin={{ top: 4, right: 24, left: 0, bottom: 4 }}
-              barCategoryGap={18}
-            >
-              <CartesianGrid
-                horizontal={false}
-                stroke="#EDE1D4"
-                strokeDasharray="4 4"
-              />
-              <XAxis
-                type="number"
-                allowDecimals={false}
-                axisLine={false}
-                tickLine={false}
-                tick={axisTickStyle}
-              />
-              <YAxis
-                dataKey="label"
-                type="category"
-                width={132}
-                axisLine={false}
-                tickLine={false}
-                tick={axisTickStyle}
-              />
-              <Tooltip
-                formatter={(value) => [formatCount(Number(value ?? 0)), "Count"]}
-                labelStyle={{ color: "#3E2723", fontWeight: 600 }}
-                contentStyle={tooltipContentStyle}
-              />
-              <Bar dataKey="value" radius={[999, 999, 999, 999]} barSize={18}>
-                {data.map((item) => (
-                  <Cell key={item.label} fill={item.fill} />
-                ))}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
-    </section>
-  );
-};
 
 const DashboardLoadingState = () => {
   return (
@@ -187,31 +57,16 @@ const DashboardLoadingState = () => {
         ))}
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1.3fr)_minmax(320px,0.9fr)]">
-        {Array.from({ length: 2 }).map((_, index) => (
+      <div className="grid gap-6 lg:grid-cols-2 xl:grid-cols-3">
+        {Array.from({ length: 3 }).map((_, index) => (
           <div
-            key={`top-chart-skeleton-${index}`}
+            key={`chart-skeleton-${index}`}
             className="rounded-[32px] border border-[#EADFD3] bg-white p-8"
           >
             <Skeleton className="h-6 w-48" />
             <Skeleton className="mt-3 h-4 w-64 max-w-full" />
             <div className="mt-6 rounded-[28px] bg-[#FCF7F0] p-5">
               <Skeleton className="h-[320px] w-full rounded-[24px]" />
-            </div>
-          </div>
-        ))}
-      </div>
-
-      <div className="grid gap-6 xl:grid-cols-2">
-        {Array.from({ length: 2 }).map((_, index) => (
-          <div
-            key={`bottom-chart-skeleton-${index}`}
-            className="rounded-[32px] border border-[#EADFD3] bg-white p-8"
-          >
-            <Skeleton className="h-6 w-40" />
-            <Skeleton className="mt-3 h-4 w-52 max-w-full" />
-            <div className="mt-6 rounded-[28px] bg-[#FCF7F0] p-5">
-              <Skeleton className="h-[260px] w-full rounded-[24px]" />
             </div>
           </div>
         ))}
@@ -301,68 +156,33 @@ const DashboardPage = () => {
     document.title = `Admin Dashboard | ${scopeLabel}`;
   }, [scopeLabel]);
 
-  const overviewChartData = useMemo<OverviewChartDatum[]>(() => {
-    if (!dashboard) {
-      return [];
-    }
+  const orderStatusChartData = useMemo(
+    () => (dashboard ? toOrderStatusData(dashboard.countOrders) : []),
+    [dashboard],
+  );
 
-    return [
-      {
-        name: "Users",
-        total: dashboard.countUsers,
-        mapped: dashboard.countUserFranchises,
-        fill: "#4A2C23",
-      },
-      {
-        name: "Customers",
-        total: dashboard.countCustomers,
-        mapped: dashboard.countCustomerFranchises,
-        fill: "#A95B24",
-      },
-      {
-        name: "Products",
-        total: dashboard.countProducts,
-        mapped: dashboard.countProductFranchises,
-        fill: "#D1A451",
-      },
-    ];
-  }, [dashboard]);
+  const paymentStatusChartData = useMemo(
+    () => (dashboard ? toPaymentStatusData(dashboard.countPayments) : []),
+    [dashboard],
+  );
 
-  const orderStatusChartData = useMemo<StatusChartDatum[]>(() => {
-    if (!dashboard) {
-      return [];
-    }
+  const deliveryStatusChartData = useMemo(
+    () => (dashboard ? toDeliveryStatusData(dashboard.countDeliveries) : []),
+    [dashboard],
+  );
 
-    return ORDER_STATUS_SEQUENCE.map((status) => ({
-      label: ORDER_STATUS_META[status].label,
-      value: dashboard.countOrders[status],
-      fill: ORDER_STATUS_META[status].fill,
-    }));
-  }, [dashboard]);
-
-  const paymentStatusChartData = useMemo<StatusChartDatum[]>(() => {
-    if (!dashboard) {
-      return [];
-    }
-
-    return PAYMENT_STATUS_SEQUENCE.map((status) => ({
-      label: PAYMENT_STATUS_META[status].label,
-      value: dashboard.countPayments[status],
-      fill: PAYMENT_STATUS_META[status].fill,
-    }));
-  }, [dashboard]);
-
-  const deliveryStatusChartData = useMemo<StatusChartDatum[]>(() => {
-    if (!dashboard) {
-      return [];
-    }
-
-    return DELIVERY_STATUS_SEQUENCE.map((status) => ({
-      label: DELIVERY_STATUS_META[status].label,
-      value: dashboard.countDeliveries[status],
-      fill: DELIVERY_STATUS_META[status].fill,
-    }));
-  }, [dashboard]);
+  const totalOrders = dashboard ? sumCounts(dashboard.countOrders) : 0;
+  const totalPayments = dashboard ? sumCounts(dashboard.countPayments) : 0;
+  const totalDeliveries = dashboard ? sumCounts(dashboard.countDeliveries) : 0;
+  const paidRate =
+    totalPayments > 0 ? (dashboard?.countPayments.PAID ?? 0) / totalPayments : 0;
+  const activeDeliveries = dashboard
+    ? dashboard.countDeliveries.ASSIGNED + dashboard.countDeliveries.PICKING_UP
+    : 0;
+  const deliveredRate =
+    totalDeliveries > 0
+      ? (dashboard?.countDeliveries.DELIVERED ?? 0) / totalDeliveries
+      : 0;
 
   const summaryCards: DashboardSummaryCardItem[] = dashboard
     ? [
@@ -440,8 +260,8 @@ const DashboardPage = () => {
             Admin Dashboard
           </h1>
           <p className="mt-3 max-w-3xl text-sm leading-6 text-[#6B4C3B] sm:text-base">
-            Visual summary of dashboard counts returned directly from the
-            current API scope.
+            Operational snapshot of counts and status distribution for orders,
+            payments, and deliveries in the current API scope.
           </p>
 
           {activeDashboardQuery.isFetching && dashboard ? (
@@ -452,7 +272,7 @@ const DashboardPage = () => {
           ) : null}
         </div>
 
-        <div className="mt-10 flex flex-col gap-3 sm:flex-row sm:items-center">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center xl:pt-2">
           {isAdmin ? (
             <Select
               value={effectiveFranchiseId || "all"}
@@ -526,102 +346,26 @@ const DashboardPage = () => {
         <div className="space-y-6 pb-4">
           <DashboardSummaryCards cards={summaryCards} />
 
-          <div className="grid gap-6 xl:grid-cols-[minmax(0,1.3fr)_minmax(320px,0.9fr)]">
-            <section className="rounded-[32px] border border-[#EADFD3] bg-white p-6 shadow-[0_24px_50px_rgba(84,54,42,0.08)] sm:p-8">
-              <div>
-                <h2 className="text-2xl font-semibold text-[#2E1A13]">
-                  Overview Composition
-                </h2>
-                <p className="mt-2 text-sm text-[#826856]">
-                  Compare the primary counts and franchise-linked counts returned
-                  by the selected dashboard scope.
-                </p>
-              </div>
+          <div className="grid gap-6 lg:grid-cols-2 xl:grid-cols-3">
+            <div className="lg:col-span-2 xl:col-span-1">
+              <DashboardOrdersChart
+                data={orderStatusChartData}
+                totalOrders={totalOrders}
+                scopeLabel={scopeLabel}
+              />
+            </div>
 
-              <div className="mt-6 rounded-[28px] bg-[#FCF7F0] p-4 sm:p-5">
-                <div className="h-[320px]">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <ComposedChart
-                      data={overviewChartData}
-                      margin={{ top: 12, right: 16, left: 0, bottom: 0 }}
-                    >
-                      <CartesianGrid
-                        vertical={false}
-                        stroke="#EDE1D4"
-                        strokeDasharray="4 4"
-                      />
-                      <XAxis
-                        dataKey="name"
-                        axisLine={false}
-                        tickLine={false}
-                        tick={axisTickStyle}
-                      />
-                      <YAxis
-                        allowDecimals={false}
-                        axisLine={false}
-                        tickLine={false}
-                        tick={axisTickStyle}
-                      />
-                      <Tooltip
-                        formatter={(value) => [
-                          formatCount(Number(value ?? 0)),
-                          "Count",
-                        ]}
-                        labelStyle={{ color: "#3E2723", fontWeight: 600 }}
-                        contentStyle={tooltipContentStyle}
-                      />
-                      <Legend
-                        wrapperStyle={{ paddingTop: 8 }}
-                        formatter={(value) => (
-                          <span className="text-sm text-[#6B4C3B]">{value}</span>
-                        )}
-                      />
-                      <Bar
-                        dataKey="total"
-                        name="Primary Count"
-                        radius={[16, 16, 0, 0]}
-                        barSize={44}
-                      >
-                        {overviewChartData.map((item) => (
-                          <Cell key={item.name} fill={item.fill} />
-                        ))}
-                      </Bar>
-                      <Line
-                        type="monotone"
-                        dataKey="mapped"
-                        name="Franchise Links"
-                        stroke="#C97F32"
-                        strokeWidth={3}
-                        dot={{ r: 4, fill: "#C97F32" }}
-                        activeDot={{ r: 6 }}
-                      />
-                    </ComposedChart>
-                  </ResponsiveContainer>
-                </div>
-              </div>
-            </section>
-
-            <StatusChartCard
-              title="Orders by Status"
-              description="Raw order status counts returned from the dashboard API."
-              data={orderStatusChartData}
-              height={320}
-            />
-          </div>
-
-          <div className="grid gap-6 xl:grid-cols-2">
-            <StatusChartCard
-              title="Payments by Status"
-              description="Payment status distribution from the current dashboard scope."
+            <DashboardPaymentChart
               data={paymentStatusChartData}
-              height={260}
+              totalPayments={totalPayments}
+              paidRate={paidRate}
             />
 
-            <StatusChartCard
-              title="Deliveries by Status"
-              description="Delivery status distribution from the current dashboard scope."
+            <DashboardDeliveryStatus
               data={deliveryStatusChartData}
-              height={260}
+              totalDeliveries={totalDeliveries}
+              activeDeliveries={activeDeliveries}
+              deliveredRate={deliveredRate}
             />
           </div>
         </div>
