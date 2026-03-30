@@ -29,7 +29,10 @@ import {
   setOrderPreparing,
   setOrderReadyForPickup,
 } from "../services/order.service";
-import { normalizeOrderStatus } from "../utils/order-management.utils";
+import {
+  normalizeOrderStatus,
+  sortOrderListByNewest,
+} from "../utils/order-management.utils";
 
 export const orderManagementKeys = {
   all: ["admin-order-management"] as const,
@@ -138,7 +141,7 @@ export const useStaffDeliveryOrdersQuery = (
         }),
       );
 
-      return orders;
+      return sortOrderListByNewest(orders);
     },
     enabled: !!params.staffId && enabled,
   });

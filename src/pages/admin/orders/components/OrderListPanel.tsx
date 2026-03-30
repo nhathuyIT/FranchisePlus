@@ -13,6 +13,7 @@ interface OrderListPanelProps {
   selectedOrderId: string | null;
   isLoading: boolean;
   error: Error | null;
+  suppressError?: boolean;
   emptyMessage: string;
   onRetry: () => void;
   onSelectOrder: (orderId: string) => void;
@@ -24,6 +25,7 @@ export function OrderListPanel({
   selectedOrderId,
   isLoading,
   error,
+  suppressError = false,
   emptyMessage,
   onRetry,
   onSelectOrder,
@@ -42,7 +44,7 @@ export function OrderListPanel({
     );
   }
 
-  if (error) {
+  if (error && !suppressError) {
     return (
       <div className="rounded-2xl border border-[#F5C6CB] bg-[#FFF5F5] px-5 py-6 text-sm text-[#9B2C2C]">
         <p className="font-semibold">Failed to load order list.</p>

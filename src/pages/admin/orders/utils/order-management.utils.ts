@@ -224,6 +224,45 @@ export const filterOrderList = (
   );
 };
 
+export const getOrderCreatedAtTimestamp = (value?: string | null) => {
+  if (!value) return 0;
+
+  const normalizedValue = value.trim();
+  const directTimestamp = new Date(normalizedValue).getTime();
+
+  if (!Number.isNaN(directTimestamp)) {
+    return directTimestamp;
+  }
+
+  const viDateTimeMatch = normalizedValue.match(
+    /^(\d{1,2})[/-](\d{1,2})[/-](\d{4})(?:[,\s]+(\d{1,2}):(\d{2})(?::(\d{2}))?)?$/,
+  );
+
+  if (!viDateTimeMatch) {
+    return 0;
+  }
+
+  const [, day, month, year, hour = "0", minute = "0", second = "0"] =
+    viDateTimeMatch;
+  const parsedTimestamp = new Date(
+    Number(year),
+    Number(month) - 1,
+    Number(day),
+    Number(hour),
+    Number(minute),
+    Number(second),
+  ).getTime();
+
+  return Number.isNaN(parsedTimestamp) ? 0 : parsedTimestamp;
+};
+
+export const sortOrderListByNewest = (orders: FranchiseOrderListItem[]) =>
+  [...orders].sort(
+    (left, right) =>
+      getOrderCreatedAtTimestamp(right.createdAt) -
+      getOrderCreatedAtTimestamp(left.createdAt),
+  );
+
 export const getOrderProgressState = (
   currentStatus: AdminOrderStatus,
   stepStatus: Exclude<AdminOrderStatus, "DRAFT" | "CANCELED">,

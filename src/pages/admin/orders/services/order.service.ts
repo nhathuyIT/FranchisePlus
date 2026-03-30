@@ -11,6 +11,7 @@ import type {
 } from "../models/order-management.type";
 import {
   normalizeOrderStatus,
+  sortOrderListByNewest,
   toApiOrderStatus,
 } from "../utils/order-management.utils";
 import {
@@ -92,6 +93,16 @@ const normalizeDeliveryReference = (raw: unknown): DeliveryReference | null => {
   return { id };
 };
 
+const getOrderCreatedAtValue = (record: Record<string, unknown>) =>
+  toStringValue(
+    record.createdAt,
+    record.created_at,
+    record.confirmedAt,
+    record.confirmed_at,
+    record.updatedAt,
+    record.updated_at,
+  );
+
 const normalizeOrderDetail = (raw: unknown): OrderDetail | null => {
   const record = toRecord(raw);
   if (!record) return null;
@@ -141,7 +152,7 @@ const normalizeOrderDetail = (raw: unknown): OrderDetail | null => {
     staffName: toStringValue(record.staffName) || undefined,
     staffEmail: toStringValue(record.staffEmail) || undefined,
     orderItems,
-    createdAt: toStringValue(record.createdAt) || undefined,
+    createdAt: getOrderCreatedAtValue(record) || undefined,
   };
 };
 
@@ -165,7 +176,7 @@ const normalizeOrderListItem = (
     phone: toStringValue(record.phone),
     subtotalAmount: toNumberValue(record.subtotalAmount),
     finalAmount: toNumberValue(record.finalAmount, record.totalAmount),
-    createdAt: toStringValue(record.createdAt),
+    createdAt: getOrderCreatedAtValue(record),
   };
 };
 
@@ -211,9 +222,11 @@ export const getFranchiseOrders = async (
     },
   });
 
-  return extractArray(response)
-    .map(normalizeOrderListItem)
-    .filter((item): item is FranchiseOrderListItem => item !== null);
+  return sortOrderListByNewest(
+    extractArray(response)
+      .map(normalizeOrderListItem)
+      .filter((item): item is FranchiseOrderListItem => item !== null),
+  );
 };
 
 export const getOrderDetail = async (orderId: string) => {

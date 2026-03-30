@@ -11,6 +11,7 @@ import {
 import {
   ORDER_STATUS_FILTERS,
   filterOrderList,
+  sortOrderListByNewest,
 } from "../utils/order-management.utils";
 
 export const useOrderListPage = () => {
@@ -43,9 +44,14 @@ export const useOrderListPage = () => {
     ? staffOrdersQuery
     : franchiseOrdersQuery;
 
+  const sortedOrders = useMemo(
+    () => sortOrderListByNewest(ordersQuery.data ?? []),
+    [ordersQuery.data],
+  );
+
   const filteredOrders = useMemo(
-    () => filterOrderList(ordersQuery.data ?? [], searchTerm),
-    [ordersQuery.data, searchTerm],
+    () => filterOrderList(sortedOrders, searchTerm),
+    [searchTerm, sortedOrders],
   );
 
   useEffect(() => {

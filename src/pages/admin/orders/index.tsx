@@ -73,6 +73,7 @@ function OrdersPage() {
               selectedOrderId={selectedOrderId}
               isLoading={ordersQuery.isLoading}
               error={ordersError}
+              suppressError={franchiseContext.isStaff}
               emptyMessage={emptyMessage}
               onRetry={() => {
                 void ordersQuery.refetch();
