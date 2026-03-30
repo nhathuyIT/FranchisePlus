@@ -45,7 +45,7 @@ const CartSummary: React.FC<CartSummaryProps> = ({
                 Subtotal: {formatCurrency(selectedTotalBeforeDiscount)}
               </span>
               {selectedSavings > 0 && (
-                <span className="rounded-full bg-[#fff1e7] px-3 py-1.5 text-[var(--cart-accent)]">
+                <span className="rounded-full bg-[#f6ede6] px-3 py-1.5 text-[var(--cart-muted)]">
                   Saved: {formatCurrency(selectedSavings)}
                 </span>
               )}
