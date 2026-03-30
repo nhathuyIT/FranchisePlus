@@ -1,6 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import emptyCartIcon from "@/assets/icons/empty-cart.svg";
 import secureLockIcon from "@/assets/icons/secure-lock.svg";
 import coffeeCupIcon from "@/assets/icons/coffee-cup.svg";
 import { PRODUCTS_CLIENT } from "@/const/product-client.const";
@@ -9,6 +8,7 @@ import { useCart } from "@/pages/client/cart/useCart";
 import { ROUTER_URL } from "@/router/route.const";
 import { useAuthStore } from "@/stores/auth-store";
 import { useLoadingStore } from "@/stores/loading.store";
+import type { CartResponse } from "@/types/cart";
 
 type CheckoutPageLocationState = {
   selectedCartItemIds?: string[];
@@ -23,10 +23,75 @@ type CheckoutFormValues = {
 
 type CheckoutFormErrors = Partial<Record<keyof CheckoutFormValues, string>>;
 
+type CheckoutDisplayItem = {
+  cartItemId: string;
+  productFranchiseId: string;
+  productName: string;
+  productImageUrl?: string;
+  productCartPrice: number;
+  quantity: number;
+  originalLineTotal: number;
+  finalLineTotal: number;
+  promotionDiscount: number;
+  voucherDiscount: number;
+};
+
+type CheckoutCartGroup = {
+  cartId: string;
+  franchiseName: string;
+  itemCount: number;
+  subtotal: number;
+  promotionDiscount: number;
+  voucherDiscount: number;
+  finalAmount: number;
+  items: CheckoutDisplayItem[];
+};
+
+const toCurrencyAmount = (value?: number | string | null) => Number(value || 0);
+
+const formatCurrency = (value: number) =>
+  `${Math.max(0, Math.round(value)).toLocaleString("vi-VN")} VND`;
+
+const getCartItemsSubtotal = (cart: Pick<CartResponse, "cartItems">) =>
+  (cart.cartItems ?? []).reduce(
+    (sum, item) =>
+      sum + toCurrencyAmount(item.lineTotal || item.finalLineTotal),
+    0,
+  );
+
+const getCartSelectionDiscounts = (
+  selectedCart: CartResponse,
+  originalCart: CartResponse,
+) => {
+  const selectedSubtotal = getCartItemsSubtotal(selectedCart);
+  const originalSubtotal =
+    toCurrencyAmount(originalCart.subtotalAmount) ||
+    getCartItemsSubtotal(originalCart);
+
+  if (selectedCart.cartItems.length === originalCart.cartItems.length) {
+    return {
+      selectedSubtotal,
+      promotionDiscount: toCurrencyAmount(originalCart.promotionDiscount),
+      voucherDiscount: toCurrencyAmount(originalCart.voucherDiscount),
+    };
+  }
+
+  const selectionRatio =
+    originalSubtotal > 0 ? Math.min(selectedSubtotal / originalSubtotal, 1) : 0;
+
+  return {
+    selectedSubtotal,
+    promotionDiscount:
+      toCurrencyAmount(originalCart.promotionDiscount) * selectionRatio,
+    voucherDiscount:
+      toCurrencyAmount(originalCart.voucherDiscount) * selectionRatio,
+  };
+};
+
 const CheckoutPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { cart, carts } = useCart();
+  const { carts } = useCart();
   const checkoutCartMutation = useCheckoutCartMutation();
   const { authUser } = useAuthStore();
   const setLoading = useLoadingStore((state) => state.setLoading);
@@ -80,79 +145,126 @@ const CheckoutPage = () => {
       .filter((singleCart) => singleCart.cartItems.length > 0);
   }, [carts, selectedCartItemIdSet]);
 
-  const checkoutItems = useMemo(() => {
-    if (selectedCartItemIdSet.size === 0) {
-      return cart.items;
-    }
+  const checkoutCartGroups = useMemo<CheckoutCartGroup[]>(
+    () =>
+      checkoutCarts.flatMap((singleCart) => {
+        const originalCart = carts.find(
+          (cartItem) => cartItem.id === singleCart.id,
+        );
+        if (!originalCart) return [];
 
-    return cart.items.filter((item) =>
-      selectedCartItemIdSet.has(item.cartItemId),
-    );
-  }, [cart.items, selectedCartItemIdSet]);
+        const { selectedSubtotal, promotionDiscount, voucherDiscount } =
+          getCartSelectionDiscounts(singleCart, originalCart);
+        const isFullCartSelection =
+          singleCart.cartItems.length === originalCart.cartItems.length;
+        const subtotal = isFullCartSelection
+          ? toCurrencyAmount(originalCart.subtotalAmount)
+          : selectedSubtotal;
+
+        const items = singleCart.cartItems.map((item): CheckoutDisplayItem => {
+          const originalLineTotal = toCurrencyAmount(
+            item.lineTotal || item.finalLineTotal,
+          );
+          const finalLineTotal = toCurrencyAmount(
+            item.finalLineTotal || item.lineTotal,
+          );
+          const itemShare =
+            selectedSubtotal > 0 ? originalLineTotal / selectedSubtotal : 0;
+          const rawPromotionDiscount = promotionDiscount * itemShare;
+          const rawVoucherDiscount = voucherDiscount * itemShare;
+          const maxDiscount = Math.max(
+            toCurrencyAmount(item.discountAmount),
+            originalLineTotal - finalLineTotal,
+            0,
+          );
+          const allocatedDiscount = rawPromotionDiscount + rawVoucherDiscount;
+          const allocationRatio =
+            allocatedDiscount > maxDiscount && allocatedDiscount > 0
+              ? maxDiscount / allocatedDiscount
+              : 1;
+
+          return {
+            cartItemId: item.cartItemId,
+            productFranchiseId: item.productFranchiseId,
+            productName: item.productName || item.productFranchiseId,
+            productImageUrl: item.productImageUrl || undefined,
+            productCartPrice: toCurrencyAmount(item.productCartPrice),
+            quantity: Math.max(1, toCurrencyAmount(item.quantity || 1)),
+            originalLineTotal,
+            finalLineTotal,
+            promotionDiscount: rawPromotionDiscount * allocationRatio,
+            voucherDiscount: rawVoucherDiscount * allocationRatio,
+          };
+        });
+
+        const finalAmount = isFullCartSelection
+          ? toCurrencyAmount(originalCart.finalAmount)
+          : items.reduce((sum, item) => sum + item.finalLineTotal, 0);
+
+        return [
+          {
+            cartId: singleCart.id,
+            franchiseName: originalCart.franchiseName || "Store cart",
+            itemCount: singleCart.cartItems.reduce(
+              (sum, item) => sum + toCurrencyAmount(item.quantity || 0),
+              0,
+            ),
+            subtotal,
+            promotionDiscount,
+            voucherDiscount,
+            finalAmount,
+            items,
+          },
+        ];
+      }),
+    [carts, checkoutCarts],
+  );
 
   const checkoutItemCount = useMemo(
     () =>
-      checkoutCarts.reduce(
-        (sum, singleCart) =>
-          sum +
-          singleCart.cartItems.reduce(
-            (cartSum, item) => cartSum + Number(item.quantity || 0),
-            0,
-          ),
+      checkoutCartGroups.reduce(
+        (sum, cartGroup) => sum + cartGroup.itemCount,
         0,
       ),
-    [checkoutCarts],
+    [checkoutCartGroups],
   );
 
   const checkoutSubtotal = useMemo(
     () =>
-      checkoutCarts.reduce((sum, singleCart) => {
-        if (singleCart.cartItems.length === 0) return sum;
-
-        const originalCart = carts.find(
-          (cartItem) => cartItem.id === singleCart.id,
-        );
-        if (!originalCart) return sum;
-
-        if (singleCart.cartItems.length === originalCart.cartItems.length) {
-          return sum + Number(originalCart.subtotalAmount || 0);
-        }
-
-        return (
-          sum +
-          singleCart.cartItems.reduce(
-            (cartSum, item) =>
-              cartSum + Number(item.lineTotal || item.finalLineTotal || 0),
-            0,
-          )
-        );
-      }, 0),
-    [carts, checkoutCarts],
+      checkoutCartGroups.reduce((sum, cartGroup) => sum + cartGroup.subtotal, 0),
+    [checkoutCartGroups],
   );
 
   const checkoutTotalAmount = useMemo(
     () =>
-      checkoutCarts.reduce((sum, singleCart) => {
-        if (singleCart.cartItems.length === 0) return sum;
+      checkoutCartGroups.reduce(
+        (sum, cartGroup) => sum + cartGroup.finalAmount,
+        0,
+      ),
+    [checkoutCartGroups],
+  );
 
-        const originalCart = carts.find(
-          (cartItem) => cartItem.id === singleCart.id,
-        );
-        if (!originalCart) return sum;
+  const checkoutPromotionAmount = useMemo(
+    () =>
+      checkoutCartGroups.reduce(
+        (sum, cartGroup) => sum + cartGroup.promotionDiscount,
+        0,
+      ),
+    [checkoutCartGroups],
+  );
 
-        if (singleCart.cartItems.length === originalCart.cartItems.length) {
-          return sum + Number(originalCart.finalAmount || 0);
-        }
+  const checkoutVoucherAmount = useMemo(
+    () =>
+      checkoutCartGroups.reduce(
+        (sum, cartGroup) => sum + cartGroup.voucherDiscount,
+        0,
+      ),
+    [checkoutCartGroups],
+  );
 
-        return (
-          sum +
-          singleCart.cartItems.reduce(
-            (cartSum, item) => cartSum + Number(item.finalLineTotal || 0),
-            0,
-          )
-        );
-      }, 0),
-    [carts, checkoutCarts],
+  const checkoutDiscountAmount = useMemo(
+    () => Math.max(checkoutSubtotal - checkoutTotalAmount, 0),
+    [checkoutSubtotal, checkoutTotalAmount],
   );
 
   const [formValues, setFormValues] = useState<CheckoutFormValues>({
@@ -258,11 +370,6 @@ const CheckoutPage = () => {
       return;
     }
 
-    if (checkoutItems.length === 0) {
-      navigate(`${ROUTER_URL.CLIENT}/${ROUTER_URL.CLIENT_ROUTER.CART}`);
-      return;
-    }
-
     const checkoutPayload = {
       address: formValues.address.trim(),
       phone: formValues.phone.trim(),
@@ -283,54 +390,23 @@ const CheckoutPage = () => {
         });
       }
 
-      navigate(
-        `${ROUTER_URL.CLIENT}/${ROUTER_URL.CLIENT_ROUTER.PAYMENT}`,
-        {
-          replace: true,
-          state: {
-            cartId: targetCartIds[0],
-            amount: checkoutTotalAmount,
-            itemCount: checkoutItemCount,
-            shippingInfo: {
-              address: formValues.address.trim(),
-              phone: formValues.phone.trim(),
-              note: formValues.note.trim(),
-            },
+      navigate(`${ROUTER_URL.CLIENT}/${ROUTER_URL.CLIENT_ROUTER.PAYMENT}`, {
+        replace: true,
+        state: {
+          cartId: targetCartIds[0],
+          amount: checkoutTotalAmount,
+          itemCount: checkoutItemCount,
+          shippingInfo: {
+            address: formValues.address.trim(),
+            phone: formValues.phone.trim(),
+            note: formValues.note.trim(),
           },
         },
-      );
+      });
     } finally {
       setLoading(false);
     }
   };
-
-  if (checkoutItems.length === 0) {
-    return (
-      <div className="min-h-screen bg-gray-50 py-8">
-        <div className="mx-auto max-w-6xl px-4">
-          <div className="py-16 text-center">
-            <div className="mb-6 flex justify-center">
-              <img src={emptyCartIcon} alt="Empty cart" className="h-32 w-32" />
-            </div>
-            <h3 className="mb-4 text-2xl font-bold text-[#5B4037]">
-              Your cart is empty
-            </h3>
-            <p className="mb-8 text-gray-600">
-              Please add products to your cart before proceeding to checkout.
-            </p>
-            <button
-              onClick={() =>
-                navigate(`${ROUTER_URL.CLIENT}/${ROUTER_URL.CLIENT_ROUTER.CART}`)
-              }
-              className="rounded bg-[#B8860B] px-8 py-3 font-semibold text-white transition-colors hover:bg-amber-700"
-            >
-              Back to cart
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
@@ -338,7 +414,8 @@ const CheckoutPage = () => {
         <div className="mb-8">
           <h1 className="mb-2 text-3xl font-bold text-[#5B4037]">Checkout</h1>
           <p className="text-gray-600">
-            Please enter your phone number, address, and note before confirming your order.
+            Please enter your phone number, address, and note before confirming
+            your order.
           </p>
         </div>
 
@@ -431,39 +508,81 @@ const CheckoutPage = () => {
                 Your order
               </h2>
 
-              <div className="mb-4 max-h-64 space-y-3 overflow-y-auto">
-                {checkoutItems.map((item) => (
+              <div className="mb-4 max-h-96 space-y-4 overflow-y-auto">
+                {checkoutCartGroups.map((cartGroup, index) => (
                   <div
-                    key={item.cartItemId}
-                    className="flex items-start gap-3 border-b border-gray-100 pb-3"
+                    key={cartGroup.cartId}
+                    className="rounded-xl border border-gray-200 bg-gray-50 p-4"
                   >
-                    <div className="h-16 w-16 shrink-0 overflow-hidden rounded-lg border border-gray-200 bg-amber-50">
-                      <img
-                        src={
-                          item.imageUrl ||
-                          getProductImage(Number(item.productFranchiseId))
-                        }
-                        alt={item.productNameSnapshot}
-                        className="h-full w-full object-cover"
-                        onError={(event) => {
-                          const target = event.target as HTMLImageElement;
-                          target.src = coffeeCupIcon;
-                          target.style.objectFit = "contain";
-                          target.style.padding = "8px";
-                        }}
-                      />
+                    <div className="flex items-start justify-between gap-3 border-b border-gray-200 pb-3">
+                      <div className="min-w-0">
+                        <h3 className="truncate text-sm font-semibold text-[#5B4037]">
+                          {cartGroup.franchiseName || `Cart ${index + 1}`}
+                        </h3>
+                        <p className="mt-1 text-xs text-gray-500">
+                          {cartGroup.itemCount} item(s)
+                        </p>
+                      </div>
+                      <span className="rounded-full bg-white px-3 py-1 text-xs font-medium text-[#B8860B]">
+                        {formatCurrency(cartGroup.finalAmount)}
+                      </span>
                     </div>
-                    <div className="min-w-0 flex-1">
-                      <h4 className="truncate text-sm font-medium text-gray-900">
-                        {item.productNameSnapshot}
-                      </h4>
-                      <p className="mt-1 text-xs text-gray-500">
-                        {item.priceSnapshot.toLocaleString("vi-VN")} VND x{" "}
-                        {item.quantity}
-                      </p>
-                      <p className="mt-1 text-sm font-semibold text-[#B8860B]">
-                        {item.lineTotal.toLocaleString("vi-VN")} VND
-                      </p>
+
+                    <div className="mt-3 space-y-3">
+                      {cartGroup.items.map((item) => (
+                        <div
+                          key={item.cartItemId}
+                          className="flex items-start gap-3 border-b border-gray-100 pb-3 last:border-b-0 last:pb-0"
+                        >
+                          <div className="h-16 w-16 shrink-0 overflow-hidden rounded-lg border border-gray-200 bg-amber-50">
+                            <img
+                              src={
+                                item.productImageUrl ||
+                                getProductImage(Number(item.productFranchiseId))
+                              }
+                              alt={item.productName}
+                              className="h-full w-full object-cover"
+                              onError={(event) => {
+                                const target = event.target as HTMLImageElement;
+                                target.src = coffeeCupIcon;
+                                target.style.objectFit = "contain";
+                                target.style.padding = "8px";
+                              }}
+                            />
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <h4 className="truncate text-sm font-medium text-gray-900">
+                              {item.productName}
+                            </h4>
+                            <p className="mt-1 text-xs text-gray-500">
+                              {formatCurrency(item.productCartPrice)} x{" "}
+                              {item.quantity}
+                            </p>
+
+                            {item.promotionDiscount > 0 ? (
+                              <p className="mt-2 text-xs text-[#B8860B]">
+                                Promotion: -{formatCurrency(item.promotionDiscount)}
+                              </p>
+                            ) : null}
+
+                            {item.voucherDiscount > 0 ? (
+                              <p className="mt-1 text-xs text-green-600">
+                                Voucher: -{formatCurrency(item.voucherDiscount)}
+                              </p>
+                            ) : null}
+
+                            {item.originalLineTotal > item.finalLineTotal ? (
+                              <p className="mt-2 text-xs text-gray-400 line-through">
+                                {formatCurrency(item.originalLineTotal)}
+                              </p>
+                            ) : null}
+
+                            <p className="mt-1 text-sm font-semibold text-[#B8860B]">
+                              After discount: {formatCurrency(item.finalLineTotal)}
+                            </p>
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   </div>
                 ))}
@@ -477,7 +596,25 @@ const CheckoutPage = () => {
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-600">Subtotal:</span>
                   <span className="font-medium">
-                    {checkoutSubtotal.toLocaleString("vi-VN")} VND
+                    {formatCurrency(checkoutSubtotal)}
+                  </span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600">Promotion:</span>
+                  <span className="font-medium text-[#B8860B]">
+                    -{formatCurrency(checkoutPromotionAmount)}
+                  </span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600">Voucher:</span>
+                  <span className="font-medium text-green-600">
+                    -{formatCurrency(checkoutVoucherAmount)}
+                  </span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600">Total discount:</span>
+                  <span className="font-medium text-[#B8860B]">
+                    -{formatCurrency(checkoutDiscountAmount)}
                   </span>
                 </div>
                 <div className="flex justify-between text-sm">
@@ -485,10 +622,17 @@ const CheckoutPage = () => {
                   <span className="font-medium text-green-600">Free</span>
                 </div>
                 <div className="flex justify-between border-t border-gray-200 pt-2 text-lg font-bold">
-                  <span className="text-gray-900">Total:</span>
-                  <span className="text-[#B8860B]">
-                    {checkoutTotalAmount.toLocaleString("vi-VN")} VND
-                  </span>
+                  <span className="text-gray-900">Total after discount:</span>
+                  <div className="text-right">
+                    {checkoutDiscountAmount > 0 ? (
+                      <p className="text-xs font-medium text-gray-400 line-through">
+                        {formatCurrency(checkoutSubtotal)}
+                      </p>
+                    ) : null}
+                    <span className="text-[#B8860B]">
+                      {formatCurrency(checkoutTotalAmount)}
+                    </span>
+                  </div>
                 </div>
               </div>
 
