@@ -11,6 +11,7 @@ import type {
   CreateProductRequest,
   UpdateProductRequest,
 } from "@/api/product/product.api";
+import type { Product } from "@/types/product.type";
 
 // ── Query Keys ──────────────────────────────────────────────────────────────
 
@@ -102,8 +103,22 @@ export const useUpdateProductStatusMutation = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, isActive }: { id: number; isActive: boolean }) =>
-      productApi.updateProduct(id, { is_active: isActive } as UpdateProductRequest),
+    mutationFn: async ({ id, isActive, product }: { id: number; isActive: boolean; product?: Product }) => {
+      // The PUT endpoint requires ALL fields — fetch current data if not provided
+      const current = product ?? await productApi.getProduct(id);
+      const payload: UpdateProductRequest = {
+        SKU: current.sku,
+        name: current.name,
+        description: current.description ?? null,
+        content: current.content ?? null,
+        image_url: current.imageUrl ?? null,
+        min_price: current.minPrice,
+        max_price: current.maxPrice,
+        is_have_topping: current.isHaveTopping ?? false,
+        is_active: isActive,
+      };
+      return productApi.updateProduct(id, payload);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: PRODUCT_KEYS.all });
       toast.success("Product status updated successfully!");

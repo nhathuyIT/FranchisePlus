@@ -44,7 +44,13 @@ export const FranchiseInventoryTab = ({
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deletingProduct, setDeletingProduct] = useState<ProductFranchise | null>(null);
 
-  const { data: productFranchises, isLoading, error } = useProductFranchisesQuery({
+  const {
+    data: productFranchises,
+    isLoading,
+    isFetching,
+    error,
+    refetch,
+  } = useProductFranchisesQuery({
     searchCondition: {
       keyword: "",
       product_id: "",
@@ -60,13 +66,32 @@ export const FranchiseInventoryTab = ({
     },
   });
 
-  const { data: inventorySearch, isLoading: isLoadingInventory } = useInventorySearch(
+  const {
+    data: inventorySearch,
+    isLoading: isLoadingInventory,
+    isFetching: isFetchingInventory,
+    error: inventoryError,
+    refetch: refetchInventory,
+  } = useInventorySearch(
     {
       searchCondition: { franchiseId },
       pageInfo: { pageNum: 1, pageSize: 1000 },
     },
     { enabled: !!franchiseId },
   );
+
+  const tableLoading =
+    isLoading || isFetching || isLoadingInventory || isFetchingInventory;
+
+  const tableError: Error | null = error
+    ? error instanceof Error
+      ? error
+      : new Error("Failed to load inventory")
+    : inventoryError
+      ? inventoryError instanceof Error
+        ? inventoryError
+        : new Error("Failed to load inventory")
+      : null;
 
   const inventoryByProductFranchiseId = useMemo(() => {
     const map = new Map<string, InventorySearchItem>();
@@ -220,6 +245,7 @@ export const FranchiseInventoryTab = ({
         entityName="Product"
         onConfirm={confirmDelete}
         isDeleting={deleteMutation.isPending}
+        useLoadingOverlay
         getDisplayName={(pf) => pf.productName || "this product"}
         deleteMessage={(pf) => 
           `Remove the "${pf.productName || 'this product'}" from this franchise's inventory? This action cannot be undone.`
@@ -239,14 +265,12 @@ export const FranchiseInventoryTab = ({
             searchPlaceholder="Search products..."
             emptyMessage="No inventory items found for this franchise."
             initialPageSize={10}
-            isLoading={isLoading || isLoadingInventory}
-            error={
-              error
-                ? error instanceof Error
-                  ? error
-                  : new Error("Failed to load inventory")
-                : null
-            }
+            isLoading={tableLoading}
+            error={tableError}
+            onRetry={() => {
+              void refetch();
+              void refetchInventory();
+            }}
             renderActions={(pf) => (
               <div className="flex gap-3 justify-end">
                 <Eye

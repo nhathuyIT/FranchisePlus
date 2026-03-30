@@ -1,4 +1,4 @@
-﻿import { ReceiptText } from "lucide-react";
+import { ReceiptText } from "lucide-react";
 import { PageHeader } from "@/components/common/PageHeader";
 import NormalLoadingLayout from "@/layouts/NormalLoadingLayout";
 import { OrderDetailScreen } from "./components/OrderDetailScreen";

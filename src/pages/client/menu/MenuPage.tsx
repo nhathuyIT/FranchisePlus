@@ -1,27 +1,34 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Coffee,
-  MapPin,
-  ChevronDown,
-  Loader2,
-  UtensilsCrossed,
   Cookie,
+  MapPin,
   Star,
+  UtensilsCrossed,
 } from "lucide-react";
 import {
   useGetAllFranchise,
   useGetCategoriesByFranchise,
-  useGetProductsByFranchise,
   useGetMenuByFranchiseAndCategory,
+  useGetProductsByFranchise,
   useGetProductsByFranchiseAndCategory,
 } from "@/hooks/client/useProduct.hook";
+import { FooterInfo } from "@/components/common/FooterInfo";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import LoadingLayout from "@/layouts/loading-layout";
 import type { MenuProduct } from "@/types/menu.type";
 import type { ProductListItem } from "@/types/product.type";
-import { MenuProductCard } from "./components/MenuProductCard";
-import { ToppingCard } from "./components/ToppingCard.";
-import { SectionDivider } from "./components/SectionDivider";
 import { EmptyState } from "./components/EmptyState";
+import { MenuProductCard } from "./components/MenuProductCard";
+import { SectionDivider } from "./components/SectionDivider";
+import { ToppingCard } from "./components/ToppingCard.";
 
 const DEFAULT_FRANCHISE_NAME = "Goat Coffee";
 
@@ -34,17 +41,16 @@ type ProductsAllDerived = {
   allCount: number;
 };
 
-// ─── Skeleton loaders ───────────────────────────────────────────────────────────
 const CardSkeleton = () => (
-  <div className="animate-pulse rounded-2xl bg-white shadow-md overflow-hidden">
-    <div className="h-52 bg-stone-200" />
-    <div className="p-5 space-y-3">
-      <div className="h-5 bg-stone-200 rounded w-3/4" />
-      <div className="h-4 bg-stone-100 rounded w-full" />
-      <div className="h-4 bg-stone-100 rounded w-1/2" />
+  <div className="animate-pulse overflow-hidden rounded-2xl bg-white shadow-md">
+    <div className="h-44 bg-stone-200 sm:h-52" />
+    <div className="space-y-3 p-4 sm:p-5">
+      <div className="h-5 w-3/4 rounded bg-stone-200" />
+      <div className="h-4 w-full rounded bg-stone-100" />
+      <div className="h-4 w-1/2 rounded bg-stone-100" />
       <div className="flex gap-2 pt-2">
-        <div className="h-7 w-16 bg-stone-200 rounded-full" />
-        <div className="h-7 w-16 bg-stone-200 rounded-full" />
+        <div className="h-7 w-16 rounded-full bg-stone-200" />
+        <div className="h-7 w-16 rounded-full bg-stone-200" />
       </div>
     </div>
   </div>
@@ -52,31 +58,25 @@ const CardSkeleton = () => (
 
 const CategorySkeleton = () => (
   <div className="flex gap-3 overflow-hidden">
-    {[...Array(5)].map((_, i) => (
+    {[...Array(5)].map((_, index) => (
       <div
-        key={i}
-        className="animate-pulse h-10 w-24 bg-stone-200 rounded-full shrink-0"
+        key={index}
+        className="h-10 w-24 shrink-0 animate-pulse rounded-full bg-stone-200"
       />
     ))}
   </div>
 );
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// ─── Main Menu Page ─────────────────────────────────────────────────────────────
-// ═══════════════════════════════════════════════════════════════════════════════
 const MenuPage = () => {
   const navigate = useNavigate();
 
-  // ── State ──────────────────────────────────────────────────────────────
   const [selectedFranchiseId, setSelectedFranchiseId] = useState<string | null>(
     null,
   );
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(
     null,
   );
-  const [isFranchiseDropdownOpen, setIsFranchiseDropdownOpen] = useState(false);
 
-  // ── Queries ────────────────────────────────────────────────────────────
   const { data: franchises, isLoading: isLoadingFranchises } =
     useGetAllFranchise();
 
@@ -94,7 +94,6 @@ const MenuPage = () => {
     ) ??
     null;
 
-  // Resolve the actual franchise ID (user-selected or first from API)
   const activeFranchiseId =
     selectedFranchiseId ||
     preferredFranchise?.id ||
@@ -111,7 +110,7 @@ const MenuPage = () => {
     staleTime: 60 * 1000,
     select: (productsAll) => {
       const allProductsVisible = productsAll.filter((product) =>
-        product.sizes.some((s) => s.isAvailable),
+        product.sizes.some((size) => size.isAvailable),
       );
 
       const categoryMenuCounts: Record<string, number> = {};
@@ -171,6 +170,7 @@ const MenuPage = () => {
       count: productsAllData?.allCount ?? 0,
     });
   }
+
   for (const category of categoriesVisible) {
     categoryTabs.push({
       id: String(category.categoryId),
@@ -181,7 +181,6 @@ const MenuPage = () => {
 
   const availableCategoryIds = categoryTabs.map((tab) => tab.id);
 
-  // Resolve the actual category ID (user-selected or first from list)
   let activeCategoryId = "";
   if (selectedCategoryId && availableCategoryIds.includes(selectedCategoryId)) {
     activeCategoryId = selectedCategoryId;
@@ -206,7 +205,7 @@ const MenuPage = () => {
         select: (menuByCategory) =>
           menuByCategory
             .flatMap((category) => category.products)
-            .filter((product) => product.sizes.some((s) => s.isAvailable)),
+            .filter((product) => product.sizes.some((size) => size.isAvailable)),
       },
     );
 
@@ -223,15 +222,16 @@ const MenuPage = () => {
     },
   );
 
-  // ── Derived state ──────────────────────────────────────────────────────
   const selectedFranchise =
-    franchises?.find((f) => f.id === activeFranchiseId) ?? preferredFranchise;
+    franchises?.find((franchise) => franchise.id === activeFranchiseId) ??
+    preferredFranchise;
 
   const selectedCategory =
     activeCategoryId === "ALL"
       ? null
-      : (categories?.find((c) => String(c.categoryId) === activeCategoryId) ??
-        null);
+      : (categories?.find(
+          (category) => String(category.categoryId) === activeCategoryId,
+        ) ?? null);
 
   let menuProductsVisible: MenuProduct[] = [];
   if (activeCategoryId === "ALL") {
@@ -258,11 +258,32 @@ const MenuPage = () => {
       : false);
   const isLoadingProducts = isLoadingMenu || isLoadingToppings;
 
-  // ── Handlers ───────────────────────────────────────────────────────────
+  const selectedBranchName = selectedFranchise?.name || DEFAULT_FRANCHISE_NAME;
+  const activeFranchiseSelectValue = activeFranchiseId || undefined;
+  const selectedCategoryName = selectedCategory?.categoryName ?? "Menu";
+  const hasActiveSelection = Boolean(selectedCategory || activeCategoryId === "ALL");
+  const currentCategoryTitle = hasActiveSelection
+    ? activeCategoryId === "ALL"
+      ? "All Menu"
+      : selectedCategoryName
+    : "Select a category";
+  const currentCategoryDescription = hasActiveSelection
+    ? activeCategoryId === "ALL"
+      ? "Browse every signature drink alongside the topping collection prepared for this branch."
+      : `Explore handcrafted ${selectedCategoryName.toLowerCase()} curated for ${selectedBranchName}.`
+    : "Choose a category to start browsing handcrafted drinks and toppings.";
+  const heroStats = [
+    { label: "Categories", value: categoriesVisible.length },
+    {
+      label: "Menu Items",
+      value: productsAllData?.allCount ?? nonToppingMenuProductsForAll.length,
+    },
+    { label: "Toppings", value: toppingsVisible.length },
+  ];
+
   const handleFranchiseChange = (id: string) => {
     setSelectedFranchiseId(id);
     setSelectedCategoryId(null);
-    setIsFranchiseDropdownOpen(false);
   };
 
   const handleViewDetail = (
@@ -273,126 +294,131 @@ const MenuPage = () => {
     navigate(`/menu/product/${franchiseId}/${productId}`);
   };
 
-  // ── Close dropdown on outside click ────────────────────────────────────
-  useEffect(() => {
-    const handleClickOutside = () => setIsFranchiseDropdownOpen(false);
-    if (isFranchiseDropdownOpen) {
-      document.addEventListener("click", handleClickOutside);
-    }
-    return () => document.removeEventListener("click", handleClickOutside);
-  }, [isFranchiseDropdownOpen]);
-
-  // ═══════════════════════════════════════════════════════════════════════
-  // ─── Render ────────────────────────────────────────────────────────────
-  // ═══════════════════════════════════════════════════════════════════════
   return (
     <div className="min-h-screen bg-[#FAF7F2]">
-      {/* ── Hero Banner ────────────────────────────────────────────────── */}
       <section
-        className="relative bg-linear-to-br from-stone-900 via-stone-800 to-amber-900 
-                    pt-28 pb-16"
+        className="relative z-30 overflow-x-hidden bg-linear-to-br from-[#241814] via-[#4E342E] to-[#8D6E63]
+                   pt-20 pb-24 sm:pt-24 sm:pb-28 lg:pt-28 lg:pb-32"
       >
-        {/* Decorative pattern */}
         <div
           className="absolute inset-0 opacity-[0.04]"
           style={{
             backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
           }}
         />
+        <div className="absolute left-[-4rem] top-14 h-40 w-40 rounded-full bg-amber-300/10 blur-3xl sm:h-52 sm:w-52" />
+        <div className="absolute right-[-3rem] top-8 h-36 w-36 rounded-full bg-white/10 blur-3xl sm:h-48 sm:w-48" />
+        <div className="absolute bottom-0 left-1/3 h-28 w-28 rounded-full bg-amber-100/10 blur-3xl sm:h-40 sm:w-40" />
 
-        <div className="container mx-auto px-4 text-center relative z-10">
-          {/* Ornamental line */}
-          <div className="flex items-center justify-center gap-4 mb-5">
-            <div className="h-px w-16 bg-linear-to-r from-transparent to-amber-400/60" />
-            <Star className="h-4 w-4 text-amber-400 fill-amber-400" />
-            <div className="h-px w-16 bg-linear-to-l from-transparent to-amber-400/60" />
-          </div>
+        <div className="container relative z-10 mx-auto px-4 sm:px-6">
+          <div className="mx-auto flex max-w-5xl flex-col gap-6 lg:items-center">
+            <div className="w-full text-left lg:text-center">
+              <div className="flex items-center justify-start gap-4 lg:justify-center">
+                <div className="h-px w-14 bg-linear-to-r from-transparent to-amber-400/70 sm:w-16" />
+                <Star className="h-4 w-4 text-amber-300 fill-amber-300" />
+                <div className="h-px w-14 bg-linear-to-l from-transparent to-amber-400/70 sm:w-16" />
+              </div>
 
-          <h1
-            className="font-serif text-4xl md:text-5xl lg:text-6xl font-bold text-white 
-                        tracking-wide drop-shadow-lg"
-          >
-            Menu
-          </h1>
-          <p className="mt-3 text-amber-200/80 text-base md:text-lg font-light tracking-wider">
-            Discover exceptional coffee flavors at every branch
-          </p>
+              <span className="mt-5 inline-flex rounded-full border border-white/15 bg-white/10 px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.28em] text-amber-100/80 backdrop-blur-md">
+                Coffee House Menu
+              </span>
 
-          {/* Franchise selector */}
-          <div className="mt-8 flex justify-center">
-            <div className="relative">
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setIsFranchiseDropdownOpen((prev) => !prev);
-                }}
-                disabled={isLoadingFranchises}
-                className="flex items-center gap-3 px-6 py-3 bg-white/10 backdrop-blur-md 
-                           border border-white/20 rounded-full text-white
-                           hover:bg-white/20 hover:border-white/40
-                           transition-all duration-300 shadow-lg hover:shadow-xl
-                           min-w-70 justify-between"
-              >
-                <div className="flex items-center gap-2">
-                  <MapPin className="h-4 w-4 text-amber-400" />
-                  <span className="font-medium text-sm">
-                    {isLoadingFranchises
-                      ? "Loading..."
-                      : selectedFranchise?.name || DEFAULT_FRANCHISE_NAME}
-                  </span>
-                </div>
-                <ChevronDown
-                  className={`h-4 w-4 text-amber-300 transition-transform duration-300 
-                              ${isFranchiseDropdownOpen ? "rotate-180" : ""}`}
-                />
-              </button>
+              <h1 className="mt-5 font-coffee text-4xl leading-none text-white drop-shadow-lg sm:text-5xl lg:text-6xl">
+                Crafted for
+                <span className="mt-2 block text-amber-200">Every Branch</span>
+              </h1>
 
-              {/* Dropdown */}
-              {isFranchiseDropdownOpen && franchises && (
-                <div
-                  className="absolute top-full mt-2 left-0 right-0 bg-white rounded-xl 
-                              shadow-2xl border border-stone-200 overflow-hidden z-50
-                              animate-in fade-in slide-in-from-top-2 duration-200"
-                >
-                  {franchises.map((franchise) => (
-                    <button
-                      type="button"
-                      key={franchise.id}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleFranchiseChange(franchise.id);
-                      }}
-                      className={`w-full flex items-center gap-3 px-5 py-3 text-left text-sm
-                                  transition-colors duration-200
-                                  ${
-                                    franchise.id === activeFranchiseId
-                                      ? "bg-amber-50 text-amber-800 font-semibold"
-                                      : "text-stone-700 hover:bg-stone-50"
-                                  }`}
+              <p className="mt-4 max-w-2xl text-sm leading-7 text-amber-50/80 sm:text-base lg:mx-auto">
+                Discover exceptional coffee flavors, signature drinks, and
+                toppings tailored to each location.
+              </p>
+            </div>
+
+            <div className="grid w-full gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,23rem)]">
+              <div className="rounded-[1.75rem] border border-white/15 bg-white/10 p-4 shadow-[0_24px_60px_rgba(20,10,6,0.22)] backdrop-blur-md sm:p-5">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-amber-100/75">
+                  Available Today
+                </p>
+                <div className="mt-4 grid grid-cols-3 gap-3">
+                  {heroStats.map((stat) => (
+                    <div
+                      key={stat.label}
+                      className="rounded-2xl border border-white/10 bg-black/10 px-3 py-3 shadow-inner"
                     >
-                      <MapPin
-                        className={`h-4 w-4 shrink-0 ${
-                          franchise.id === activeFranchiseId
-                            ? "text-amber-600"
-                            : "text-stone-400"
-                        }`}
-                      />
-                      <span className="truncate">{franchise.name}</span>
-                      {franchise.id === activeFranchiseId && (
-                        <span className="ml-auto text-amber-500 text-xs">
-                          ●
-                        </span>
-                      )}
-                    </button>
+                      <p className="font-coffee text-2xl text-white sm:text-[1.75rem]">
+                        {stat.value}
+                      </p>
+                      <p className="mt-1 text-[10px] uppercase tracking-[0.22em] text-amber-100/65">
+                        {stat.label}
+                      </p>
+                    </div>
                   ))}
                 </div>
-              )}
+              </div>
+
+              <div className="rounded-[1.75rem] border border-white/15 bg-white/10 p-4 shadow-[0_24px_60px_rgba(20,10,6,0.22)] backdrop-blur-md sm:p-5">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-amber-100/75">
+                      Current Branch
+                    </p>
+                    <p className="mt-1 text-sm leading-6 text-amber-50/75">
+                      Switch branch to see menu availability in real time.
+                    </p>
+                  </div>
+                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-white/10 bg-black/10">
+                    <MapPin className="h-4 w-4 text-amber-300" />
+                  </div>
+                </div>
+
+                <div className="mt-4">
+                  <p className="mb-2 text-[10px] uppercase tracking-[0.24em] text-amber-100/60">
+                    Serving from
+                  </p>
+                  <Select
+                    value={activeFranchiseSelectValue}
+                    onValueChange={handleFranchiseChange}
+                    disabled={isLoadingFranchises || !franchises?.length}
+                  >
+                    <SelectTrigger className="h-12 w-full rounded-full border border-white/20 bg-black/10 px-4 text-left text-white shadow-none transition-all duration-300 hover:border-[#C4A77D] hover:bg-[#6D4C41]/35 focus:border-[#C4A77D] focus:ring-[#C4A77D]/20 disabled:cursor-not-allowed disabled:opacity-70 sm:h-13">
+                      <div className="flex min-w-0 items-center gap-2">
+                        <MapPin className="h-4 w-4 shrink-0 text-amber-300" />
+                        <SelectValue
+                          placeholder={
+                            isLoadingFranchises ? "Loading..." : "Select branch"
+                          }
+                        />
+                      </div>
+                    </SelectTrigger>
+
+                    <SelectContent
+                      position="popper"
+                      side="bottom"
+                      align="start"
+                      sideOffset={10}
+                      avoidCollisions={false}
+                      className="z-[9999] max-h-64 w-[var(--radix-select-trigger-width)] rounded-[1.25rem] border-stone-200 bg-white shadow-[0_28px_80px_rgba(20,10,6,0.24)] [&_[data-slot=select-scroll-down-button]]:hidden [&_[data-slot=select-scroll-up-button]]:hidden"
+                    >
+                      {franchises?.map((franchise) => (
+                        <SelectItem
+                          key={franchise.id}
+                          value={franchise.id}
+                          className="py-4 text-sm text-stone-700"
+                        >
+                          <span className="flex items-center gap-3">
+                            <MapPin className="h-4 w-4 shrink-0 text-stone-400" />
+                            <span className="truncate">{franchise.name}</span>
+                          </span>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Bottom curve */}
         <div className="absolute bottom-0 left-0 right-0">
           <svg
             viewBox="0 0 1440 60"
@@ -409,193 +435,244 @@ const MenuPage = () => {
         </div>
       </section>
 
-      {/* ── Main Content ───────────────────────────────────────────────── */}
-      <div className="container mx-auto px-4 pb-20 -mt-2">
-        {/* ── Category tabs ──────────────────────────────────────────── */}
-        <div className="mb-10 mt-3">
-          {isLoadingCategories || isLoadingProductsAll ? (
-            <CategorySkeleton />
-          ) : categoryTabs.length > 0 ? (
-            <div className="flex flex-wrap gap-2 justify-center">
-              {categoryTabs.map((cat) => {
-                const isActive = cat.id === activeCategoryId;
-                return (
-                  <button
-                    key={cat.id}
-                    type="button"
-                    onClick={() => setSelectedCategoryId(cat.id)}
-                    className={`relative px-5 py-2.5 rounded-full text-sm font-medium
-                               transition-all duration-300 ease-out
-                               ${
-                                 isActive
-                                   ? "bg-amber-700 text-white shadow-lg shadow-amber-700/25 scale-105"
-                                   : "bg-white text-stone-600 border border-stone-200 shadow-sm hover:border-amber-300 hover:text-amber-700 hover:shadow-md hover:scale-[1.02]"
-                               }`}
-                  >
-                    <span>{cat.name}</span>
-                    <span
-                      className={`ml-2 rounded-full px-2 py-0.5 text-[11px] font-semibold
-                                  ${
-                                    isActive
-                                      ? "bg-white/20 text-white"
-                                      : "bg-amber-50 text-amber-700"
-                                  }`}
-                    >
-                      {cat.count}
-                    </span>
-                    {isActive && (
-                      <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1.5 h-1.5 bg-amber-300 rounded-full" />
-                    )}
-                  </button>
-                );
-              })}
+      <div className="relative z-10 container mx-auto px-3 pb-16 sm:px-4 sm:pb-20">
+        <div className="relative -mt-14 sm:-mt-16">
+          <div className="overflow-hidden rounded-[1.75rem] border border-[#E8DFD6] bg-[rgba(255,253,249,0.92)] p-4 shadow-[0_28px_70px_rgba(63,41,33,0.08)] backdrop-blur-sm sm:p-5 lg:p-6">
+            <div className="flex flex-col gap-5">
+              <div className="flex flex-col gap-4 md:items-center md:text-center">
+                <div className="flex flex-wrap items-center gap-2 md:justify-center">
+                  <span className="inline-flex items-center rounded-full border border-[#E8DFD6] bg-[#FAF8F5] px-3 py-1 text-xs font-medium text-[#6D4C41]">
+                    {selectedBranchName}
+                  </span>
+                  <span className="inline-flex items-center rounded-full border border-[#F1E2D2] bg-[#FFF8F1] px-3 py-1 text-xs font-medium text-[#C97B3D]">
+                    {menuProductsVisible.length} drinks
+                  </span>
+                  <span className="inline-flex items-center rounded-full border border-[#F1E2D2] bg-[#FFF8F1] px-3 py-1 text-xs font-medium text-[#C97B3D]">
+                    {toppingsVisible.length} toppings
+                  </span>
+                </div>
+
+                <div>
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-[#8D6E63]">
+                    Handcrafted Selection
+                  </p>
+                  <h2 className="mt-2 font-coffee text-3xl leading-none text-[#3E2723] sm:text-4xl">
+                    {currentCategoryTitle}
+                  </h2>
+                  <p className="mt-3 max-w-2xl text-sm leading-6 text-[#6D4C41] md:mx-auto">
+                    {currentCategoryDescription}
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-3 md:justify-center">
+                  <div className="h-px w-10 bg-[#C4A77D]/50 sm:w-12" />
+                  <Coffee className="h-4 w-4 text-[#C4A77D]" />
+                  <div className="h-px w-10 bg-[#C4A77D]/50 sm:w-12" />
+                </div>
+              </div>
+
+              <div className="rounded-[1.5rem] border border-[#E8DFD6] bg-white/85 p-3 sm:p-4">
+                <div className="mb-3 flex items-center justify-between gap-3">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-[#8D6E63]">
+                    Browse By Category
+                  </p>
+                  <span className="text-xs text-[#A1887F] md:hidden">
+                    Tap to choose
+                  </span>
+                </div>
+
+                {isLoadingCategories || isLoadingProductsAll ? (
+                  <CategorySkeleton />
+                ) : categoryTabs.length > 0 ? (
+                  <div>
+                    <div className="md:hidden">
+                      <Select
+                        value={activeCategoryId}
+                        onValueChange={(value) => setSelectedCategoryId(value)}
+                      >
+                        <SelectTrigger className="h-12 w-full rounded-[1rem] border-[#E8DFD6] bg-white px-4 text-left text-sm font-medium text-[#5D4037] shadow-sm transition-colors duration-200 hover:border-[#6D4C41] hover:bg-[#FAF8F5] hover:text-[#6D4C41] focus:border-[#6D4C41] focus:ring-[#6D4C41]/15">
+                          <SelectValue placeholder="Select category" />
+                        </SelectTrigger>
+                        <SelectContent
+                          position="popper"
+                          side="bottom"
+                          align="start"
+                          sideOffset={8}
+                          avoidCollisions={false}
+                          className="z-[9999] max-h-72 w-[var(--radix-select-trigger-width)] rounded-2xl border-[#E8DFD6] bg-white shadow-[0_24px_70px_rgba(63,41,33,0.16)] [&_[data-slot=select-scroll-down-button]]:hidden [&_[data-slot=select-scroll-up-button]]:hidden"
+                        >
+                          {categoryTabs.map((category) => (
+                            <SelectItem
+                              key={category.id}
+                              value={category.id}
+                              className="py-3 text-sm text-[#5D4037]"
+                            >
+                              {category.name} ({category.count})
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="hidden flex-wrap gap-2 md:flex md:justify-center">
+                      {categoryTabs.map((category) => {
+                        const isActive = category.id === activeCategoryId;
+
+                        return (
+                          <button
+                            key={category.id}
+                            type="button"
+                            onClick={() => setSelectedCategoryId(category.id)}
+                            className={`relative cursor-pointer whitespace-nowrap rounded-full px-4 py-2.5 text-sm font-medium
+                                       transition-all duration-300 ease-out lg:px-5
+                                       ${
+                                         isActive
+                                           ? "bg-[#6D4C41] text-white shadow-lg shadow-[#6D4C41]/20"
+                                           : "border border-[#E8DFD6] bg-white text-[#5D4037] shadow-sm hover:border-[#C8B7A7] hover:bg-[#FAF8F5] hover:text-[#6D4C41]"
+                                       }`}
+                          >
+                            <span>{category.name}</span>
+                            <span
+                              className={`ml-2 rounded-full px-2 py-0.5 text-[11px] font-semibold ${
+                                isActive
+                                  ? "bg-white/20 text-white"
+                                  : "bg-[#FFF4E8] text-[#C97B3D]"
+                              }`}
+                            >
+                              {category.count}
+                            </span>
+                            {isActive && (
+                              <span className="absolute -bottom-1 left-1/2 h-1.5 w-1.5 -translate-x-1/2 rounded-full bg-[#C4A77D]" />
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ) : (
+                  !isLoadingFranchises && (
+                    <p className="py-2 text-sm text-[#8D6E63]">
+                      No categories available for this branch.
+                    </p>
+                  )
+                )}
+              </div>
             </div>
-          ) : (
-            !isLoadingFranchises && (
-              <p className="text-center text-stone-400 italic font-serif pt-3">
-                No categories available for this branch
-              </p>
-            )
-          )}
+          </div>
         </div>
 
-        {/* ── Current selection info ─────────────────────────────────── */}
-        {(selectedCategory || activeCategoryId === "ALL") && (
-          <div className="text-center mb-10">
-            <p className="text-xs uppercase tracking-[0.3em] text-amber-600/70 font-medium mb-1">
-              {selectedFranchise?.name || DEFAULT_FRANCHISE_NAME}
-            </p>
-            <h2 className="font-serif text-3xl md:text-4xl font-bold text-stone-800 mb-2">
-              {activeCategoryId === "ALL"
-                ? "All"
-                : selectedCategory?.categoryName}
-            </h2>
-            <div className="flex items-center justify-center gap-3">
-              <div className="h-px w-12 bg-amber-400/40" />
-              <Coffee className="h-4 w-4 text-amber-500" />
-              <div className="h-px w-12 bg-amber-400/40" />
-            </div>
-          </div>
-        )}
-
-        {/* ── Products area ──────────────────────────────────────────── */}
-        {isLoadingProducts ? (
-          <div>
-            {/* Menu skeletons */}
-            <div className="mb-12">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="h-10 w-10 bg-stone-200 rounded-full animate-pulse" />
-                <div className="h-7 w-40 bg-stone-200 rounded animate-pulse" />
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                {[...Array(4)].map((_, i) => (
-                  <CardSkeleton key={i} />
-                ))}
-              </div>
-            </div>
-            {/* Topping skeletons */}
+        <div className="mt-8 sm:mt-10">
+          {isLoadingProducts ? (
             <div>
-              <div className="flex items-center gap-3 mb-6">
-                <div className="h-10 w-10 bg-stone-200 rounded-full animate-pulse" />
-                <div className="h-7 w-40 bg-stone-200 rounded animate-pulse" />
+              <div className="mb-10 sm:mb-12">
+                <div className="mb-6 flex items-center gap-3">
+                  <div className="h-10 w-10 animate-pulse rounded-full bg-stone-200" />
+                  <div className="h-7 w-40 animate-pulse rounded bg-stone-200" />
+                </div>
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3 xl:grid-cols-4">
+                  {[...Array(4)].map((_, index) => (
+                    <CardSkeleton key={index} />
+                  ))}
+                </div>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {[...Array(3)].map((_, i) => (
-                  <div
-                    key={i}
-                    className="animate-pulse h-24 bg-white rounded-2xl shadow-sm"
-                  />
-                ))}
-              </div>
-            </div>
-          </div>
-        ) : (
-          <>
-            {/* ── Menu Section ───────────────────────────────────────── */}
-            {menuProductsVisible.length > 0 ? (
-              <section className="mb-14">
-                <SectionDivider
-                  icon={UtensilsCrossed}
-                  title="Menu"
-                  count={menuProductsVisible.length}
-                />
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                  {menuProductsVisible.map((product) => (
-                    <MenuProductCard
-                      key={product.productId}
-                      product={product}
-                      onViewDetail={() =>
-                        handleViewDetail(
-                          activeFranchiseId,
-                          String(product.productId),
-                        )
-                      }
+
+              <div>
+                <div className="mb-6 flex items-center gap-3">
+                  <div className="h-10 w-10 animate-pulse rounded-full bg-stone-200" />
+                  <div className="h-7 w-40 animate-pulse rounded bg-stone-200" />
+                </div>
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                  {[...Array(3)].map((_, index) => (
+                    <div
+                      key={index}
+                      className="h-24 animate-pulse rounded-2xl bg-white shadow-sm"
                     />
                   ))}
                 </div>
-              </section>
-            ) : (
-              activeCategoryId && (
-                <section className="mb-14">
+              </div>
+            </div>
+          ) : (
+            <>
+              {menuProductsVisible.length > 0 ? (
+                <section className="mb-12 sm:mb-14">
                   <SectionDivider
                     icon={UtensilsCrossed}
                     title="Menu"
-                    count={0}
+                    count={menuProductsVisible.length}
                   />
-                  <EmptyState message="No products in menu yet" />
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3 xl:grid-cols-4">
+                    {menuProductsVisible.map((product) => (
+                      <MenuProductCard
+                        key={product.productId}
+                        product={product}
+                        onViewDetail={() =>
+                          handleViewDetail(
+                            activeFranchiseId,
+                            String(product.productId),
+                          )
+                        }
+                      />
+                    ))}
+                  </div>
                 </section>
-              )
-            )}
-
-            {/* ── Topping Section ────────────────────────────────────── */}
-            {toppingsVisible.length > 0 ? (
-              <section>
-                <SectionDivider
-                  icon={Cookie}
-                  title="Topping"
-                  count={toppingsVisible.length}
-                />
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {toppingsVisible.map((product) => (
-                    <ToppingCard
-                      key={product.productId}
-                      product={product}
-                      onViewDetail={() =>
-                        handleViewDetail(
-                          activeFranchiseId,
-                          String(product.productId),
-                        )
-                      }
+              ) : (
+                activeCategoryId && (
+                  <section className="mb-12 sm:mb-14">
+                    <SectionDivider
+                      icon={UtensilsCrossed}
+                      title="Menu"
+                      count={0}
                     />
-                  ))}
-                </div>
-              </section>
-            ) : (
-              activeCategoryId && (
-                <section>
-                  <SectionDivider icon={Cookie} title="Topping" count={0} />
-                  <EmptyState message="No toppings yet" />
-                </section>
-              )
-            )}
+                    <EmptyState message="No products in menu yet" />
+                  </section>
+                )
+              )}
 
-            {/* No category selected */}
-            {!activeCategoryId && !isLoadingCategories && (
-              <EmptyState message="Please select a category to view menu" />
-            )}
-          </>
-        )}
+              {toppingsVisible.length > 0 ? (
+                <section>
+                  <SectionDivider
+                    icon={Cookie}
+                    title="Topping"
+                    count={toppingsVisible.length}
+                  />
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                    {toppingsVisible.map((product) => (
+                      <ToppingCard
+                        key={product.productId}
+                        product={product}
+                        onViewDetail={() =>
+                          handleViewDetail(
+                            activeFranchiseId,
+                            String(product.productId),
+                          )
+                        }
+                      />
+                    ))}
+                  </div>
+                </section>
+              ) : (
+                activeCategoryId && (
+                  <section>
+                    <SectionDivider icon={Cookie} title="Topping" count={0} />
+                    <EmptyState message="No toppings yet" />
+                  </section>
+                )
+              )}
+
+              {!activeCategoryId && !isLoadingCategories && (
+                <EmptyState message="Please select a category to view menu" />
+              )}
+            </>
+          )}
+        </div>
       </div>
 
-      {/* ── Loading overlay for franchise change ──────────────────────── */}
-      {isLoadingFranchises && (
-        <div className="fixed inset-0 bg-white/60 backdrop-blur-sm z-50 flex items-center justify-center">
-          <div className="flex flex-col items-center gap-4 bg-white p-8 rounded-2xl shadow-2xl">
-            <Loader2 className="h-10 w-10 text-amber-600 animate-spin" />
-            <p className="font-serif text-stone-600">Loading menu...</p>
-          </div>
-        </div>
-      )}
+      <FooterInfo />
+
+      <LoadingLayout
+        forceVisible={isLoadingFranchises}
+        message="Loading menu"
+      />
     </div>
   );
 };

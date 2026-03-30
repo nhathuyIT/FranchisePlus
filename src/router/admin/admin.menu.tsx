@@ -107,7 +107,7 @@ export const ADMIN_MENU: AdminMenuItem[] = [
     icon: "category",
     component: React.lazy(() => import("@/pages/admin/categories/index")),
     isEnd: true,
-    permissions: [PermissionEnum.VIEW_PRODUCTS],
+    permissions: [PermissionEnum.VIEW_CATEGORY],
   },
   {
     label: "Products",

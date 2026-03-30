@@ -225,6 +225,9 @@ export const changeStatusProductFranchise = async (
       message: string;
       data: ApiProductFranchise;
     }>(`/api/product-franchises/${String(id)}/status`, data);
+    if (!response.data.data) {
+      return getProductFranchise(id);
+    }
     return mapApiProductFranchise(response.data.data);
   } catch (error) {
     console.error("[Product Franchise API] Change status error:", error);

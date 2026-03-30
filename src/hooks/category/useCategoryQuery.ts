@@ -116,8 +116,25 @@ export const useUpdateCategoryStatusMutation = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, isActive }: { id: number | string; isActive: boolean }) =>
-      categoryApi.updateCategory(id, { is_active: isActive } as UpdateCategoryRequest),
+    mutationFn: async ({
+      id,
+      isActive,
+      category,
+    }: {
+      id: number | string;
+      isActive: boolean;
+      category?: { code: string; name: string; description?: string | null };
+    }) => {
+      // The PUT endpoint requires ALL fields — fetch current data if not provided
+      const current = category ?? await categoryApi.getCategory(id);
+      const payload: UpdateCategoryRequest = {
+        code: current.code,
+        name: current.name,
+        description: current.description ?? null,
+        is_active: isActive,
+      };
+      return categoryApi.updateCategory(id, payload);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: CATEGORY_KEYS.all });
       toast.success("Category status updated successfully!");

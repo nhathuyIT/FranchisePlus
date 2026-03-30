@@ -19,7 +19,6 @@ export const ROUTER_URL = {
     PRODUCTS: "products",
     PRODUCT_DETAIL: "products/:slug",
     PAYMENT: "payment",
-    PAYMENT_NEW: "payment-new",
     PAYMENT_QR: "payment/qr",
     PAYMENT_SUCCESS: "payment/success",
   },
@@ -28,6 +27,7 @@ export const ROUTER_URL = {
   ACCOUNT_ROUTER: {
     MY_PROFILE: "my-profile",
     MY_ORDER: "my-order",
+    MY_ORDER_DETAIL: "my-order/:orderId",
   },
 
   ADMIN: "/admin",
@@ -66,6 +66,6 @@ export const ROUTER_URL = {
     USER_FRANCHISE_ROLES: "user-franchise-roles",
     CUSTOMERS: "customers",
     CART: "cart",
-    CART_CHECKOUT: "cart/:cartId/checkout",
+    CART_CHECKOUT: "cart/:cartId/checkout"
   },
 };

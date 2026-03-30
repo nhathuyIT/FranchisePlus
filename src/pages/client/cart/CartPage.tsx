@@ -17,14 +17,13 @@ import CartSummary from "./components/CartSummary";
 import CartTableHeader from "./components/CartTableHeader";
 import CartStoreSection from "./components/CartStoreSection";
 import CartVoucherDialog from "./components/CartVoucherDialog";
-import LoadingLayout from "@/layouts/loading-layout";
+import NormalLoadingLayout from "@/layouts/NormalLoadingLayout";
 
 const CartPage: React.FC = () => {
   const {
     carts,
     updateItemQuantity,
     removeItem,
-    saveItemNote,
     saveEditedItem,
     itemCount,
     isLoading,
@@ -37,6 +36,7 @@ const CartPage: React.FC = () => {
   const updateCartMutation = useUpdateCartMutation();
   const setLoading = useLoadingStore((state) => state.setLoading);
   const isNavigatingToCheckoutRef = useRef(false);
+  const cartOrderRef = useRef<string[]>([]);
 
   const [voucherDialogCartId, setVoucherDialogCartId] = useState<string | null>(
     null,
@@ -53,6 +53,28 @@ const CartPage: React.FC = () => {
   );
   const [cartActionLoadingCount, setCartActionLoadingCount] = useState(0);
 
+  const orderedCarts = useMemo(() => {
+    const preservedIds = cartOrderRef.current.filter((id) =>
+      carts.some((cart) => cart.id === id),
+    );
+    const newIds = carts
+      .map((cart) => cart.id)
+      .filter((id) => !preservedIds.includes(id));
+    const nextOrder = [...preservedIds, ...newIds];
+
+    cartOrderRef.current = nextOrder;
+
+    const orderMap = new Map(
+      nextOrder.map((id, index) => [id, index] as const),
+    );
+
+    return [...carts].sort(
+      (left, right) =>
+        (orderMap.get(left.id) ?? Number.MAX_SAFE_INTEGER) -
+        (orderMap.get(right.id) ?? Number.MAX_SAFE_INTEGER),
+    );
+  }, [carts]);
+
   const {
     selectedItemIds,
     toggleItem,
@@ -67,11 +89,11 @@ const CartPage: React.FC = () => {
     selectedSavings,
     allChecked,
     someChecked,
-  } = useCartSelection(carts);
+  } = useCartSelection(orderedCarts);
 
   const voucherDialogCart = useMemo(
-    () => carts.find((cart) => cart.id === voucherDialogCartId) ?? null,
-    [carts, voucherDialogCartId],
+    () => orderedCarts.find((cart) => cart.id === voucherDialogCartId) ?? null,
+    [orderedCarts, voucherDialogCartId],
   );
 
   const isCartActionLoading = cartActionLoadingCount > 0;
@@ -88,18 +110,16 @@ const CartPage: React.FC = () => {
     }
   };
 
-  const handleRemove = (cartItemId: string) => {
-    void runWithCartActionLoading(async () => {
-      const wasRemoved = await removeItem(cartItemId);
-      if (wasRemoved) {
-        removeSelection(cartItemId);
-      }
+  const handleRemove = async (cartItemId: string) => {
+    const wasRemoved = await runWithCartActionLoading(() =>
+      removeItem(cartItemId),
+    );
 
-      return wasRemoved;
-    });
+    if (wasRemoved) {
+      removeSelection(cartItemId);
+    }
   };
 
-  // Voucher/cancel/save-message run per shop cart, so pending state is tracked by cartId.
   const setCancellingCartState = (cartId: string, pending: boolean) => {
     setCancellingCartIds((current) => {
       if (pending) {
@@ -125,26 +145,28 @@ const CartPage: React.FC = () => {
   const isVoucherPending = (cartId: string) =>
     voucherPendingCartIds.includes(cartId);
 
-  const handleCancelCart = (cartId: string) => {
+  const handleCancelCart = async (cartId: string) => {
     if (!cartId || isCancellingCart(cartId)) return;
 
     setCancellingCartState(cartId, true);
 
-    void runWithCartActionLoading(async () => {
-      try {
-        await cancelCartMutation.mutateAsync(cartId);
-        setVoucherDialogCartId((current) =>
-          current === cartId ? null : current,
-        );
-      } finally {
-        setCancellingCartState(cartId, false);
-      }
-    });
+    try {
+      await runWithCartActionLoading(() =>
+        cancelCartMutation.mutateAsync(cartId),
+      );
+      setVoucherDialogCartId((current) =>
+        current === cartId ? null : current,
+      );
+    } catch {
+      // mutation hook already handles error toast
+    } finally {
+      setCancellingCartState(cartId, false);
+    }
   };
 
   const handleCheckout = () => {
     const checkoutItemIds = selectedItemIds.filter((cartItemId) =>
-      carts.some((singleCart) =>
+      orderedCarts.some((singleCart) =>
         singleCart.cartItems.some((item) => item.cartItemId === cartItemId),
       ),
     );
@@ -179,7 +201,7 @@ const CartPage: React.FC = () => {
     }));
   };
 
-  const handleApplyVoucher = () => {
+  const handleApplyVoucher = async () => {
     if (!voucherDialogCart || isVoucherPending(voucherDialogCart.id)) return;
 
     const targetCartId = voucherDialogCart.id;
@@ -188,57 +210,63 @@ const CartPage: React.FC = () => {
 
     setVoucherPendingState(targetCartId, true);
 
-    void runWithCartActionLoading(async () => {
-      try {
-        await applyVoucherMutation.mutateAsync({
+    try {
+      await runWithCartActionLoading(() =>
+        applyVoucherMutation.mutateAsync({
           cartId: targetCartId,
           data: { voucherCode: code },
-        });
-        setVoucherDialogCartId(null);
-      } finally {
-        setVoucherPendingState(targetCartId, false);
-      }
-    });
+        }),
+      );
+      setVoucherDialogCartId(null);
+    } catch {
+      // mutation hook already handles error toast
+    } finally {
+      setVoucherPendingState(targetCartId, false);
+    }
   };
 
-  const handleRemoveVoucher = (cartId: string) => {
+  const handleRemoveVoucher = async (cartId: string) => {
     if (!cartId || isVoucherPending(cartId)) return;
 
     setVoucherPendingState(cartId, true);
 
-    void runWithCartActionLoading(async () => {
-      try {
-        await removeVoucherMutation.mutateAsync(cartId);
-        setVoucherInputs((current) => ({
-          ...current,
-          [cartId]: "",
-        }));
-        setVoucherDialogCartId((current) =>
-          current === cartId ? null : current,
-        );
-      } finally {
-        setVoucherPendingState(cartId, false);
-      }
-    });
+    try {
+      await runWithCartActionLoading(() =>
+        removeVoucherMutation.mutateAsync(cartId),
+      );
+      setVoucherInputs((current) => ({
+        ...current,
+        [cartId]: "",
+      }));
+      setVoucherDialogCartId((current) =>
+        current === cartId ? null : current,
+      );
+    } catch {
+      // mutation hook already handles error toast
+    } finally {
+      setVoucherPendingState(cartId, false);
+    }
   };
 
-  const handleSaveCartMessage = (cartId: string, message: string) => {
+  const handleSaveCartMessage = async (cartId: string, message: string) => {
     setSavingMessageCartId(cartId);
 
-    void runWithCartActionLoading(async () => {
-      try {
-        await updateCartMutation.mutateAsync({
+    try {
+      await runWithCartActionLoading(() =>
+        updateCartMutation.mutateAsync({
           cartId,
           data: {
             message: message.trim(),
           },
-        });
-      } finally {
-        setSavingMessageCartId((current) =>
-          current === cartId ? null : current,
-        );
-      }
-    });
+        }),
+      );
+    } catch {
+      // mutation hook already handles error toast
+    } finally {
+      setSavingMessageCartId((current) =>
+        current === cartId ? null : current,
+      );
+    }
   };
 
   useEffect(() => {
@@ -263,7 +291,7 @@ const CartPage: React.FC = () => {
 
   return (
     <div
-      className="relative min-h-screen overflow-x-hidden bg-[var(--cart-page)] pb-48"
+      className="relative min-h-screen overflow-x-hidden bg-[var(--cart-page)] pb-56 sm:pb-52 lg:pb-48"
       style={
         {
           "--cart-page": "#f6efe7",
@@ -280,8 +308,8 @@ const CartPage: React.FC = () => {
         } as React.CSSProperties
       }
     >
-      <LoadingLayout forceVisible={isCartActionLoading} />
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-[28rem] overflow-hidden">
+      <NormalLoadingLayout forceShow={isCartActionLoading} />
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-[22rem] overflow-hidden sm:h-[28rem]">
         <div className="absolute -left-20 top-10 h-72 w-72 rounded-full bg-[#f0d4bb]/55 blur-3xl" />
         <div className="absolute right-[-5rem] top-0 h-80 w-80 rounded-full bg-[#edd8c9]/70 blur-3xl" />
         <div className="absolute left-1/2 top-36 h-56 w-56 -translate-x-1/2 rounded-full bg-[#fff5ed]/90 blur-3xl" />
@@ -289,8 +317,8 @@ const CartPage: React.FC = () => {
 
       <CartPageHeader selectedItemCount={selectedItemCount} />
 
-      <div className="relative mx-auto max-w-7xl px-4 pb-8">
-        <section className="overflow-hidden rounded-[2rem] border border-[var(--cart-border)] bg-[var(--cart-surface)] shadow-[0_24px_70px_rgba(63,41,33,0.08)] backdrop-blur-md">
+      <div className="relative mx-auto max-w-7xl px-3 pb-6 sm:px-4 sm:pb-8">
+        <section className="overflow-hidden rounded-[1.5rem] border border-[var(--cart-border)] bg-[var(--cart-surface)] shadow-[0_24px_70px_rgba(63,41,33,0.08)] backdrop-blur-md sm:rounded-[2rem]">
           <div className="border-b border-[var(--cart-border-soft)] bg-[linear-gradient(180deg,rgba(255,255,255,0.72)_0%,rgba(255,249,242,0.88)_100%)]">
             <CartTableHeader
               allChecked={allChecked}
@@ -299,8 +327,8 @@ const CartPage: React.FC = () => {
             />
           </div>
 
-          <div className="space-y-5 p-4 md:p-5">
-            {carts.map((singleCart) => (
+          <div className="space-y-4 p-3 sm:space-y-5 sm:p-4 md:p-5">
+            {orderedCarts.map((singleCart) => (
               <CartStoreSection
                 key={singleCart.id}
                 cart={singleCart}
@@ -326,14 +354,11 @@ const CartPage: React.FC = () => {
                   )
                 }
                 onUpdateQuantity={(cartItemId, quantity) =>
-                  void runWithCartActionLoading(() =>
+                  runWithCartActionLoading(() =>
                     updateItemQuantity(cartItemId, quantity),
                   )
                 }
                 onRemove={handleRemove}
-                onSaveItemNote={(cartItemId, note) =>
-                  runWithCartActionLoading(() => saveItemNote(cartItemId, note))
-                }
                 isItemPending={isItemPending}
                 onSaveMessage={(message) =>
                   handleSaveCartMessage(singleCart.id, message)
@@ -348,8 +373,8 @@ const CartPage: React.FC = () => {
 
         <div className="mt-7">
           <Link
-            to="/client/menu"
-            className="inline-flex items-center gap-2 rounded-full border border-[var(--cart-border)] bg-white/80 px-4 py-2.5 text-sm font-medium text-[var(--cart-ink)] shadow-[0_14px_30px_rgba(63,41,33,0.06)] transition-all hover:-translate-y-0.5 hover:border-[#d6b9a7] hover:text-[var(--cart-accent)]"
+            to={`/${ROUTER_URL.MENU}`}
+            className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-[var(--cart-border)] bg-white/80 px-4 py-2.5 text-sm font-medium text-[var(--cart-ink)] shadow-[0_14px_30px_rgba(63,41,33,0.06)] transition-all hover:-translate-y-0.5 hover:border-[#d6b9a7] hover:text-[var(--cart-accent)] sm:w-auto"
           >
             <ChevronLeft className="h-4 w-4" />
             Continue shopping

@@ -80,7 +80,9 @@ const AccountLayout = () => {
             {/* Nav Items */}
             <nav className="space-y-1">
               {SIDEBAR_ITEMS.map((item) => {
-                const isActive = location.pathname === item.path;
+                const isActive =
+                  location.pathname === item.path ||
+                  location.pathname.startsWith(`${item.path}/`);
                 return (
                   <Link
                     key={item.path}
