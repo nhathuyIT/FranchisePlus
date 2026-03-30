@@ -16,6 +16,7 @@ import {
   ORDER_STATUS_META,
   formatCurrency,
   formatDateTime,
+  formatStaffInfo,
   getOrderDiscountTotal,
   getOrderStatusNarrative,
   getPaymentStatusMeta,
@@ -128,10 +129,13 @@ export function OrderDetailHero({
               <div className="rounded-2xl border border-white/80 bg-white/75 p-4 backdrop-blur">
                 <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-[#9A7B67]">
                   <CalendarDays className="h-4 w-4 text-[#C97B3D]" />
-                  Created
+                  {order.staffName || order.staffEmail ? "Created by" : "Created"}
                 </div>
                 <p className="mt-3 text-sm font-medium text-[#3E2723]">
-                  {formatDateTime(order.createdAt)}
+                  {order.staffName || order.staffEmail
+                    ? formatStaffInfo(order.staffName, order.staffEmail)
+                    : formatDateTime(order.createdAt)
+                  }
                 </p>
               </div>
 
@@ -147,7 +151,7 @@ export function OrderDetailHero({
             </div>
           </div>
 
-          <div className="grid gap-3 sm:grid-cols-3 xl:w-[340px] xl:grid-cols-1">
+          <div className="grid gap-3 sm:grid-cols-3 xl:w-85 xl:grid-cols-1">
             <div className="rounded-2xl border border-[#F0DCC6] bg-[#FFF7EE] p-4">
               <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#9A7B67]">
                 Final Amount
