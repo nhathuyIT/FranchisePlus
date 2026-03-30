@@ -79,6 +79,17 @@ export interface UserFranchiseRoleSearchResponse {
   pageInfo: PageInfoResponse;
 }
 
+export interface UserByFranchiseItem {
+  value: string;
+  code: string;
+  name: string;
+  email: string;
+  phone: string;
+  image: string;
+}
+
+export type UserByFranchiseResponse = UserByFranchiseItem[];
+
 export type UserFranchiseRoleListResponse = UserFranchiseRole[];
 
 export type UserFranchiseRoleDetailResponse = UserFranchiseRoleItem;
