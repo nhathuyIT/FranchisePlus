@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+﻿import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { ChevronLeft } from "lucide-react";
 import { useCart } from "./useCart";
@@ -10,7 +10,6 @@ import {
   useUpdateCartMutation,
 } from "@/hooks/cart/useCart.hook";
 import { ROUTER_URL } from "@/router/route.const";
-import NormalLoadingLayout from "@/layouts/NormalLoadingLayout";
 import { useLoadingStore } from "@/stores/loading.store";
 import CartEmpty from "./components/CartEmpty";
 import CartPageHeader from "./components/CartPageHeader";
@@ -18,6 +17,7 @@ import CartSummary from "./components/CartSummary";
 import CartTableHeader from "./components/CartTableHeader";
 import CartStoreSection from "./components/CartStoreSection";
 import CartVoucherDialog from "./components/CartVoucherDialog";
+import NormalLoadingLayout from "@/layouts/NormalLoadingLayout";
 
 const CartPage: React.FC = () => {
   const {
@@ -151,7 +151,9 @@ const CartPage: React.FC = () => {
     setCancellingCartState(cartId, true);
 
     try {
-      await runWithCartActionLoading(() => cancelCartMutation.mutateAsync(cartId));
+      await runWithCartActionLoading(() =>
+        cancelCartMutation.mutateAsync(cartId),
+      );
       setVoucherDialogCartId((current) =>
         current === cartId ? null : current,
       );
@@ -229,7 +231,9 @@ const CartPage: React.FC = () => {
     setVoucherPendingState(cartId, true);
 
     try {
-      await runWithCartActionLoading(() => removeVoucherMutation.mutateAsync(cartId));
+      await runWithCartActionLoading(() =>
+        removeVoucherMutation.mutateAsync(cartId),
+      );
       setVoucherInputs((current) => ({
         ...current,
         [cartId]: "",
