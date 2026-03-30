@@ -8,6 +8,7 @@ import type {
   ShiftAssignmentListItem,
   ShiftAssignmentStatus,
 } from "@/types/shift-assignment.type";
+import type { User } from "@/types/user.type";
 import {
   hasDisplayShiftName,
   normalizeDateKey,
@@ -30,6 +31,10 @@ export type ShiftCalendarEvent = {
 
 export type ShiftListItem = Shift & {
   assignedCount: number;
+};
+
+export type ShiftEmployee = User & {
+  roleLabel: string;
 };
 
 type SearchMode = "userName" | "shiftName" | null;
@@ -227,9 +232,44 @@ export function useShiftPageData({
     [employeeRolesQuery.data],
   );
 
-  const employees = useMemo(
-    () => users.filter((user) => assignableUserIds.has(String(user.id))),
-    [users, assignableUserIds],
+  const roleLabelByUserId = useMemo(() => {
+    const roleSetByUserId = new Map<string, Set<string>>();
+
+    for (const assignment of employeeRolesQuery.data?.pageData ?? []) {
+      if (assignment.isDeleted) {
+        continue;
+      }
+
+      const userId = String(assignment.userId);
+      const roleLabel =
+        assignment.roleName?.trim() || assignment.roleCode?.trim() || "";
+
+      if (!roleLabel) {
+        continue;
+      }
+
+      const existingRoleSet = roleSetByUserId.get(userId) ?? new Set<string>();
+      existingRoleSet.add(roleLabel);
+      roleSetByUserId.set(userId, existingRoleSet);
+    }
+
+    return new Map<string, string>(
+      [...roleSetByUserId.entries()].map(([userId, roleSet]) => [
+        userId,
+        [...roleSet].join(", "),
+      ]),
+    );
+  }, [employeeRolesQuery.data]);
+
+  const employees = useMemo<ShiftEmployee[]>(
+    () =>
+      users
+        .filter((user) => assignableUserIds.has(String(user.id)))
+        .map((user) => ({
+          ...user,
+          roleLabel: roleLabelByUserId.get(String(user.id)) ?? "",
+        })),
+    [users, assignableUserIds, roleLabelByUserId],
   );
 
   const franchiseEvents = useMemo(
