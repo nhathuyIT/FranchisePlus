@@ -44,7 +44,6 @@ export function ReadyForPickupDialog({
 }: ReadyForPickupDialogProps) {
   const { authUser, getCurrentRole } = useAuthStore();
   const [selectedStaffId, setSelectedStaffId] = useState("");
-  const [searchValue, setSearchValue] = useState("");
   const [validationError, setValidationError] = useState("");
   const currentRole = getCurrentRole();
   const persistedAuthUser = useMemo(() => getCurrentAuthUser(), []);
@@ -72,7 +71,6 @@ export function ReadyForPickupDialog({
   useEffect(() => {
     if (!open) {
       setSelectedStaffId("");
-      setSearchValue("");
       setValidationError("");
     }
   }, [open]);
@@ -158,16 +156,6 @@ export function ReadyForPickupDialog({
   );
 
   useEffect(() => {
-    if (!open || !isCurrentActorStaff || !currentStaffIdentity) {
-      return;
-    }
-
-    setSearchValue((currentValue) =>
-      currentValue.trim() ? currentValue : currentStaffIdentity.name,
-    );
-  }, [currentStaffIdentity, isCurrentActorStaff, open]);
-
-  useEffect(() => {
     if (!open || !isCurrentActorStaff || !matchedCurrentStaff) {
       return;
     }
@@ -241,13 +229,10 @@ export function ReadyForPickupDialog({
               }}
               options={options}
               placeholder="Select one delivery staff member"
-              searchPlaceholder="Search by name, email, or phone"
               emptyText="No staff found for this franchise"
               isLoading={staffQuery.isLoading || staffQuery.isFetching}
               loadingText="Loading staff..."
-              searchValue={searchValue}
-              onSearchValueChange={setSearchValue}
-              resetSearchOnClose={false}
+              showSearch={false}
             />
 
             {selectedStaff && (

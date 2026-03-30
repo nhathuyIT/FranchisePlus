@@ -27,6 +27,7 @@ export interface PopoverSearchSelectProps {
   emptyText?: string;
   minChars?: number;
   loadingText?: string;
+  showSearch?: boolean;
 
   disabled?: boolean;
   isLoading?: boolean;
@@ -59,6 +60,7 @@ export function PopoverSearchSelect({
   emptyText = "No options found",
   minChars = 0,
   loadingText = "Loading...",
+  showSearch = true,
   disabled = false,
   isLoading = false,
   open: openProp,
@@ -104,6 +106,8 @@ export function PopoverSearchSelect({
   );
 
   const filteredOptions = React.useMemo(() => {
+    if (!showSearch) return options;
+
     const normalizedSearch = normalizeForSearch(searchValue);
     if (minChars > 0 && normalizedSearch.length < minChars) return [];
     if (!normalizedSearch) return options;
@@ -118,9 +122,12 @@ export function PopoverSearchSelect({
             : "");
       return normalizeForSearch(raw).includes(normalizedSearch);
     });
-  }, [options, searchValue, minChars]);
+  }, [minChars, options, searchValue, showSearch]);
 
-  const showMinCharsHint = minChars > 0 && normalizeForSearch(searchValue).length < minChars;
+  const showMinCharsHint =
+    showSearch &&
+    minChars > 0 &&
+    normalizeForSearch(searchValue).length < minChars;
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -156,15 +163,17 @@ export function PopoverSearchSelect({
           contentClassName
         )}
       >
-        <div className="border-b p-2">
-          <Input
-            value={searchValue}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder={searchPlaceholder}
-            className="h-9"
-            onKeyDown={(e) => e.stopPropagation()}
-          />
-        </div>
+        {showSearch ? (
+          <div className="border-b p-2">
+            <Input
+              value={searchValue}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder={searchPlaceholder}
+              className="h-9"
+              onKeyDown={(e) => e.stopPropagation()}
+            />
+          </div>
+        ) : null}
 
         <div
           className="max-h-64 overflow-y-auto overscroll-contain p-1"
