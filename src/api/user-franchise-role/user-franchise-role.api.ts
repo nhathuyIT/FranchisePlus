@@ -4,6 +4,7 @@ import type {
   UserFranchiseRoleSearchRequest,
   UserFranchiseRoleSearchResponse,
   UserFranchiseRoleItem,
+  UserByFranchiseResponse,
   PageInfoResponse,
 } from "./user-franchise-role.type";
 
@@ -99,4 +100,17 @@ export const restore = async (id: number): Promise<void> => {
   await httpClient.patch<null, never>({
     url: `${BASE_URL}/${encodeId(id)}/restore`,
   });
+};
+
+/**
+ * Get all users that belong to a franchise
+ */
+export const getUsersByFranchiseId = async (
+  franchiseId: string | number,
+): Promise<UserByFranchiseResponse> => {
+  const response = await httpClient.get<UserByFranchiseResponse, never>({
+    url: `${BASE_URL}/franchise/${encodeId(franchiseId)}`,
+  });
+
+  return response ?? [];
 };

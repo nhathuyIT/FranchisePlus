@@ -13,6 +13,8 @@ export const userFranchiseRoleKeys = {
   lists: () => [...userFranchiseRoleKeys.all, "list"] as const,
   list: (filters: UserFranchiseRoleSearchRequest) =>
     [...userFranchiseRoleKeys.lists(), filters] as const,
+  byFranchiseUsers: (franchiseId: string | number) =>
+    [...userFranchiseRoleKeys.all, "byFranchiseUsers", franchiseId] as const,
   details: () => [...userFranchiseRoleKeys.all, "detail"] as const,
   detail: (id: number) => [...userFranchiseRoleKeys.details(), id] as const,
   roles: ["roles", "list"] as const,
@@ -48,6 +50,22 @@ export const useRoles = () => {
     queryFn: () => roleApi.getAll(),
     staleTime: 10 * 60 * 1000, // 10 minutes
     select: (data) => data ?? [],
+  });
+};
+
+/**
+ * Get all users by franchise id
+ */
+export const useUsersByFranchiseId = (
+  franchiseId: string,
+  options?: {
+    enabled?: boolean;
+  },
+) => {
+  return useQuery({
+    queryKey: userFranchiseRoleKeys.byFranchiseUsers(franchiseId),
+    queryFn: () => ufrApi.getUsersByFranchiseId(franchiseId),
+    enabled: options?.enabled ?? true,
   });
 };
 

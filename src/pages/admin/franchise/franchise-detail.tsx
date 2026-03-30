@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { ArrowLeft, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -9,6 +9,10 @@ import { FranchiseInfoCard } from "./components/general/FranchiseInfoCard";
 import { FranchiseStaffTab } from "./components/staff/FranchiseStaffTab";
 import { FranchiseInventoryTab } from "./components/inventory/FranchiseInventoryTab";
 import { useFranchise } from "@/hooks/franchise";
+import {
+  useRoles,
+  useUserFranchiseRoleSearch,
+} from "@/hooks/user-franchise-role";
 import { Permission } from "@/config/permission";
 import { useAuthStore } from "@/stores/auth-store";
 import { FranchiseCategoryTab } from "./components/categories/FranchiseCategoryTab";
@@ -51,22 +55,46 @@ const FranchiseDetail = () => {
   const [createCategoryOpen, setCreateCategoryOpen] = useState(false);
   const [createProductOpen, setCreateProductOpen] = useState(false);
 
-  const [staffList] = useState([
-    {
-      id: "staff-001",
-      name: "Staff Member 1",
-      email: "staff1@example.com",
-      role: "STAFF",
-    },
-    {
-      id: "staff-002",
-      name: "Staff Member 2",
-      email: "staff2@example.com",
-      role: "STAFF",
-    },
-  ]);
+  const { data: roleOptions = [] } = useRoles();
 
-  const handleAddStaff = () => {};
+  const { data: searchResult, isLoading: isLoadingFranchiseUsers } =
+    useUserFranchiseRoleSearch(
+      {
+        searchCondition: {
+          franchiseId: id ?? "",
+          isDeleted: false,
+        },
+        pageInfo: {
+          pageNum: 1,
+          pageSize: 100,
+        },
+      },
+      {
+        enabled: canReadDetail && !!id,
+      },
+    );
+
+  const assignments = searchResult?.pageData ?? [];
+
+  const staffList = useMemo(
+    () =>
+      assignments.map((item) => {
+        const matchedRole = roleOptions.find(
+          (role) => role.value === item.roleId,
+        );
+
+        return {
+          id: String(item.id),
+          name: item.userName ?? "Unknown",
+          email: item.userEmail ?? "",
+          phone: "",
+          image: "",
+          roleName: item.roleName || matchedRole?.name || "Unknown",
+          roleCode: item.roleCode || matchedRole?.code || "",
+        };
+      }),
+    [assignments, roleOptions],
+  );
 
   if (isLoading) {
     return (
@@ -220,7 +248,7 @@ const FranchiseDetail = () => {
           >
             <FranchiseStaffTab
               staffList={staffList}
-              onAddStaff={handleAddStaff}
+              isLoading={isLoadingFranchiseUsers}
             />
           </TabsContent>
 
