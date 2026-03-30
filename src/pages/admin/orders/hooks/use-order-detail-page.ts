@@ -39,9 +39,6 @@ export const useOrderDetailPage = (orderId?: string | null) => {
   const delivery = isMissingDelivery ? null : (deliveryQuery.data ?? null);
   const payment = paymentQuery.data ?? null;
   const deliveryId = order?.deliveryId || delivery?.id || "";
-  const deliveryEmptyMessage = isMissingDelivery
-    ? "This order has not been assigned to delivery yet."
-    : "Delivery information has not been created yet for this order.";
 
   const canMoveToPreparing = order?.status === "CONFIRMED";
   const canReadyForPickup = order?.status === "PREPARING";
@@ -115,7 +112,6 @@ export const useOrderDetailPage = (orderId?: string | null) => {
     order,
     delivery,
     deliveryError,
-    deliveryEmptyMessage,
     payment,
     deliveryId,
     isMutating,

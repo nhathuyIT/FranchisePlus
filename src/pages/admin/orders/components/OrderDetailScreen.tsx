@@ -1,5 +1,5 @@
 ﻿/* eslint-disable react-hooks/set-state-in-effect */
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   AlertCircle,
   ArrowLeft,
@@ -23,7 +23,6 @@ import { useOrderDetailPage } from "../hooks/use-order-detail-page";
 import {
   formatCurrency,
   formatDateTime,
-  ORDER_STATUS_META,
   PAYMENT_STATUS_META,
 } from "../utils/order-management.utils";
 import { ConfirmPaymentDialog } from "./ConfirmPaymentDialog";
@@ -61,7 +60,6 @@ export function OrderDetailScreen({
     order,
     delivery,
     deliveryError,
-    deliveryEmptyMessage,
     payment,
     deliveryId,
     isMutating,
@@ -80,6 +78,7 @@ export function OrderDetailScreen({
   } = useOrderDetailPage(orderId);
   const [isReadyDialogOpen, setIsReadyDialogOpen] = useState(false);
   const [isConfirmPaymentOpen, setIsConfirmPaymentOpen] = useState(false);
+  const detailTopRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     setIsReadyDialogOpen(false);
@@ -135,7 +134,6 @@ export function OrderDetailScreen({
     );
   }
 
-  const statusMeta = ORDER_STATUS_META[order.status];
   const paymentStatusMeta = payment
     ? PAYMENT_STATUS_META[payment.status]
     : null;
@@ -144,11 +142,28 @@ export function OrderDetailScreen({
     deliveryQuery.isFetching ||
     paymentQuery.isFetching;
 
+  const handleConfirmPaymentAndResetView = async (payload: {
+    method: string;
+    providerTxnId: string;
+  }) => {
+    await handleConfirmPayment(payload);
+    await refetchAll();
+
+    requestAnimationFrame(() => {
+      detailTopRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    });
+  };
+
   return (
     <>
       <NormalLoadingLayout
         forceShow={isMutating || (isRefreshing && !orderQuery.isLoading)}
       />
+
+      <div ref={detailTopRef} />
 
       <div
         className={cn(
@@ -173,10 +188,6 @@ export function OrderDetailScreen({
               </div>
 
               <div className="flex flex-wrap items-center gap-2">
-                <Badge variant="outline" className={statusMeta.badgeClassName}>
-                  {statusMeta.label}
-                </Badge>
-
                 {variant === "page" && onBack ? (
                   <Button
                     type="button"
@@ -211,7 +222,6 @@ export function OrderDetailScreen({
           assignedToEmail={delivery?.assignedToEmail || order.staffEmail}
           assignedAt={delivery?.assignedAt}
           deliveryError={deliveryError}
-          deliveryEmptyMessage={deliveryEmptyMessage}
           deliveryActionMessage={deliveryActionMessage}
           isMutating={isMutating}
           isRefreshing={isRefreshing}
@@ -299,10 +309,6 @@ export function OrderDetailScreen({
         <Card className="border-[#E8DFD6] shadow-sm">
           <CardHeader>
             <CardTitle className="text-[#3E2723]">Order Items</CardTitle>
-            <CardDescription>
-              Snapshot items stay read-only here. Each status update should
-              happen outside the item list.
-            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             {order.orderItems.length > 0 ? (
@@ -455,7 +461,7 @@ export function OrderDetailScreen({
         defaultMethod={payment?.method}
         defaultProviderTxnId={payment?.providerTxnId}
         isSubmitting={isMutating}
-        onSubmit={handleConfirmPayment}
+        onSubmit={handleConfirmPaymentAndResetView}
       />
     </>
   );

@@ -12,7 +12,6 @@ import type {
 import {
   completeDelivery,
   getDeliveryByOrderId,
-  getDeliveryStaffByFranchise,
   pickupDelivery,
   searchDeliveries,
 } from "../services/delivery.service";
@@ -22,6 +21,7 @@ import {
   refundPayment,
 } from "../services/payment.service";
 import {
+  getAssignableStaffByFranchise,
   getFranchiseOrders,
   getOrderByCartId,
   getOrderByCode,
@@ -177,7 +177,7 @@ export const useFranchiseDeliveryStaffQuery = (
 ) =>
   useQuery({
     queryKey: orderManagementKeys.staffByFranchise(franchiseId),
-    queryFn: () => getDeliveryStaffByFranchise(franchiseId),
+    queryFn: () => getAssignableStaffByFranchise(franchiseId),
     enabled: !!franchiseId && enabled,
     staleTime: 5 * 60 * 1000,
   });
