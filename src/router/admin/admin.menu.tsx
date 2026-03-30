@@ -163,6 +163,6 @@ export const ADMIN_MENU: AdminMenuItem[] = [
     icon: "voucher",
     component: React.lazy(() => import("@/pages/admin/loyalty/index.tsx")),
     isEnd: true,
-    permissions: [PermissionEnum.VIEW_PRODUCTS],
+    permissions: [PermissionEnum.VIEW_LOYALTY_RULES],
   },
 ];
